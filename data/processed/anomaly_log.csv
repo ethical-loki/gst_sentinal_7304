@@ -1,0 +1,1508 @@
+anomaly_id,row_id,description
+PR-01,B2B-EX-A1-DUP,Whole invoice duplicated
+PR-01,B2B-EX-A2-DUP,Whole invoice duplicated
+PR-26,B2B-EX-B1,Blocked credit line - Car repair and servicing
+PR-65,SAL-EX-C001,Unpaid overdue invoice exceeding 220 days
+PR-66,RCP-DUP-001,Duplicate payment receipt logged against invoice
+PR-67,RCP-00002,Receipt amount exceeds invoice balance
+PR-68,RCP-PHANTOM-01,Receipt mapped to non-existent invoice reference
+GS-21,99MANFQ7855H7ZN,Vendor registration status is Cancelled
+GS-21,27MCPFQ1001Z5ZI,Vendor registration status is Cancelled
+GS-21,18TYDFG5237Q4ZH,Vendor registration status is Cancelled
+GS-21,27IVECP7399K1ZL,Vendor registration status is Cancelled
+GS-21,01GJEFI0059C3Z8,Vendor registration status is Cancelled
+GS-21,10WHKCD3278X5ZH,Vendor registration status is Cancelled
+GS-21,27VKCFS8321W6Z1,Vendor registration status is Cancelled
+GS-21,27CYOCS8337G9Z1,Vendor registration status is Cancelled
+GS-21,27ATHCV5907A6ZP,Vendor registration status is Cancelled
+GS-21,11LDFFG6154R2ZT,Vendor registration status is Cancelled
+GS-22,27DYDFG5066F4ZR,Vendor registration status is Suspended
+GS-22,27NJFFG8880T4ZU,Vendor registration status is Suspended
+GS-22,27QOGFS8535P2Z1,Vendor registration status is Suspended
+GS-22,27EQHFS3565M6ZJ,Vendor registration status is Suspended
+GS-22,27QXKCP8685W1ZG,Vendor registration status is Suspended
+GS-22,27BJPCG2725M5ZA,Vendor registration status is Suspended
+GS-22,19XXQFN8140Z5Z4,Vendor registration status is Suspended
+GS-22,27HPBFO2499C3Z6,Vendor registration status is Suspended
+GS-29,11JTKFD7359G7ZY,Vendor is a chronic non-filer
+GS-29,10TWACS5917I6Z3,Vendor is a chronic non-filer
+GS-29,27UKRCN1982H2ZV,Vendor is a chronic non-filer
+GS-29,15JIIFS7450T3ZP,Vendor is a chronic non-filer
+GS-29,99LZBFP5353W5ZW,Vendor is a chronic non-filer
+GS-29,22YYIFV6484Z7ZM,Vendor is a chronic non-filer
+GS-29,27WIWCD3153S9ZU,Vendor is a chronic non-filer
+GS-29,02VHXFV8485F7ZZ,Vendor is a chronic non-filer
+GS-29,27NDACN8691Y4ZU,Vendor is a chronic non-filer
+GS-29,27SOQFN4086X3ZJ,Vendor is a chronic non-filer
+GS-29,27XFJFN0427Q7ZV,Vendor is a chronic non-filer
+GS-29,27MDKCA2804T6Z8,Vendor is a chronic non-filer
+GS-21,99MANFQ7855H7ZN,Vendor registration status is Cancelled
+GS-21,27MCPFQ1001Z5ZI,Vendor registration status is Cancelled
+GS-21,18TYDFG5237Q4ZH,Vendor registration status is Cancelled
+GS-21,27IVECP7399K1ZL,Vendor registration status is Cancelled
+GS-21,01GJEFI0059C3Z8,Vendor registration status is Cancelled
+GS-21,10WHKCD3278X5ZH,Vendor registration status is Cancelled
+GS-21,27VKCFS8321W6Z1,Vendor registration status is Cancelled
+GS-21,27CYOCS8337G9Z1,Vendor registration status is Cancelled
+GS-21,27ATHCV5907A6ZP,Vendor registration status is Cancelled
+GS-21,11LDFFG6154R2ZT,Vendor registration status is Cancelled
+GS-22,27DYDFG5066F4ZR,Vendor registration status is Suspended
+GS-22,27NJFFG8880T4ZU,Vendor registration status is Suspended
+GS-22,27QOGFS8535P2Z1,Vendor registration status is Suspended
+GS-22,27EQHFS3565M6ZJ,Vendor registration status is Suspended
+GS-22,27QXKCP8685W1ZG,Vendor registration status is Suspended
+GS-22,27BJPCG2725M5ZA,Vendor registration status is Suspended
+GS-22,19XXQFN8140Z5Z4,Vendor registration status is Suspended
+GS-22,27HPBFO2499C3Z6,Vendor registration status is Suspended
+GS-29,11JTKFD7359G7ZY,Vendor is a chronic non-filer
+GS-29,10TWACS5917I6Z3,Vendor is a chronic non-filer
+GS-29,27UKRCN1982H2ZV,Vendor is a chronic non-filer
+GS-29,15JIIFS7450T3ZP,Vendor is a chronic non-filer
+GS-29,99LZBFP5353W5ZW,Vendor is a chronic non-filer
+GS-29,22YYIFV6484Z7ZM,Vendor is a chronic non-filer
+GS-29,27WIWCD3153S9ZU,Vendor is a chronic non-filer
+GS-29,02VHXFV8485F7ZZ,Vendor is a chronic non-filer
+GS-29,27NDACN8691Y4ZU,Vendor is a chronic non-filer
+GS-29,27SOQFN4086X3ZJ,Vendor is a chronic non-filer
+GS-29,27XFJFN0427Q7ZV,Vendor is a chronic non-filer
+GS-29,27MDKCA2804T6Z8,Vendor is a chronic non-filer
+PR-70,INV-2024-02967,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01280,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02677,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01578,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01611,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01747,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02595,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02499,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02626,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03211,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03278,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02059,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02383,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01510,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02697,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02652,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01949,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02235,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01083,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02946,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01468,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02667,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03362,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01301,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01095,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02500,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01564,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02546,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03388,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02177,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02605,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01110,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01467,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03039,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01731,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02272,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02301,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02405,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02936,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01759,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01406,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01403,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01175,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01944,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01328,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02921,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03403,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01445,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01004,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01129,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01433,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02446,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02211,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01571,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03041,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01902,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02391,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02423,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01853,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01261,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03085,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01624,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02160,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02551,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03019,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02326,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01268,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02100,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03260,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01789,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02623,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02335,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01055,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02836,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02188,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01640,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03130,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01103,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01307,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01305,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01607,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01162,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02449,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03391,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01715,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03407,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02265,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02247,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01599,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02930,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02920,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01288,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03120,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01201,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02535,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02448,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02427,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01227,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01625,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03018,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01104,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02955,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01478,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02933,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01400,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02028,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02463,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02792,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03193,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03367,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02612,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01338,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01014,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03304,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01768,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02715,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01414,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01713,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01951,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01848,Invoice present in books but omitted in GSTR-2B
+PR-71,INV-2024-01595,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01778,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01256,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01262,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02551,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01922,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01984,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03289,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02423,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03286,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02510,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02053,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02044,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02865,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01365,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01003,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01296,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02926,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01206,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03088,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02396,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01539,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01433,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01267,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03093,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01454,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01908,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02667,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02422,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02942,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02193,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02718,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03171,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01741,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03189,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03087,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02545,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02757,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02814,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02390,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03218,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01181,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02020,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02684,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01316,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01353,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02045,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01907,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03419,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02242,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02800,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01698,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01028,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01365,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01515,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03121,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02523,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01684,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02508,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01133,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03302,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02145,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02184,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01031,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03377,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02824,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01493,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03192,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01369,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03336,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02915,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01088,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02620,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01663,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01850,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01515,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02345,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02998,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01580,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02990,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01283,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02556,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01750,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03314,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03406,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01737,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01321,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02507,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03149,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02306,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03199,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02124,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02142,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03411,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02200,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01483,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01190,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02900,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02503,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03105,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03024,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02372,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03282,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01460,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02311,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03222,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02180,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02216,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03202,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01464,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02619,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02158,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03004,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02602,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01324,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02501,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02125,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01308,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02447,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01345,Value mismatch between Books and GSTR-2B
+PR-75,INV-2024-02841,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02276,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02855,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02988,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02676,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01229,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02121,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01433,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02842,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02892,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01075,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01978,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-EX-B001,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02211,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02496,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02403,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03068,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01097,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02086,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03410,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01690,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01896,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01030,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01304,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01163,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01678,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01471,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01096,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02309,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02941,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01274,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01052,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01021,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01005,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01534,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03012,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02743,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03160,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01488,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02017,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01823,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01169,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02844,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02938,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02141,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02684,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02400,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01124,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02331,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02517,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01694,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01794,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01656,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03074,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01599,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01591,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01861,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02348,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03252,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01870,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02768,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01042,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01720,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02292,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02213,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01879,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03030,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02371,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01083,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03388,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02784,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02134,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02208,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01969,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02361,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02719,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01677,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01443,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01962,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03058,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01559,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02576,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01466,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01741,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02765,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02225,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02999,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03325,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02798,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02115,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03398,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01764,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02838,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02830,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03336,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02745,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01169,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03134,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02845,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01114,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03101,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01113,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01924,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01664,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01306,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01068,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02610,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01788,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02675,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02068,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01195,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02542,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02561,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02302,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01360,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03245,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03162,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02644,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01262,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02016,Tax period mismatch (shifted filing period in 2B)
+PR-70,INV-2024-01208,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01454,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02220,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03131,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02727,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01852,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02239,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01921,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03333,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02449,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01591,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02391,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01613,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03348,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02612,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01803,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01656,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02594,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03125,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02888,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02551,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01750,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01094,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03036,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01575,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03033,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01348,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01321,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01093,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03363,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01839,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02575,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02139,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01204,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02029,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03232,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02985,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01619,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02281,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02156,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02537,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02949,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03391,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02241,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01429,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03213,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01018,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01740,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01717,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02038,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01631,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01723,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01755,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02967,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01006,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03010,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02074,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01118,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01236,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01042,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01382,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02818,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03247,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02954,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01415,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02828,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01179,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02107,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02435,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02509,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02978,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01752,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01468,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03199,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03242,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02194,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01998,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01162,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01530,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03148,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02306,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02493,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03253,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02078,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01171,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03116,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01057,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03074,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01778,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02693,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03192,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03081,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02432,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02594,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02601,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02245,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03201,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02683,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01009,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03016,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01595,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02734,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02482,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02516,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02769,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01169,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02023,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02460,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02400,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01627,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02728,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02917,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02369,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01154,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01962,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01341,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03167,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01702,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02535,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03065,Invoice present in books but omitted in GSTR-2B
+PR-71,INV-2024-02699,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02802,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02449,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03018,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01128,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01005,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01507,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02301,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02865,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03298,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01677,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03273,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01199,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02348,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03237,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01181,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01470,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03417,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02332,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02555,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01096,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01239,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02519,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03083,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03040,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02186,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03096,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02711,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01491,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02072,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02844,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01661,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02655,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02466,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02550,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01660,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02907,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02590,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01394,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03136,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01567,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01900,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01365,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02091,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03015,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01431,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02504,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02316,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01442,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02260,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03052,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02327,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01174,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02045,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01112,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03120,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01991,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03064,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02929,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03229,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01388,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01209,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01493,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01401,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03284,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01613,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01983,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01182,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02781,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02929,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01593,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02049,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01858,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02764,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02463,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01407,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01639,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01371,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03182,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02787,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01998,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01982,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01626,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01041,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02874,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01864,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01853,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03047,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03198,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01842,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02446,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02859,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02046,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01863,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02099,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02755,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01610,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02777,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02248,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03003,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02937,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02398,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01745,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01748,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02793,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01254,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03228,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02426,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01274,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01456,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02362,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01083,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01056,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01751,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02127,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01110,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01001,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02780,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02361,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02080,Value mismatch between Books and GSTR-2B
+PR-75,INV-2024-01607,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01736,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01367,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02088,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01931,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02630,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02855,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01054,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01160,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01789,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02820,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02541,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02937,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01971,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01218,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02616,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02542,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01413,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03193,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03364,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03315,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03001,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02708,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01542,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03245,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02660,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02755,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02523,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01483,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02771,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01678,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01755,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03373,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03269,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03276,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03164,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01568,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01246,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02665,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03198,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03286,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03070,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02471,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01715,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01034,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03406,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03250,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01081,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03032,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02966,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01801,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02311,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01275,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01571,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02573,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02213,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02529,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01221,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02289,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01403,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02306,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02826,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01242,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02643,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02037,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03115,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03282,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02807,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02095,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01542,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01528,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01858,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01669,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01514,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01280,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01977,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01833,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02615,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02030,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02387,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01888,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01897,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02782,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02177,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02209,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02890,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01142,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01611,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03312,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01634,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02491,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02113,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03025,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02409,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02674,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03004,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01943,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02619,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02393,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03360,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01903,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01263,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01005,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01141,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02939,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02193,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01840,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01400,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02958,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02487,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01238,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01273,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03415,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02226,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02286,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02912,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03080,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01452,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02749,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02340,Tax period mismatch (shifted filing period in 2B)
+PR-70,INV-2024-02402,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01990,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01090,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01755,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02800,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03003,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02342,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02949,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01955,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02795,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01026,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02244,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02159,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03201,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03079,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02449,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01507,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01551,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03342,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01988,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01394,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01147,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01514,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02496,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01474,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03082,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01890,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02938,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03233,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03049,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01522,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01356,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02841,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02567,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02369,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02544,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03100,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01246,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01842,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02497,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01722,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02802,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02455,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02756,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02901,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02805,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02924,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02428,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02276,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01733,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03311,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02681,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01868,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03390,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02820,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02377,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02951,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01173,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01076,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02171,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02372,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02874,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02158,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01282,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01803,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01384,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01944,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01397,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01628,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01683,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01081,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01593,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02072,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01323,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02271,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02954,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03220,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02597,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02023,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02774,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02623,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03243,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03051,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01445,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01690,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02407,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02491,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01623,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01440,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01506,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02798,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02179,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01875,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02344,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02650,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02612,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03009,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01884,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01293,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02789,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02403,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01522,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03325,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03018,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01066,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02105,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02106,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02933,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01409,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02435,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02689,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01963,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01460,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02520,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03283,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01506,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01295,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01320,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01445,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02844,Invoice present in books but omitted in GSTR-2B
+PR-71,INV-2024-01942,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02818,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03136,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02741,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01528,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01845,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01319,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01568,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02198,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02506,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03238,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02981,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01520,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02057,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01941,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01717,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02821,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01680,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02463,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01341,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03083,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02751,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02421,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02318,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02918,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02025,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02264,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01095,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02878,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01980,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01743,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03203,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02090,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01829,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01354,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01425,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03166,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02675,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01190,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01355,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01187,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02273,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01335,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02045,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01313,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01892,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01257,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01695,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02044,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02073,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03369,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01186,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02551,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02325,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02966,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01082,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01139,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02391,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03318,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03201,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01484,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01418,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03080,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01957,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01063,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03312,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01441,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01527,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03168,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02107,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01652,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01569,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03020,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01943,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01211,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01171,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02450,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02920,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01764,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02998,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01373,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02118,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02503,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02763,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01043,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01388,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02163,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03406,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02294,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02453,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03143,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02594,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03288,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02197,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01660,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01558,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02699,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02195,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01619,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01820,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03128,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02681,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03336,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01188,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01222,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03272,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02730,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01323,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03064,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02370,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02887,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01171,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02238,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03414,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01159,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01634,Value mismatch between Books and GSTR-2B
+PR-71,INV-EX-A001,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01893,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02758,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01592,Value mismatch between Books and GSTR-2B
+PR-75,INV-2024-02339,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02642,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03151,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02242,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02829,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01980,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03185,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01697,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02817,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02343,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03228,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02482,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01122,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01807,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02330,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01925,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03042,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01215,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02329,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02122,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01191,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01150,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01430,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02649,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02334,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01008,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02362,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01599,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02422,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02690,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02252,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02077,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01549,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02655,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01702,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01024,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01885,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02094,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01311,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01293,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03142,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01587,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02508,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03193,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03096,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01515,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02478,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02655,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01290,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02315,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02811,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01393,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01754,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01201,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01543,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03377,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02103,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02777,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01508,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02396,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01217,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02949,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01605,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01424,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02981,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03183,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02773,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02446,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01192,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01968,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03289,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01902,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02935,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02515,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02222,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02136,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01841,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01296,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01858,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03214,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03031,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02465,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02048,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03145,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02211,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03414,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02591,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03279,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01033,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03292,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02820,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02622,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02562,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01754,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01917,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01197,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02952,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02722,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02842,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02760,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02517,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02766,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01463,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02983,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03191,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02536,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01891,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03364,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02785,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02735,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02939,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03368,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02995,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02006,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02514,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01575,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01022,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01490,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01128,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03286,Tax period mismatch (shifted filing period in 2B)
+PR-70,INV-2024-02304,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02318,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01038,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02137,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01303,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01122,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03096,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01622,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02013,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03095,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02780,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01182,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01736,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01367,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01843,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02561,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02551,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01892,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01282,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01110,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02592,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01246,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03267,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01953,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03069,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01830,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01895,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01492,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01001,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02251,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02745,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01006,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01729,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03312,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02593,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01911,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02354,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01755,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01634,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03413,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02374,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03081,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03009,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01768,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01319,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01645,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01409,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03276,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02799,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01885,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02626,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02723,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03159,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02246,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03204,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02899,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01587,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03029,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03337,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02833,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02144,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03364,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01295,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03166,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02684,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01413,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02377,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01173,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02844,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01267,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01269,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02528,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01001,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02237,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01483,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03200,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01909,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01991,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02339,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02999,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02809,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02986,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01055,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01406,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02095,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02330,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02155,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01450,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02290,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02264,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03417,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03126,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01545,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02240,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01933,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01123,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01344,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02011,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01977,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03260,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03329,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03034,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01834,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01886,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01553,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01725,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02115,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02490,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01049,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02617,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01749,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-03414,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01400,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02026,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02889,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02288,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02223,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01954,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-01333,Invoice present in books but omitted in GSTR-2B
+PR-70,INV-2024-02878,Invoice present in books but omitted in GSTR-2B
+PR-71,INV-2024-01217,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01735,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02395,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01685,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03219,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02335,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02073,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01694,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02045,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01201,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01849,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01042,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01191,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01249,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03312,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01778,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01410,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01104,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03014,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02987,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03193,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01867,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01341,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03173,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02686,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02966,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02337,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02941,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03081,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02956,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01482,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01466,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01198,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01137,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02420,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01715,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02588,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03339,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02997,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03311,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02605,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01660,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03181,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01066,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01284,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02104,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03117,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02821,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01394,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02334,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01991,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01527,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01240,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01936,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02396,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02654,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02684,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02952,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02947,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02199,Value mismatch between Books and GSTR-2B
+PR-71,INV-EX-B001,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01064,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01775,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01199,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03411,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01649,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01095,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02359,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01871,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01863,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01711,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01750,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02897,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01951,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01749,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01151,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03105,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03205,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02484,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01764,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02576,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03036,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01746,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01087,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03192,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01458,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02210,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02759,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02869,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01931,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02631,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02323,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01997,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02905,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01907,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01239,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02656,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01838,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02820,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02564,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03113,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-03325,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01985,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02804,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01671,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02853,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01253,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02453,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02966,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02175,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01552,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01576,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02970,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01185,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02806,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02039,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02619,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02716,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-01211,Value mismatch between Books and GSTR-2B
+PR-71,INV-2024-02819,Value mismatch between Books and GSTR-2B
+PR-75,INV-2024-01377,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01236,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03121,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02666,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01014,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03355,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02200,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02919,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01313,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01083,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01741,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02135,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01552,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02055,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01371,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03201,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01128,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02993,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02289,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01597,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01516,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01745,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03116,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02871,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01057,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02342,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01310,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02047,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02858,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01413,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02126,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02570,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02387,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02485,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01580,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02287,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02070,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01894,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01291,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01845,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02354,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01426,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01514,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02030,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01443,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01468,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01888,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02150,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01274,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02559,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02198,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02050,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01840,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01613,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02015,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03207,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01299,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01462,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01172,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02023,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02226,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03238,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03016,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02060,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03148,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02392,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02398,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01754,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01583,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01055,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01173,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02934,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03394,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03310,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01948,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02703,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03048,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01868,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01307,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02049,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01540,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01463,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01755,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02938,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02036,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02219,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02093,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03024,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01858,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02630,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03012,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01182,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01763,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02969,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03354,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03232,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02356,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02094,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02386,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02704,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01367,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02848,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02433,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01673,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02917,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01945,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03204,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02967,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02380,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01018,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01365,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02141,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02032,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02139,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02118,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02331,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01429,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-01510,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-03046,Tax period mismatch (shifted filing period in 2B)
+PR-75,INV-2024-02177,Tax period mismatch (shifted filing period in 2B)

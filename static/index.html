@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GST_Sentinel - HSN Code Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --glass-bg: rgba(22, 31, 51, 0.80);
+            --glass-border: rgba(255,255,255,0.12);
+            --accent-glow: rgba(99,102,241,0.35);
+            --accent: #6366f1;
+            --text: #f3f4f6;
+            --muted: #9ca3af;
+            --green: #34d399;
+            --purple: #c084fc;
+            --blue: #38bdf8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body {
+            background: radial-gradient(circle at 50% 0%, #1a233a 0%, var(--bg) 100%);
+            min-height: 100vh;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .glow {
+            position: fixed; width: 500px; height: 500px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%);
+            top: 0; left: 50%; transform: translateX(-50%);
+            pointer-events: none; filter: blur(60px); z-index: 0;
+        }
+
+        .container { width: 100%; max-width: 700px; position: relative; z-index: 1; }
+
+        /* ---- Header ---- */
+        .header { text-align: center; margin-bottom: 28px; }
+
+        .badge-live {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 5px 14px; background: rgba(99,102,241,0.15);
+            border: 1px solid rgba(99,102,241,0.3); border-radius: 30px;
+            font-size: 0.78rem; font-weight: 700; color: #a5b4fc;
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;
+        }
+
+        .dot {
+            width: 8px; height: 8px; background: var(--green); border-radius: 50%;
+            box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.6); }
+            50%       { box-shadow: 0 0 0 8px rgba(52,211,153,0); }
+        }
+
+        h1 {
+            font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .subtitle { color: var(--muted); font-size: 0.95rem; }
+
+        /* ---- Card ---- */
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px; padding: 26px;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+
+        /* ---- Search input ---- */
+        .search-wrap { position: relative; }
+
+        .input-row { display: flex; align-items: center; position: relative; }
+
+        .search-ico {
+            position: absolute; left: 16px; width: 20px; height: 20px;
+            stroke: var(--muted); fill: none; stroke-width: 2;
+            stroke-linecap: round; stroke-linejoin: round; pointer-events: none;
+        }
+
+        #searchInput {
+            width: 100%; padding: 16px 48px 16px 50px;
+            font-size: 1rem; font-weight: 500; font-family: inherit;
+            background: rgba(10,15,30,0.65); border: 1.5px solid var(--glass-border);
+            border-radius: 14px; color: var(--text); outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        #searchInput:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px var(--accent-glow);
+        }
+
+        #searchInput::placeholder { color: #4b5563; font-weight: 400; }
+
+        #clearBtn {
+            position: absolute; right: 14px; width: 26px; height: 26px;
+            background: rgba(255,255,255,0.1); border: none; border-radius: 50%;
+            color: var(--muted); font-size: 16px; cursor: pointer;
+            display: none; align-items: center; justify-content: center;
+            transition: background 0.2s;
+        }
+        #clearBtn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+        /* ---- Dropdown ---- */
+        #dropdown {
+            position: absolute; top: calc(100% + 8px); left: 0; right: 0;
+            background: rgba(10,15,30,0.97);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 16px;
+            max-height: 340px; overflow-y: auto;
+            z-index: 200; padding: 8px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+            display: none;
+        }
+
+        #dropdown::-webkit-scrollbar { width: 5px; }
+        #dropdown::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 8px; }
+
+        .dd-header {
+            padding: 6px 12px 8px; font-size: 0.7rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px; color: #4b5563;
+            border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 4px;
+            display: flex; justify-content: space-between;
+        }
+
+        .dd-item {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer;
+            border: 1px solid transparent; transition: all 0.14s;
+        }
+
+        .dd-item:hover, .dd-item.active {
+            background: rgba(99,102,241,0.18); border-color: rgba(99,102,241,0.35);
+        }
+
+        .dd-left { display: flex; flex-direction: column; gap: 3px; flex: 1; overflow: hidden; }
+        .dd-top  { display: flex; align-items: center; gap: 8px; }
+
+        .hsn-code { font-family: 'Courier New', monospace; font-size: 0.92rem; font-weight: 700; color: #818cf8; }
+
+        .badge {
+            font-size: 0.62rem; font-weight: 700; padding: 2px 7px;
+            border-radius: 6px; text-transform: uppercase; letter-spacing: 0.4px;
+            flex-shrink: 0;
+        }
+        .b-ch { background: rgba(192,132,252,0.15); color: var(--purple); border: 1px solid rgba(192,132,252,0.3); }
+        .b-hd { background: rgba(56,189,248,0.15);  color: var(--blue);   border: 1px solid rgba(56,189,248,0.3); }
+        .b-tc { background: rgba(52,211,153,0.15);  color: var(--green);  border: 1px solid rgba(52,211,153,0.3); }
+
+        .dd-desc { font-size: 0.84rem; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        mark {
+            background: rgba(250,204,21,0.25); color: #fde047;
+            font-weight: 700; border-radius: 2px; padding: 0 2px; font-style: normal;
+        }
+
+        .copy-btn {
+            flex-shrink: 0; background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1); color: var(--muted);
+            font-size: 0.72rem; font-weight: 600; padding: 4px 9px;
+            border-radius: 6px; cursor: pointer; transition: all 0.15s; font-family: inherit;
+        }
+        .copy-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+
+        .dd-empty { padding: 20px; text-align: center; color: var(--muted); font-size: 0.9rem; }
+
+        /* ---- Chips ---- */
+        .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; align-items: center; }
+
+        .chip-label { font-size: 0.72rem; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .chip {
+            padding: 5px 13px; font-size: 0.8rem; font-weight: 500; font-family: inherit;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 20px; color: #cbd5e1; cursor: pointer;
+            transition: all 0.18s; user-select: none;
+        }
+        .chip:hover { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.4); color: #fff; transform: translateY(-1px); }
+
+        /* ---- Detail card ---- */
+        #detailCard {
+            margin-top: 20px; background: rgba(10,15,30,0.6);
+            border: 1px solid var(--glass-border); border-radius: 16px;
+            padding: 20px; display: none;
+            animation: fadeUp 0.28s ease;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .dc-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .dc-label { font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+        #dcCode  { font-family: monospace; font-size: 1.2rem; font-weight: 800; color: #a5b4fc; margin-bottom: 6px; }
+        #dcDesc  { font-size: 0.9rem; color: #e2e8f0; line-height: 1.55; margin-bottom: 16px; }
+
+        .rate-row {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+            padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .rate-box {
+            background: rgba(30,41,59,0.55); padding: 11px; border-radius: 10px;
+            text-align: center; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .rate-box .rl { font-size: 0.65rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+        .rate-box .rv { font-size: 0.95rem; font-weight: 700; color: var(--green); margin-top: 3px; }
+
+        /* ---- Toast ---- */
+        #toast {
+            position: fixed; bottom: 24px; left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #1e293b; border: 1px solid var(--green); color: var(--green);
+            padding: 10px 20px; border-radius: 30px; font-size: 0.84rem; font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+            opacity: 0; pointer-events: none; z-index: 999; font-family: inherit;
+        }
+        #toast.on { transform: translateX(-50%) translateY(0); opacity: 1; }
+    </style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="container">
+
+    <div class="header">
+        <div class="badge-live"><span class="dot"></span> GST_Sentinel Engine v2.0</div>
+        <h1>HSN Code Intelligence</h1>
+        <p class="subtitle">Lightning-fast auto-suggest &amp; tax breakdown for goods &amp; services</p>
+    </div>
+
+    <div class="card">
+        <div class="search-wrap">
+            <div class="input-row">
+                <svg class="search-ico" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input id="searchInput" type="text" autocomplete="off"
+                       placeholder="Type item name or HSN code... (e.g. Live Animals, 0101, Chemicals)">
+                <button id="clearBtn" title="Clear">&#x2715;</button>
+            </div>
+            <div id="dropdown"></div>
+        </div>
+
+        <div class="chips">
+            <span class="chip-label">Quick Try:</span>
+            <button class="chip" onclick="setQuery('Live Animals')">Live Animals</button>
+            <button class="chip" onclick="setQuery('0101')">HSN 0101</button>
+            <button class="chip" onclick="setQuery('Chemicals')">Chemicals</button>
+            <button class="chip" onclick="setQuery('Horses')">Horses</button>
+            <button class="chip" onclick="setQuery('Bovine')">Bovine</button>
+        </div>
+
+        <div id="detailCard">
+            <div class="dc-top">
+                <span class="dc-label">Selected HSN</span>
+                <span id="dcBadge" class="badge b-tc">Tariff Code</span>
+            </div>
+            <div id="dcCode">-</div>
+            <div id="dcDesc">-</div>
+            <div class="rate-row">
+                <div class="rate-box"><div class="rl">IGST</div><div id="igst" class="rv">18%</div></div>
+                <div class="rate-box"><div class="rl">CGST</div><div id="cgst" class="rv">9%</div></div>
+                <div class="rate-box"><div class="rl">SGST</div><div id="sgst" class="rv">9%</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+    // ---- Elements ----
+    const searchInput = document.getElementById('searchInput');
+    const dropdown    = document.getElementById('dropdown');
+    const clearBtn    = document.getElementById('clearBtn');
+    const detailCard  = document.getElementById('detailCard');
+
+    // ---- State ----
+    let debounce = null;
+    let controller = null;
+    let cursor = -1;
+    let results = [];
+
+    // ---- Toast ----
+    function toast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('on');
+        setTimeout(function() { el.classList.remove('on'); }, 2200);
+    }
+
+    // ---- Badge ----
+    function badgeClass(code) {
+        if (code.length <= 2) return 'b-ch';
+        if (code.length <= 4) return 'b-hd';
+        return 'b-tc';
+    }
+    function badgeLabel(code) {
+        if (code.length <= 2) return 'Chapter';
+        if (code.length <= 4) return 'Heading';
+        return 'Tariff Code';
+    }
+
+    // ---- Highlight ----
+    function hl(text, q) {
+        if (!q || !text) return text || '';
+        try {
+            var esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return text.replace(new RegExp('(' + esc + ')', 'gi'), '<mark>$1</mark>');
+        } catch(e) { return text; }
+    }
+
+    // ---- Copy ----
+    function copyCode(e, code) {
+        e.stopPropagation();
+        navigator.clipboard.writeText(code).then(function() {
+            toast('Copied HSN: ' + code);
+        }).catch(function() {
+            toast('Copy failed');
+        });
+    }
+
+    // ---- Select Item ----
+    function selectItem(item) {
+        searchInput.value = item.description + ' (HSN: ' + item.hsn_code + ')';
+        dropdown.style.display = 'none';
+        cursor = -1;
+
+        var gst = parseFloat(item.gst_rate) || 18;
+        document.getElementById('dcCode').textContent = 'HSN: ' + item.hsn_code;
+        document.getElementById('dcDesc').textContent = item.description;
+
+        var badge = document.getElementById('dcBadge');
+        badge.textContent = badgeLabel(item.hsn_code);
+        badge.className = 'badge ' + badgeClass(item.hsn_code);
+
+        document.getElementById('igst').textContent = gst + '%';
+        document.getElementById('cgst').textContent = (gst / 2).toFixed(1) + '%';
+        document.getElementById('sgst').textContent = (gst / 2).toFixed(1) + '%';
+
+        detailCard.style.display = 'block';
+    }
+
+    // ---- Render Dropdown ----
+    function renderDropdown(matches, q) {
+        results = matches;
+        cursor = -1;
+        dropdown.innerHTML = '';
+
+        if (!matches || matches.length === 0) {
+            dropdown.innerHTML = '<div class="dd-empty">No HSN code found for "' + q + '"</div>';
+            dropdown.style.display = 'block';
+            return;
+        }
+
+        var hdr = document.createElement('div');
+        hdr.className = 'dd-header';
+        hdr.innerHTML = '<span>' + matches.length + ' result' + (matches.length !== 1 ? 's' : '') + '</span><span>Arrow keys + Enter to pick</span>';
+        dropdown.appendChild(hdr);
+
+        matches.forEach(function(item, idx) {
+            var row = document.createElement('div');
+            row.className = 'dd-item';
+            row.setAttribute('data-idx', idx);
+
+            var left = document.createElement('div');
+            left.className = 'dd-left';
+
+            var top = document.createElement('div');
+            top.className = 'dd-top';
+
+            var code = document.createElement('span');
+            code.className = 'hsn-code';
+            code.innerHTML = '[' + hl(item.hsn_code, q) + ']';
+
+            var badge = document.createElement('span');
+            badge.className = 'badge ' + badgeClass(item.hsn_code);
+            badge.textContent = badgeLabel(item.hsn_code);
+
+            top.appendChild(code);
+            top.appendChild(badge);
+
+            var desc = document.createElement('div');
+            desc.className = 'dd-desc';
+            desc.innerHTML = hl(item.description, q);
+
+            left.appendChild(top);
+            left.appendChild(desc);
+
+            var cpBtn = document.createElement('button');
+            cpBtn.className = 'copy-btn';
+            cpBtn.textContent = 'Copy';
+            cpBtn.title = 'Copy HSN ' + item.hsn_code;
+            (function(capturedItem) {
+                cpBtn.addEventListener('click', function(e) { copyCode(e, capturedItem.hsn_code); });
+                row.addEventListener('click', function() { selectItem(capturedItem); });
+            })(item);
+
+            row.appendChild(left);
+            row.appendChild(cpBtn);
+            dropdown.appendChild(row);
+        });
+
+        dropdown.style.display = 'block';
+    }
+
+    // ---- Trigger Search ----
+    function doSearch(q) {
+        clearBtn.style.display = q.length > 0 ? 'flex' : 'none';
+
+        if (debounce) clearTimeout(debounce);
+        if (controller) { controller.abort(); controller = null; }
+
+        if (!q) { dropdown.style.display = 'none'; return; }
+
+        debounce = setTimeout(function() {
+            controller = new AbortController();
+            fetch('/api/hsn-search?query=' + encodeURIComponent(q), { signal: controller.signal })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (searchInput.value.trim() !== q) return;
+                    renderDropdown(data.matches || [], q);
+                })
+                .catch(function(err) {
+                    if (err.name === 'AbortError') return;
+                    console.error('HSN search error:', err);
+                    toast('Server offline - restart uvicorn');
+                });
+        }, 180);
+    }
+
+    // ---- Public: setQuery (called by chips) ----
+    function setQuery(q) {
+        searchInput.value = q;
+        doSearch(q);
+        searchInput.focus();
+    }
+
+    // ---- Events ----
+    searchInput.addEventListener('input', function() {
+        doSearch(this.value.trim());
+    });
+
+    clearBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        clearBtn.style.display = 'none';
+        dropdown.style.display = 'none';
+        detailCard.style.display = 'none';
+        results = [];
+        searchInput.focus();
+    });
+
+    searchInput.addEventListener('keydown', function(e) {
+        var items = dropdown.querySelectorAll('.dd-item');
+        if (!items.length || dropdown.style.display === 'none') return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            cursor = Math.min(cursor + 1, items.length - 1);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            cursor = Math.max(cursor - 1, 0);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (cursor >= 0 && cursor < results.length) selectItem(results[cursor]);
+            return;
+        } else if (e.key === 'Escape') {
+            dropdown.style.display = 'none';
+            return;
+        } else { return; }
+
+        items.forEach(function(el, i) {
+            el.classList.toggle('active', i === cursor);
+        });
+        if (items[cursor]) items[cursor].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.search-wrap')) {
+            dropdown.style.display = 'none';
+        }
+    });
+</script>
+</body>
+</html>
