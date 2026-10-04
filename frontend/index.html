@@ -532,6 +532,24 @@
             opacity: 1;
         }
 
+        .btn-custom-outline {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #94a3b8;
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: inline-block;
+        }
+
+        .btn-custom-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #f8fafc;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
         @media (prefers-reduced-motion: reduce) {
             .brand-badge .pulse {
                 animation: none;
@@ -539,13 +557,21 @@
         }
     </style>
 </head>
+<!-- This is the html code part -->
 
 <body>
     <canvas id="bg3d"></canvas>
     <div class="bg-overlay"></div>
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+        <a href="/reconciliation" style="padding: 8px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 500;
+                          background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4);
+                          color: #38bdf8; text-decoration: none; transition: all 0.2s ease;">
+            📂 Open Reconciliation Viewer
+        </a>
+    </div>
 
-    <div class="container">
-        <div class="header">
+    <div class="container" style="position: relative; z-index: 10;">
+        <div class="header" style="position: relative; z-index: 10;">
             <div class="brand-badge">
                 <span class="pulse"></span> GST_Sentinel Engine v2.0
             </div>

@@ -133,3 +133,52 @@ async def serve_frontend():
         )
     with open(html_path, "r", encoding="utf-8") as f:
         return HTMLResponse(content=f.read())
+from pathlib import Path
+import pandas as pd
+from fastapi import HTTPException
+from fastapi.responses import HTMLResponse
+
+# Define root directory based on backend/main.py location
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+@app.get("/reconciliation", response_class=HTMLResponse)
+def get_recon_page():
+    """Serves the reconciliation HTML page from the frontend folder."""
+    file_path = BASE_DIR / "frontend" / "recon_file.html"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="recon_file.html not found in frontend directory.")
+    with open(file_path, "r", encoding="utf-8") as f:
+        return f.read()
+
+@app.get("/api/recon/{category}")
+def get_recon_data(category: str):
+    """Fetches CSV data from the data/processed folder matching the category."""
+    file_map = {
+        "b2b": "recon_b2b.csv",
+        "b2ba": "recon_b2ba.csv",
+        "cdn": "recon_cdn.csv",
+        "cdna": "recon_cdna.csv"
+    }
+    
+    if category not in file_map:
+        raise HTTPException(status_code=404, detail="Invalid reconciliation category requested.")
+    
+    file_path = BASE_DIR / "data" / "processed" / file_map[category]
+    
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail=f"Processed dataset file not found: {file_map[category]}")
+    
+    try:
+        # Read the CSV using pandas
+        df = pd.read_csv(file_path)
+        # Replace NaN values with empty strings for safe JSON serialization
+        df = df.fillna("")
+        
+        return {
+            "category": category,
+            "total_rows": len(df),
+            "columns": df.columns.tolist(),
+            "data": df.to_dict(orient="records")
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing CSV dataset: {str(e)}")
