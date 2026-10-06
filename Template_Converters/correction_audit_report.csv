@@ -1,22 +1,8 @@
 ﻿Invoice Number,Invoice Status,Type,Category / Error Code,Field / JSON Path,Customer Original Value,System Corrected Value,Description / Rule Reason
-INV26637264,INVALID,AUTO_CORRECTION,DATE_FORMAT_NORMALIZATION,expdt1.shipbdt,2026-08-10,10-08-2026,Standardized date format from '2026-08-10' to '10-08-2026'
-INV26637264,INVALID,AUTO_CORRECTION,DATE_FORMAT_NORMALIZATION,docdt1.docdt,24/09/2026,24-09-2026,Standardized date format from '24/09/2026' to '24-09-2026'
-INV26637264,INVALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[1].assamt,"80030,19",80030.19,"Replaced comma decimal separator '80030,19' with standard point notation '80030.19'"
-INV26637264,INVALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[1].totitemval,"94435,62",94435.62,"Replaced comma decimal separator '94435,62' with standard point notation '94435.62'"
-INV26637264,INVALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[2].assamt,"72919,99",72919.99,"Replaced comma decimal separator '72919,99' with standard point notation '72919.99'"
-INV26637264,INVALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[3].grossamt,"680491,99",680491.99,"Replaced comma decimal separator '680491,99' with standard point notation '680491.99'"
-INV26637264,INVALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[3].assamt,"680491,99",680491.99,"Replaced comma decimal separator '680491,99' with standard point notation '680491.99'"
-INV26637264,INVALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[3].totitemval,"802980,55",802980.55,"Replaced comma decimal separator '802980,55' with standard point notation '802980.55'"
-INV26637264,INVALID,AUTO_CORRECTION,DATE_FORMAT_NORMALIZATION,ewbdt1.transporter_doc_date,2026-06-15,15-06-2026,Standardized date format from '2026-06-15' to '15-06-2026'
-INV26637264,INVALID,COMPLIANCE_ERROR,Code 2289,self_gstin,,,Invalid self_gstin length (6). Must be exactly 15 characters. (Reason: Supplier GSTIN or self_gstin length is not 15 characters or format mismatch)
-INV26637264,INVALID,COMPLIANCE_ERROR,Code 2289,self_gstin,,,self_gstin '24MHVU' does not match supplier_gstin '24MHVUP6974E3ZY'. (Reason: Supplier GSTIN or self_gstin length is not 15 characters or format mismatch)
-INV26985859,INVALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[1].grossamt,"92899,16",92899.16,"Replaced comma decimal separator '92899,16' with standard point notation '92899.16'"
-INV26985859,INVALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[1].assamt,"91041,18",91041.18,"Replaced comma decimal separator '91041,18' with standard point notation '91041.18'"
-INV26985859,INVALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[1].totitemval,"107428,60",107428.60,"Replaced comma decimal separator '107428,60' with standard point notation '107428.60'"
-INV26985859,INVALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,valdt1.totinvval,"107428,60",107428.60,"Replaced comma decimal separator '107428,60' with standard point notation '107428.60'"
-INV26985859,INVALID,AUTO_CORRECTION,DATE_FORMAT_NORMALIZATION,ewbdt1.transporter_doc_date,14/07/2026,14-07-2026,Standardized date format from '14/07/2026' to '14-07-2026'
-INV26985859,INVALID,COMPLIANCE_ERROR,Code 4021,ewbdt1.transporter_doc_date,,,Transporter document date cannot be earlier than invoice date. (Reason: )
-INV26954866,VALID,AUTO_CORRECTION,DATE_FORMAT_NORMALIZATION,docdt1.docdt,21/08/2026,21-08-2026,Standardized date format from '21/08/2026' to '21-08-2026'
-INV26954866,VALID,AUTO_CORRECTION,STATE_CODE_PADDING,buyerdt1.pos,6,06,Padded single digit state code '6' to 2-digit format '06'
-INV26954866,VALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[1].assamt,"57366,96",57366.96,"Replaced comma decimal separator '57366,96' with standard point notation '57366.96'"
-INV26954866,VALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[2].grossamt,"123,93",123.93,"Replaced comma decimal separator '123,93' with standard point notation '123.93'"
+INV26271798,INVALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[1].totitemval,"130777,45",130777.45,"Replaced comma decimal separator '130777,45' with standard point notation '130777.45'"
+INV26271798,INVALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[3].grossamt,"131419,72",131419.72,"Replaced comma decimal separator '131419,72' with standard point notation '131419.72'"
+INV26271798,INVALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[3].assamt,"128791,33",128791.33,"Replaced comma decimal separator '128791,33' with standard point notation '128791.33'"
+INV26271798,INVALID,AUTO_CORRECTION,DATE_FORMAT_NORMALIZATION,ewbdt1.transporter_doc_date,2026-07-23,23-07-2026,Standardized date format from '2026-07-23' to '23-07-2026'
+INV26271798,INVALID,COMPLIANCE_ERROR,Code 2289,self_gstin,,,Invalid self_gstin length (12). Must be exactly 15 characters. (Reason: Supplier GSTIN or self_gstin length is not 15 characters or format mismatch)
+INV26271798,INVALID,COMPLIANCE_ERROR,Code 2289,self_gstin,,,self_gstin '24TLYLA4982V' does not match supplier_gstin '24TLYLA4982V1ZL'. (Reason: Supplier GSTIN or self_gstin length is not 15 characters or format mismatch)
+INV26271798,INVALID,COMPLIANCE_ERROR,Code 4021,ewbdt1.transporter_doc_date,,,Transporter document date cannot be earlier than invoice date. (Reason: )
