@@ -42,6 +42,36 @@
 
         .container { width: 100%; max-width: 700px; position: relative; z-index: 1; }
 
+        /* ---- Navigation ---- */
+        .nav-links {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .btn-custom-outline {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: var(--muted);
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-custom-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
         /* ---- Header ---- */
         .header { text-align: center; margin-bottom: 28px; }
 
@@ -238,6 +268,11 @@
 <body>
 <div class="glow"></div>
 <div class="container">
+
+    <div class="nav-links">
+        <span style="font-size: 0.85rem; color: var(--muted);">Module: HSN Code Intelligence</span>
+        <a href="/reconciliation" class="btn-custom-outline">Move to Reconciliation Records Reviewer &rarr;</a>
+    </div>
 
     <div class="header">
         <div class="badge-live"><span class="dot"></span> GST_Sentinel Engine v2.0</div>
