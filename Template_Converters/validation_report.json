@@ -1,0 +1,183 @@
+{
+  "total_invoices": 3,
+  "valid_invoices": 1,
+  "failed_invoices": 2,
+  "results": [
+    {
+      "invoice_number": "INV26637264",
+      "status": "INVALID",
+      "error_count": 2,
+      "errors": [
+        {
+          "error_code": 2289,
+          "field": "self_gstin",
+          "message": "Invalid self_gstin length (6). Must be exactly 15 characters.",
+          "reason": "Supplier GSTIN or self_gstin length is not 15 characters or format mismatch",
+          "resolution": "Provide valid 15-character supplier GSTIN"
+        },
+        {
+          "error_code": 2289,
+          "field": "self_gstin",
+          "message": "self_gstin '24MHVU' does not match supplier_gstin '24MHVUP6974E3ZY'.",
+          "reason": "Supplier GSTIN or self_gstin length is not 15 characters or format mismatch",
+          "resolution": "Provide valid 15-character supplier GSTIN"
+        }
+      ],
+      "corrections_applied_count": 9,
+      "corrections_applied": [
+        {
+          "category": "DATE_FORMAT_NORMALIZATION",
+          "field": "expdt1.shipbdt",
+          "original": "2026-08-10",
+          "corrected": "10-08-2026",
+          "description": "Standardized date format from '2026-08-10' to '10-08-2026'"
+        },
+        {
+          "category": "DATE_FORMAT_NORMALIZATION",
+          "field": "docdt1.docdt",
+          "original": "24/09/2026",
+          "corrected": "24-09-2026",
+          "description": "Standardized date format from '24/09/2026' to '24-09-2026'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[1].assamt",
+          "original": "80030,19",
+          "corrected": "80030.19",
+          "description": "Replaced comma decimal separator '80030,19' with standard point notation '80030.19'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[1].totitemval",
+          "original": "94435,62",
+          "corrected": "94435.62",
+          "description": "Replaced comma decimal separator '94435,62' with standard point notation '94435.62'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[2].assamt",
+          "original": "72919,99",
+          "corrected": "72919.99",
+          "description": "Replaced comma decimal separator '72919,99' with standard point notation '72919.99'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[3].grossamt",
+          "original": "680491,99",
+          "corrected": "680491.99",
+          "description": "Replaced comma decimal separator '680491,99' with standard point notation '680491.99'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[3].assamt",
+          "original": "680491,99",
+          "corrected": "680491.99",
+          "description": "Replaced comma decimal separator '680491,99' with standard point notation '680491.99'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[3].totitemval",
+          "original": "802980,55",
+          "corrected": "802980.55",
+          "description": "Replaced comma decimal separator '802980,55' with standard point notation '802980.55'"
+        },
+        {
+          "category": "DATE_FORMAT_NORMALIZATION",
+          "field": "ewbdt1.transporter_doc_date",
+          "original": "2026-06-15",
+          "corrected": "15-06-2026",
+          "description": "Standardized date format from '2026-06-15' to '15-06-2026'"
+        }
+      ]
+    },
+    {
+      "invoice_number": "INV26985859",
+      "status": "INVALID",
+      "error_count": 1,
+      "errors": [
+        {
+          "error_code": 4021,
+          "field": "ewbdt1.transporter_doc_date",
+          "message": "Transporter document date cannot be earlier than invoice date.",
+          "reason": "",
+          "resolution": ""
+        }
+      ],
+      "corrections_applied_count": 5,
+      "corrections_applied": [
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[1].grossamt",
+          "original": "92899,16",
+          "corrected": "92899.16",
+          "description": "Replaced comma decimal separator '92899,16' with standard point notation '92899.16'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[1].assamt",
+          "original": "91041,18",
+          "corrected": "91041.18",
+          "description": "Replaced comma decimal separator '91041,18' with standard point notation '91041.18'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[1].totitemval",
+          "original": "107428,60",
+          "corrected": "107428.60",
+          "description": "Replaced comma decimal separator '107428,60' with standard point notation '107428.60'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "valdt1.totinvval",
+          "original": "107428,60",
+          "corrected": "107428.60",
+          "description": "Replaced comma decimal separator '107428,60' with standard point notation '107428.60'"
+        },
+        {
+          "category": "DATE_FORMAT_NORMALIZATION",
+          "field": "ewbdt1.transporter_doc_date",
+          "original": "14/07/2026",
+          "corrected": "14-07-2026",
+          "description": "Standardized date format from '14/07/2026' to '14-07-2026'"
+        }
+      ]
+    },
+    {
+      "invoice_number": "INV26954866",
+      "status": "VALID",
+      "error_count": 0,
+      "errors": [],
+      "corrections_applied_count": 4,
+      "corrections_applied": [
+        {
+          "category": "DATE_FORMAT_NORMALIZATION",
+          "field": "docdt1.docdt",
+          "original": "21/08/2026",
+          "corrected": "21-08-2026",
+          "description": "Standardized date format from '21/08/2026' to '21-08-2026'"
+        },
+        {
+          "category": "STATE_CODE_PADDING",
+          "field": "buyerdt1.pos",
+          "original": "6",
+          "corrected": "06",
+          "description": "Padded single digit state code '6' to 2-digit format '06'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[1].assamt",
+          "original": "57366,96",
+          "corrected": "57366.96",
+          "description": "Replaced comma decimal separator '57366,96' with standard point notation '57366.96'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[2].grossamt",
+          "original": "123,93",
+          "corrected": "123.93",
+          "description": "Replaced comma decimal separator '123,93' with standard point notation '123.93'"
+        }
+      ]
+    }
+  ]
+}

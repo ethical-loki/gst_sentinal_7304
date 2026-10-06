@@ -1,0 +1,126 @@
+{
+  "einvoices": [
+    {
+      "self_gstin": "29BHXKP2127R2Z7",
+      "system cd": "ERP_SAP",
+      "branch cd": "BR49",
+      "vertical cd": "EXPORT",
+      "irnreq": "Y",
+      "trandt1": {
+        "trancatg": "EXP",
+        "reversecharge": "N",
+        "transactionmode": "SHP",
+        "igst_on_intra": "N"
+      },
+      "docdt1": {
+        "document_type": "INV",
+        "docno": "INV26607721",
+        "docdt": "2026-07-10"
+      },
+      "supplierdt1": {
+        "supplier_gstin": "29BHXKP2127R2Z7",
+        "supplier_lginm": "ALPHA SOLUTIONS",
+        "supplier_trdnm": "DELTA MILLS LTD",
+        "supplier_bno": "SUITE 329",
+        "supplier_bnm": "BENGALURU INDUSTRIAL PARK",
+        "supplier flno": "NAA",
+        "supplier_loc": "BENGALURU",
+        "supplier_dst": "BENGALURU",
+        "supplier_pin": "560001",
+        "supplier_state": "29",
+        "supplier_phone": "9799046589",
+        "supplier_email": "billing@bengalurutex.com"
+      },
+      "buyerdt1": {
+        "buyer_gstin": "URP",
+        "buyer_trdnm": "PRIME LOGISTICS LLP INC",
+        "buyer_lglnm": "PRIME LOGISTICS LLP INC",
+        "buyer_bno": "NAA",
+        "buyer_bnm": "ROAD 12, Texas",
+        "buyer_flno": "NAA",
+        "buyer loc": "Texas",
+        "buyer_dst": "Texas",
+        "buyer_pin": "999999",
+        "buyer state": "96",
+        "pos": "96",
+        "buyer_phone": "",
+        "buyer_email": "accounts@texascorp.com"
+      },
+      "itemdtls": [
+        {
+          "prdnm": "POLY-HANGER",
+          "prddesc": "Plastic Garment Hanger Grade A",
+          "isservc": "N",
+          "hsncd": "39269069",
+          "qty": "183.049",
+          "ugc": "PCS",
+          "unitrate": "17.67",
+          "grossamt": "3234.48",
+          "discount": "161.72",
+          "othchrg": "",
+          "assamt": "3072.76",
+          "taxability": "TAX",
+          "cgstrt": "0.00",
+          "cgstamt": "0.00",
+          "sgstrt": "0.00",
+          "sgstamt": "0.00",
+          "igstrt": "18.00",
+          "igstamt": "553,10",
+          "cessrt": "0.00",
+          "cessamt": "0.00",
+          "cessnonadval": "",
+          "statecessrt": "0.00",
+          "statecessamt": "0.00",
+          "totitemval": "3625.86"
+        }
+      ],
+      "valdt1": {
+        "ttlassval": "3072.76",
+        "cgstval": "0.00",
+        "sgstval": "0,00",
+        "igstval": "553.10",
+        "cesval": "0.00",
+        "stcesval": "0.00",
+        "cesnonadval": "0.00",
+        "discval": "",
+        "totinvval": "3625.86",
+        "othchrg": "0.00"
+      },
+      "ewbdt1": {
+        "ewayreq": "N",
+        "subsupplytype": "",
+        "distance_of_transport": "",
+        "transporter_id": "",
+        "transporter_name": "",
+        "mode_of_transport": "",
+        "transport_doc_no": "",
+        "transporter_doc_date": "",
+        "veh_type": "",
+        "veh_number": ""
+      },
+      "expdt1": {
+        "expcat": "DIR",
+        "wthpay": "Y",
+        "shipbno": "SB420676",
+        "shipbdt": "2026-07-10",
+        "port": "INMAA1",
+        "forcur": "USD",
+        "cntcode": "US"
+      },
+      "shipdtl": {
+        "ship_gstin": "29BHXKP2127R2Z7",
+        "ship_lglnm": "CHENNAI PORT TERMINAL",
+        "ship_trdnm": "CHENNAI PORT TERMINAL",
+        "ship_bno": "GATE 4",
+        "ship_bnm": "PORT COMPLEX",
+        "ship fino": "NAA",
+        "ship_loc": "CHENNAI",
+        "ship_dst": "CHENNAI",
+        "ship pin": "600001",
+        "ship_state": "33",
+        "ship_phone": "",
+        "ship_email": ""
+      }
+    }
+  ]
+}

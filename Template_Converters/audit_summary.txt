@@ -1,0 +1,69 @@
+===========================================================================
+             GST E-INVOICE & E-WAY BILL TRANSFORMATION REPORT
+===========================================================================
+Total Invoices Processed : 3
+Compliant (Valid)       : 1
+Non-Compliant (Failed)  : 2
+---------------------------------------------------------------------------
+
+[INVALID] Invoice #1: INV26637264
+   Status             : INVALID
+   Auto-Corrections   : 9
+   Unresolved Errors  : 2
+   * Corrections Made (Customer Errors Fixed):
+     - [DATE_FORMAT_NORMALIZATION] expdt1.shipbdt: '2026-08-10' -> '10-08-2026'
+       Reason: Standardized date format from '2026-08-10' to '10-08-2026'
+     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '24/09/2026' -> '24-09-2026'
+       Reason: Standardized date format from '24/09/2026' to '24-09-2026'
+     - [FORMAT_NORMALIZATION] itemdtls[1].assamt: '80030,19' -> '80030.19'
+       Reason: Replaced comma decimal separator '80030,19' with standard point notation '80030.19'
+     - [FORMAT_NORMALIZATION] itemdtls[1].totitemval: '94435,62' -> '94435.62'
+       Reason: Replaced comma decimal separator '94435,62' with standard point notation '94435.62'
+     - [FORMAT_NORMALIZATION] itemdtls[2].assamt: '72919,99' -> '72919.99'
+       Reason: Replaced comma decimal separator '72919,99' with standard point notation '72919.99'
+     - [FORMAT_NORMALIZATION] itemdtls[3].grossamt: '680491,99' -> '680491.99'
+       Reason: Replaced comma decimal separator '680491,99' with standard point notation '680491.99'
+     - [FORMAT_NORMALIZATION] itemdtls[3].assamt: '680491,99' -> '680491.99'
+       Reason: Replaced comma decimal separator '680491,99' with standard point notation '680491.99'
+     - [FORMAT_NORMALIZATION] itemdtls[3].totitemval: '802980,55' -> '802980.55'
+       Reason: Replaced comma decimal separator '802980,55' with standard point notation '802980.55'
+     - [DATE_FORMAT_NORMALIZATION] ewbdt1.transporter_doc_date: '2026-06-15' -> '15-06-2026'
+       Reason: Standardized date format from '2026-06-15' to '15-06-2026'
+   ! Unresolved NIC Rule Violations:
+     - [Code 2289] self_gstin: Invalid self_gstin length (6). Must be exactly 15 characters.
+       Resolution: Provide valid 15-character supplier GSTIN
+     - [Code 2289] self_gstin: self_gstin '24MHVU' does not match supplier_gstin '24MHVUP6974E3ZY'.
+       Resolution: Provide valid 15-character supplier GSTIN
+---------------------------------------------------------------------------
+[INVALID] Invoice #2: INV26985859
+   Status             : INVALID
+   Auto-Corrections   : 5
+   Unresolved Errors  : 1
+   * Corrections Made (Customer Errors Fixed):
+     - [FORMAT_NORMALIZATION] itemdtls[1].grossamt: '92899,16' -> '92899.16'
+       Reason: Replaced comma decimal separator '92899,16' with standard point notation '92899.16'
+     - [FORMAT_NORMALIZATION] itemdtls[1].assamt: '91041,18' -> '91041.18'
+       Reason: Replaced comma decimal separator '91041,18' with standard point notation '91041.18'
+     - [FORMAT_NORMALIZATION] itemdtls[1].totitemval: '107428,60' -> '107428.60'
+       Reason: Replaced comma decimal separator '107428,60' with standard point notation '107428.60'
+     - [FORMAT_NORMALIZATION] valdt1.totinvval: '107428,60' -> '107428.60'
+       Reason: Replaced comma decimal separator '107428,60' with standard point notation '107428.60'
+     - [DATE_FORMAT_NORMALIZATION] ewbdt1.transporter_doc_date: '14/07/2026' -> '14-07-2026'
+       Reason: Standardized date format from '14/07/2026' to '14-07-2026'
+   ! Unresolved NIC Rule Violations:
+     - [Code 4021] ewbdt1.transporter_doc_date: Transporter document date cannot be earlier than invoice date.
+---------------------------------------------------------------------------
+[VALID] Invoice #3: INV26954866
+   Status             : VALID
+   Auto-Corrections   : 4
+   Unresolved Errors  : 0
+   * Corrections Made (Customer Errors Fixed):
+     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '21/08/2026' -> '21-08-2026'
+       Reason: Standardized date format from '21/08/2026' to '21-08-2026'
+     - [STATE_CODE_PADDING] buyerdt1.pos: '6' -> '06'
+       Reason: Padded single digit state code '6' to 2-digit format '06'
+     - [FORMAT_NORMALIZATION] itemdtls[1].assamt: '57366,96' -> '57366.96'
+       Reason: Replaced comma decimal separator '57366,96' with standard point notation '57366.96'
+     - [FORMAT_NORMALIZATION] itemdtls[2].grossamt: '123,93' -> '123.93'
+       Reason: Replaced comma decimal separator '123,93' with standard point notation '123.93'
+---------------------------------------------------------------------------

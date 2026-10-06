@@ -134,12 +134,22 @@ async def serve_frontend():
     with open(html_path, "r", encoding="utf-8") as f:
         return HTMLResponse(content=f.read())
 from pathlib import Path
+import json
 import pandas as pd
-from fastapi import HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi import HTTPException, Request, Response
+from fastapi.responses import HTMLResponse, FileResponse
 
 # Define root directory based on backend/main.py location
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Import converter service
+from backend.converter_service import (
+    load_default_sample_dirty,
+    generate_random_dirty,
+    process_converter_pipeline,
+    TEMPLATE_CONVERTERS_DIR
+)
+
 
 @app.get("/reconciliation", response_class=HTMLResponse)
 def get_recon_page():
@@ -149,6 +159,7 @@ def get_recon_page():
         raise HTTPException(status_code=404, detail="recon_file.html not found in frontend directory.")
     with open(file_path, "r", encoding="utf-8") as f:
         return f.read()
+
 
 @app.get("/api/recon/{category}")
 def get_recon_data(category: str):
@@ -182,3 +193,114 @@ def get_recon_data(category: str):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing CSV dataset: {str(e)}")
+
+
+# =========================================================================
+# TEMPLATE CONVERTER & AUDITOR ENDPOINTS
+# =========================================================================
+
+@app.get("/converter", response_class=HTMLResponse)
+async def serve_converter_page():
+    """Serves the high-performance Template Converter & Compliance Auditor dashboard UI."""
+    candidates = [
+        BASE_DIR / "frontend" / "converter.html",
+        BASE_DIR / "static" / "converter.html"
+    ]
+    for p in candidates:
+        if p.exists():
+            with open(p, "r", encoding="utf-8") as f:
+                return HTMLResponse(content=f.read())
+    raise HTTPException(status_code=404, detail="converter.html not found in frontend or static directory.")
+
+
+@app.get("/api/converter/sample")
+async def get_sample_dirty_payload():
+    """Returns sample dirty customer input payload for interactive demonstration."""
+    try:
+        sample_data = load_default_sample_dirty()
+        return {"status": "success", "payload": sample_data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error loading sample payload: {str(e)}")
+
+
+@app.post("/api/converter/generate")
+async def generate_random_dirty_payload(request: Request):
+    """
+    Generates a batch of randomized invoices with clean schema keys and
+    realistic dirty field values (comma decimals, unpadded states, etc.).
+    """
+    try:
+        body = await request.json() if (await request.body()) else {}
+        count = int(body.get("count", 1))
+        dirty_payload = generate_random_dirty(count=count)
+        return {
+            "status": "success",
+            "count": count,
+            "payload": dirty_payload
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating random payload: {str(e)}")
+
+
+@app.post("/api/converter/process")
+async def process_payload(request: Request):
+    """
+    Converts and validates dirty payload, applying auto-corrections,
+    checking NIC compliance rules, and returning all 4 output reports and metrics.
+    """
+    try:
+        body = await request.json()
+        # Accept either {"payload": {...}} or raw JSON dict/list directly
+        raw_payload = body.get("payload") if isinstance(body, dict) and "payload" in body else body
+
+        if not raw_payload:
+            raise HTTPException(status_code=400, detail="Empty payload provided.")
+
+        result = process_converter_pipeline(raw_payload, sync_to_disk=True)
+        return result
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid JSON syntax: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing conversion: {str(e)}")
+
+
+@app.get("/api/converter/download/{file_type}")
+async def download_converted_file(file_type: str):
+    """
+    Downloads any of the 4 canonical output files produced by the pipeline:
+    - corrected   -> corrected_payload.json
+    - report      -> validation_report.json
+    - csv         -> correction_audit_report.csv
+    - summary     -> audit_summary.txt
+    """
+    file_map = {
+        "corrected": ("corrected_payload.json", "application/json"),
+        "report": ("validation_report.json", "application/json"),
+        "csv": ("correction_audit_report.csv", "text/csv; charset=utf-8"),
+        "summary": ("audit_summary.txt", "text/plain; charset=utf-8")
+    }
+
+    if file_type not in file_map:
+        raise HTTPException(status_code=400, detail=f"Invalid file type requested. Options: {list(file_map.keys())}")
+
+    filename, media_type = file_map[file_type]
+    file_path = TEMPLATE_CONVERTERS_DIR / filename
+
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail=f"File {filename} has not been generated yet. Run a conversion first.")
+
+    return FileResponse(
+        path=str(file_path),
+        filename=filename,
+        media_type=media_type
+    )
+
+
+if __name__ == "__main__":
+    import uvicorn
+    print("\n🚀 Starting GST Sentinel Server at http://127.0.0.1:8000 ...")
+    print("👉 E-Invoice & E-Way Converter Dashboard: http://127.0.0.1:8000/converter")
+    print("👉 HSN Code Search Engine               : http://127.0.0.1:8000/")
+    print("👉 Reconciliation Records Reviewer      : http://127.0.0.1:8000/reconciliation\n")
+    uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)
+

@@ -1,0 +1,103 @@
+{
+  "einvoices": [
+    {
+      "self_gstin": "33AACCK0893N1Z9",
+      "system_cd": "ERP01",
+      "branch_cd": "BR001",
+      "vertical_cd": "DOM",
+      "irnreq": "Y",
+      "trandt1": {
+        "trancatg": "B2B",
+        "reversecharge": "N",
+        "transactionmode": "REG",
+        "igstonintra": "N"
+      },
+      "docdt1": {
+        "document_type": "INV",
+        "docno": "INV2024-001",
+        "docdt": "01-10-2024"
+      },
+      "supplierdt1": {
+        "supplier_gstin": "33AACCK0893N1Z9",
+        "supplier_lglnm": "K PR MILL LIMITED",
+        "supplier_trdnm": "K PR MILL LIMITED",
+        "supplier_bno": "15",
+        "supplier_bnm": "ARASUR COMPLEX",
+        "supplier_flno": "1ST FLOOR",
+        "supplier_loc": "COIMBATORE",
+        "supplier_dst": "COIMBATORE",
+        "supplier_pin": "641407",
+        "supplier_state": "33",
+        "supplier_phone": "9876543210",
+        "supplier_email": "accounts@kprmill.com"
+      },
+      "buyerdt1": {
+        "buyer_gstin": "29AABCU9603R1ZM",
+        "buyer_trdnm": "KARNATAKA TEXTILE TRADERS",
+        "buyer_lglnm": "KARNATAKA TEXTILE TRADERS",
+        "buyer_bno": "44",
+        "buyer_bnm": "INDUSTRIAL AREA",
+        "buyer_flno": "GROUND FLOOR",
+        "buyer_loc": "BENGALURU",
+        "buyer_dst": "BENGALURU",
+        "buyer_pin": "560001",
+        "buyer_state": "29",
+        "pos": "29",
+        "buyer_phone": "9123456789",
+        "buyer_email": "billing@karnatakatextiles.com"
+      },
+      "itemdtls": [
+        {
+          "prdnm": "COTTON YARN 40S",
+          "prddesc": "Combed Cotton Yarn 40s Count",
+          "isservc": "N",
+          "hsncd": "520511",
+          "qty": "100.000",
+          "uqc": "KGS",
+          "unitrate": "350.00",
+          "grossamt": "35000.00",
+          "discount": "0.00",
+          "othchrg": "0.00",
+          "assamt": "35000.00",
+          "taxability": "TAX",
+          "cgstrt": "0.00",
+          "cgstamt": "0.00",
+          "sgstrt": "0.00",
+          "sgstamt": "0.00",
+          "igstrt": "5.00",
+          "igstamt": "1750.00",
+          "cessrt": "0.00",
+          "cessamt": "0.00",
+          "cessnonadval": "",
+          "statecessrt": "0.00",
+          "statecessamt": "0.00",
+          "totitemval": "36750.00"
+        }
+      ],
+      "valdt1": {
+        "ttlassval": "35000.00",
+        "cgstval": "0.00",
+        "sgstval": "0.00",
+        "igstval": "1750.00",
+        "cesval": "0.00",
+        "stcesval": "0.00",
+        "cesnonadval": "0.00",
+        "discval": "",
+        "totinvval": "36750.00",
+        "othchrg": "0.00"
+      },
+      "ewbdt1": {
+        "ewayreq": "Y",
+        "subsupplytype": "1",
+        "distance_of_transport": "350",
+        "transporter_id": "29AABCU9603R1ZM",
+        "transporter_name": "VRL LOGISTICS",
+        "mode_of_transport": "1",
+        "transport_doc_no": "",
+        "transporter_doc_date": "01-10-2024",
+        "veh_type": "R",
+        "veh_number": "KA01AB1234"
+      }
+    }
+  ]
+}

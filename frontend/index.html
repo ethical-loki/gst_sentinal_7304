@@ -561,13 +561,23 @@
 
 <body>
     <canvas id="bg3d"></canvas>
-    <div class="bg-overlay"></div>
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
-        <a href="/reconciliation" style="padding: 8px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 500;
-                          background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4);
-                          color: #38bdf8; text-decoration: none; transition: all 0.2s ease;">
-            Move to Reconciliation Records Reviewer &rarr;
-        </a>
+    <div style="position: relative; z-index: 20; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; width: 100%; max-width: 680px;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="/" style="padding: 7px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;
+                              background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color: #fff; text-decoration: none; box-shadow: 0 2px 10px rgba(99,102,241,0.4);">
+                🔍 HSN Intelligence
+            </a>
+            <a href="/converter" style="padding: 7px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;
+                              background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.35);
+                              color: #a5b4fc; text-decoration: none; transition: all 0.2s ease;">
+                ⚡ E-Invoice & E-Way Converter
+            </a>
+            <a href="/reconciliation" style="padding: 7px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;
+                              background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35);
+                              color: #38bdf8; text-decoration: none; transition: all 0.2s ease;">
+                📊 Reconciliation Viewer
+            </a>
+        </div>
     </div>
 
     <div class="container" style="position: relative; z-index: 10;">
