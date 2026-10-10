@@ -598,6 +598,511 @@
             transform: translateY(0);
         }
 
+        /* ================= EMBEDDED SPLIT-SCREEN COPILOT (RESPONSIVE & AUTO-ADJUSTABLE) ================= */
+        .editor-copilot-split {
+            display: grid;
+            grid-template-columns: minmax(360px, 1.05fr) minmax(360px, 0.95fr);
+            gap: 16px;
+            width: 100%;
+            transition: grid-template-columns 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            align-items: stretch;
+        }
+
+        /* Interactive Resolution & Layout Presets */
+        .editor-copilot-split.split-half {
+            grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr) !important;
+        }
+
+        .editor-copilot-split.split-wide {
+            grid-template-columns: minmax(280px, 0.72fr) minmax(460px, 1.28fr) !important;
+        }
+
+        .editor-copilot-split.split-max {
+            grid-template-columns: 1fr !important;
+        }
+
+        .editor-copilot-split.split-max .editor-container,
+        .editor-copilot-split.split-max .split-resizer {
+            display: none !important;
+        }
+
+        .editor-copilot-split.split-max .copilot-container {
+            grid-column: 1 / -1 !important;
+            width: 100% !important;
+            min-height: 520px;
+        }
+
+        .editor-copilot-split.editor-only {
+            grid-template-columns: 1fr !important;
+        }
+
+        .editor-copilot-split.editor-only .copilot-container,
+        .editor-copilot-split.editor-only .split-resizer {
+            display: none !important;
+        }
+
+        .editor-copilot-split.editor-only .editor-container {
+            grid-column: 1 / -1 !important;
+            width: 100% !important;
+            min-height: 520px;
+        }
+
+        /* Screen Resolution Auto-Adaptability */
+        @media (min-width: 1680px) {
+            .editor-copilot-split:not(.split-max):not(.editor-only):not(.split-half):not(.split-wide) {
+                grid-template-columns: minmax(440px, 1.02fr) minmax(440px, 0.98fr);
+                gap: 20px;
+            }
+            .copilot-messages-feed {
+                max-height: 600px !important;
+            }
+        }
+
+        @media (max-width: 1180px) {
+            .editor-copilot-split:not(.split-max):not(.editor-only):not(.split-half):not(.split-wide) {
+                grid-template-columns: minmax(340px, 1fr) minmax(340px, 1fr);
+                gap: 14px;
+            }
+        }
+
+        @media (max-width: 980px) {
+            .editor-copilot-split {
+                grid-template-columns: 1fr !important;
+                gap: 20px;
+            }
+            .split-resizer {
+                display: none !important;
+            }
+            .copilot-container {
+                min-height: 460px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .copilot-header {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 8px;
+            }
+            .copilot-header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .copilot-messages-feed {
+                max-height: 380px !important;
+                padding: 10px;
+            }
+            .copilot-input-area {
+                padding: 8px 10px;
+            }
+            .copilot-pills-bar {
+                padding: 6px 10px;
+            }
+        }
+
+        /* Draggable Resizer Bar */
+        .split-resizer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 8px;
+            margin: 0 -4px;
+            cursor: col-resize;
+            position: relative;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 4px;
+            transition: background 0.2s ease, box-shadow 0.2s ease;
+            user-select: none;
+        }
+
+        .split-resizer:hover, .split-resizer.is-dragging {
+            background: rgba(99, 102, 241, 0.5);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.6);
+        }
+
+        .resizer-knob {
+            width: 4px;
+            height: 28px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.25);
+            transition: background 0.2s ease;
+        }
+
+        .split-resizer:hover .resizer-knob, .split-resizer.is-dragging .resizer-knob {
+            background: #ffffff;
+        }
+
+        .copilot-container {
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            border-radius: var(--radius-md);
+            background: rgba(10, 15, 30, 0.82);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+            min-height: 500px;
+            position: relative;
+            transition: border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .copilot-header {
+            padding: 12px 16px;
+            background: rgba(15, 23, 42, 0.92);
+            border-bottom: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .copilot-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .copilot-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #6366f1 0%, #38bdf8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+            flex-shrink: 0;
+        }
+
+        .copilot-title-block {
+            min-width: 0;
+        }
+
+        .copilot-title-block h3 {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .copilot-title-block span {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+        }
+
+        .copilot-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        /* Resolution / Layout Segmented Control */
+        .copilot-layout-group {
+            display: inline-flex;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+            padding: 2px;
+            gap: 2px;
+        }
+
+        .copilot-layout-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .copilot-layout-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .copilot-layout-btn.active {
+            background: rgba(99, 102, 241, 0.3);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.4);
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+        }
+
+        .copilot-status-badge {
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .copilot-icon-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glass);
+            color: var(--text-muted);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .copilot-icon-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Quick Suggestions Pills Bar */
+        .copilot-pills-bar {
+            padding: 8px 12px;
+            background: rgba(6, 9, 17, 0.6);
+            border-bottom: 1px solid var(--border-glass);
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            white-space: nowrap;
+            align-items: center;
+            scrollbar-width: thin;
+        }
+
+        .copilot-pills-bar::-webkit-scrollbar {
+            height: 3px;
+        }
+        .copilot-pills-bar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.18);
+            border-radius: 2px;
+        }
+
+        .copilot-pill {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 5px 11px;
+            border-radius: 12px;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            color: #c7d2fe;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
+        .copilot-pill:hover {
+            background: rgba(99, 102, 241, 0.35);
+            color: #ffffff;
+            border-color: rgba(99, 102, 241, 0.6);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+        }
+
+        /* Chat messages feed */
+        .copilot-messages-feed {
+            flex: 1;
+            padding: 14px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-height: 340px;
+            max-height: calc(100vh - 350px);
+            scroll-behavior: smooth;
+        }
+
+        .copilot-msg {
+            display: flex;
+            flex-direction: column;
+            max-width: 96%;
+            width: fit-content;
+            animation: fadeInMsg 0.25s ease;
+        }
+
+        @keyframes fadeInMsg {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .copilot-msg.bot {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .copilot-msg.user {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .msg-bubble {
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 0.83rem;
+            line-height: 1.55;
+            position: relative;
+            word-break: break-word;
+            max-width: 100%;
+        }
+
+        .copilot-msg.bot .msg-bubble {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(99, 102, 241, 0.28);
+            color: #e2e8f0;
+            border-bottom-left-radius: 3px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+        }
+
+        .copilot-msg.user .msg-bubble {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            color: #ffffff;
+            border-bottom-right-radius: 3px;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+        }
+
+        .msg-bubble strong {
+            color: #ffffff;
+        }
+
+        .msg-bubble code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 0, 0, 0.45);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #38bdf8;
+            font-size: 0.8rem;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .msg-patch-banner {
+            margin-top: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            color: #34d399;
+            font-size: 0.78rem;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+        }
+
+        .msg-action-bar {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .copilot-action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(56, 189, 248, 0.12);
+            border: 1px solid rgba(56, 189, 248, 0.45);
+            color: #38bdf8;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: left;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+            white-space: normal;
+            max-width: 100%;
+            line-height: 1.35;
+            flex: 0 1 auto;
+        }
+
+        .copilot-action-btn:hover {
+            background: rgba(56, 189, 248, 0.28);
+            border-color: #38bdf8;
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);
+        }
+
+        /* Copilot Input Area */
+        .copilot-input-area {
+            padding: 10px 14px;
+            background: rgba(15, 23, 42, 0.92);
+            border-top: 1px solid var(--border-glass);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .copilot-input-box {
+            flex: 1;
+            background: rgba(10, 15, 30, 0.7);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            padding: 8px 12px;
+            color: #ffffff;
+            font-size: 0.82rem;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .copilot-input-box:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+        }
+
+        .copilot-send-btn {
+            background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+            border: none;
+            color: #ffffff;
+            border-radius: var(--radius-sm);
+            padding: 8px 14px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .copilot-send-btn:hover {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .copilot-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         /* ================= EXECUTIVE KPI DASHBOARD ================= */
         .kpi-section {
             margin-bottom: 28px;
@@ -1253,9 +1758,6 @@
             <a href="/converter" class="nav-tab-link active">
                 ⚡ E-Invoice & E-Way Converter
             </a>
-            <a href="/reconciliation" class="nav-tab-link">
-                📊 Reconciliation Viewer
-            </a>
         </nav>
 
         <div class="header-status-pill">
@@ -1338,65 +1840,140 @@
 
             </div>
 
-            <!-- Editor & Ingestion Panel -->
-            <div class="editor-container">
-                <div class="editor-top-bar">
-                    <div class="editor-title-block">
-                        <h2 id="editorPanelTitle">Dirty Payload Inspector</h2>
-                        <div class="editor-status-indicator" id="jsonStatusBadge">Valid JSON</div>
+            <!-- Embedded Split-Screen: Editor & AI Compliance Copilot -->
+            <div class="editor-copilot-split" id="editorCopilotSplit">
+                
+                <!-- Left: Editor & Ingestion Panel -->
+                <div class="editor-container">
+                    <div class="editor-top-bar">
+                        <div class="editor-title-block">
+                            <h2 id="editorPanelTitle">Dirty Payload Inspector</h2>
+                            <div class="editor-status-indicator" id="jsonStatusBadge">Valid JSON</div>
+                        </div>
+
+                        <div class="editor-quick-actions">
+                            <button class="action-tool-btn" id="btnToggleCopilot" onclick="toggleCopilotSplit()" title="Toggle Split Screen Copilot">
+                                🤖 <span id="toggleCopilotText">Copilot Split</span>
+                            </button>
+                            <button class="action-tool-btn" id="btnLoadSample" onclick="handleLoadSample()">
+                                📂 Load Sample
+                            </button>
+                            <button class="action-tool-btn" id="btnFormatJson" onclick="handleFormatJson()">
+                                ✨ Format
+                            </button>
+                            <button class="action-tool-btn" id="btnCopyPayload" onclick="handleCopyPayload()">
+                                📋 Copy
+                            </button>
+                            <button class="action-tool-btn" id="btnClearEditor" onclick="handleClearEditor()">
+                                🗑️ Clear
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="editor-quick-actions">
-                        <button class="action-tool-btn" id="btnLoadSample" onclick="handleLoadSample()">
-                            📂 Load Sample
-                        </button>
-                        <button class="action-tool-btn" id="btnFormatJson" onclick="handleFormatJson()">
-                            ✨ Format
-                        </button>
-                        <button class="action-tool-btn" id="btnCopyPayload" onclick="handleCopyPayload()">
-                            📋 Copy
-                        </button>
-                        <button class="action-tool-btn" id="btnClearEditor" onclick="handleClearEditor()">
-                            🗑️ Clear
+                    <!-- Drag & Drop Zone for Customer Upload -->
+                    <div class="file-drop-zone" id="fileDropZone">
+                        <input type="file" id="jsonFileInput" accept=".json" onchange="handleFileUpload(event)">
+                        <div class="drop-zone-content">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <span>Drag & drop customer <strong>.json</strong> payload here or <strong>browse files</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Code Editor Area -->
+                    <div class="json-editor-wrapper">
+                        <textarea 
+                            id="rawJsonEditor" 
+                            class="json-textarea" 
+                            placeholder="// Paste or generate dirty customer JSON payload here..."
+                            spellcheck="false"
+                            oninput="validateJsonInput()"
+                        ></textarea>
+                    </div>
+
+                    <!-- Editor Footer & Process Action -->
+                    <div class="editor-footer-bar">
+                        <div class="editor-stats-crumb">
+                            <span id="charCountLabel">0 Characters</span>
+                            <span id="invoiceCountLabel">0 Invoices Detected</span>
+                        </div>
+
+                        <button class="btn-run-audit" id="btnRunAudit" onclick="handleProcessPipeline()">
+                            🚀 Transform & Run NIC Audit Pipeline
                         </button>
                     </div>
                 </div>
 
-                <!-- Drag & Drop Zone for Customer Upload -->
-                <div class="file-drop-zone" id="fileDropZone">
-                    <input type="file" id="jsonFileInput" accept=".json" onchange="handleFileUpload(event)">
-                    <div class="drop-zone-content">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        <span>Drag & drop customer <strong>.json</strong> payload here or <strong>browse files</strong></span>
+                <!-- Draggable Resizer Bar for Custom Screen Split Widths -->
+                <div class="split-resizer" id="splitResizer" title="Drag left/right to adjust screen split width. Double click to reset.">
+                    <div class="resizer-knob"></div>
+                </div>
+
+                <!-- Right: AI Compliance Copilot & Assistant -->
+                <div class="copilot-container" id="copilotPanel">
+                    <!-- Copilot Top Header -->
+                    <div class="copilot-header">
+                        <div class="copilot-brand">
+                            <div class="copilot-avatar">🤖</div>
+                            <div class="copilot-title-block">
+                                <h3>GST Compliance Copilot</h3>
+                                <span>Real-Time NIC Diagnostics & Smart Patcher</span>
+                            </div>
+                        </div>
+                        <div class="copilot-header-actions">
+                            <!-- Resolution & Layout Switcher -->
+                            <div class="copilot-layout-group" title="Adjust Chatbot Resolution / Width">
+                                <button type="button" class="copilot-layout-btn active" id="btnSplitAuto" onclick="setCopilotLayout('auto')" title="Smart Auto Resolution">Auto</button>
+                                <button type="button" class="copilot-layout-btn" id="btnSplitHalf" onclick="setCopilotLayout('half')" title="50:50 Balanced Split">50:50</button>
+                                <button type="button" class="copilot-layout-btn" id="btnSplitWide" onclick="setCopilotLayout('wide')" title="Wide Chat Mode (65% width)">Wide</button>
+                                <button type="button" class="copilot-layout-btn" id="btnSplitFull" onclick="setCopilotLayout('full')" title="Maximize Chat Window">⤢ Full</button>
+                            </div>
+                            <div class="copilot-status-badge" id="copilotStatusPill">
+                                <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10b981;"></span>
+                                <span id="copilotStatusText">Active</span>
+                            </div>
+                            <button type="button" class="copilot-icon-btn" onclick="clearCopilotChat()" title="Clear Chat History">🧹 Clear</button>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Code Editor Area -->
-                <div class="json-editor-wrapper">
-                    <textarea 
-                        id="rawJsonEditor" 
-                        class="json-textarea" 
-                        placeholder="// Paste or generate dirty customer JSON payload here..."
-                        spellcheck="false"
-                        oninput="validateJsonInput()"
-                    ></textarea>
-                </div>
-
-                <!-- Editor Footer & Process Action -->
-                <div class="editor-footer-bar">
-                    <div class="editor-stats-crumb">
-                        <span id="charCountLabel">0 Characters</span>
-                        <span id="invoiceCountLabel">0 Invoices Detected</span>
+                    <!-- Quick Context Prompt Pills -->
+                    <div class="copilot-pills-bar" id="copilotPillsBar">
+                        <button class="copilot-pill" onclick="sendCopilotQuickMessage('Why did my invoice fail?')">💡 Explain Errors</button>
+                        <button class="copilot-pill" onclick="sendCopilotQuickMessage('How do I fix supplier GSTIN?')">🏢 Fix Supplier GSTIN</button>
+                        <button class="copilot-pill" onclick="sendCopilotQuickMessage('Fix state and pin code mismatch')">📍 Fix State / PIN</button>
+                        <button class="copilot-pill" onclick="sendCopilotQuickMessage('Add vehicle number for E-Way Bill')">🚚 Fix Vehicle Number</button>
+                        <button class="copilot-pill" onclick="sendCopilotQuickMessage('Rebalance tax math and invoice value')">🧮 Rebalance Tax Math</button>
                     </div>
 
-                    <button class="btn-run-audit" id="btnRunAudit" onclick="handleProcessPipeline()">
-                        🚀 Transform & Run NIC Audit Pipeline
-                    </button>
+                    <!-- Chat Message Feed -->
+                    <div class="copilot-messages-feed" id="copilotMessagesFeed">
+                        <!-- Welcome Bot Message -->
+                        <div class="copilot-msg bot">
+                            <div class="msg-bubble">
+                                👋 <strong>Hello! I am your GST Sentinel Compliance Copilot.</strong><br><br>
+                                I inspect your payload in real-time against official NIC IRN & E-Way Bill rules. If your GSTIN is locked, invalid, or failing validation, tell me your details right here (e.g., <em>"My GSTIN is 29ABCDE1234F1Z5"</em> or <em>"Vehicle number is KA01AB1234"</em>), and I will <strong>automatically patch your JSON payload</strong> and re-validate it for you!
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Input Bar -->
+                    <form class="copilot-input-area" id="copilotChatForm" onsubmit="handleCopilotSubmit(event)">
+                        <input 
+                            type="text" 
+                            id="copilotInputBox" 
+                            class="copilot-input-box" 
+                            placeholder="Tell me your GSTIN, ask to fix an error, or ask a question..." 
+                            autocomplete="off"
+                        >
+                        <button type="submit" class="copilot-send-btn" id="copilotSendBtn">
+                            <span>Send</span> ↵
+                        </button>
+                    </form>
                 </div>
+
             </div>
 
         </section>
@@ -1655,6 +2232,10 @@
         let currentMode = 'random'; // 'random' or 'custom'
         let currentRandomCount = 1;
         let pipelineData = null;
+        let currentValidationReport = null;
+        let currentCorrectedPayload = null;
+        let initialDirtyPayloadStr = '';
+        let currentLivePayload = null;
         let lastRawJsonStr = '';
         let lastCleanJsonStr = '';
         let lastSummaryText = '';
@@ -1672,6 +2253,9 @@
 
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', async () => {
+            initSplitResizer();
+            const savedLayout = localStorage.getItem('copilot_layout_mode') || 'auto';
+            setCopilotLayout(savedLayout);
             // Load initial random batch so the user has immediate data to explore
             await handleGenerateRandom();
         });
@@ -1721,9 +2305,31 @@
 
                 const result = await response.json();
                 if (result.status === 'success' && result.payload) {
-                    rawJsonEditor.value = JSON.stringify(result.payload, null, 2);
+                    const dirtyStr = JSON.stringify(result.payload, null, 2);
+                    rawJsonEditor.value = dirtyStr;
+                    initialDirtyPayloadStr = dirtyStr;
+                    currentLivePayload = result.payload;
                     validateJsonInput();
+                    
+                    // Silent background audit preview to initialize Copilot state
+                    try {
+                        const auditResp = await fetch('/api/converter/process', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ payload: result.payload })
+                        });
+                        if (auditResp.ok) {
+                            pipelineData = await auditResp.json();
+                            currentValidationReport = pipelineData.validation_report;
+                            currentCorrectedPayload = pipelineData.corrected_payload;
+                        }
+                    } catch (auditErr) {
+                        console.warn('Initial background audit preview:', auditErr);
+                    }
+
                     showToast(`Generated ${result.count} invoice(s) with dirty field values!`, 'success');
+                    // Automatically inspect and seed Copilot diagnostic with the fresh payload
+                    await triggerCopilotAutoDiagnostic();
                 } else {
                     throw new Error('Invalid response structure from generator API');
                 }
@@ -1743,9 +2349,31 @@
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json();
                 if (data.payload) {
-                    rawJsonEditor.value = JSON.stringify(data.payload, null, 2);
+                    const dirtyStr = JSON.stringify(data.payload, null, 2);
+                    rawJsonEditor.value = dirtyStr;
+                    initialDirtyPayloadStr = dirtyStr;
+                    currentLivePayload = data.payload;
                     validateJsonInput();
+
+                    // Silent background audit preview to initialize Copilot state
+                    try {
+                        const auditResp = await fetch('/api/converter/process', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ payload: data.payload })
+                        });
+                        if (auditResp.ok) {
+                            pipelineData = await auditResp.json();
+                            currentValidationReport = pipelineData.validation_report;
+                            currentCorrectedPayload = pipelineData.corrected_payload;
+                        }
+                    } catch (auditErr) {
+                        console.warn('Initial background audit preview:', auditErr);
+                    }
+
                     showToast('Sample dirty payload loaded!', 'success');
+                    // Automatically inspect and seed Copilot diagnostic with the sample payload
+                    await triggerCopilotAutoDiagnostic();
                 }
             } catch (err) {
                 showToast(`Error loading sample: ${err.message}`, 'error');
@@ -1868,7 +2496,11 @@
                 }
 
                 pipelineData = await response.json();
-                lastRawJsonStr = JSON.stringify(parsedPayload, null, 2);
+                currentValidationReport = pipelineData.validation_report;
+                currentCorrectedPayload = pipelineData.corrected_payload;
+                initialDirtyPayloadStr = JSON.stringify(parsedPayload, null, 2);
+                currentLivePayload = pipelineData.corrected_payload;
+                lastRawJsonStr = initialDirtyPayloadStr;
                 lastCleanJsonStr = JSON.stringify(pipelineData.corrected_payload, null, 2);
                 lastSummaryText = pipelineData.summary_text;
                 fullAuditRecords = pipelineData.audit_records || [];
@@ -2158,6 +2790,492 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
+        }
+
+        // ==============================================================
+        // AI COMPLIANCE COPILOT & SPLIT-SCREEN CHATBOT LOGIC
+        // ==============================================================
+        let copilotChatHistory = [];
+        let isCopilotSplitActive = true;
+        let activeCopilotLayout = localStorage.getItem('copilot_layout_mode') || 'auto';
+
+        // Set Copilot Layout & Screen Split Width
+        function setCopilotLayout(mode) {
+            const splitContainer = document.getElementById('editorCopilotSplit');
+            if (!splitContainer) return;
+            const buttons = document.querySelectorAll('.copilot-layout-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // Clear any inline drag styling
+            splitContainer.style.gridTemplateColumns = '';
+
+            splitContainer.classList.remove('split-half', 'split-wide', 'split-max', 'editor-only');
+            activeCopilotLayout = mode;
+
+            if (mode === 'half') {
+                splitContainer.classList.add('split-half');
+                document.getElementById('btnSplitHalf')?.classList.add('active');
+                showToast('📐 50:50 Balanced Split Activated', 'info');
+            } else if (mode === 'wide') {
+                splitContainer.classList.add('split-wide');
+                document.getElementById('btnSplitWide')?.classList.add('active');
+                showToast('📐 Wide Chat Window Activated (65% width)', 'info');
+            } else if (mode === 'full') {
+                splitContainer.classList.add('split-max');
+                document.getElementById('btnSplitFull')?.classList.add('active');
+                showToast('⤢ Full Chat Mode Activated', 'info');
+            } else {
+                // 'auto'
+                document.getElementById('btnSplitAuto')?.classList.add('active');
+                showToast('⚡ Smart Resolution Auto-Adjust Active', 'info');
+            }
+
+            localStorage.setItem('copilot_layout_mode', mode);
+        }
+
+        // Toggle between Split Screen and Full-Width Editor
+        function toggleCopilotSplit() {
+            const splitContainer = document.getElementById('editorCopilotSplit');
+            const toggleText = document.getElementById('toggleCopilotText');
+            isCopilotSplitActive = !isCopilotSplitActive;
+
+            if (isCopilotSplitActive) {
+                splitContainer.classList.remove('editor-only');
+                toggleText.textContent = 'Copilot Split';
+                const savedMode = localStorage.getItem('copilot_layout_mode') || 'auto';
+                setCopilotLayout(savedMode);
+                showToast('AI Copilot Split-Screen Enabled', 'success');
+            } else {
+                splitContainer.classList.remove('split-half', 'split-wide', 'split-max');
+                splitContainer.classList.add('editor-only');
+                toggleText.textContent = 'Show Copilot';
+                showToast('Full-Width Editor Mode Activated', 'success');
+            }
+        }
+
+        // Initialize Draggable Split Resizer
+        function initSplitResizer() {
+            const resizer = document.getElementById('splitResizer');
+            const splitContainer = document.getElementById('editorCopilotSplit');
+            if (!resizer || !splitContainer) return;
+
+            let isDragging = false;
+
+            resizer.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                resizer.classList.add('is-dragging');
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const rect = splitContainer.getBoundingClientRect();
+                const totalWidth = rect.width;
+                if (totalWidth <= 0) return;
+
+                // Position within splitContainer
+                const mouseX = e.clientX - rect.left;
+                let editorPct = (mouseX / totalWidth) * 100;
+
+                // Bounds checking (keep editor between 22% and 78%)
+                if (editorPct < 22) editorPct = 22;
+                if (editorPct > 78) editorPct = 78;
+
+                const copilotPct = 100 - editorPct;
+
+                // Remove preset classes while custom dragging
+                splitContainer.classList.remove('split-half', 'split-wide', 'split-max');
+                const buttons = document.querySelectorAll('.copilot-layout-btn');
+                buttons.forEach(btn => btn.classList.remove('active'));
+
+                splitContainer.style.gridTemplateColumns = `${editorPct.toFixed(1)}% ${copilotPct.toFixed(1)}%`;
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    resizer.classList.remove('is-dragging');
+                    document.body.style.cursor = '';
+                    document.body.style.userSelect = '';
+                }
+            });
+
+            // Double click on resizer knob to reset to Auto
+            resizer.addEventListener('dblclick', () => {
+                setCopilotLayout('auto');
+            });
+        }
+
+        // Update Copilot Status Badge in Header
+        function updateCopilotHeaderStatus(validationReport) {
+            const statusText = document.getElementById('copilotStatusText');
+            const statusPill = document.getElementById('copilotStatusPill');
+            if (!statusText) return;
+
+            if (!validationReport || !validationReport.results || validationReport.results.length === 0) {
+                statusText.textContent = 'Active';
+                statusText.style.color = '#38bdf8';
+                return;
+            }
+
+            const firstRes = validationReport.results[0] || {};
+            const errCount = (firstRes.errors || []).length;
+            if (errCount === 0) {
+                statusText.textContent = '100% Compliant';
+                statusText.style.color = '#10b981';
+                if (statusPill) {
+                    statusPill.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                    const dot = statusPill.querySelector('span');
+                    if (dot) dot.style.background = '#10b981';
+                }
+            } else {
+                statusText.textContent = `${errCount} Error${errCount > 1 ? 's' : ''} Remaining`;
+                statusText.style.color = '#f43f5e';
+                if (statusPill) {
+                    statusPill.style.borderColor = 'rgba(244, 63, 94, 0.4)';
+                    const dot = statusPill.querySelector('span');
+                    if (dot) dot.style.background = '#f43f5e';
+                }
+            }
+        }
+
+        // Trigger Automatic Diagnostic on current payload in editor
+        async function triggerCopilotAutoDiagnostic(customNotice = null) {
+            const feed = document.getElementById('copilotMessagesFeed');
+            if (!feed) return;
+
+            copilotChatHistory = [];
+
+            let currentPayload = null;
+            try {
+                const rawEditorText = rawJsonEditor.value.trim();
+                if (rawEditorText) {
+                    currentPayload = JSON.parse(rawEditorText);
+                }
+            } catch (err) {
+                currentPayload = null;
+            }
+
+            if (!currentPayload) {
+                feed.innerHTML = `
+                    <div class="copilot-msg bot">
+                        <div class="msg-bubble">
+                            👋 <strong>No valid JSON payload in editor.</strong> Load a sample payload or generate a batch to begin real-time NIC compliance audits!
+                        </div>
+                    </div>
+                `;
+                updateCopilotPills(["Load Sample", "Generate Fresh Dirty Batch", "Format JSON"]);
+                updateCopilotHeaderStatus(null);
+                return;
+            }
+
+            feed.innerHTML = `
+                <div class="copilot-msg bot" id="copilotAutoThinking">
+                    <div class="msg-bubble" style="color: var(--accent-cyan); display: flex; align-items: center; gap: 8px;">
+                        <span class="pulse-dot" style="width: 8px; height: 8px; background: #38bdf8;"></span>
+                        <span>Auto-detecting NIC compliance errors across active payload...</span>
+                    </div>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('/api/converter/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: "Why did my invoice fail?",
+                        payload: currentPayload,
+                        validation_report: currentValidationReport || null,
+                        chat_history: []
+                    })
+                });
+
+                const thinkingEl = document.getElementById('copilotAutoThinking');
+                if (thinkingEl) thinkingEl.remove();
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+
+                const botMsgDiv = document.createElement('div');
+                botMsgDiv.className = 'copilot-msg bot';
+
+                let noticePrefix = customNotice ? `<div style="font-size:0.85rem; color:#94a3b8; margin-bottom:8px;">${escapeHtml(customNotice)}</div>` : '';
+                let replyHtml = `<div class="msg-bubble">${noticePrefix}${formatMarkdownReply(data.reply)}</div>`;
+
+                if (data.interactive_actions && data.interactive_actions.length > 0) {
+                    const actionBtns = data.interactive_actions.map(act => 
+                        `<button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('${escapeHtml(act)}')">${escapeHtml(act)}</button>`
+                    ).join(' ');
+                    replyHtml += `<div class="msg-action-bar">${actionBtns}</div>`;
+                }
+
+                botMsgDiv.innerHTML = replyHtml;
+                feed.innerHTML = '';
+                feed.appendChild(botMsgDiv);
+                feed.scrollTop = feed.scrollHeight;
+
+                if (data.quick_prompts && data.quick_prompts.length > 0) {
+                    updateCopilotPills(data.quick_prompts);
+                } else if (data.interactive_actions && data.interactive_actions.length > 0) {
+                    updateCopilotPills(data.interactive_actions);
+                }
+
+                updateCopilotHeaderStatus(data.validation_report);
+
+            } catch (err) {
+                const thinkingEl = document.getElementById('copilotAutoThinking');
+                if (thinkingEl) thinkingEl.remove();
+
+                feed.innerHTML = `
+                    <div class="copilot-msg bot">
+                        <div class="msg-bubble">
+                            👋 <strong>Inspection Ready.</strong> Tell me your GSTIN or ask to fix an error to start.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Clear Chat History and Auto-Detect Active Errors Immediately
+        async function clearCopilotChat() {
+            showToast('Chat cleared — re-evaluating invoice errors...', 'info');
+            await triggerCopilotAutoDiagnostic('🧹 Chat history cleared. Active payload re-inspected:');
+        }
+
+        // Quick Message Pill Click
+        function sendCopilotQuickMessage(text) {
+            const input = document.getElementById('copilotInputBox');
+            input.value = text;
+            handleCopilotSubmit(new Event('submit'));
+        }
+
+        // Update Quick Prompt Pills
+        function updateCopilotPills(prompts) {
+            if (!prompts || !prompts.length) return;
+            const container = document.getElementById('copilotPillsBar');
+            container.innerHTML = prompts.map(p => `
+                <button type="button" class="copilot-pill" onclick="sendCopilotQuickMessage('${escapeHtml(p)}')">
+                    ${escapeHtml(p)}
+                </button>
+            `).join('');
+        }
+
+        // Format Markdown-like text to safe HTML
+        function formatMarkdownReply(text) {
+            if (!text) return '';
+            let html = escapeHtml(text);
+            // Bold **text**
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            // Italic *text*
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            // Inline code `code`
+            html = html.replace(/`(.*?)`/g, '<code>$1</code>');
+            // Bullet points
+            html = html.replace(/^[•\-\*]\s+(.*)$/gm, '<div style="margin-left: 12px; margin-bottom: 4px;">• $1</div>');
+            // Newlines
+            html = html.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+            return html;
+        }
+
+        // Submit message to Copilot
+        async function handleCopilotSubmit(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            const input = document.getElementById('copilotInputBox');
+            const sendBtn = document.getElementById('copilotSendBtn');
+            const feed = document.getElementById('copilotMessagesFeed');
+            const message = (input.value || '').trim();
+
+            if (!message) return;
+
+            // 1. Append User Message
+            const userMsgDiv = document.createElement('div');
+            userMsgDiv.className = 'copilot-msg user';
+            userMsgDiv.innerHTML = `<div class="msg-bubble">${escapeHtml(message)}</div>`;
+            feed.appendChild(userMsgDiv);
+
+            input.value = '';
+            input.disabled = true;
+            sendBtn.disabled = true;
+            feed.scrollTop = feed.scrollHeight;
+
+            // Add thinking indicator
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'copilot-msg bot';
+            typingDiv.id = 'copilotTypingIndicator';
+            typingDiv.innerHTML = `
+                <div class="msg-bubble" style="color: var(--accent-cyan); display: flex; align-items: center; gap: 8px;">
+                    <span class="pulse-dot" style="width: 8px; height: 8px; background: #38bdf8;"></span>
+                    <span>Analyzing compliance rules & payload...</span>
+                </div>
+            `;
+            feed.appendChild(typingDiv);
+            feed.scrollTop = feed.scrollHeight;
+
+            // 2. Prepare payload from active state or raw editor
+            let currentPayload = currentLivePayload;
+            if (!currentPayload) {
+                try {
+                    const rawEditorText = rawJsonEditor.value.trim();
+                    if (rawEditorText) {
+                        currentPayload = JSON.parse(rawEditorText);
+                        initialDirtyPayloadStr = rawEditorText;
+                    }
+                } catch (err) {
+                    currentPayload = null;
+                }
+            }
+
+            try {
+                const response = await fetch('/api/converter/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        payload: currentPayload,
+                        validation_report: currentValidationReport || null,
+                        chat_history: copilotChatHistory
+                    })
+                });
+
+                // Remove typing indicator
+                const typingEl = document.getElementById('copilotTypingIndicator');
+                if (typingEl) typingEl.remove();
+
+                if (!response.ok) {
+                    throw new Error(`Server returned HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // 3. Render Assistant Reply
+                const botMsgDiv = document.createElement('div');
+                botMsgDiv.className = 'copilot-msg bot';
+
+                let replyHtml = `<div class="msg-bubble">${formatMarkdownReply(data.reply)}</div>`;
+
+                // Interactive Action Buttons inside Chat Bubble
+                if (data.interactive_actions && data.interactive_actions.length > 0) {
+                    const actionBtns = data.interactive_actions.map(act => 
+                        `<button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('${escapeHtml(act)}')">${escapeHtml(act)}</button>`
+                    ).join(' ');
+                    replyHtml += `<div class="msg-action-bar">${actionBtns}</div>`;
+                }
+
+                if (data.patch_applied && data.patch_summary && data.patch_summary.length > 0) {
+                    const patchTags = data.patch_summary.map(s => `<div>⚡ ${escapeHtml(s)}</div>`).join('');
+                    replyHtml += `
+                        <div class="msg-patch-banner">
+                            <div>${patchTags}</div>
+                        </div>
+                    `;
+                }
+
+                botMsgDiv.innerHTML = replyHtml;
+                feed.appendChild(botMsgDiv);
+                feed.scrollTop = feed.scrollHeight;
+
+                // 4. Update Chat History
+                copilotChatHistory.push({ role: 'user', text: message });
+                copilotChatHistory.push({ role: 'assistant', text: data.reply });
+
+                // 5. Update Quick Pills
+                if (data.quick_prompts) {
+                    updateCopilotPills(data.quick_prompts);
+                }
+
+                // 6. If Patch was Applied: Automatically update the Live UI Screens!
+                if (data.patch_applied && data.updated_payload) {
+                    currentLivePayload = data.updated_payload;
+                    if (!initialDirtyPayloadStr && rawJsonEditor.value.trim()) {
+                        initialDirtyPayloadStr = rawJsonEditor.value.trim();
+                    }
+
+                    // Keep Customer Raw Dirty Input showing the DIRTY payload only!
+                    // Do NOT overwrite rawJsonEditor or diffDirtyPane with clean/patched payload.
+                    if (!rawJsonEditor.value.trim() && initialDirtyPayloadStr) {
+                        rawJsonEditor.value = initialDirtyPayloadStr;
+                    }
+                    validateJsonInput();
+
+                    // 6A. Synchronize Side-by-Side Diff Panes (Tab 2)
+                    // Left Pane: Customer Raw Dirty Input ONLY!
+                    // Right Pane: Clean Normalized Patched NIC Payload!
+                    lastRawJsonStr = initialDirtyPayloadStr || rawJsonEditor.value;
+                    lastCleanJsonStr = data.corrected_payload 
+                        ? JSON.stringify(data.corrected_payload, null, 2) 
+                        : JSON.stringify(data.updated_payload, null, 2);
+
+                    if (typeof renderDiffPanes === 'function') {
+                        renderDiffPanes(lastRawJsonStr, lastCleanJsonStr);
+                    }
+
+                    // 6B. Synchronize Validation Cards & Tab Error Counts (Tab 3)
+                    if (data.validation_report) {
+                        currentValidationReport = data.validation_report;
+                        currentCorrectedPayload = data.corrected_payload || data.updated_payload;
+
+                        // Render Cards
+                        renderValidationCards(currentValidationReport);
+
+                        // Update Status Badge on Copilot Header
+                        updateCopilotHeaderStatus(currentValidationReport);
+
+                        // Update Tab Counter Pills (Tab 1 Corrections & Tab 3 Errors)
+                        const firstRes = (currentValidationReport.results || [])[0] || {};
+                        const errCount = firstRes.error_count ?? (firstRes.errors || []).length;
+                        const corrCount = firstRes.corrections_applied_count ?? (firstRes.corrections_applied || []).length;
+                        const tabErrEl = document.getElementById('tabCountErrors');
+                        if (tabErrEl) tabErrEl.textContent = errCount;
+                        const tabCorrEl = document.getElementById('tabCountCorrections');
+                        if (tabCorrEl) tabCorrEl.textContent = corrCount;
+                    }
+
+                    // 6C. Synchronize Terminal Summary Report (Tab 4)
+                    if (data.summary_text) {
+                        lastSummaryText = data.summary_text;
+                        if (typeof renderTerminalSummary === 'function') {
+                            renderTerminalSummary(data.summary_text);
+                        }
+                    }
+
+                    // 6D. Synchronize Audit Records Table (Tab 1)
+                    if (data.audit_records && Array.isArray(data.audit_records)) {
+                        fullAuditRecords = data.audit_records;
+                        if (typeof renderAuditTable === 'function') {
+                            renderAuditTable(fullAuditRecords);
+                        }
+                    }
+
+                    // 6E. Synchronize Executive KPIs & Financials
+                    if (data.metrics && typeof renderExecutiveKPIs === 'function') {
+                        renderExecutiveKPIs(data.metrics);
+                    }
+
+                    // 6F. Ensure Output Dashboard & KPI Sections are visible
+                    const kpiSec = document.getElementById('kpiDashboardSection');
+                    if (kpiSec) kpiSec.style.display = 'block';
+                    const outSec = document.getElementById('outputDashboardSection');
+                    if (outSec) outSec.style.display = 'block';
+
+                    showToast('⚡ All screens & output tabs synchronized in real-time!', 'success');
+                }
+
+            } catch (err) {
+                const typingEl = document.getElementById('copilotTypingIndicator');
+                if (typingEl) typingEl.remove();
+
+                const botMsgDiv = document.createElement('div');
+                botMsgDiv.className = 'copilot-msg bot';
+                botMsgDiv.innerHTML = `<div class="msg-bubble" style="color: #fca5a5;">⚠️ <strong>Error contacting Copilot:</strong> ${escapeHtml(err.message)}</div>`;
+                feed.appendChild(botMsgDiv);
+                feed.scrollTop = feed.scrollHeight;
+            } finally {
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.focus();
+            }
         }
     </script>
 </body>

@@ -1,14 +1,37 @@
 # Python Virtual Environment
 venv/
+.venv/
 env/
 ENV/
 __pycache__/
 *.pyc
 
-# Data and Local Databases
-data/raw/
+# Local SQLite databases & temporary DB locks
 *.db
+*.sqlite
 *.sqlite3
+*-journal
+*.db-wal
+*.db-shm
+
+# Data and client uploads
+data/raw/client_uploads/
+*.csv.tmp
+*.xlsx.tmp
+
+# Environment and Secret files
+.env
+.env.*
+!.env.example
+secrets/
 
 # IDE / OS specific
 .DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Testing and coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/

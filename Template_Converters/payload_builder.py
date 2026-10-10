@@ -151,6 +151,1972 @@ def normalize_dict_keys_with_log(d: Any, path: str = "") -> Tuple[Any, List[Dict
         return new_list, modifications
     return d, modifications
 
+# ============================================================================
+# Master Definitions from Part 1
+# ============================================================================
+
+COUNTRY_CURRENCY_MAP = {
+    "IN": "INR",
+    "US": "USD",
+    "GB": "GBP",
+    "AE": "AED",
+    "SG": "SGD",
+    "JP": "JPY",
+    "AU": "AUD",
+    "CA": "CAD",
+    "CN": "CNY",
+    "HK": "HKD",
+    "DE": "EUR",
+    "FR": "EUR",
+    "IT": "EUR",
+}
+
+ALLOWED_UQC = [
+    "BAG", "BAL", "BDL", "BKL", "BOU", "BOX", "BTL", "BUN", "CAN", "CBM", 
+    "CCM", "CMS", "CTN", "DOZ", "DRM", "GMS", "GRS", "GYD", "KGS", "KLR", 
+    "KME", "MLT", "MTR", "MTS", "NOS", "PAC", "PCS", "PRS", "QTL", "ROL", 
+    "SET", "SQF", "SQM", "SQY", "TBS", "TGM", "THD", "TON", "TUB", "UGS", 
+    "UNT", "YDS", "OTH"
+]
+
+# ============================================================================
+# Part 1 Normalization Helpers
+# ============================================================================
+
+def normalize_buyer_gstin(raw: str):
+    if raw is None:
+        return ""
+    s = str(raw).strip().upper()
+    if s != "URP":
+        s = re.sub(r"[^0-9A-Z]", "", s)
+    return s
+
+def normalize_numeric_string(raw: str):
+    if raw is None:
+        return ""
+    s = str(raw).strip()
+    return re.sub(r"[^0-9]", "", s)
+
+def normalize_date(raw: str):
+    if raw is None:
+        return ""
+    s = str(raw).strip()
+    normalized = re.sub(r"[-. ]", "/", s)
+    return normalized
+
+def normalize_gstin(raw: str):
+    s = "" if raw is None else str(raw).strip().upper()
+    s = s.replace(" ", "")
+    normalized = re.sub(r"[^0-9A-Z]", "", s)
+    return normalized
+
+def normalize_uppercase(raw: str):
+    if raw is None:
+        return ""
+    return str(raw).strip().upper()
+
+def normalize_field(raw: str):
+    if raw is None:
+        return ""
+    return str(raw).strip()
+
+def normalize_doc_number(raw: str):
+    if raw is None:
+        return ""
+    s = str(raw).strip()
+    normalized = re.sub(r"[^0-9A-Za-z/-]", "", s)
+    return normalized
+
+def normalize_email(raw: str):
+    if raw is None:
+        return ""
+    return str(raw).strip().lower()
+
+def normalize_ship_gstin(raw: str):
+    if raw is None:
+        return ""
+    s = str(raw).strip().upper()
+    if s != "URP":
+        s = re.sub(r"[^0-9A-Z]", "", s)
+    return s
+
+def normalize_ship_lglnm(raw: str):
+    if raw is None:
+        return ""
+    return str(raw).strip()
+
+def normalize_ship_trdnm(raw: str):
+    if raw is None:
+        return ""
+    return str(raw).strip()
+
+def normalize_ship_bno(raw: str):
+    if raw is None:
+        return ""
+    return str(raw).strip()
+
+def normalize_ship_bnm(raw: str):
+    if raw is None:
+        return ""
+    return " ".join(str(raw).split()).strip()
+
+def normalize_ship_flno(raw: str):
+    if raw is None:
+        return ""
+    return " ".join(str(raw).split()).strip()
+
+def normalize_ship_loc(raw: str):
+    if raw is None:
+        return ""
+    return " ".join(str(raw).split()).strip()
+
+def normalize_ship_dst(raw: str):
+    if raw is None:
+        return ""
+    return " ".join(str(raw).split()).strip()
+
+def normalize_ship_pin(raw: str):
+    if raw is None:
+        return ""
+    s = str(raw).strip()
+    return re.sub(r"[^0-9]", "", s)
+
+def normalize_state_code(raw: str):
+    if raw is None:
+        return ""
+    s = re.sub(r"[^0-9]", "", str(raw).strip())
+    if len(s) == 1:
+        s = s.zfill(2)
+    return s
+
+def normalize_date_dash(raw: str):
+    if raw is None:
+        return ""
+    s = str(raw).strip()
+    normalized = re.sub(r"[/ .]", "-", s)
+    return normalized
+
+def normalize_product_name(raw: str):
+    if raw is None:
+        return ""
+    return " ".join(str(raw).split()).strip()
+
+def process_payload(input_file: Any, output_valid: str = "valid.json", output_invalid: str = "invalid.json"):
+    if isinstance(input_file, dict):
+        payload = input_file
+    else:
+        try:
+            with open(input_file, "r", encoding="utf-8") as f:
+                payload = json.load(f)
+        except Exception as e:
+            print(f"Failed to read input file: {e}")
+            return None
+
+    errors = []
+    warnings = []
+    def get_nrom(key, func=normalize_field):
+        return func(payload.get(key, ""))
+
+    allowed_pmt_modes = ["CASH", "EPAY", "DIRDBT", "OTH"]
+    allowed_trancatg = ["B2B", "B2G", "EXP", "B2C"]
+    ALLOWED_TAXABILITY = ["TAX", "EXM", "NIL", "NGT"]
+    allowed_transmode = ["REG", "DIS", "SHP", "CMB"]
+    allowed_expcat = ["DIR", "DEM", "SEZ", "SED"]
+    allowed_doc_types = ["INV", "CRN", "DBN", "CHL", "BIL", "OTH"]
+    date_pattern = r"^[0-3][0-9]/[0-1][0-9]/[2][0][1-2][0-9]$"
+    port_pattern = r"^[0-9A-Z]{6,10}$"
+    buyer_gstin_pattern = r"^[0-9]{2}[0-9A-Z]{13}$"
+    gstin_pattern = r"^[0-9]{2}[0-9A-Z]{13}$"
+    ship_gstin_pattern = r"^(?:[0-9]{2}[0-9A-Z]{13}|URP)$"
+    date_pattern_dash = r"^[0-3][0-9]-[0-1][0-9]-[2][0][1-2][0-9]$"
+    date_regex = r"^[0-3][0-9]-[0-1][0-9]-20[1-2][0-9]$"
+    remark_pattern = r"^[0-9A-Za-z/\-\(\) ]*$"
+    adv_pattern = r"^[0-9A-Za-z/\-\(\)]*$"
+    tend_pattern = r"^[0-9A-Za-z/\-\(\)]*$"
+    contr_pattern = r"^[0-9A-Za-z/\-\(\)]*$"
+    ext_pattern = r"^[0-9A-Za-z/\-\(\)]*$"
+    proj_pattern = r"^[0-9A-Za-z/\-\(\)]*$"
+    po_pattern = r"^[0-9A-Za-z/\-\(\)]*$"
+    allowed_values = ["Y", "N"]
+    valid_subtypes = [str(i) for i in range(1, 13)]
+    valid_modes = ["1", "2", "3", "4"]
+    raw_dist = payload.get("distance_of_transport") if isinstance(payload, dict) else ""
+    trans_id_pattern = r"^[0-9]{2}[A-Z0-9]{13}$"
+    non_road_modes = ["2", "3", "4"]
+    allowed_veh_types = ["R", "O"]
+    veh_pattern = r"^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,2}[0-9]{4}$"
+    upi_pattern = r"^[\w\.\-]+@[a-zA-Z]{2,}$"
+    ifsc_pattern = r"^[A-Z]{4}0[A-Z0-9]{6}$"
+    target_format = "%d-%m-%Y"
+
+    if not isinstance(payload, dict):
+        return {"payload": payload, "errors": errors}
+
+    norm_gstin       = normalize_gstin(payload.get("self_gstin", ""))
+    norm_sys         = normalize_field(payload.get("system_cd", ""))
+    norm_br          = normalize_field(payload.get("branch_cd", ""))
+    norm_vert        = normalize_field(payload.get("vertical_cd", ""))
+    norm_irnreq      = normalize_uppercase(payload.get("irnreq", ""))
+    norm_irn         = normalize_field(payload.get("irn", ""))
+    norm_trancatg    = normalize_uppercase(payload.get("trancatg", ""))
+    norm_revcharge   = normalize_uppercase(payload.get("reversecharge", ""))
+    norm_transmode   = normalize_uppercase(payload.get("transactionmode", ""))
+    norm_ecom_gstin  = normalize_gstin(payload.get("ecom_gstin", ""))
+    norm_igst_intra  = normalize_uppercase(payload.get("igst_on_intra", ""))
+    norm_expcat      = normalize_uppercase(payload.get("expcat", ""))
+    norm_wthpay      = normalize_uppercase(payload.get("wthpay", ""))
+    norm_shipbno     = normalize_field(payload.get("shipbno", ""))
+    norm_shipbdt     = normalize_date(payload.get("shipbdt", ""))
+    norm_port        = normalize_uppercase(payload.get("port", ""))
+    norm_invforcur   = normalize_field(payload.get("invforcur", ""))
+    norm_forcur      = normalize_uppercase(payload.get("forcur", ""))
+    norm_refclm      = normalize_uppercase(payload.get("refclm", ""))
+    norm_cntcode     = normalize_uppercase(payload.get("cntcode", ""))
+    norm_expduty     = normalize_field(payload.get("expduty", ""))
+    norm_doc_type    = normalize_uppercase(payload.get("document_type", ""))
+    norm_docno       = normalize_doc_number(payload.get("docno", ""))
+    raw_docdt        = payload.get("docdt", "")
+    norm_docdt       = ""
+    norm_orginvno    = normalize_doc_number(payload.get("orginvno", ""))
+    norm_orginvdt    = normalize_date(payload.get("orginvdt", ""))
+    norm_sup_gstin   = normalize_gstin(payload.get("supplier_gstin", ""))
+    norm_sup_lglnm   = normalize_field(payload.get("supplier_lglnm", ""))
+    norm_sup_trdnm   = normalize_field(payload.get("supplier_trdnm", ""))
+    norm_sup_bno     = normalize_field(payload.get("supplier_bno", ""))
+    norm_sup_bnm     = normalize_field(payload.get("supplier_bnm", ""))
+    norm_sup_flno    = normalize_field(payload.get("supplier_flno", ""))
+    norm_sup_loc     = normalize_field(payload.get("supplier_loc", ""))
+    norm_sup_dst     = normalize_field(payload.get("supplier_dst", ""))
+    norm_sup_pin     = normalize_numeric_string(payload.get("supplier_pin", ""))
+    norm_sup_state   = normalize_numeric_string(payload.get("supplier_state", ""))
+    norm_sup_phone   = normalize_numeric_string(payload.get("supplier_phone", ""))
+    norm_sup_email   = normalize_field(payload.get("supplier_email", ""))
+    norm_cust_cd     = normalize_field(payload.get("cust_cd", ""))
+    norm_buy_gstin   = normalize_buyer_gstin(payload.get("buyer_gstin", ""))
+    norm_buy_lglnm   = normalize_field(payload.get("buyer_lglnm", ""))
+    norm_buy_trdnm   = normalize_field(payload.get("buyer_trdnm", ""))
+    norm_buy_bno     = normalize_field(payload.get("buyer_bno", ""))
+    norm_buy_bnm     = normalize_field(payload.get("buyer_bnm", ""))
+    norm_buy_flno    = normalize_field(payload.get("buyer_flno", ""))
+    norm_buy_loc     = normalize_field(payload.get("buyer_loc", ""))
+    norm_buy_dst     = normalize_field(payload.get("buyer_dst", ""))
+    norm_buy_pin     = normalize_numeric_string(payload.get("buyer_pin", ""))
+    norm_buy_state   = normalize_numeric_string(payload.get("buyer_state", ""))
+    raw_pos          = payload.get("pos", "")
+    norm_pos         = normalize_numeric_string(raw_pos)
+    norm_buy_phone   = normalize_numeric_string(payload.get("buyer_phone", ""))
+    norm_buy_email   = normalize_field(payload.get("buyer_email", ""))
+    norm_disp_gstin  = normalize_buyer_gstin(payload.get("disp_gstin", ""))
+    norm_disp_trdnm  = normalize_field(payload.get("disp_trdnm", ""))
+    norm_disp_bno    = normalize_field(payload.get("disp_bno", ""))
+    norm_disp_bnm    = normalize_field(payload.get("disp_bnm", ""))
+    norm_disp_flno   = normalize_field(payload.get("disp_flno", ""))
+    norm_disp_loc    = normalize_field(payload.get("disp_loc", ""))
+    norm_disp_dst    = normalize_field(payload.get("disp_dst", ""))
+    norm_disp_pin    = normalize_numeric_string(payload.get("disp_pin", ""))
+    norm_disp_state  = normalize_numeric_string(payload.get("disp_state", ""))
+    norm_disp_phone  = normalize_numeric_string(payload.get("disp_phone", ""))
+    norm_disp_email  = normalize_email(payload.get("disp_email", ""))
+    norm_ship_gstin  = normalize_ship_gstin(payload.get("ship_gstin", ""))
+    norm_ship_lglnm  = normalize_ship_lglnm(payload.get("ship_lglnm", ""))
+    norm_ship_trdnm  = normalize_ship_trdnm(payload.get("ship_trdnm", ""))
+    norm_ship_bno    = normalize_ship_bno(payload.get("ship_bno", ""))
+    norm_ship_bnm    = normalize_ship_bnm(payload.get("ship_bnm", ""))
+    norm_ship_flno   = normalize_ship_flno(payload.get("ship_flno", ""))
+    norm_ship_loc    = normalize_ship_loc(payload.get("ship_loc", ""))
+    norm_ship_dst    = normalize_ship_dst(payload.get("ship_dst", ""))
+    norm_ship_pin    = normalize_ship_pin(payload.get("ship_pin", ""))
+    norm_ship_state  = normalize_state_code(payload.get("ship_state", ""))
+    norm_ship_phone  = normalize_numeric_string(payload.get("ship_phone", ""))
+    norm_ship_email  = normalize_email(payload.get("ship_email", ""))
+    norm_frmdt       = normalize_date_dash(payload.get("frmdt", ""))
+    norm_todt        = normalize_date_dash(payload.get("todt", ""))
+    norm_itemcd      = normalize_field(payload.get("itemcd", ""))
+    norm_prdnm       = normalize_product_name(payload.get("prdnm", ""))
+    norm_prddesc     = " ".join(str(payload.get("prddesc", "")).split()).strip() if payload.get("prddesc") else ""
+    norm_isservc     = normalize_uppercase(payload.get("isservc", ""))
+    norm_hsncd       = normalize_numeric_string(payload.get("hsncd", ""))
+    norm_barcde      = normalize_field(payload.get("barcde", ""))
+    norm_qty         = str(payload.get("qty", "")).strip() if payload.get("qty") is not None else ""
+    norm_freeqty     = str(payload.get("freeqty", "")).strip() if payload.get("freeqty") is not None else ""
+    norm_uqc         = normalize_uppercase(payload.get("uqc", ""))
+    norm_unitrate    = str(payload.get("unitrate", "")).strip() if payload.get("unitrate") is not None else ""
+    norm_grossamt    = str(payload.get("grossamt", "")).strip() if payload.get("grossamt") is not None else ""
+    norm_discount    = str(payload.get("discount", "")).strip() if payload.get("discount") is not None else ""
+    norm_othchrg     = str(payload.get("othchrg", "")).strip() if payload.get("othchrg") is not None else ""
+    norm_pretaxval   = str(payload.get("pretaxval", "")).strip() if payload.get("pretaxval") is not None else ""
+    norm_assamt      = str(payload.get("assamt", "")).strip() if payload.get("assamt") is not None else ""
+    norm_taxability  = normalize_uppercase(payload.get("taxability", ""))
+    norm_diffpercent = str(payload.get("diffpercent", "")).strip() if payload.get("diffpercent") is not None else ""
+    norm_cgstrt      = str(payload.get("cgstrt", "")).strip() if payload.get("cgstrt") is not None else ""
+    norm_cgstamt     = str(payload.get("cgstamt", "")).strip() if payload.get("cgstamt") is not None else ""
+    norm_sgstrt      = str(payload.get("sgstrt", "")).strip() if payload.get("sgstrt") is not None else ""
+    norm_sgstamt     = str(payload.get("sgstamt", "")).strip() if payload.get("sgstamt") is not None else ""
+    norm_igstrt      = str(payload.get("igstrt", "")).strip() if payload.get("igstrt") is not None else ""
+    norm_igstamt     = str(payload.get("igstamt", "")).strip() if payload.get("igstamt") is not None else ""
+    norm_cessrt      = str(payload.get("cessrt", "")).strip() if payload.get("cessrt") is not None else ""
+    norm_cessamt     = str(payload.get("cessamt", "")).strip() if payload.get("cessamt") is not None else ""
+    norm_cessnonadval = str(payload.get("cessnonadval", "")).strip() if payload.get("cessnonadval") is not None else ""
+    norm_statecessrt = str(payload.get("statecessrt", "")).strip() if payload.get("statecessrt") is not None else ""
+    norm_statecessamt = str(payload.get("statecessamt", "")).strip() if payload.get("statecessamt") is not None else ""
+    norm_statecesnonadvl = str(payload.get("statecesnonadvlamt", "")).strip() if payload.get("statecesnonadvlamt") is not None else ""
+    norm_totitemval  = str(payload.get("totitemval", "")).strip() if payload.get("totitemval") is not None else ""
+    norm_ordlineref  = str(payload.get("ordlineref", "")).strip() if payload.get("ordlineref") is not None else ""
+    norm_orgcntry    = str(payload.get("orgcntry", "")).strip().upper() if payload.get("orgcntry") is not None else ""
+    norm_prdsino     = str(payload.get("prdsino", "")).strip() if payload.get("prdsino") is not None else ""
+    norm_batchname   = str(payload.get("batchname", "")).strip() if payload.get("batchname") is not None else ""
+    norm_batchexpirydt = str(payload.get("batchexpirydt", "")).strip() if payload.get("batchexpirydt") is not None else ""
+    norm_batchwarrantydt = str(payload.get("batchwarrantydt", "")).strip() if payload.get("batchwarrantydt") is not None else ""
+    norm_ttlassval   = str(payload.get("ttlassval", "")).strip() if payload.get("ttlassval") is not None else ""
+    norm_cgstval     = str(payload.get("cgstval", "")).strip() if payload.get("cgstval") is not None else ""
+    norm_sgstval     = str(payload.get("sgstval", "")).strip() if payload.get("sgstval") is not None else ""
+    norm_igstval     = str(payload.get("igstval", "")).strip() if payload.get("igstval") is not None else ""
+    norm_cesval      = str(payload.get("cesval", "")).strip() if payload.get("cesval") is not None else ""
+    norm_stcesval    = str(payload.get("stcesval", "")).strip() if payload.get("stcesval") is not None else ""
+    norm_cesnonadval = str(payload.get("cesnonadval", "")).strip() if payload.get("cesnonadval") is not None else ""
+    norm_discval     = str(payload.get("discval", "")).strip() if payload.get("discval") is not None else ""
+    norm_othchrgval  = str(payload.get("othchrgval", "")).strip() if payload.get("othchrgval") is not None else ""
+    norm_rndoffamt   = str(payload.get("rndoffamt", "")).strip() if payload.get("rndoffamt") is not None else ""
+    norm_totinvval   = str(payload.get("totinvval", "")).strip() if payload.get("totinvval") is not None else ""
+    norm_payee_name  = str(payload.get("payee_name", "")).strip() if payload.get("payee_name") is not None else ""
+    norm_pmtmode     = str(payload.get("pmtmode", "")).strip().upper() if payload.get("pmtmode") is not None else ""
+    norm_fininsbr    = str(payload.get("fininsbr", "")).strip().upper() if payload.get("fininsbr") is not None else ""
+    norm_payterm     = str(payload.get("payterm", "")).strip() if payload.get("payterm") is not None else ""
+    norm_payinstr    = str(payload.get("payinstr", "")).strip() if payload.get("payinstr") is not None else ""
+    norm_crtrn       = str(payload.get("crtrn", "")).strip() if payload.get("crtrn") is not None else ""
+    norm_dirdr       = str(payload.get("dirdr", "")).strip() if payload.get("dirdr") is not None else ""
+    norm_crday       = str(payload.get("crday", "")).strip() if payload.get("crday") is not None else ""
+    norm_paidamt     = str(payload.get("paidamt", "")).strip() if payload.get("paidamt") is not None else ""
+    norm_balamt = str(payload.get("balamt", "")).strip() if payload.get("balamt") is not None else ""
+    norm_payduedt = str(payload.get("payduedt", "")).strip().replace("/", "-") if payload.get("payduedt") is not None else ""
+    norm_acctdet = str(payload.get("acctdet", "")).strip() if payload.get("acctdet") is not None else ""
+    norm_bnknm = str(payload.get("bnknm", "")).strip() if payload.get("bnknm") is not None else ""
+    norm_brnchnm = str(payload.get("brnchnm", "")).strip() if payload.get("brnchnm") is not None else ""
+    norm_invrmk = str(payload.get("invrmk", "")).strip() if payload.get("invrmk") is not None else ""
+    norm_invstdt = str(payload.get("invstdt", "")).strip().replace("/", "-") if payload.get("invstdt") is not None else ""
+    norm_invenddt = str(payload.get("invenddt", "")).strip().replace("/", "-") if payload.get("invenddt") is not None else ""
+    norm_othrefno = str(payload.get("othrefno", "")).strip() if payload.get("othrefno") is not None else ""
+    norm_recadvref = str(payload.get("recadvref", "")).strip() if payload.get("recadvref") is not None else ""
+    norm_recadvdt = str(payload.get("recadvdt", "")).strip().replace("/", "-") if payload.get("recadvdt") is not None else ""
+    norm_tendref = str(payload.get("tendref", "")).strip() if payload.get("tendref") is not None else ""
+    norm_contrref = str(payload.get("contrref", "")).strip() if payload.get("contrref") is not None else ""
+    norm_extref = str(payload.get("extref", "")).strip() if payload.get("extref") is not None else ""
+    norm_projref = str(payload.get("projref", "")).strip() if payload.get("projref") is not None else ""
+    raw_porefdt = payload.get("porefdt", "")
+    norm_porefdt = ""
+    norm_poref = str(payload.get("poref", "")).strip() if payload.get("poref") is not None else ""
+    norm_ewayreq = str(payload.get("ewayreq", "")).strip().upper()
+    norm_subsupplytype = str(payload.get("subsupplytype", "")).strip() if payload.get("subsupplytype") is not None else ""
+    norm_mode_of_transport = str(payload.get("mode_of_transport", "")).strip() if payload.get("mode_of_transport") is not None else ""
+    norm_distance_str = str(raw_dist).strip() if raw_dist is not None else ""
+    norm_distance = norm_distance_str
+    norm_distance_val = None
+    try:
+        if raw_dist is not None and str(raw_dist).strip() != "":
+            norm_distance_val = int(raw_dist)
+    except (ValueError, TypeError):
+        errors.append(f"Invalid distance_of_transport:'{raw_dist}'.Must be a number")
+    norm_transporter_id = str(payload.get("transporter_id", "")).strip().upper()
+    norm_transporter_name = str(payload.get("transporter_name", "")).strip() if payload.get("transporter_name") is not None else ""
+    norm_transport_doc_no = str(payload.get("transport_doc_no", "")).strip().upper()
+    norm_trans_doc_dt = str(payload.get("transporter_doc_date", "")).strip().replace("/", "-") if payload.get("transporter_doc_date") is not None else ""
+    norm_veh_type = str(payload.get("veh_type", "")).strip().upper()
+    raw_veh = str(payload.get("veh_number", "")).strip().upper()
+    norm_veh_number = raw_veh.replace(" ", "").replace("-", "")
+    norm_brand_name = str(payload.get("brand_name", "")).strip() if payload.get("brand_name") is not None else ""
+    norm_client_name = str(payload.get("client_name", "")).strip() if payload.get("client_name") is not None else ""
+    norm_vendor_id = str(payload.get("vendor_id", "")).strip() if payload.get("vendor_id") is not None else ""
+    norm_period = str(payload.get("period", "")).strip() if payload.get("period") is not None else ""
+    norm_upiid = str(payload.get("upiid", "")).strip().lower() if payload.get("upiid") is not None else ""
+    norm_upipayeename = str(payload.get("upipayeename", "")).strip() if payload.get("upipayeename") is not None else ""
+    norm_upiacct = str(payload.get("upiacctnumber", "")).strip() if payload.get("upiacctnumber") is not None else ""
+    norm_upi_ifsc = str(payload.get("upiactifsccd", "")).strip().upper() if payload.get("upiactifsccd") is not None else ""
+    mandatory_fields = [
+        "self_gstin", "system_cd", "branch_cd", "vertical_cd", 
+        "irnreq", "irn", "trancatg", "reversecharge", "transactionmode",
+        "ecom_gstin", "igst_on_intra", "expcat", "wthpay", "shipbno", 
+        "shipbdt", "port", "invforcur", "forcur", "refclm", "cntcode", "expduty", "document_type", "docno", "docdt", "orginvno",
+        "orginvdt", "supplier_gstin", "supplier_lglnm", "supplier_trdnm", "supplier_bno", "supplier_bnm", "supplier_flno",
+        "supplier_loc", "supplier_dst", "supplier_pin", "supplier_state", 
+        "supplier_phone", "supplier_email", "cust_cd", "buyer_gstin", "buyer_lglnm", "buyer_trdnm", "buyer_bno", "buyer_bnm",
+        "buyer_flno", "buyer_loc", "buyer_dst", "buyer_pin", "buyer_state", "pos", "buyer_phone", "buyer_email", "disp_gstin",
+        "disp_trdnm", "disp_bno", "disp_bnm", "disp_flno", "disp_loc", "disp_dst", "disp_pin", "disp_state", "disp_phone", "disp_email",
+        "ship_gstin", "ship_lglnm", "ship_trdnm", "ship_bno", "ship_bnm", "ship_flno", "ship_loc", "ship_dst", "ship_pin", "ship_state",
+        "ship_phone", "ship_email", "frmdt", "todt", "itemcd", "prdnm", "prddesc", "isservc", "hsncd", "barcde", "qty", "freeqty", "uqc",
+        "unitrate", "grossamt", "discount", "othchrg", "pretaxval", "assamt", "taxability", "diffpercent", "cgstrt", "cgstamt", "sgstrt",
+        "sgstamt", "igstrt", "igstamt", "cessrt", "cessamt", "cessnonadval", "statecessrt", "statecessamt", "statecesnonadvlamt", "totitemval",
+        "ordlineref", "orgcntry", "prdsino", "batchname", "batchexpirydt", "batchwarrantydt", "ttlassval", "cgstval", "sgstval",
+        "igstval", "cesval", "stcesval", "cesnonadval", "discval", "othchrgval", "rndoffamt", "totinvval", "payee_name", "pmtmode", "fininsbr",
+        "payterm", "payinstr", "crtrn", "dirdr", "crday", "paidamt", "balamt", "payduedt", "acctdet", "bnknm", "brnchnm", "invrmk", "invstdt",
+        "invenddt", "othrefno", "recadvref", "recadvdt", "tendref", "contrref", "extref", "projref", "porefdt", "poref", "ewayreq", "subsupplytype",
+        "mode_of_transport", "distance_of_transport", "transporter_id", "transporter_name", "transport_doc_no", "transporter_doc_date", "veh_type",
+        "veh_number", "brand_name", "client_name", "vendor_id", "period", "upiid", "upipayeename", "upiacctnumber", "upiactifsccd"
+    ]
+    
+    missing = [f for f in mandatory_fields if f not in payload]
+    if missing:
+        errors.append(f"Mandatory field key(s) missing: {', '.join(missing)}")
+    if not norm_gstin:
+        errors.append("self_gstin cannot be blank or null")
+    elif len(norm_gstin) != 15:
+        errors.append(f"Invalid self_gstin length ({len(norm_gstin)})")
+    elif not norm_gstin[:2].isdigit():
+        errors.append("self_gstin state code must be numeric")
+    if not norm_trancatg:
+        errors.append("Transaction Category (trancatg) cannot be blank")
+    elif norm_trancatg not in allowed_trancatg:
+        errors.append(f"Invalid trancatg. Must be one of {allowed_trancatg}")
+    if norm_refclm and norm_refclm not in ["Y", "N"]:
+        errors.append(f"Invalid refclm value '{norm_refclm}'. Must be 'Y' or 'N'")
+    if norm_trancatg == "EXP":
+        if not norm_cntcode:
+            errors.append("cntcode is mandatory when trancatg is 'EXP'")
+        elif len(norm_cntcode) != 2:
+            errors.append(f"Invalid cntcode length. Got: '{norm_cntcode}' (Expected 2)")
+        if not norm_forcur:
+            errors.append("forcur is mandatory when trancatg is 'EXP'")
+        if norm_cntcode and norm_forcur:
+            expected_currency = COUNTRY_CURRENCY_MAP.get(norm_cntcode)
+            if not expected_currency:
+                errors.append(f"Country code '{norm_cntcode}' is not recognized in our system.")
+            elif norm_forcur != expected_currency:
+                errors.append(f"Mismatch: Country '{norm_cntcode}' uses '{expected_currency}', but found '{norm_forcur}'")
+        if not norm_expcat:
+            errors.append("expcat is mandatory when trancatg is 'EXP'")
+        elif norm_expcat not in allowed_expcat:
+            errors.append(f"Invalid expcat '{norm_expcat}'. Must be {allowed_expcat}")
+        if not norm_wthpay:
+            errors.append("wthpay is mandatory when trancatg is 'EXP'")
+        elif norm_wthpay not in ["Y", "N"]:
+            errors.append(f"Invalid wthpay '{norm_wthpay}'. Must be 'Y' or 'N'")
+    else:
+        forbidden_fields = {"expcat": norm_expcat, "wthpay": norm_wthpay, "forcur": norm_forcur, "cntcode": norm_cntcode}
+        for field_name, value in forbidden_fields.items():
+            if value != "":
+                errors.append(f"{field_name} must be empty when trancatg is '{norm_trancatg}'")
+    if norm_shipbno and not (7 <= len(norm_shipbno) <= 20):
+        errors.append(f"shipbno must be 7-20 chars. Current: {len(norm_shipbno)}")
+    if norm_shipbdt and not re.match(date_pattern, norm_shipbdt):
+        errors.append(f"Invalid shipbdt format '{norm_shipbdt}'. Expected DD/MM/YYYY")
+    if norm_port:
+        if not (6 <= len(norm_port) <= 10):
+            errors.append(f"port code must be 6-10 chars. Current: {len(norm_port)}")
+        elif not re.match(port_pattern, norm_port):
+            errors.append(f"Invalid port code format '{norm_port}'.")
+    if norm_invforcur:
+        try:
+            val = float(norm_invforcur)
+            if val < 0: 
+                errors.append("invforcur cannot be negative")
+            if "." in norm_invforcur:
+                parts = norm_invforcur.split(".")
+                if len(parts[0]) > 14 or len(parts[1]) > 2:
+                    errors.append("invforcur exceeds max precision (14.2)")
+            elif len(norm_invforcur) > 14:
+                errors.append("invforcur exceeds max length of 14 digits")
+        except ValueError:
+            errors.append(f"invforcur must be numeric. Got: '{norm_invforcur}'")
+    if norm_irnreq not in ["Y", "N"]: errors.append("IRNREQ must be 'Y' or 'N'")
+    if norm_revcharge not in ["Y", "N"]: errors.append("Reverse Charge must be 'Y' or 'N'")
+    if norm_transmode not in allowed_transmode:
+        errors.append(f"Invalid transactionmode. Must be one of {allowed_transmode}")
+    if norm_expduty != "":
+        try:
+            val = float(norm_expduty)
+            if val < 0:
+                errors.append("expduty cannot be negative")
+            if "." in norm_expduty:
+                parts = norm_expduty.split(".")
+                if len(parts[0]) > 14 or len(parts[1]) > 2:
+                    errors.append("expduty exceeds max precision (14.2)")
+            elif len(norm_expduty) > 14:
+                errors.append("expduty exceeds max length of 14 digits")
+        except ValueError:
+            errors.append(f"expduty must be numeric. Got:'{norm_expduty}'")
+    if not norm_doc_type:
+        errors.append("document_type is mandatory and cannot be blank")
+    elif norm_doc_type not in allowed_doc_types:
+        errors.append(f"Invalid document_type'{norm_doc_type}'.Must be one of {allowed_doc_types}")
+    if not norm_docno:
+        errors.append("docno is mandatory and cannot be blank (or contained only invalid characters)")
+    elif len(norm_docno) > 16:
+        errors.append(f"docno exceeds max length of 16. Current length: {len(norm_docno)}")
+    if not raw_docdt:
+        errors.append("docdt is mandatory and cannot be blank")
+    else:
+        for fmt in ("%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d", "%m/%d/%Y", "%d.%m.%Y", "%d-%m-%y", "%d/%m/%y"):
+            try:
+                norm_docdt = datetime.strptime(raw_docdt, fmt).strftime(target_format)
+                break
+            except ValueError:
+                continue
+        if not norm_docdt:
+            errors.append(f"Invalid docdt format'{raw_docdt}'. Expected date normalized to DD-MM-YYYY")
+    if norm_orginvno and len(norm_orginvno) > 16:
+        errors.append(f"orginvno exceeds max length of 16. Current length:{len(norm_orginvno)}")
+    if norm_orginvdt:
+        if not re.match(date_pattern, norm_orginvdt):
+            errors.append(f"Invalid orginvdt format '{norm_orginvdt}'.Expected DD/MM/YYYY")
+    if not norm_sup_gstin:
+        errors.append("supplier_gstin cannot be blank or null")
+    elif len(norm_sup_gstin) != 15:
+        errors.append(f"Invalid supplier_gstin length ({len(norm_sup_gstin)})")
+    elif not norm_sup_gstin[:2].isdigit():
+        errors.append("supplier_gstin state code must be numeric")
+    if not norm_sup_lglnm:
+        errors.append("supplier_lglnm is mandatory and cannot be blank")
+    else:
+        name_len = len(norm_sup_lglnm)
+        if name_len < 3 or name_len > 100:
+            errors.append(f"supplier_lglnm length must be 3-100 characters. Current: {name_len}")
+    if norm_sup_trdnm:
+        trd_len = len(norm_sup_trdnm)
+        if trd_len < 3 or trd_len > 100:
+            errors.append(f"supplier_trdnm length must be 3-100 characters. Current: {trd_len}")
+    if norm_sup_bno and len(norm_sup_bno) > 60:
+        errors.append(f"supplier_bno exceeds max length of 60. Current: {len(norm_sup_bno)}")
+    if not norm_sup_bnm:
+        errors.append("supplier_bnm is mandatory and cannot be blank")
+    elif not (3 <= len(norm_sup_bnm) <= 100):
+        errors.append(f"supplier_bnm length must be 3-100 characters. Current: {len(norm_sup_bnm)}")
+    if norm_sup_flno:
+        if not (3 <= len(norm_sup_flno) <= 100):
+            errors.append(f"supplier_flno length must be 3-100 characters. Current: {len(norm_sup_flno)}")
+    if not norm_sup_loc:
+        errors.append("supplier_loc is mandatory")
+    elif not (3 <= len(norm_sup_loc) <= 50):
+        errors.append(f"supplier_loc length must be 3-50. Current: {len(norm_sup_loc)}")
+    if norm_sup_dst and len(norm_sup_dst) > 60:
+        errors.append(f"supplier_dst exceeds max length of 60")
+    if not norm_sup_pin:
+        errors.append("supplier_pin is mandatory")
+    elif len(norm_sup_pin) != 6:
+        errors.append(f"supplier_pin must be exactly 6 digits. Got: {len(norm_sup_pin)}")
+    if not norm_sup_state:
+        errors.append("supplier_state is mandatory")
+    elif len(norm_sup_state) != 2:
+        errors.append(f"supplier_state must be exactly 2 digits (e.g., '12'). Got: {len(norm_sup_state)}")
+    if norm_sup_phone and len(norm_sup_phone) != 10:
+        errors.append(f"supplier_phone must be 10 digits. Got: {len(norm_sup_phone)}")
+    if norm_sup_email:
+        if not (10 <= len(norm_sup_email) <= 50):
+            errors.append(f"supplier_email length must be 10-50. Current: {len(norm_sup_email)}")
+        if "@" not in norm_sup_email or "." not in norm_sup_email:
+            errors.append("Invalid email format for supplier_email")
+    if norm_cust_cd and len(norm_cust_cd) > 30:
+        errors.append(f"cust_cd exceeds max length of 30")
+    if not norm_buy_gstin:
+        errors.append("buyer_gstin is mandatory and cannot be blank")
+    else:
+        if not (3 <= len(norm_buy_gstin) <= 15):
+            errors.append(f"buyer_gstin length must be 3-15 chars. Got: {len(norm_buy_gstin)}")
+        if norm_buy_gstin != "URP":
+            if not re.match(buyer_gstin_pattern, norm_buy_gstin):
+                errors.append(f"Invalid buyer_gstin format '{norm_buy_gstin}'. Must be 15-digit GSTIN or 'URP'")
+        if norm_trancatg in ["EXP", "B2C"] and norm_buy_gstin != "URP":
+            pass 
+        elif norm_trancatg in ["B2B", "B2G"] and norm_buy_gstin == "URP":
+            errors.append(f"buyer_gstin cannot be 'URP' for transaction category '{norm_trancatg}'")
+    if not norm_buy_lglnm:
+        errors.append("buyer_lglnm is mandatory and cannot be blank")
+    else:
+        buy_name_len = len(norm_buy_lglnm)
+        if buy_name_len < 3 or buy_name_len > 100:
+            errors.append(f"buyer_lglnm length must be 3-100 characters. Current: {buy_name_len}")
+    if norm_buy_trdnm:
+        buy_trd_len = len(norm_buy_trdnm)
+        if buy_trd_len < 3 or buy_trd_len > 100:
+            errors.append(f"buyer_trdnm length must be 3-100 characters. Current: {buy_trd_len}")
+    if norm_buy_bno and len(norm_buy_bno) > 60:
+        errors.append(f"buyer_bno exceeds max length of 60. Current: {len(norm_buy_bno)}")
+    if not norm_buy_bnm:
+        errors.append("buyer_bnm is mandatory and cannot be blank")
+    elif not (3 <= len(norm_buy_bnm) <= 100):
+        errors.append(f"buyer_bnm length must be 3-100 characters. Current: {len(norm_buy_bnm)}")
+    if norm_buy_flno: 
+        buy_flno_len = len(norm_buy_flno)
+        if buy_flno_len < 3 or buy_flno_len > 100:
+            errors.append(f"buyer_flno length must be 3-100 characters. Current: {buy_flno_len}")
+    if not norm_buy_loc:
+        errors.append("buyer_loc is mandatory")
+    elif not (3 <= len(norm_buy_loc) <= 100):
+        errors.append(f"buyer_loc length must be 3-100. Current: {len(norm_buy_loc)}")
+    if norm_buy_dst and len(norm_buy_dst) > 60:
+        errors.append(f"buyer_dst exceeds max length of 60")
+    if not norm_buy_pin:
+        errors.append("buyer_pin is mandatory")
+    elif len(norm_buy_pin) != 6:
+        errors.append(f"buyer_pin must be 6 digits. Got: {len(norm_buy_pin)}")
+    if not norm_buy_state:
+        errors.append("buyer_state is mandatory")
+    elif len(norm_buy_state) != 2:
+        errors.append(f"buyer_state must be 2 digits. Got: {len(norm_buy_state)}")
+    if norm_pos and len(norm_pos) == 1:
+        norm_pos = norm_pos.zfill(2)
+    if norm_trancatg == "EXP":
+        norm_pos = "96"
+    elif not norm_pos:
+        if norm_buy_gstin and norm_buy_gstin != "URP" and len(norm_buy_gstin) >= 2:
+            norm_pos = norm_buy_gstin[:2]
+    if norm_trancatg == "B2C" and not norm_pos:
+        errors.append("pos is mandatory for B2C transactions (no value provided and no buyer_gstin available for fallback)")
+    if norm_pos:
+        if len(norm_pos) != 2:
+            errors.append(f"pos must be exactly 2 digits. Got: '{norm_pos}' (Length: {len(norm_pos)})")
+        if not norm_pos.isdigit():
+            errors.append(f"pos must be a numeric state code. Got: '{norm_pos}'")
+    if norm_buy_phone == "":
+        pass 
+    elif len(norm_buy_phone) != 10:
+        errors.append(f"buyer_phone must be exactly 10 digits. Got: {len(norm_buy_phone)}")
+    if norm_buy_email:
+        email_len = len(norm_buy_email)
+        if not (10 <= email_len <= 50):
+            errors.append(f"buyer_email length must be 10-50 characters. Current: {email_len}")
+        if "@" not in norm_buy_email or "." not in norm_buy_email:
+            errors.append(f"Invalid email format for buyer_email: '{norm_buy_email}'")
+    if norm_disp_gstin:
+        if norm_disp_gstin == "URP":
+            pass 
+        else:
+            if not (3 <= len(norm_disp_gstin) <= 15):
+                errors.append(f"disp_gstin length must be 3-15 chars. Got: {len(norm_disp_gstin)}")
+            elif not re.match(gstin_pattern, norm_disp_gstin):
+                errors.append(f"Invalid disp_gstin format '{norm_disp_gstin}'. Must be 15-digit GSTIN or 'URP'")
+            elif not norm_disp_gstin[:2].isdigit():
+                errors.append("disp_gstin state code (first 2 digits) must be numeric")
+    if norm_transmode in ["DIS", "CMB"]:
+        if not norm_disp_trdnm:
+            errors.append(f"disp_trdnm is mandatory when transactionmode is '{norm_transmode}'")
+        else:
+            trd_len = len(norm_disp_trdnm)
+            if trd_len < 3 or trd_len > 100:
+                errors.append(f"disp_trdnm length must be 3-100 characters. Current: {trd_len}")
+    if norm_disp_bno:
+        if len(norm_disp_bno) > 60:
+            errors.append(f"disp_bno exceeds max length of 60. Current: {len(norm_disp_bno)}")
+    if norm_transmode in ["DIS", "CMB"]:
+        if not norm_disp_bnm:
+            errors.append(f"disp_bnm is mandatory when transactionmode is '{norm_transmode}'")
+        else:
+            bnm_len = len(norm_disp_bnm)
+            if bnm_len < 3 or bnm_len > 100:
+                errors.append(f"disp_bnm length must be 3-100 characters. Current: {bnm_len}")
+    if norm_disp_flno:
+        flno_len = len(norm_disp_flno)
+        if flno_len < 3 or flno_len > 100:
+            errors.append(f"disp_flno length must be 3-100 characters. Current: {flno_len}")
+    if norm_transmode in ["DIS", "CMB"]:
+        if not norm_disp_loc:
+            errors.append(f"disp_loc is mandatory when transactionmode is '{norm_transmode}'")
+        else:
+            loc_len = len(norm_disp_loc)
+            if loc_len < 3 or loc_len > 100:
+                errors.append(f"disp_loc length must be 3-100 characters. Current: {loc_len}")
+    if norm_disp_dst and len(norm_disp_dst) > 60:
+        errors.append(f"disp_dst exceeds max length of 60 characters. Current: {len(norm_disp_dst)}")
+    if norm_transmode in ["DIS", "CMB"]:
+        if not norm_disp_pin:
+            errors.append(f"disp_pin is mandatory when transactionmode is '{norm_transmode}'")
+        elif len(norm_disp_pin) != 6:
+            errors.append(f"disp_pin must be exactly 6 digits. Got: {len(norm_disp_pin)}")
+    else:
+        if norm_disp_pin and len(norm_disp_pin) != 6:
+            errors.append(f"Invalid disp_pin format; must be 6 digits.")
+    if len(norm_disp_state) == 1:
+        norm_disp_state = norm_disp_state.zfill(2)
+    if norm_transmode in ["DIS", "CMB"]:
+        if not norm_disp_state:
+            errors.append(f"disp_state is mandatory when transactionmode is '{norm_transmode}'")
+        elif len(norm_disp_state) != 2:
+            errors.append(f"disp_state must be exactly 2 digits. Got: {len(norm_disp_state)}")
+    else:
+        if norm_disp_state and len(norm_disp_state) != 2:
+            errors.append(f"Invalid disp_state format; must be 2 digits.")
+    if norm_disp_phone != "":
+        if len(norm_disp_phone) != 10:
+            errors.append(f"disp_phone must be exactly 10 digits. Got: {len(norm_disp_phone)}")
+    if norm_disp_email:
+        email_len = len(norm_disp_email)
+        if not (10 <= email_len <= 50):
+            errors.append(f"disp_email length must be 10-50 characters. Current: {email_len}")
+        if "@" not in norm_disp_email or "." not in norm_disp_email.split("@")[-1]:
+            errors.append(f"Invalid email format for disp_email: '{norm_disp_email}'")
+    if norm_ship_gstin:
+        ship_len = len(norm_ship_gstin)
+        if ship_len < 3 or ship_len > 15:
+            errors.append(f"ship_gstin length must be 3-15 chars. Got: {ship_len}")
+        if not re.match(ship_gstin_pattern, norm_ship_gstin):
+            errors.append(f"Invalid ship_gstin format '{norm_ship_gstin}'. Must be 15-digit GSTIN or 'URP'")
+    if norm_transmode in ["SHP", "CMB"]:
+        if not norm_ship_lglnm:
+            errors.append(f"ship_lglnm is mandatory when transactionmode is '{norm_transmode}'")
+        else:
+            ship_name_len = len(norm_ship_lglnm)
+            if ship_name_len < 3 or ship_name_len > 100:
+                errors.append(f"ship_lglnm length must be 3-100 characters. Current: {ship_name_len}")
+    else:
+        pass
+    if norm_ship_trdnm:
+        ship_trd_len = len(norm_ship_trdnm)
+        if ship_trd_len < 3 or ship_trd_len > 100:
+            errors.append(f"ship_trdnm length must be 3-100 characters. Current: {ship_trd_len}")
+    if norm_ship_bno and len(norm_ship_bno) > 60:
+        errors.append(f"ship_bno exceeds max length of 60 characters. Current: {len(norm_ship_bno)}")
+    if norm_transmode in ["SHP", "CMB"] and not norm_ship_bno:
+        pass
+    
+    if norm_transmode in ["SHP", "CMB"]:
+        if not norm_ship_bnm:
+            errors.append(f"ship_bnm is mandatory when transactionmode is '{norm_transmode}'")
+        else:
+            bnm_len = len(norm_ship_bnm)
+            if bnm_len < 3 or bnm_len > 100:
+                errors.append(f"ship_bnm length must be 3-100 characters. Current: {bnm_len}")
+    if norm_ship_flno:
+        flno_len = len(norm_ship_flno)
+        if flno_len < 3 or flno_len > 100:
+            errors.append(f"ship_flno length must be 3-100 characters. Current: {flno_len}")
+    if norm_transmode in ["SHP", "CMB"]:
+        if not norm_ship_loc:
+            errors.append(f"ship_loc is mandatory when transactionmode is '{norm_transmode}'")
+        else:
+            loc_len = len(norm_ship_loc)
+            if loc_len < 3 or loc_len > 100:
+                errors.append(f"ship_loc length must be 3-100 characters. Current: {loc_len}")
+    elif norm_ship_loc:
+        loc_len = len(norm_ship_loc)
+        if loc_len < 3 or loc_len > 100:
+            errors.append(f"ship_loc length must be 3-100 characters. Current: {loc_len}")
+    if norm_ship_dst:
+        if len(norm_ship_dst) > 60:
+            errors.append(f"ship_dst exceeds max length of 60 characters. Current: {len(norm_ship_dst)}")
+
+    if norm_transmode in ["SHP", "CMB"] and not norm_ship_dst:
+        errors.append(f"ship_dst is recommended/mandatory when transactionmode is '{norm_transmode}'")
+    if norm_transmode in ["SHP", "CMB"]:
+        if not norm_ship_pin:
+            errors.append(f"ship_pin is mandatory when transactionmode is '{norm_transmode}'")
+        elif len(norm_ship_pin) != 6:
+            errors.append(f"ship_pin must be exactly 6 digits. Got: {len(norm_ship_pin)}")
+    else:
+        if norm_ship_pin and len(norm_ship_pin) != 6:
+            errors.append(f"Invalid ship_pin format; must be 6 digits.")
+    if norm_transmode in ["SHP", "CMB"]:
+        if not norm_ship_state:
+            errors.append(f"ship_state is mandatory when transactionmode is '{norm_transmode}'")
+        elif len(norm_ship_state) != 2:
+            errors.append(f"ship_state must be exactly 2 digits. Got: '{norm_ship_state}'")
+    else:
+        if norm_ship_state and len(norm_ship_state) != 2:
+            errors.append(f"Invalid ship_state format; must be 2 digits.")
+    if norm_ship_phone != "":
+        if len(norm_ship_phone) != 10:
+            errors.append(f"ship_phone must be exactly 10 digits. Got: {len(norm_ship_phone)}")
+    if norm_ship_email:
+        ship_email_len = len(norm_ship_email)
+        if not (10 <= ship_email_len <= 50):
+            errors.append(f"ship_email length must be 10-50 characters. Current: {ship_email_len}")
+    
+        if "@" not in norm_ship_email or "." not in norm_ship_email.split("@")[-1]:
+            errors.append(f"Invalid email format for ship_email: '{norm_ship_email}'")
+    if norm_frmdt:
+        if not re.match(date_pattern_dash, norm_frmdt):
+            errors.append(f"Invalid frmdt format '{norm_frmdt}'. Expected DD-MM-YYYY")
+    if norm_todt:
+        if not re.match(date_pattern_dash, norm_todt):
+            errors.append(f"Invalid todt format '{norm_todt}'. Expected DD-MM-YYYY")
+    if norm_itemcd:
+        if len(norm_itemcd) > 100:
+            errors.append(f"itemcd exceeds max length of 100 characters. Current: {len(norm_itemcd)}")
+    if not norm_prdnm:
+        errors.append("prdnm (Product Name) is mandatory and cannot be blank")
+    else:
+        prd_len = len(norm_prdnm)
+        if prd_len < 3 or prd_len > 300:
+            errors.append(f"prdnm length must be 3-300 characters. Current: {prd_len}")
+    if norm_prddesc:
+        desc_len = len(norm_prddesc)
+        if desc_len < 3 or desc_len > 300:
+            errors.append(f"prddesc length must be 3-300 characters. Current: {desc_len}")
+    if not norm_isservc:
+        errors.append("isservc (Service indicator) is mandatory and cannot be blank")
+    elif norm_isservc not in ["Y", "N"]:
+        errors.append(f"Invalid isservc value '{norm_isservc}'. Must be 'Y' (Service) or 'N' (Goods)")
+    if not norm_hsncd:
+        errors.append("hsncd (HSN/SAC Code) is mandatory and cannot be blank")
+    else:
+        hsn_len = len(norm_hsncd)
+        if hsn_len < 2 or hsn_len > 8:
+            errors.append(f"hsncd length must be between 2 and 8 digits. Got: {hsn_len}")
+        if hsn_len % 2 != 0 and hsn_len != 1: 
+            pass
+    if norm_barcde:
+        bar_len = len(norm_barcde)
+        if bar_len < 1 or bar_len > 30:
+            errors.append(f"barcde length must be between 1 and 30 characters. Current: {bar_len}")
+    
+    if norm_isservc == "N" and not norm_qty:
+        errors.append("qty is mandatory when the item is Goods (isservc = 'N')")
+    elif norm_qty:
+        try:
+            qty_val = float(norm_qty)
+            if qty_val < 0:
+                errors.append("qty cannot be negative")
+            if "." in norm_qty:
+                parts = norm_qty.split(".")
+                if len(parts[0]) > 8: # 11 total - 3 decimal = 8 integer digits
+                    errors.append(f"qty integer part exceeds 8 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 3:
+                    errors.append(f"qty decimal part exceeds 3 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_qty) > 8:
+                    errors.append(f"qty exceeds max length of 8 digits for integer value.")
+        except ValueError:
+            errors.append(f"qty must be a numeric decimal. Got: '{norm_qty}'")
+    if norm_freeqty:
+        try:
+            fq_val = float(norm_freeqty)
+            if fq_val < 0:
+                errors.append("freeqty cannot be negative")
+            if "." in norm_freeqty:
+                parts = norm_freeqty.split(".")
+                if len(parts[0]) > 9:
+                    errors.append(f"freeqty integer part exceeds 9 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 3:
+                    errors.append(f"freeqty decimal part exceeds 3 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_freeqty) > 9:
+                    errors.append(f"freeqty integer exceeds max length of 9 digits.")
+        except ValueError:
+            errors.append(f"freeqty must be a numeric value. Got: '{norm_freeqty}'")
+    if norm_isservc == "N" and not norm_uqc:
+        errors.append("uqc is mandatory when the item is Goods (isservc = 'N')")
+    elif norm_uqc:
+        if len(norm_uqc) > 3:
+            errors.append(f"uqc exceeds max length of 3 characters. Got: '{norm_uqc}'")
+        elif norm_uqc not in ALLOWED_UQC:
+            errors.append(f"Invalid uqc code '{norm_uqc}'. Must be a valid code from UQC Master (e.g., BAG, PCS, NOS)")
+    if not norm_unitrate:
+        errors.append("unitrate (Per Unit Rate) is mandatory and cannot be blank")
+    else:
+        try:
+            ur_val = float(norm_unitrate)
+            if ur_val < 0:
+                errors.append("unitrate cannot be negative")
+            if "." in norm_unitrate:
+                parts = norm_unitrate.split(".")
+                if len(parts[0]) > 13:
+                    errors.append(f"unitrate integer part exceeds 13 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 3:
+                    errors.append(f"unitrate decimal part exceeds 3 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_unitrate) > 13:
+                    errors.append(f"unitrate integer exceeds max length of 13 digits.")
+        except ValueError:
+            errors.append(f"unitrate must be a numeric decimal. Got: '{norm_unitrate}'")
+    if not norm_grossamt:
+        errors.append("grossamt (Total Amount) is mandatory and cannot be blank")
+    else:
+        try:
+            gross_val = float(norm_grossamt)
+            if gross_val < 0:
+                errors.append("grossamt cannot be negative")
+            if "." in norm_grossamt:
+                parts = norm_grossamt.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"grossamt integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"grossamt decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_grossamt) > 15:
+                    errors.append(f"grossamt integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"grossamt must be a numeric decimal. Got: '{norm_grossamt}'")
+    if norm_discount:
+        try:
+            disc_val = float(norm_discount)
+            if disc_val < 0:
+                errors.append("discount cannot be negative")
+            if "." in norm_discount:
+                parts = norm_discount.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"discount integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"discount decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_discount) > 15:
+                    errors.append(f"discount integer exceeds max length of 15 digits.")
+                
+        except ValueError:
+            errors.append(f"discount must be a numeric decimal. Got: '{norm_discount}'")
+    if norm_othchrg:
+        try:
+            oth_val = float(norm_othchrg)
+            if oth_val < 0:
+                errors.append("othchrg (Other Charges) cannot be negative")
+            if "." in norm_othchrg:
+                parts = norm_othchrg.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"othchrg integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"othchrg decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_othchrg) > 15:
+                    errors.append(f"othchrg integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"othchrg must be a numeric decimal. Got: '{norm_othchrg}'")
+    if norm_pretaxval:
+        try:
+            pretax_val = float(norm_pretaxval)
+            if pretax_val < 0:
+                errors.append("pretaxval cannot be negative")
+            if "." in norm_pretaxval:
+                parts = norm_pretaxval.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"pretaxval integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"pretaxval decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_pretaxval) > 15:
+                    errors.append(f"pretaxval integer exceeds max length of 15 digits.")
+                
+        except ValueError:
+            errors.append(f"pretaxval must be a numeric decimal. Got: '{norm_pretaxval}'")
+    if not norm_assamt:
+        errors.append("assamt (Assessable Amount) is mandatory and cannot be blank")
+    else:
+        try:
+            ass_val = float(norm_assamt)
+            if ass_val < 0:
+                errors.append("assamt cannot be negative")
+        
+            if "." in norm_assamt:
+                parts = norm_assamt.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"assamt integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"assamt decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_assamt) > 15:
+                    errors.append(f"assamt integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"assamt must be a numeric decimal. Got: '{norm_assamt}'")
+    if not norm_taxability:
+        errors.append("taxability is mandatory and cannot be blank")
+    elif norm_taxability not in ALLOWED_TAXABILITY:
+        errors.append(f"Invalid taxability code '{norm_taxability}'. Must be one of: {', '.join(ALLOWED_TAXABILITY)}")
+    
+    if norm_diffpercent:
+        try:
+            diff_val = float(norm_diffpercent)
+            if diff_val < 0:
+                errors.append("diffpercent cannot be negative")
+        
+            if "." in norm_diffpercent:
+                parts = norm_diffpercent.split(".")
+                if len(parts[0]) > 3:
+                    errors.append(f"diffpercent integer part exceeds 3 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 3:
+                    errors.append(f"diffpercent decimal part exceeds 3 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_diffpercent) > 3:
+                    errors.append(f"diffpercent integer exceeds max length of 3 digits.")
+                
+        except ValueError:
+            errors.append(f"diffpercent must be a numeric decimal. Got: '{norm_diffpercent}'")
+    if not norm_cgstrt:
+        errors.append("cgstrt (CGST Rate) is mandatory and cannot be blank")
+    else:
+        try:
+            cgst_rate_val = float(norm_cgstrt)
+            if cgst_rate_val < 0:
+                errors.append("cgstrt cannot be negative")
+            if "." in norm_cgstrt:
+                parts = norm_cgstrt.split(".")
+                if len(parts[0]) > 3:
+                    errors.append(f"cgstrt integer part exceeds 3 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 3:
+                    errors.append(f"cgstrt decimal part exceeds 3 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_cgstrt) > 3:
+                    errors.append(f"cgstrt integer exceeds max length of 3 digits.")
+                
+        except ValueError:
+            errors.append(f"cgstrt must be a numeric decimal. Got: '{norm_cgstrt}'")
+    if not norm_cgstamt:
+        errors.append("cgstamt (CGST Amount) is mandatory and cannot be blank")
+    else:
+        try:
+            cgst_amt_val = float(norm_cgstamt)
+            if cgst_amt_val < 0:
+                errors.append("cgstamt cannot be negative")
+            if "." in norm_cgstamt:
+                parts = norm_cgstamt.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"cgstamt integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"cgstamt decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_cgstamt) > 15:
+                    errors.append(f"cgstamt integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"cgstamt must be a numeric decimal. Got: '{norm_cgstamt}'")
+    if not norm_sgstrt:
+        errors.append("sgstrt (SGST Rate) is mandatory and cannot be blank")
+    else:
+        try:
+            sgst_rate_val = float(norm_sgstrt)
+            if sgst_rate_val < 0:
+                errors.append("sgstrt cannot be negative")
+            if "." in norm_sgstrt:
+                parts = norm_sgstrt.split(".")
+                if len(parts[0]) > 3:
+                    errors.append(f"sgstrt integer part exceeds 3 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 3:
+                    errors.append(f"sgstrt decimal part exceeds 3 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_sgstrt) > 3:
+                    errors.append(f"sgstrt integer exceeds max length of 3 digits.")
+        except ValueError:
+            errors.append(f"sgstrt must be a numeric decimal. Got: '{norm_sgstrt}'")
+    if not norm_sgstamt:
+        errors.append("sgstamt (SGST Amount) is mandatory and cannot be blank")
+    else:
+        try:
+            sgst_amt_val = float(norm_sgstamt)
+            if sgst_amt_val < 0:
+                errors.append("sgstamt cannot be negative")
+            if "." in norm_sgstrt:
+                parts = norm_sgstamt.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"sgstamt integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"sgstamt decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_sgstamt) > 15:
+                    errors.append(f"sgstamt integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"sgstamt must be a numeric decimal. Got: '{norm_sgstamt}'")
+    if not norm_igstrt:
+        errors.append("igstrt (IGST Rate) is mandatory and cannot be blank")
+    else:
+        try:
+            igst_rate_val = float(norm_igstrt)
+            if igst_rate_val < 0:
+                errors.append("igstrt cannot be negative")
+            if "." in norm_igstrt:
+                parts = norm_igstrt.split(".")
+                if len(parts[0]) > 3:
+                    errors.append(f"igstrt integer part exceeds 3 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 3:
+                    errors.append(f"igstrt decimal part exceeds 3 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_igstrt) > 3:
+                    errors.append(f"igstrt integer exceeds max length of 3 digits.")
+        except ValueError:
+            errors.append(f"igstrt must be a numeric decimal. Got: '{norm_igstrt}'")
+    if not norm_igstamt:
+        errors.append("igstamt (IGST Amount) is mandatory and cannot be blank")
+    else:
+        try:
+            igst_amt_val = float(norm_igstamt)
+            if igst_amt_val < 0:
+                errors.append("igstamt cannot be negative")
+            if "." in norm_igstamt:
+                parts = norm_igstamt.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"igstamt integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"igstamt decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_igstamt) > 15:
+                    errors.append(f"igstamt integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"igstamt must be a numeric decimal. Got: '{norm_igstamt}'")
+    if not norm_cessrt:
+        errors.append("cessrt (Cess Rate) is mandatory and cannot be blank")
+    else:
+        try:
+            cess_rate_val = float(norm_cessrt)
+            if cess_rate_val < 0:
+                errors.append("cessrt cannot be negative")
+            if "." in norm_cessrt:
+                parts = norm_cessrt.split(".")
+                if len(parts[0]) > 3:
+                    errors.append(f"cessrt integer part exceeds 3 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 3:
+                    errors.append(f"cessrt decimal part exceeds 3 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_cessrt) > 3:
+                    errors.append(f"cessrt integer exceeds max length of 3 digits.")
+                
+        except ValueError:
+            errors.append(f"cessrt must be a numeric decimal. Got: '{norm_cessrt}'")
+    if not norm_cessamt:
+        errors.append("cessamt (Cess Amount) is mandatory and cannot be blank")
+    else:
+        try:
+            cess_amt_val = float(norm_cessamt)
+            if cess_amt_val < 0:
+                errors.append("cessamt cannot be negative")
+            if "." in norm_cessamt:
+                parts = norm_cessamt.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"cessamt integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"cessamt decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_cessamt) > 15:
+                    errors.append(f"cessamt integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"cessamt must be a numeric decimal. Got: '{norm_cessamt}'")
+    if not norm_cessnonadval:
+        errors.append("cessnonadval (Non-Advalorem Cess) is mandatory and cannot be blank")
+    else:
+        try:
+            non_adv_val = float(norm_cessnonadval)
+            if non_adv_val < 0:
+                errors.append("cessnonadval cannot be negative")
+            if "." in norm_cessnonadval:
+                parts = norm_cessnonadval.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"cessnonadval integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"cessnonadval decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_cessnonadval) > 15:
+                    errors.append(f"cessnonadval integer exceeds max length of 15 digits.")
+                
+        except ValueError:
+            errors.append(f"cessnonadval must be a numeric decimal. Got: '{norm_cessnonadval}'")
+    if not norm_statecessrt:
+        errors.append("statecessrt (State Cess Rate) is mandatory and cannot be blank")
+    else:
+        try:
+            st_cess_rate_val = float(norm_statecessrt)
+            if st_cess_rate_val < 0:
+                errors.append("statecessrt cannot be negative")
+            if "." in norm_statecessrt:
+                parts = norm_statecessrt.split(".")
+                if len(parts[0]) > 3:
+                    errors.append(f"statecessrt integer part exceeds 3 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 3:
+                    errors.append(f"statecessrt decimal part exceeds 3 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_statecessrt) > 3:
+                    errors.append(f"statecessrt integer exceeds max length of 3 digits.")
+        except ValueError:
+            errors.append(f"statecessrt must be a numeric decimal. Got: '{norm_statecessrt}'")
+    if not norm_statecessamt:
+        errors.append("statecessamt (State Cess Amount) is mandatory and cannot be blank")
+    else:
+        try:
+            st_cess_amt_val = float(norm_statecessamt)
+            if st_cess_amt_val < 0:
+                errors.append("statecessamt cannot be negative")
+            if "." in norm_statecessamt:
+                parts = norm_statecessamt.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"statecessamt integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"statecessamt decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_statecessamt) > 15:
+                    errors.append(f"statecessamt integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"statecessamt must be a numeric decimal. Got: '{norm_statecessamt}'")
+    if norm_statecesnonadvl:
+        try:
+            st_non_adv_val = float(norm_statecesnonadvl)
+            if st_non_adv_val < 0:
+                errors.append("statecesnonadvlamt cannot be negative")
+            if "." in norm_statecesnonadvl:
+                parts = norm_statecesnonadvl.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"statecesnonadvlamt integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"statecesnonadvlamt decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_statecesnonadvl) > 15:
+                    errors.append(f"statecesnonadvlamt integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"statecesnonadvlamt must be a numeric decimal. Got: '{norm_statecesnonadvl}'")
+    if not norm_totitemval:
+        errors.append("totitemval (Total Item Value) is mandatory and cannot be blank")
+    else:
+        try:
+            tot_val = float(norm_totitemval)
+            if tot_val < 0:
+                errors.append("totitemval cannot be negative")
+            if "." in norm_totitemval:
+                parts = norm_totitemval.split(".")
+                if len(parts[0]) > 15 or len(parts[1]) > 2:
+                    errors.append(f"totitemval precision error. Max 15.2 digits allowed.")
+            elif len(norm_totitemval) > 15:
+                errors.append(f"totitemval integer part exceeds 15 digits.")
+            calculated_total = (
+                float(norm_assamt or 0) + 
+                float(norm_cgstamt or 0) + 
+                float(norm_sgstamt or 0) + 
+                float(norm_igstamt or 0) + 
+                float(norm_cessamt or 0) + 
+                float(norm_statecessamt or 0) + 
+                float(norm_cessnonadval or 0) +
+                float(norm_statecesnonadvl or 0)
+            )
+            if abs(tot_val - calculated_total) > 0.01:
+                errors.append(
+                    f"totitemval ({tot_val}) mismatch. "
+                    f"Sum of components equals: {round(calculated_total, 2)}"
+                )
+
+        except ValueError:
+            errors.append(f"totitemval must be a numeric decimal. Got: '{norm_totitemval}'")
+    
+    if norm_ordlineref:
+        if len(norm_ordlineref) < 1:
+            errors.append("ordlineref cannot be an empty string")
+        if len(norm_ordlineref) > 50:
+            errors.append(f"ordlineref exceeds max length of 50 characters. Got: {len(norm_ordlineref)}")
+    if norm_orgcntry:
+        if len(norm_orgcntry) != 2:
+            errors.append(f"orgcntry must be exactly 2 characters (ISO alpha-2). Got: {len(norm_orgcntry)}")
+        if not norm_orgcntry.isalpha():
+            errors.append(f"orgcntry must contain only letters. Got: '{norm_orgcntry}'")
+    if norm_prdsino:
+        if len(norm_prdsino) < 1:
+            errors.append("prdsino cannot be an empty string if provided")
+        if len(norm_prdsino) > 20:
+            errors.append(f"prdsino exceeds max length of 20 characters. Got: {len(norm_prdsino)}")
+
+    if norm_batchname:
+        if len(norm_batchname) > 20:
+            errors.append(f"batchname exceeds max length of 20 characters. Got: {len(norm_batchname)}")
+        if not re.match(r'^[a-zA-Z0-9\-/]+$', norm_batchname):
+            errors.append(f"batchname contains invalid characters. Only alphanumeric, '-' and '/' are allowed. Got: '{norm_batchname}'")
+    if norm_batchexpirydt:
+        date_pattern = r"^[0-3][0-9]-[0-1][0-9]-20[1-2][0-9]$"
+        if not re.match(date_pattern, norm_batchexpirydt):
+            errors.append(f"batchexpirydt format mismatch. Expected DD-MM-YYYY (2010-2029). Got: '{norm_batchexpirydt}'")
+        else:
+            try:
+                datetime.strptime(norm_batchexpirydt, "%d-%m-%Y")
+            except ValueError:
+                errors.append(f"batchexpirydt is not a valid calendar date. Got: '{norm_batchexpirydt}'")
+    if norm_batchwarrantydt:
+        warranty_pattern = r"^[0-3][0-9]-[0-1][0-9]-20[1-2][0-9]$"
+        if not re.match(warranty_pattern, norm_batchwarrantydt):
+            errors.append(f"batchwarrantydt format mismatch. Expected DD-MM-YYYY (2010-2029). Got: '{norm_batchwarrantydt}'")
+        else:
+            try:
+                datetime.strptime(norm_batchwarrantydt, "%d-%m-%Y")
+            except ValueError:
+                errors.append(f"batchwarrantydt is not a valid calendar date. Got: '{norm_batchwarrantydt}'")
+    if not norm_ttlassval:
+        errors.append("ttlassval (Total Assessable Value) is mandatory and cannot be blank")
+    else:
+        try:
+            ttl_ass_val = float(norm_ttlassval)
+            if ttl_ass_val < 0:
+                errors.append("ttlassval cannot be negative")
+            if "." in norm_ttlassval:
+                parts = norm_ttlassval.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"ttlassval integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"ttlassval decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_ttlassval) > 15:
+                    errors.append(f"ttlassval integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"ttlassval must be a numeric decimal. Got: '{norm_ttlassval}'")
+    if not norm_cgstval:
+        errors.append("cgstval (Total CGST Value) is mandatory and cannot be blank")
+    else:
+        try:
+            ttl_cgst = float(norm_cgstval)
+            if ttl_cgst < 0:
+                errors.append("cgstval cannot be negative")
+            if "." in norm_cgstval:
+                parts = norm_cgstval.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"cgstval integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"cgstval decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_cgstval) > 15:
+                    errors.append(f"cgstval integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"cgstval must be a numeric decimal. Got: '{norm_cgstval}'")
+    if not norm_sgstval:
+        errors.append("sgstval (Total SGST Value) is mandatory and cannot be blank")
+    else:
+        try:
+            ttl_sgst = float(norm_sgstval)
+            if ttl_sgst < 0:
+                errors.append("sgstval cannot be negative")
+            if "." in norm_sgstval:
+                parts = norm_sgstval.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"sgstval integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"sgstval decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_sgstval) > 15:
+                    errors.append(f"sgstval integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"sgstval must be a numeric decimal. Got: '{norm_sgstval}'")
+    if not norm_igstval:
+        errors.append("igstval (Total IGST Value) is mandatory and cannot be blank")
+    else:
+        try:
+            ttl_igst = float(norm_igstval)
+            if ttl_igst < 0:
+                errors.append("igstval cannot be negative")
+            if "." in norm_igstval:
+                parts = norm_igstval.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"igstval integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"igstval decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_igstval) > 15:
+                    errors.append(f"igstval integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"igstval must be a numeric decimal. Got: '{norm_igstval}'")
+    if not norm_cesval:
+        errors.append("cesval (Total Cess Value) is mandatory and cannot be blank")
+    else:
+        try:
+            ttl_cess = float(norm_cesval)
+            if ttl_cess < 0:
+                errors.append("cesval cannot be negative")
+            if "." in norm_cesval:
+                parts = norm_cesval.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"cesval integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"cesval decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_cesval) > 15:
+                    errors.append(f"cesval integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"cesval must be a numeric decimal. Got: '{norm_cesval}'")
+    if not norm_stcesval:
+        errors.append("stcesval (Total State CESS Value) is mandatory and cannot be blank")
+    else:
+        try:
+            ttl_st_cess = float(norm_stcesval)
+            if ttl_st_cess < 0:
+                errors.append("stcesval cannot be negative")
+            if "." in norm_stcesval:
+                parts = norm_stcesval.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"stcesval integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"stcesval decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_stcesval) > 15:
+                    errors.append(f"stcesval integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"stcesval must be a numeric decimal. Got: '{norm_stcesval}'")
+    if not norm_cesnonadval:
+        errors.append("cesnonadval (Total Cess Non-advol Value) is mandatory and cannot be blank")
+    else:
+        try:
+            ttl_ces_nonad = float(norm_cesnonadval)
+            if ttl_ces_nonad < 0:
+                errors.append("cesnonadval cannot be negative")
+            if "." in norm_cesnonadval:
+                parts = norm_cesnonadval.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"cesnonadval integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"cesnonadval decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_cesnonadval) > 15:
+                    errors.append(f"cesnonadval integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"cesnonadval must be a numeric decimal. Got: '{norm_cesnonadval}'")
+    if norm_discval:
+        try:
+            ttl_disc = float(norm_discval)
+            if ttl_disc < 0:
+                errors.append("discval cannot be negative")
+            if "." in norm_discval:
+                parts = norm_discval.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"discval integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"discval decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_discval) > 15:
+                    errors.append(f"discval integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"discval must be a numeric decimal. Got: '{norm_discval}'")
+    if norm_othchrgval:
+        try:
+            ttl_oth_chrg = float(norm_othchrgval)
+            if ttl_oth_chrg < 0:
+                errors.append("othchrgval cannot be negative")
+            if "." in norm_othchrgval:
+                parts = norm_othchrgval.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"othchrgval integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"othchrgval decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_othchrgval) > 15:
+                    errors.append(f"othchrgval integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"othchrgval must be a numeric decimal. Got: '{norm_othchrgval}'")
+    if norm_rndoffamt:
+        try:
+            val_rndoff = float(norm_rndoffamt)
+            if val_rndoff < 0:
+                errors.append("rndoffamt cannot be negative per schema constraints")
+            if "." in norm_rndoffamt:
+                parts = norm_rndoffamt.split(".")
+                if len(parts[0]) > 4:
+                    errors.append(f"rndoffamt integer part exceeds 4 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"rndoffamt decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_rndoffamt) > 4:
+                    errors.append(f"rndoffamt integer exceeds max length of 4 digits.")
+        except ValueError:
+            errors.append(f"rndoffamt must be a numeric decimal. Got: '{norm_rndoffamt}'")
+    if not norm_totinvval:
+        errors.append("totinvval (Total Invoice Value) is mandatory and cannot be blank")
+    else:
+        try:
+            ttl_inv_val = float(norm_totinvval)
+            if ttl_inv_val < 0:
+                errors.append("totinvval cannot be negative")
+            if "." in norm_totinvval:
+                parts = norm_totinvval.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"totinvval integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"totinvval decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_totinvval) > 15:
+                    errors.append(f"totinvval integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"totinvval must be a numeric decimal. Got: '{norm_totinvval}'")
+    if norm_payee_name:
+        if len(norm_payee_name) > 100:
+            errors.append(f"payee_name exceeds max length of 100 characters. Got: {len(norm_payee_name)}")
+        allowed_chars = " .&'-()/,"
+        if not all(c.isalnum() or c in allowed_chars for c in norm_payee_name):
+            errors.append(f"payee_name contains invalid special characters. Got: '{norm_payee_name}'")
+    if norm_pmtmode:
+        if len(norm_pmtmode) > 6:
+            errors.append(f"pmtmode exceeds max length of 6 characters. Got: {len(norm_pmtmode)}")
+        if norm_pmtmode not in allowed_pmt_modes:
+            errors.append(f"Invalid pmtmode. Expected one of {allowed_pmt_modes}. Got: '{norm_pmtmode}'")
+    if norm_fininsbr:
+        if len(norm_fininsbr) > 11:
+            errors.append(f"fininsbr exceeds max length of 11 characters. Got: {len(norm_fininsbr)}")
+        ifsc_pattern = r"^[A-Z]{4}0[A-Z0-9]{6}$"
+        if not re.match(ifsc_pattern, norm_fininsbr):
+            errors.append(f"fininsbr is not a valid IFSC format. Expected 4 letters, '0', then 6 digits/letters. Got: '{norm_fininsbr}'")
+    if norm_payterm:
+        if len(norm_payterm) < 1:
+            errors.append("payterm must contain at least 1 character if provided.")
+        if len(norm_payterm) > 100:
+            errors.append(f"payterm exceeds max length of 100 characters. Got: {len(norm_payterm)}")
+    if norm_payinstr:
+        if len(norm_payinstr) < 1:
+            errors.append("payinstr cannot be an empty string if provided")
+        if len(norm_payinstr) > 100:
+            errors.append(f"payinstr exceeds max length of 100 characters. Got: {len(norm_payinstr)}")
+    if norm_crtrn:
+        if len(norm_crtrn) < 1:
+            errors.append("crtrn cannot be an empty string if provided")
+        if len(norm_crtrn) > 100:
+            errors.append(f"crtrn exceeds max length of 100 characters. Got: {len(norm_crtrn)}")
+    if norm_dirdr:
+        if len(norm_dirdr) < 1:
+            errors.append("dirdr cannot be an empty string if provided")
+        if len(norm_dirdr) > 100:
+            errors.append(f"dirdr exceeds max length of 100 characters. Got: {len(norm_dirdr)}")
+    if norm_crday:
+        try:
+            val_crday = int(norm_crday)
+            if val_crday < 0:
+                errors.append("crday (Credit Days) cannot be negative")
+            if len(norm_crday) > 9:
+                errors.append(f"crday exceeds max length of 9 digits. Got: {len(norm_crday)}")
+        except ValueError:
+            errors.append(f"crday must be a valid integer. Got: '{norm_crday}'")
+    if norm_paidamt:
+        try:
+            val_paid = float(norm_paidamt)
+            if val_paid < 0:
+                errors.append("paidamt cannot be negative")
+            if "." in norm_paidamt:
+                parts = norm_paidamt.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"paidamt integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"paidamt decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_paidamt) > 15:
+                    errors.append(f"paidamt integer exceeds max length of 15 digits.")
+        except ValueError:
+            errors.append(f"paidamt must be a numeric decimal. Got: '{norm_paidamt}'")
+    if norm_balamt:
+        try:
+            val_bal = float(norm_balamt)
+            if val_bal < 0:
+                errors.append("balamt (Balance Amount) cannot be negative")
+            if "." in norm_balamt:
+                parts = norm_balamt.split(".")
+                if len(parts[0]) > 15:
+                    errors.append(f"balamt integer part exceeds 15 digits. Got: {len(parts[0])}")
+                if len(parts[1]) > 2:
+                    errors.append(f"balamt decimal part exceeds 2 places. Got: {len(parts[1])}")
+            else:
+                if len(norm_balamt) > 15:
+                    errors.append(f"balamt integer exceeds max length of 15 digits.")
+
+        except ValueError:
+            errors.append(f"balamt must be a numeric decimal. Got: '{norm_balamt}'")
+    if norm_payduedt:
+        if not re.match(date_regex, norm_payduedt):
+            errors.append(f"payduedt format is invalid. Expected DD-MM-YYYY (2010-2029). Got: '{norm_payduedt}'")
+        else:
+            try:
+                datetime.strptime(norm_payduedt, "%d-%m-%Y")
+            except ValueError:
+                errors.append(f"payduedt is a malformed date: '{norm_payduedt}'")
+    if norm_acctdet:
+        if len(norm_acctdet) < 1:
+            errors.append("acctdet cannot be empty if provided")
+        if len(norm_acctdet) > 18:
+            errors.append(f"acctdet exceeds max length of 18 characters. Got: {len(norm_acctdet)}")
+        if not norm_acctdet.isalnum():
+            if not all(c.isalnum() or c == '-' for c in norm_acctdet):
+                errors.append(f"acctdet contains invalid characters. Got: '{norm_acctdet}'")
+    if norm_bnknm:
+        if len(norm_bnknm) < 1:
+            errors.append("bnknm cannot be an empty string if provided")
+        if len(norm_bnknm) > 50:
+            errors.append(f"bnknm exceeds max length of 50 characters. Got: {len(norm_bnknm)}")
+        allowed_chars = " .&-"
+        if not all(c.isalnum() or c in allowed_chars for c in norm_bnknm):
+            warnings.append(f"bnknm contains unusual characters: '{norm_bnknm}'")
+    if norm_brnchnm:
+        if len(norm_brnchnm) < 1:
+            errors.append("brnchnm cannot be an empty string if provided")
+        if len(norm_brnchnm) > 50:
+            errors.append(f"brnchnm exceeds max length of 50 characters. Got: {len(norm_brnchnm)}")
+    if norm_invrmk:
+        rmk_len = len(norm_invrmk)
+        if rmk_len < 3 or rmk_len > 100:
+            errors.append(f"invrmk length must be between 3 and 100. Got: {rmk_len}")
+        if not re.match(remark_pattern, norm_invrmk):
+            errors.append(f"invrmk contains invalid characters. Allowed: Alphanumeric and / - ( )")
+    if norm_invstdt:
+        if not re.match(date_regex, norm_invstdt):
+            errors.append(f"invstdt format invalid. Expected DD-MM-YYYY (2010-2029). Got: '{norm_invstdt}'")
+        else:
+            try:
+                datetime.strptime(norm_invstdt, "%d-%m-%Y")
+            except ValueError:
+                errors.append(f"invstdt is not a valid calendar date: '{norm_invstdt}'")
+    if norm_invenddt:
+        if not re.match(date_regex, norm_invenddt):
+            errors.append(f"invenddt format invalid. Expected DD-MM-YYYY (2010-2029). Got: '{norm_invenddt}'")
+        else:
+            try:
+                end_dt = datetime.strptime(norm_invenddt, "%d-%m-%Y")
+                if norm_invstdt:
+                    start_dt = datetime.strptime(norm_invstdt, "%d-%m-%Y")
+                    if end_dt < start_dt:
+                        errors.append("invenddt (End Date) cannot be earlier than invstdt (Start Date)")
+            except ValueError:
+                errors.append(f"invenddt is not a valid calendar date: '{norm_invenddt}'")
+    if norm_othrefno:
+        if len(norm_othrefno) < 1:
+            errors.append("othrefno cannot be empty if provided")
+        if len(norm_othrefno) > 20:
+            errors.append(f"othrefno exceeds max length of 20 characters. Got: {len(norm_othrefno)}")
+    if norm_recadvref:
+        ref_len = len(norm_recadvref)
+        if ref_len < 1 or ref_len > 20:
+            errors.append(f"recadvref length must be between 1 and 20. Got: {ref_len}")
+        if not re.match(adv_pattern, norm_recadvref):
+            errors.append(f"recadvref contains invalid characters. Allowed: Alphanumeric and / - ( )")
+    if norm_recadvdt:
+        if not re.match(date_regex, norm_recadvdt):
+            errors.append(f"recadvdt format invalid. Expected DD-MM-YYYY. Got: '{norm_recadvdt}'")
+        else:
+            try:
+                adv_dt = datetime.strptime(norm_recadvdt, "%d-%m-%Y")
+            except ValueError:
+                errors.append(f"recadvdt is not a valid calendar date: '{norm_recadvdt}'")
+    if norm_tendref:
+        ref_len = len(norm_tendref)
+        if ref_len < 1 or ref_len > 20:
+            errors.append(f"tendref length must be between 1 and 20. Got: {ref_len}")
+        if not re.match(tend_pattern, norm_tendref):
+            errors.append(f"tendref contains invalid characters. Allowed: Alphanumeric and / - ( )")
+    if norm_contrref:
+        ref_len = len(norm_contrref)
+        if ref_len < 1 or ref_len > 20:
+            errors.append(f"contrref length must be between 1 and 20. Got: {ref_len}")
+        if not re.match(contr_pattern, norm_contrref):
+            errors.append(f"contrref contains invalid characters. Allowed: Alphanumeric and / - ( )")
+    if norm_extref:
+        ref_len = len(norm_extref)
+        if ref_len < 1 or ref_len > 20:
+            errors.append(f"extref length must be between 1 and 20. Got: {ref_len}")
+        if not re.match(ext_pattern, norm_extref):
+            errors.append(f"extref contains invalid characters. Allowed: Alphanumeric and / - ( )")
+    if norm_projref:
+        ref_len = len(norm_projref)
+        if ref_len < 1 or ref_len > 20:
+            errors.append(f"projref length must be between 1 and 20. Got: {ref_len}")
+        if not re.match(proj_pattern, norm_projref):
+            errors.append(f"projref contains invalid characters. Allowed: Alphanumeric and / - ( )")
+    if raw_porefdt:
+        for fmt in ("%d-%m-%Y", "%d/%m/%y", "%d/%m/%Y", "%d.%m.%Y", "%Y-%m-%d", "%d-%m-%y"):
+            try:
+                norm_porefdt = datetime.strptime(raw_porefdt, fmt).strftime(target_format)
+                break
+            except ValueError:
+                continue
+        if norm_porefdt:
+            try:
+                po_dt  = datetime.strptime(norm_porefdt, target_format)
+                doc_dt = datetime.strptime(norm_docdt, target_format)
+                if po_dt > doc_dt:
+                    errors.append(f"Business Logic Error: PO Date ({norm_porefdt}) cannot be after Document Date ({norm_docdt})")
+                else:
+                    print(f"Success! Normalized '{raw_porefdt}' to '{norm_porefdt}'")
+            except ValueError:
+                errors.append(f"Invalid Date: Could not validate '{norm_porefdt}' against docdt.")
+        else:errors.append(f"Normalization Error: Format of '{raw_porefdt}' not recognized. Use DD-MM-YY.")
+    if norm_poref:
+        ref_len = len(norm_poref)
+        if ref_len < 1 or ref_len > 20:
+            errors.append(f"poref length must be between 1 and 20. Got: {ref_len}")
+        if not re.match(po_pattern, norm_poref):
+            errors.append(f"poref contains invalid characters. Allowed: Alphanumeric and / - ( )")
+    if not norm_ewayreq:
+        errors.append("ewayreq is a mandatory field and cannot be empty.")
+    elif len(norm_ewayreq) != 1:
+        errors.append(f"ewayreq must be exactly 1 character. Got: {len(norm_ewayreq)}")
+    elif norm_ewayreq not in allowed_values:
+        errors.append(f"ewayreq contains invalid value '{norm_ewayreq}'. Must be 'Y' or 'N'.")
+    if norm_ewayreq == "Y":
+        if not norm_subsupplytype:
+            errors.append("subsupplytype is required when ewayreq is 'Y'")
+        elif norm_subsupplytype not in valid_subtypes:
+            errors.append(f"Invalid subsupplytype '{norm_subsupplytype}'. Must be between 1 and 12.")
+    if len(norm_subsupplytype) > 2:
+        errors.append("subsupplytype exceeds max length of 2 characters")
+    if norm_ewayreq == "Y":
+        if not norm_mode_of_transport:
+            errors.append("mode_of_transport is required when ewayreq is 'Y'")
+        elif norm_mode_of_transport not in valid_modes:
+            errors.append(f"Invalid mode_of_transport '{norm_mode_of_transport}'. Must be 1, 2, 3, or 4.")
+    if len(norm_mode_of_transport) > 1:
+        errors.append("mode_of_transport exceeds max length of 1 character")
+    
+    if norm_ewayreq == "Y":
+        if norm_distance_val is None or norm_distance_val <= 0:
+            errors.append("distance_of_transport is required and must be greater than 0 when ewayreq is 'Y'")
+        if norm_distance_val > 9999:
+            errors.append(f"distance_of_transport exceeds max allowed digits (4). Got: {norm_distance}")
+        if norm_distance_val > 4000:
+            warnings.append("distance_of_transport exceeds the standard 4000km threshold; please verify.")
+    if norm_ewayreq == "Y":
+        if not norm_transporter_id:
+            errors.append("transporter_id is required for EWB Part-A generation when ewayreq is 'Y'")
+        elif len(norm_transporter_id) != 15:
+            errors.append(f"transporter_id must be exactly 15 characters. Got: {len(norm_transporter_id)}")
+        elif not re.match(trans_id_pattern, norm_transporter_id):
+            errors.append(f"transporter_id '{norm_transporter_id}' has an invalid format.")
+    elif len(norm_transporter_id) > 15:
+        errors.append("transporter_id exceeds max length of 15 characters")
+    if norm_transporter_name:
+        if len(norm_transporter_name) > 100:
+            errors.append(f"transporter_name exceeds max length of 100 characters. Got: {len(norm_transporter_name)}")
+        if norm_transporter_name.isdigit():
+            warnings.append("transporter_name appears to be numeric; please verify if this is a name.")
+    if norm_ewayreq == "Y" and norm_mode_of_transport in non_road_modes:
+        if not norm_transport_doc_no:
+            errors.append(f"transport_doc_no is required when mode_of_transport is {norm_mode_of_transport}")
+    if len(norm_transport_doc_no) > 15:
+        errors.append(f"transport_doc_no exceeds max length of 15 characters. Got: {len(norm_transport_doc_no)}")
+    if norm_ewayreq == "Y" and norm_mode_of_transport in non_road_modes:
+        if not norm_trans_doc_dt:
+            errors.append(f"transporter_doc_date is required when mode_of_transport is {norm_mode_of_transport}")
+        else:
+            if not re.match(date_regex, norm_trans_doc_dt):
+                errors.append(f"transporter_doc_date format invalid. Expected DD-MM-YYYY. Got: '{norm_trans_doc_dt}'")
+            else:
+                try:
+                    doc_dt = datetime.strptime(norm_trans_doc_dt, "%d-%m-%Y")
+                    if doc_dt > datetime.now():
+                        errors.append("transporter_doc_date cannot be a future date")
+                except ValueError:
+                    errors.append(f"transporter_doc_date is not a valid calendar date: '{norm_trans_doc_dt}'")
+    if norm_ewayreq == "Y" and norm_mode_of_transport == "1":
+        if not norm_veh_type:
+            errors.append("veh_type is required for Road transport when ewayreq is 'Y'")
+        elif norm_veh_type not in allowed_veh_types:
+            errors.append(f"Invalid veh_type '{norm_veh_type}'. Must be 'R' (Regular) or 'O' (ODC).")
+    if len(norm_veh_type) > 1:
+        errors.append("veh_type exceeds max length of 1 character")
+    if norm_ewayreq == "Y" and norm_mode_of_transport == "1":
+        if not norm_veh_number:
+            errors.append("veh_number is required for Road transport when ewayreq is 'Y'")
+        elif not re.match(veh_pattern, norm_veh_number):
+            if len(norm_veh_number) < 7 or len(norm_veh_number) > 15:
+                errors.append(f"Invalid vehicle number format: '{norm_veh_number}'")
+            else:
+                warnings.append(f"Vehicle number '{norm_veh_number}' does not match standard patterns.")
+    if len(norm_veh_number) > 15:
+        errors.append("veh_number exceeds max length of 15 characters")
+    
+    if norm_brand_name:
+        name_len = len(norm_brand_name)
+        if name_len > 100:
+            errors.append(f"brand_name exceeds max length of 100 characters. Got: {name_len}")
+        if not any(char.isalnum() for char in norm_brand_name):
+            warnings.append("brand_name contains only symbols; please verify.")
+    if norm_client_name:
+        name_len = len(norm_client_name)
+        if name_len > 100:
+            errors.append(f"client_name exceeds max length of 100 characters. Got: {name_len}")
+        if len(norm_client_name) > 0 and not any(c.isalpha() for c in norm_client_name):
+            warnings.append("client_name contains no alphabetic characters; please verify.")
+    if norm_vendor_id:
+        vid_len = len(norm_vendor_id)
+        if vid_len > 100:
+            errors.append(f"vendor_id exceeds max length of 100 characters. Got: {vid_len}")
+    if norm_period:
+        period_len = len(norm_period)
+        if period_len > 30:
+            errors.append(f"period exceeds max length of 30 characters. Got: {period_len}")
+        if norm_period.isdigit() and len(norm_period) == 4:
+            pass
+    if norm_upiid:
+        if len(norm_upiid) > 100:
+            errors.append(f"upiid exceeds max length of 100 characters. Got: {len(norm_upiid)}")
+        elif not re.match(upi_pattern, norm_upiid):
+            warnings.append(f"upiid '{norm_upiid}' does not match standard VPA format (e.g., name@bank)")
+    if norm_upipayeename:
+        name_len = len(norm_upipayeename)
+        if name_len > 100:
+            errors.append(f"upipayeename exceeds max length of 100 characters. Got: {name_len}")
+        if not re.match(r"^[a-zA-Z0-9\s\.]*$", norm_upipayeename):
+            warnings.append("upipayeename contains special characters; please ensure it matches the bank account name.")
+    if norm_upiacct:
+        if not norm_upiacct.isdigit():
+            errors.append(f"upiacctnumber must contain only numbers. Got: '{norm_upiacct}'")
+        acct_len = len(norm_upiacct)
+        if acct_len < 9 or acct_len > 18:
+            errors.append(f"upiacctnumber must be between 9 and 18 digits. Got: {acct_len}")
+    if norm_upi_ifsc:
+        if len(norm_upi_ifsc) != 11:
+            errors.append(f"upiactifsccd must be exactly 11 characters. Got: {len(norm_upi_ifsc)}")
+        elif not re.match(ifsc_pattern, norm_upi_ifsc):
+            errors.append(f"Invalid upiactifsccd format: '{norm_upi_ifsc}'. Expected format: BBBB0CCCCCC")
+    output_data = OrderedDict()
+    output_data["self_gstin"] = norm_gstin
+    output_data["system_cd"] = norm_sys
+    output_data["branch_cd"] = norm_br
+    output_data["vertical_cd"] = norm_vert
+    output_data["irnreq"] = norm_irnreq
+    output_data["irn"] = norm_irn
+    output_data["trancatg"] = norm_trancatg
+    output_data["reversecharge"] = norm_revcharge
+    output_data["transactionmode"] = norm_transmode
+    output_data["ecom_gstin"] = norm_ecom_gstin
+    output_data["igst_on_intra"] = norm_igst_intra
+    output_data["expcat"] = norm_expcat
+    output_data["wthpay"] = norm_wthpay 
+    output_data["shipbno"] = norm_shipbno 
+    output_data["shipbdt"] = norm_shipbdt 
+    output_data["port"] = norm_port 
+    output_data["invforcur"] = norm_invforcur
+    output_data["forcur"] = norm_forcur
+    output_data["refclm"] = norm_refclm
+    output_data["cntcode"] = norm_cntcode 
+    output_data["expduty"]=norm_expduty
+    output_data["document_type"]=norm_doc_type
+    output_data["docno"] = norm_docno
+    output_data["docdt"]=norm_docdt
+    output_data["orginvno"]=norm_orginvno
+    output_data["orginvdt"]=norm_orginvdt
+    output_data["supplier_gstin"] = norm_sup_gstin
+    output_data["supplier_lglnm"] = norm_sup_lglnm
+    output_data["supplier_trdnm"] = norm_sup_trdnm
+    output_data["supplier_bno"] = norm_sup_bno
+    output_data["supplier_bnm"] = norm_sup_bnm
+    output_data["supplier_flno"] = norm_sup_flno
+    output_data["supplier_loc"] = norm_sup_loc
+    output_data["supplier_dst"] = norm_sup_dst
+    output_data["supplier_pin"] = norm_sup_pin
+    output_data["supplier_state"] = norm_sup_state
+    output_data["supplier_phone"] = norm_sup_phone
+    output_data["supplier_email"] = norm_sup_email
+    output_data["cust_cd"] = norm_cust_cd
+    output_data["buyer_gstin"] = norm_buy_gstin
+    output_data["buyer_lglnm"] = norm_buy_lglnm
+    output_data["buyer_trdnm"] = norm_buy_trdnm
+    output_data["buyer_bno"] = norm_buy_bno
+    output_data["buyer_bnm"] = norm_buy_bnm
+    output_data["buyer_flno"] = norm_buy_flno
+    output_data["buyer_loc"] = norm_buy_loc
+    output_data["buyer_dst"] = norm_buy_dst
+    output_data["buyer_pin"] = norm_buy_pin
+    output_data["buyer_state"] = norm_buy_state
+    output_data["pos"]=norm_pos
+    output_data["buyer_phone"] = norm_buy_phone
+    output_data["buyer_email"] = norm_buy_email
+    output_data["disp_gstin"] = norm_disp_gstin
+    output_data["disp_trdnm"] = norm_disp_trdnm
+    output_data["disp_bno"] = norm_disp_bno
+    output_data["disp_flno"] = norm_disp_flno
+    output_data["disp_loc"] = norm_disp_loc
+    output_data["disp_dst"] = norm_disp_dst
+    output_data["disp_pin"] = norm_disp_pin
+    output_data["disp_state"] = norm_disp_state
+    output_data["disp_phone"] = norm_disp_phone
+    output_data["disp_email"] = norm_disp_email
+    output_data["ship_gstin"] = norm_ship_gstin
+    output_data["ship_lglnm"] = norm_ship_lglnm
+    output_data["ship_trdnm"] = norm_ship_trdnm
+    output_data["ship_bno"] = norm_ship_bno
+    output_data["ship_bnm"] = norm_ship_bnm
+    output_data["ship_flno"] = norm_ship_flno
+    output_data["ship_loc"] = norm_ship_loc
+    output_data["ship_dst"] = norm_ship_dst
+    output_data["ship_pin"] = norm_ship_pin
+    output_data["ship_state"] = norm_ship_state
+    output_data["ship_phone"] = norm_ship_phone
+    output_data["ship_email"] = norm_ship_email
+    output_data["frmdt"] = norm_frmdt
+    output_data["todt"] = norm_todt
+    output_data["itemcd"] = norm_itemcd
+    output_data["prdnm"] = norm_prdnm
+    output_data["prddesc"] = norm_prddesc
+    output_data["isservc"] = norm_isservc
+    output_data["hsncd"] = norm_hsncd
+    output_data["barcde"] = norm_barcde
+    output_data["qty"] = norm_qty
+    output_data["freeqty"] = norm_freeqty
+    output_data["uqc"] = norm_uqc
+    output_data["unitrate"] = norm_unitrate
+    output_data["grossamt"] = norm_grossamt
+    output_data["discount"] = norm_discount
+    output_data["othchrg"] = norm_othchrg
+    output_data["pretaxval"] = norm_pretaxval
+    output_data["assamt"] = norm_assamt
+    output_data["taxability"] = norm_taxability
+    output_data["diffpercent"] = norm_diffpercent
+    output_data["cgstrt"] = norm_cgstrt
+    output_data["cgstamt"] = norm_cgstamt
+    output_data["sgstrt"] = norm_sgstrt
+    output_data["sgstamt"] = norm_sgstamt
+    output_data["igstrt"] = norm_igstrt
+    output_data["igstamt"] = norm_igstamt
+    output_data["cessrt"] = norm_cessrt
+    output_data["cessamt"] = norm_cessamt
+    output_data["cessnonadval"] = norm_cessnonadval
+    output_data["statecessrt"] = norm_statecessrt
+    output_data["statecessamt"] = norm_statecessamt
+    output_data["statecesnonadvlamt"] = norm_statecesnonadvl
+    output_data["totitemval"] = norm_totitemval
+    output_data["ordlineref"] = norm_ordlineref
+    output_data["orgcntry"] = norm_orgcntry
+    output_data["prdsino"] = norm_prdsino
+    output_data["batchname"] = norm_batchname
+    output_data["batchexpirydt"] = norm_batchexpirydt
+    output_data["batchwarrantydt"] = norm_batchwarrantydt
+    output_data["ttlassval"] = norm_ttlassval
+    output_data["cgstval"] = norm_cgstval
+    output_data["sgstval"] = norm_sgstval
+    output_data["igstval"] = norm_igstval
+    output_data["cesval"] = norm_cesval
+    output_data["stcesval"] = norm_stcesval
+    output_data["cesnonadval"] = norm_cesnonadval
+    output_data["discval"] = norm_discval
+    output_data["othchrgval"] = norm_othchrgval
+    output_data["rndoffamt"] = norm_rndoffamt
+    output_data["totinvval"] = norm_totinvval
+    output_data["payee_name"] = norm_payee_name
+    output_data["pmtmode"] = norm_pmtmode
+    output_data["fininsbr"] = norm_fininsbr
+    output_data["payterm"] = norm_payterm
+    output_data["payinstr"] = norm_payinstr
+    output_data["crtrn"] = norm_crtrn
+    output_data["dirdr"] = norm_dirdr
+    output_data["crday"] = norm_crday
+    output_data["paidamt"] = norm_paidamt
+    output_data["balamt"] = norm_balamt
+    output_data["payduedt"] = norm_payduedt
+    output_data["acctdet"] = norm_acctdet
+    output_data["bnknm"] = norm_bnknm
+    output_data["brnchnm"] = norm_brnchnm
+    output_data["invrmk"] = norm_invrmk
+    output_data["invstdt"] = norm_invstdt
+    output_data["invenddt"] = norm_invenddt
+    output_data["othrefno"] = norm_othrefno
+    output_data["recadvref"] = norm_recadvref
+    output_data["recadvdt"] = norm_recadvdt
+    output_data["tendref"] = norm_tendref
+    output_data["contrref"] = norm_contrref
+    output_data["extref"] = norm_extref
+    output_data["projref"] = norm_projref
+    output_data["porefdt"] = norm_porefdt
+    output_data["poref"] = norm_poref
+    output_data["ewayreq"] = norm_ewayreq
+    output_data["subsupplytype"] = norm_subsupplytype
+    output_data["mode_of_transport"] = norm_mode_of_transport
+    output_data["distance_of_transport"] = norm_distance_str
+    output_data["transporter_id"] = norm_transporter_id
+    output_data["transporter_name"] = norm_transporter_name
+    output_data["transport_doc_no"] = norm_transport_doc_no
+    output_data["transporter_doc_date"] = norm_trans_doc_dt
+    output_data["veh_type"] = norm_veh_type
+    output_data["veh_number"] = norm_veh_number
+    output_data["brand_name"] = norm_brand_name
+    output_data["client_name"] = norm_client_name
+    output_data["vendor_id"] = norm_vendor_id
+    output_data["period"] = norm_period
+    output_data["upiid"] = norm_upiid
+    output_data["upipayeename"] = norm_upipayeename
+    output_data["upiacctnumber"] = norm_upiacct
+    output_data["upiactifsccd"] = norm_upi_ifsc
+    if errors:
+        output_data["error"] = " | ".join(errors)
+        if output_invalid:
+            try:
+                with open(output_invalid, "w", encoding="utf-8") as f:
+                    json.dump(output_data, f, indent=2)
+                print(f"❌ Validation failed: {output_invalid}")
+            except Exception as e:
+                pass
+    else:
+        if "error" in output_data:
+            del output_data["error"]
+        if output_valid:
+            try:
+                with open(output_valid, "w", encoding="utf-8") as f:
+                    json.dump(output_data, f, indent=2)
+                print(f"✅ Validation successful: {output_valid}")
+            except Exception as e:
+                pass
+    return {"payload": output_data, "errors": errors, "warnings": warnings}
+
 def clean_str(val: Any) -> str:
     if val is None:
         return ""
@@ -182,9 +2148,7 @@ def clean_decimal_str(val: Any, decimals: int = 2, audit_log: Optional[List[Dict
         return "0.00"
 
 def clean_int_str(val: Any) -> str:
-    if val is None:
-        return ""
-    return re.sub(r"[^\d]", "", str(val).strip())
+    return normalize_numeric_string(val)
 
 def normalize_date_to_standard(raw_date: Any, target_sep: str = "-", audit_log: Optional[List[Dict[str, Any]]] = None, field: str = "") -> str:
     """Converts dates to DD-MM-YYYY format and logs format changes."""
@@ -215,27 +2179,19 @@ def normalize_date_to_standard(raw_date: Any, target_sep: str = "-", audit_log: 
 def clean_state_code(raw_state: Any, audit_log: Optional[List[Dict[str, Any]]] = None, field: str = "") -> str:
     if not raw_state:
         return ""
-    s = clean_int_str(raw_state)
-    if len(s) == 1:
-        padded = s.zfill(2)
-        if audit_log is not None and field:
-            audit_log.append({
-                "category": "STATE_CODE_PADDING",
-                "field": field,
-                "original": raw_state,
-                "corrected": padded,
-                "description": f"Padded single digit state code '{raw_state}' to 2-digit format '{padded}'"
-            })
-        return padded
-    return s
+    padded = normalize_state_code(raw_state)
+    if len(str(raw_state).strip()) == 1 and audit_log is not None and field:
+        audit_log.append({
+            "category": "STATE_CODE_PADDING",
+            "field": field,
+            "original": raw_state,
+            "corrected": padded,
+            "description": f"Padded single digit state code '{raw_state}' to 2-digit format '{padded}'"
+        })
+    return padded
 
 def clean_gstin(raw_gstin: Any) -> str:
-    if not raw_gstin:
-        return ""
-    s = str(raw_gstin).strip().upper()
-    if s == "URP":
-        return "URP"
-    return re.sub(r"[^0-9A-Z]", "", s)
+    return normalize_buyer_gstin(raw_gstin)
 
 
 class PayloadBuilder:
@@ -393,21 +2349,21 @@ class PayloadBuilder:
 
         clean_supplierdt1 = {
             "supplier_gstin": sup_gstin,
-            "supplier_lglnm": clean_str(supplierdt1.get("supplier_lglnm", "")),
-            "supplier_trdnm": clean_str(supplierdt1.get("supplier_trdnm", supplierdt1.get("supplier_lglnm", ""))),
-            "supplier_bno": clean_str(supplierdt1.get("supplier_bno", "")),
-            "supplier_bnm": clean_str(supplierdt1.get("supplier_bnm", "")),
-            "supplier_flno": clean_str(supplierdt1.get("supplier_flno", "NAA")),
-            "supplier_loc": clean_str(supplierdt1.get("supplier_loc", "")),
-            "supplier_dst": clean_str(supplierdt1.get("supplier_dst", "")),
-            "supplier_pin": clean_int_str(supplierdt1.get("supplier_pin", "")),
+            "supplier_lglnm": normalize_field(supplierdt1.get("supplier_lglnm", "")),
+            "supplier_trdnm": normalize_field(supplierdt1.get("supplier_trdnm", supplierdt1.get("supplier_lglnm", ""))),
+            "supplier_bno": normalize_field(supplierdt1.get("supplier_bno", "")),
+            "supplier_bnm": normalize_ship_bnm(supplierdt1.get("supplier_bnm", "")),
+            "supplier_flno": normalize_ship_flno(supplierdt1.get("supplier_flno", "NAA")),
+            "supplier_loc": normalize_ship_loc(supplierdt1.get("supplier_loc", "")),
+            "supplier_dst": normalize_ship_dst(supplierdt1.get("supplier_dst", "")),
+            "supplier_pin": normalize_numeric_string(supplierdt1.get("supplier_pin", "")),
             "supplier_state": sup_state,
-            "supplier_phone": clean_int_str(supplierdt1.get("supplier_phone", "")),
-            "supplier_email": clean_str(supplierdt1.get("supplier_email", "")).lower()
+            "supplier_phone": normalize_numeric_string(supplierdt1.get("supplier_phone", "")),
+            "supplier_email": normalize_email(supplierdt1.get("supplier_email", ""))
         }
 
         # Buyer Details (buyerdt1)
-        raw_buy_gstin = clean_gstin(buyerdt1.get("buyer_gstin", data.get("buyer_gstin", "")))
+        raw_buy_gstin = normalize_buyer_gstin(buyerdt1.get("buyer_gstin", data.get("buyer_gstin", "")))
         buy_gstin = raw_buy_gstin
         if raw_buy_gstin and raw_buy_gstin != "URP" and len(raw_buy_gstin) != 15:
             audit_log.append({
@@ -417,11 +2373,11 @@ class PayloadBuilder:
                 "corrected": raw_buy_gstin,
                 "description": f"Customer input buyer_gstin '{raw_buy_gstin}' has invalid length ({len(raw_buy_gstin)} chars, expected 15 or 'URP')."
             })
-        raw_pos = clean_str(buyerdt1.get("pos", data.get("pos", "")))
+        raw_pos = normalize_field(buyerdt1.get("pos", data.get("pos", "")))
         pos = clean_state_code(raw_pos, audit_log=audit_log, field="buyerdt1.pos")
-        raw_buy_state = clean_str(buyerdt1.get("buyer_state", data.get("buyer_state", "")))
+        raw_buy_state = normalize_field(buyerdt1.get("buyer_state", data.get("buyer_state", "")))
         buy_state = clean_state_code(raw_buy_state, audit_log=audit_log, field="buyerdt1.buyer_state")
-        buy_pin = clean_int_str(buyerdt1.get("buyer_pin", data.get("buyer_pin", "")))
+        buy_pin = normalize_numeric_string(buyerdt1.get("buyer_pin", data.get("buyer_pin", "")))
 
         # Export Auto-Alignments
         if is_export:
@@ -491,24 +2447,24 @@ class PayloadBuilder:
 
         clean_buyerdt1 = {
             "buyer_gstin": buy_gstin,
-            "buyer_trdnm": clean_str(buyerdt1.get("buyer_trdnm", "")),
-            "buyer_lglnm": clean_str(buyerdt1.get("buyer_lglnm", "")),
-            "buyer_bno": clean_str(buyerdt1.get("buyer_bno", "NAA")),
-            "buyer_bnm": clean_str(buyerdt1.get("buyer_bnm", "")),
-            "buyer_flno": clean_str(buyerdt1.get("buyer_flno", "NAA")),
-            "buyer_loc": clean_str(buyerdt1.get("buyer_loc", "")),
-            "buyer_dst": clean_str(buyerdt1.get("buyer_dst", "")),
+            "buyer_trdnm": normalize_field(buyerdt1.get("buyer_trdnm", "")),
+            "buyer_lglnm": normalize_field(buyerdt1.get("buyer_lglnm", "")),
+            "buyer_bno": normalize_field(buyerdt1.get("buyer_bno", "NAA")),
+            "buyer_bnm": normalize_ship_bnm(buyerdt1.get("buyer_bnm", "")),
+            "buyer_flno": normalize_ship_flno(buyerdt1.get("buyer_flno", "NAA")),
+            "buyer_loc": normalize_ship_loc(buyerdt1.get("buyer_loc", "")),
+            "buyer_dst": normalize_ship_dst(buyerdt1.get("buyer_dst", "")),
             "buyer_pin": buy_pin,
             "buyer_state": buy_state,
             "pos": pos,
-            "buyer_phone": clean_int_str(buyerdt1.get("buyer_phone", "")),
-            "buyer_email": clean_str(buyerdt1.get("buyer_email", "")).lower()
+            "buyer_phone": normalize_numeric_string(buyerdt1.get("buyer_phone", "")),
+            "buyer_email": normalize_email(buyerdt1.get("buyer_email", ""))
         }
 
         # Dispatch Details (dispdt1)
         clean_dispdt1 = None
         if dispdt1:
-            raw_disp_gstin = clean_gstin(dispdt1.get("disp_gstin", ""))
+            raw_disp_gstin = normalize_buyer_gstin(dispdt1.get("disp_gstin", ""))
             if raw_disp_gstin and raw_disp_gstin != "URP" and len(raw_disp_gstin) != 15:
                 audit_log.append({
                     "category": "INVALID_GSTIN_LENGTH",
@@ -519,22 +2475,22 @@ class PayloadBuilder:
                 })
             clean_dispdt1 = {
                 "disp_gstin": raw_disp_gstin,
-                "disp_trdnm": clean_str(dispdt1.get("disp_trdnm", "")),
-                "disp_bno": clean_str(dispdt1.get("disp_bno", "NAA")),
-                "disp_bnm": clean_str(dispdt1.get("disp_bnm", "NAA")),
-                "disp_flno": clean_str(dispdt1.get("disp_flno", "NAA")),
-                "disp_loc": clean_str(dispdt1.get("disp_loc", "")),
-                "disp_dst": clean_str(dispdt1.get("disp_dst", "")),
-                "disp_pin": clean_int_str(dispdt1.get("disp_pin", "")),
+                "disp_trdnm": normalize_ship_trdnm(dispdt1.get("disp_trdnm", "")),
+                "disp_bno": normalize_ship_bno(dispdt1.get("disp_bno", "NAA")),
+                "disp_bnm": normalize_ship_bnm(dispdt1.get("disp_bnm", "NAA")),
+                "disp_flno": normalize_ship_flno(dispdt1.get("disp_flno", "NAA")),
+                "disp_loc": normalize_ship_loc(dispdt1.get("disp_loc", "")),
+                "disp_dst": normalize_ship_dst(dispdt1.get("disp_dst", "")),
+                "disp_pin": normalize_ship_pin(dispdt1.get("disp_pin", "")),
                 "disp_state": clean_state_code(dispdt1.get("disp_state", ""), audit_log=audit_log, field="dispdt1.disp_state"),
-                "disp_phone": clean_int_str(dispdt1.get("disp_phone", "")),
-                "disp_email": clean_str(dispdt1.get("disp_email", "")).lower()
+                "disp_phone": normalize_numeric_string(dispdt1.get("disp_phone", "")),
+                "disp_email": normalize_email(dispdt1.get("disp_email", ""))
             }
 
         # Shipping Details (shipdtl)
         clean_shipdtl = None
         if shipdtl:
-            raw_ship_gstin = clean_gstin(shipdtl.get("ship_gstin", ""))
+            raw_ship_gstin = normalize_ship_gstin(shipdtl.get("ship_gstin", ""))
             if raw_ship_gstin and raw_ship_gstin != "URP" and len(raw_ship_gstin) != 15:
                 audit_log.append({
                     "category": "INVALID_GSTIN_LENGTH",
@@ -545,17 +2501,17 @@ class PayloadBuilder:
                 })
             clean_shipdtl = {
                 "ship_gstin": raw_ship_gstin,
-                "ship_lglnm": clean_str(shipdtl.get("ship_lglnm", "")),
-                "ship_trdnm": clean_str(shipdtl.get("ship_trdnm", "")),
-                "ship_bno": clean_str(shipdtl.get("ship_bno", "NAA")),
-                "ship_bnm": clean_str(shipdtl.get("ship_bnm", "NAA")),
-                "ship_flno": clean_str(shipdtl.get("ship_flno", "NAA")),
-                "ship_loc": clean_str(shipdtl.get("ship_loc", "")),
-                "ship_dst": clean_str(shipdtl.get("ship_dst", "")),
-                "ship_pin": clean_int_str(shipdtl.get("ship_pin", "")),
+                "ship_lglnm": normalize_ship_lglnm(shipdtl.get("ship_lglnm", "")),
+                "ship_trdnm": normalize_ship_trdnm(shipdtl.get("ship_trdnm", "")),
+                "ship_bno": normalize_ship_bno(shipdtl.get("ship_bno", "NAA")),
+                "ship_bnm": normalize_ship_bnm(shipdtl.get("ship_bnm", "NAA")),
+                "ship_flno": normalize_ship_flno(shipdtl.get("ship_flno", "NAA")),
+                "ship_loc": normalize_ship_loc(shipdtl.get("ship_loc", "")),
+                "ship_dst": normalize_ship_dst(shipdtl.get("ship_dst", "")),
+                "ship_pin": normalize_ship_pin(shipdtl.get("ship_pin", "")),
                 "ship_state": clean_state_code(shipdtl.get("ship_state", ""), audit_log=audit_log, field="shipdtl.ship_state"),
-                "ship_phone": clean_int_str(shipdtl.get("ship_phone", "")),
-                "ship_email": clean_str(shipdtl.get("ship_email", "")).lower()
+                "ship_phone": normalize_numeric_string(shipdtl.get("ship_phone", "")),
+                "ship_email": normalize_email(shipdtl.get("ship_email", ""))
             }
 
         # Inter-State vs Intra-State determination
@@ -574,11 +2530,11 @@ class PayloadBuilder:
 
         for idx, raw_item in enumerate(itemdtls, start=1):
             item = normalize_dict_keys_with_log(raw_item)[0] if isinstance(raw_item, dict) else raw_item
-            prdnm = clean_str(item.get("prdnm", f"ITEM_{idx}"))
-            prddesc = clean_str(item.get("prddesc", prdnm))
-            isservc = clean_str(item.get("isservc", "N")).upper() or "N"
-            hsncd = clean_int_str(item.get("hsncd", ""))
-            raw_uqc = clean_str(item.get("uqc", "NOS")).upper() or "NOS"
+            prdnm = normalize_product_name(item.get("prdnm", f"ITEM_{idx}"))
+            prddesc = normalize_product_name(item.get("prddesc", prdnm))
+            isservc = normalize_uppercase(item.get("isservc", "N")) or "N"
+            hsncd = normalize_numeric_string(item.get("hsncd", ""))
+            raw_uqc = normalize_uppercase(item.get("uqc", "NOS")) or "NOS"
             uqc = raw_uqc if raw_uqc in ALLOWED_UQC else "OTH"
 
             qty_d = Decimal(clean_decimal_str(item.get("qty", "1.000"), 3, audit_log=audit_log, field=f"itemdtls[{idx}].qty"))
@@ -753,7 +2709,7 @@ class PayloadBuilder:
             "distance_of_transport": clean_int_str(ewbdt1.get("distance_of_transport", "")),
             "transporter_id": raw_trans_id,
             "transporter_name": clean_str(ewbdt1.get("transporter_name", "")),
-            "mode_of_transport": clean_str(ewbdt1.get("mode_of_transport", "")),
+            "mode_of_transport": clean_str(ewbdt1.get("mode_of_transport") or ewbdt1.get("transmode") or inv.get("mode_of_transport") or inv.get("transmode") or ""),
             "transport_doc_no": clean_str(ewbdt1.get("transport_doc_no", "")).upper(),
             "transporter_doc_date": normalize_date_to_standard(ewbdt1.get("transporter_doc_date", ""), audit_log=audit_log, field="ewbdt1.transporter_doc_date"),
             "veh_type": clean_str(ewbdt1.get("veh_type", "")).upper(),
@@ -819,3 +2775,8 @@ class PayloadBuilder:
     def convert_payload_document(cls, input_data: Any) -> Dict[str, Any]:
         """Backward-compatible wrapper returning only corrected payload."""
         return cls.convert_payload_document_with_audit(input_data)[0]
+
+if __name__ == "__main__":
+    import os
+    if os.path.exists("rescuepe.log"):
+        process_payload("rescuepe.log", "valid.json", "error.json")

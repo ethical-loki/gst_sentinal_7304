@@ -147,52 +147,10 @@ from backend.converter_service import (
     load_default_sample_dirty,
     generate_random_dirty,
     process_converter_pipeline,
+    process_converter_chat,
     TEMPLATE_CONVERTERS_DIR
 )
 
-
-@app.get("/reconciliation", response_class=HTMLResponse)
-def get_recon_page():
-    """Serves the reconciliation HTML page from the frontend folder."""
-    file_path = BASE_DIR / "frontend" / "recon_file.html"
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="recon_file.html not found in frontend directory.")
-    with open(file_path, "r", encoding="utf-8") as f:
-        return f.read()
-
-
-@app.get("/api/recon/{category}")
-def get_recon_data(category: str):
-    """Fetches CSV data from the data/processed folder matching the category."""
-    file_map = {
-        "b2b": "recon_b2b.csv",
-        "b2ba": "recon_b2ba.csv",
-        "cdn": "recon_cdn.csv",
-        "cdna": "recon_cdna.csv"
-    }
-    
-    if category not in file_map:
-        raise HTTPException(status_code=404, detail="Invalid reconciliation category requested.")
-    
-    file_path = BASE_DIR / "data" / "processed" / file_map[category]
-    
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail=f"Processed dataset file not found: {file_map[category]}")
-    
-    try:
-        # Read the CSV using pandas
-        df = pd.read_csv(file_path)
-        # Replace NaN values with empty strings for safe JSON serialization
-        df = df.fillna("")
-        
-        return {
-            "category": category,
-            "total_rows": len(df),
-            "columns": df.columns.tolist(),
-            "data": df.to_dict(orient="records")
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing CSV dataset: {str(e)}")
 
 
 # =========================================================================
@@ -264,6 +222,36 @@ async def process_payload(request: Request):
         raise HTTPException(status_code=500, detail=f"Error processing conversion: {str(e)}")
 
 
+@app.post("/api/converter/chat")
+async def chat_with_converter_copilot(request: Request):
+    """
+    AI Compliance Assistant & Copilot for E-Invoice and E-Way Bill operations.
+    Answers compliance queries, explains validation errors in plain English,
+    accepts user corrections (GSTIN, PAN, PIN, Vehicle, etc.), patches payload,
+    and returns live re-validation status.
+    """
+    try:
+        body = await request.json()
+        message = body.get("message", "").strip()
+        raw_payload = body.get("payload")
+        validation_report = body.get("validation_report")
+        chat_history = body.get("chat_history", [])
+
+        if not raw_payload:
+            # Fallback to default dirty sample if none in editor
+            raw_payload = load_default_sample_dirty()
+
+        response = process_converter_chat(
+            user_message=message,
+            raw_payload=raw_payload,
+            validation_report=validation_report,
+            chat_history=chat_history
+        )
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error in compliance copilot: {str(e)}")
+
+
 @app.get("/api/converter/download/{file_type}")
 async def download_converted_file(file_type: str):
     """
@@ -300,7 +288,6 @@ if __name__ == "__main__":
     import uvicorn
     print("\n🚀 Starting GST Sentinel Server at http://127.0.0.1:8000 ...")
     print("👉 E-Invoice & E-Way Converter Dashboard: http://127.0.0.1:8000/converter")
-    print("👉 HSN Code Search Engine               : http://127.0.0.1:8000/")
-    print("👉 Reconciliation Records Reviewer      : http://127.0.0.1:8000/reconciliation\n")
+    print("👉 HSN Code Search Engine               : http://127.0.0.1:8000/\n")
     uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)
 

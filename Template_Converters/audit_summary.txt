@@ -6,23 +6,35 @@ Compliant (Valid)       : 0
 Non-Compliant (Failed)  : 1
 ---------------------------------------------------------------------------
 
-[INVALID] Invoice #1: INV26271798
+[INVALID] Invoice #1: INV-2026-B2B01
    Status             : INVALID
-   Auto-Corrections   : 4
-   Unresolved Errors  : 3
+   Auto-Corrections   : 5
+   Unresolved Errors  : 9
    * Corrections Made (Customer Errors Fixed):
-     - [FORMAT_NORMALIZATION] itemdtls[1].totitemval: '130777,45' -> '130777.45'
-       Reason: Replaced comma decimal separator '130777,45' with standard point notation '130777.45'
-     - [FORMAT_NORMALIZATION] itemdtls[3].grossamt: '131419,72' -> '131419.72'
-       Reason: Replaced comma decimal separator '131419,72' with standard point notation '131419.72'
-     - [FORMAT_NORMALIZATION] itemdtls[3].assamt: '128791,33' -> '128791.33'
-       Reason: Replaced comma decimal separator '128791,33' with standard point notation '128791.33'
-     - [DATE_FORMAT_NORMALIZATION] ewbdt1.transporter_doc_date: '2026-07-23' -> '23-07-2026'
-       Reason: Standardized date format from '2026-07-23' to '23-07-2026'
+     - [KEY_NAME_NORMALIZATION] itemdtls[1].unitprice: 'unitprice' -> 'unitrate'
+       Reason: Standardized non-compliant key 'unitprice' to schema key 'unitrate'
+     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-10' -> '10-10-2026'
+       Reason: Standardized date format from '2026-10-10' to '10-10-2026'
+     - [TAX_MATH_RECALCULATION] itemdtls[1].grossamt: '' -> '50000.00'
+       Reason: Recalculated Gross Amount as Qty (5.000) * UnitRate (10000.00) (Rule 2192)
+     - [TAX_MATH_RECALCULATION] itemdtls[1].assamt: '' -> '50000.00'
+       Reason: Recalculated Assessable Value as Gross (50000.00) - Discount (0.00) (Rule 2193)
+     - [TAX_MATH_RECALCULATION] itemdtls[1].totitemval: '59000' -> '50000.00'
+       Reason: Recalculated Total Item Value to match sum of assessable value and all taxes (Rule 2194)
    ! Unresolved NIC Rule Violations:
-     - [Code 2289] self_gstin: Invalid self_gstin length (12). Must be exactly 15 characters.
+     - [Code 2289] self_gstin: Invalid self_gstin length (14). Must be exactly 15 characters.
        Resolution: Provide valid 15-character supplier GSTIN
-     - [Code 2289] self_gstin: self_gstin '24TLYLA4982V' does not match supplier_gstin '24TLYLA4982V1ZL'.
+     - [Code 2285] trandt1.transactionmode: Invalid transactionmode 'REGULAR_TRANSIT'. Must be REG, DIS, SHP, or CMB
+       Resolution: Ensure field length conforms to official NIC character length constraints
+     - [Code 2289] supplierdt1.supplier_gstin: Invalid supplier_gstin length (14). Must be exactly 15 characters.
        Resolution: Provide valid 15-character supplier GSTIN
-     - [Code 4021] ewbdt1.transporter_doc_date: Transporter document date cannot be earlier than invoice date.
+     - [Code 3039] supplierdt1.supplier_pin: Pincode '400001' of supplier does not belong to State '29' (Karnataka).
+       Resolution: Ensure PIN code belongs to the specified State code
+     - [Code 2212] buyerdt1.buyer_gstin: buyer_gstin cannot be 'URP' for transaction category 'B2B'.
+       Resolution: For B2B, B2G, and SEZ, pass valid 15-character recipient GSTIN
+     - [Code 2176] itemdtls[1].hsncd: hsncd is mandatory for item 1
+       Resolution: Check HSN code against NIC master (minimum 4 to 8 digits for goods, 6 for services 99xxxx)
+     - [Code 4019] ewbdt1.transporter_id: Provide Transporter ID in order to generate Part A of e-Way Bill.
+     - [Code 4029] ewbdt1.distance_of_transport: distance_of_transport is required and must be greater than 0 when ewayreq is 'Y'
+     - [Code 4011] ewbdt1.veh_number: Vehicle number should be passed in case transportation mode is Road.
 ---------------------------------------------------------------------------
