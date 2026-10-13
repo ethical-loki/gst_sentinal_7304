@@ -148,8 +148,13 @@ from backend.converter_service import (
     generate_random_dirty,
     process_converter_pipeline,
     process_converter_chat,
+    get_configured_endpoints_info,
+    verify_gstin_government_portal,
+    verify_vehicle_government_portal,
+    verify_vahan_vehicle_portal,
     TEMPLATE_CONVERTERS_DIR
 )
+
 
 
 
@@ -179,6 +184,37 @@ async def get_sample_dirty_payload():
         return {"status": "success", "payload": sample_data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error loading sample payload: {str(e)}")
+
+
+@app.get("/api/converter/endpoints")
+async def get_module_endpoints():
+    """
+    Returns active URLs, authentication headers, and statuses for
+    all connected verification modules (GSTIN, Vahan Vehicle, NIC Engine).
+    """
+    try:
+        return get_configured_endpoints_info()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving module endpoints: {str(e)}")
+
+
+@app.get("/api/converter/verify-gstin/{gstin}")
+async def verify_gstin_endpoint(gstin: str):
+    """Live verification of GSTIN against configured portal / Modulo-36 checksum."""
+    try:
+        return verify_gstin_government_portal(gstin.strip())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error verifying GSTIN: {str(e)}")
+
+
+@app.get("/api/converter/verify-vehicle/{veh_num}")
+async def verify_vehicle_endpoint(veh_num: str):
+    """Verification of Vehicle Number against MoRTH format / Live API."""
+    try:
+        return verify_vahan_vehicle_portal(veh_num.strip())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error verifying vehicle: {str(e)}")
+
 
 
 @app.post("/api/converter/generate")

@@ -1,40 +1,44 @@
 ===========================================================================
              GST E-INVOICE & E-WAY BILL TRANSFORMATION REPORT
 ===========================================================================
-Total Invoices Processed : 1
-Compliant (Valid)       : 0
-Non-Compliant (Failed)  : 1
+Total Invoices Processed : 2
+Compliant (Valid)       : 2
+Non-Compliant (Failed)  : 0
 ---------------------------------------------------------------------------
 
-[INVALID] Invoice #1: INV-2026-B2B01
-   Status             : INVALID
-   Auto-Corrections   : 5
-   Unresolved Errors  : 9
+[VALID] Invoice #1: INV26762610
+   Status             : VALID
+   Auto-Corrections   : 9
+   Unresolved Errors  : 0
    * Corrections Made (Customer Errors Fixed):
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].unitprice: 'unitprice' -> 'unitrate'
-       Reason: Standardized non-compliant key 'unitprice' to schema key 'unitrate'
-     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-10' -> '10-10-2026'
-       Reason: Standardized date format from '2026-10-10' to '10-10-2026'
-     - [TAX_MATH_RECALCULATION] itemdtls[1].grossamt: '' -> '50000.00'
-       Reason: Recalculated Gross Amount as Qty (5.000) * UnitRate (10000.00) (Rule 2192)
-     - [TAX_MATH_RECALCULATION] itemdtls[1].assamt: '' -> '50000.00'
-       Reason: Recalculated Assessable Value as Gross (50000.00) - Discount (0.00) (Rule 2193)
-     - [TAX_MATH_RECALCULATION] itemdtls[1].totitemval: '59000' -> '50000.00'
-       Reason: Recalculated Total Item Value to match sum of assessable value and all taxes (Rule 2194)
-   ! Unresolved NIC Rule Violations:
-     - [Code 2289] self_gstin: Invalid self_gstin length (14). Must be exactly 15 characters.
-       Resolution: Provide valid 15-character supplier GSTIN
-     - [Code 2285] trandt1.transactionmode: Invalid transactionmode 'REGULAR_TRANSIT'. Must be REG, DIS, SHP, or CMB
-       Resolution: Ensure field length conforms to official NIC character length constraints
-     - [Code 2289] supplierdt1.supplier_gstin: Invalid supplier_gstin length (14). Must be exactly 15 characters.
-       Resolution: Provide valid 15-character supplier GSTIN
-     - [Code 3039] supplierdt1.supplier_pin: Pincode '400001' of supplier does not belong to State '29' (Karnataka).
-       Resolution: Ensure PIN code belongs to the specified State code
-     - [Code 2212] buyerdt1.buyer_gstin: buyer_gstin cannot be 'URP' for transaction category 'B2B'.
-       Resolution: For B2B, B2G, and SEZ, pass valid 15-character recipient GSTIN
-     - [Code 2176] itemdtls[1].hsncd: hsncd is mandatory for item 1
-       Resolution: Check HSN code against NIC master (minimum 4 to 8 digits for goods, 6 for services 99xxxx)
-     - [Code 4019] ewbdt1.transporter_id: Provide Transporter ID in order to generate Part A of e-Way Bill.
-     - [Code 4029] ewbdt1.distance_of_transport: distance_of_transport is required and must be greater than 0 when ewayreq is 'Y'
-     - [Code 4011] ewbdt1.veh_number: Vehicle number should be passed in case transportation mode is Road.
+     - [DATE_FORMAT_NORMALIZATION] expdt1.shipbdt: '05.09.2026' -> '05-09-2026'
+       Reason: Standardized date format from '05.09.2026' to '05-09-2026'
+     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-08-03' -> '03-08-2026'
+       Reason: Standardized date format from '2026-08-03' to '03-08-2026'
+     - [FORMAT_NORMALIZATION] itemdtls[1].grossamt: '5531,46' -> '5531.46'
+       Reason: Replaced comma decimal separator '5531,46' with standard point notation '5531.46'
+     - [FORMAT_NORMALIZATION] itemdtls[1].totitemval: '6200,77' -> '6200.77'
+       Reason: Replaced comma decimal separator '6200,77' with standard point notation '6200.77'
+     - [FORMAT_NORMALIZATION] itemdtls[2].grossamt: '12926,93' -> '12926.93'
+       Reason: Replaced comma decimal separator '12926,93' with standard point notation '12926.93'
+     - [FORMAT_NORMALIZATION] itemdtls[2].totitemval: '14188,60' -> '14188.60'
+       Reason: Replaced comma decimal separator '14188,60' with standard point notation '14188.60'
+     - [FORMAT_NORMALIZATION] itemdtls[3].assamt: '145423,37' -> '145423.37'
+       Reason: Replaced comma decimal separator '145423,37' with standard point notation '145423.37'
+     - [FORMAT_NORMALIZATION] itemdtls[3].totitemval: '152694,54' -> '152694.54'
+       Reason: Replaced comma decimal separator '152694,54' with standard point notation '152694.54'
+     - [FORMAT_NORMALIZATION] valdt1.totinvval: '173083,91' -> '173083.91'
+       Reason: Replaced comma decimal separator '173083,91' with standard point notation '173083.91'
+---------------------------------------------------------------------------
+[VALID] Invoice #2: INV26575920
+   Status             : VALID
+   Auto-Corrections   : 3
+   Unresolved Errors  : 0
+   * Corrections Made (Customer Errors Fixed):
+     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-07-26' -> '26-07-2026'
+       Reason: Standardized date format from '2026-07-26' to '26-07-2026'
+     - [FORMAT_NORMALIZATION] itemdtls[1].assamt: '65206,18' -> '65206.18'
+       Reason: Replaced comma decimal separator '65206,18' with standard point notation '65206.18'
+     - [FORMAT_NORMALIZATION] itemdtls[1].totitemval: '68466,49' -> '68466.49'
+       Reason: Replaced comma decimal separator '68466,49' with standard point notation '68466.49'
 ---------------------------------------------------------------------------

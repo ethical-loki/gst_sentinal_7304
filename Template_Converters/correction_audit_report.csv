@@ -1,15 +1,13 @@
 ﻿Invoice Number,Invoice Status,Type,Category / Error Code,Field / JSON Path,Customer Original Value,System Corrected Value,Description / Rule Reason
-INV-2026-B2B01,INVALID,AUTO_CORRECTION,KEY_NAME_NORMALIZATION,itemdtls[1].unitprice,unitprice,unitrate,Standardized non-compliant key 'unitprice' to schema key 'unitrate'
-INV-2026-B2B01,INVALID,AUTO_CORRECTION,DATE_FORMAT_NORMALIZATION,docdt1.docdt,2026-10-10,10-10-2026,Standardized date format from '2026-10-10' to '10-10-2026'
-INV-2026-B2B01,INVALID,AUTO_CORRECTION,TAX_MATH_RECALCULATION,itemdtls[1].grossamt,,50000.00,Recalculated Gross Amount as Qty (5.000) * UnitRate (10000.00) (Rule 2192)
-INV-2026-B2B01,INVALID,AUTO_CORRECTION,TAX_MATH_RECALCULATION,itemdtls[1].assamt,,50000.00,Recalculated Assessable Value as Gross (50000.00) - Discount (0.00) (Rule 2193)
-INV-2026-B2B01,INVALID,AUTO_CORRECTION,TAX_MATH_RECALCULATION,itemdtls[1].totitemval,59000,50000.00,Recalculated Total Item Value to match sum of assessable value and all taxes (Rule 2194)
-INV-2026-B2B01,INVALID,COMPLIANCE_ERROR,Code 2289,self_gstin,,,Invalid self_gstin length (14). Must be exactly 15 characters. (Reason: Supplier GSTIN or self_gstin length is not 15 characters or format mismatch)
-INV-2026-B2B01,INVALID,COMPLIANCE_ERROR,Code 2285,trandt1.transactionmode,,,"Invalid transactionmode 'REGULAR_TRANSIT'. Must be REG, DIS, SHP, or CMB (Reason: A mandatory or optional field length violated NIC schema boundary)"
-INV-2026-B2B01,INVALID,COMPLIANCE_ERROR,Code 2289,supplierdt1.supplier_gstin,,,Invalid supplier_gstin length (14). Must be exactly 15 characters. (Reason: Supplier GSTIN or self_gstin length is not 15 characters or format mismatch)
-INV-2026-B2B01,INVALID,COMPLIANCE_ERROR,Code 3039,supplierdt1.supplier_pin,,,Pincode '400001' of supplier does not belong to State '29' (Karnataka). (Reason: Pincode prefix does not match the State code passed for supplier)
-INV-2026-B2B01,INVALID,COMPLIANCE_ERROR,Code 2212,buyerdt1.buyer_gstin,,,buyer_gstin cannot be 'URP' for transaction category 'B2B'. (Reason: URP passed for B2B/B2G/SEZ transaction)
-INV-2026-B2B01,INVALID,COMPLIANCE_ERROR,Code 2176,itemdtls[1].hsncd,,,hsncd is mandatory for item 1 (Reason: Wrong HSN code passed)
-INV-2026-B2B01,INVALID,COMPLIANCE_ERROR,Code 4019,ewbdt1.transporter_id,,,Provide Transporter ID in order to generate Part A of e-Way Bill. (Reason: )
-INV-2026-B2B01,INVALID,COMPLIANCE_ERROR,Code 4029,ewbdt1.distance_of_transport,,,distance_of_transport is required and must be greater than 0 when ewayreq is 'Y' (Reason: )
-INV-2026-B2B01,INVALID,COMPLIANCE_ERROR,Code 4011,ewbdt1.veh_number,,,Vehicle number should be passed in case transportation mode is Road. (Reason: )
+INV26762610,VALID,AUTO_CORRECTION,DATE_FORMAT_NORMALIZATION,expdt1.shipbdt,05.09.2026,05-09-2026,Standardized date format from '05.09.2026' to '05-09-2026'
+INV26762610,VALID,AUTO_CORRECTION,DATE_FORMAT_NORMALIZATION,docdt1.docdt,2026-08-03,03-08-2026,Standardized date format from '2026-08-03' to '03-08-2026'
+INV26762610,VALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[1].grossamt,"5531,46",5531.46,"Replaced comma decimal separator '5531,46' with standard point notation '5531.46'"
+INV26762610,VALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[1].totitemval,"6200,77",6200.77,"Replaced comma decimal separator '6200,77' with standard point notation '6200.77'"
+INV26762610,VALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[2].grossamt,"12926,93",12926.93,"Replaced comma decimal separator '12926,93' with standard point notation '12926.93'"
+INV26762610,VALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[2].totitemval,"14188,60",14188.60,"Replaced comma decimal separator '14188,60' with standard point notation '14188.60'"
+INV26762610,VALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[3].assamt,"145423,37",145423.37,"Replaced comma decimal separator '145423,37' with standard point notation '145423.37'"
+INV26762610,VALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[3].totitemval,"152694,54",152694.54,"Replaced comma decimal separator '152694,54' with standard point notation '152694.54'"
+INV26762610,VALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,valdt1.totinvval,"173083,91",173083.91,"Replaced comma decimal separator '173083,91' with standard point notation '173083.91'"
+INV26575920,VALID,AUTO_CORRECTION,DATE_FORMAT_NORMALIZATION,docdt1.docdt,2026-07-26,26-07-2026,Standardized date format from '2026-07-26' to '26-07-2026'
+INV26575920,VALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[1].assamt,"65206,18",65206.18,"Replaced comma decimal separator '65206,18' with standard point notation '65206.18'"
+INV26575920,VALID,AUTO_CORRECTION,FORMAT_NORMALIZATION,itemdtls[1].totitemval,"68466,49",68466.49,"Replaced comma decimal separator '68466,49' with standard point notation '68466.49'"

@@ -1,113 +1,107 @@
 {
-  "total_invoices": 1,
-  "valid_invoices": 0,
-  "failed_invoices": 1,
+  "total_invoices": 2,
+  "valid_invoices": 2,
+  "failed_invoices": 0,
   "results": [
     {
-      "invoice_number": "INV-2026-B2B01",
-      "status": "INVALID",
-      "error_count": 9,
-      "errors": [
-        {
-          "error_code": 2289,
-          "field": "self_gstin",
-          "message": "Invalid self_gstin length (14). Must be exactly 15 characters.",
-          "reason": "Supplier GSTIN or self_gstin length is not 15 characters or format mismatch",
-          "resolution": "Provide valid 15-character supplier GSTIN"
-        },
-        {
-          "error_code": 2285,
-          "field": "trandt1.transactionmode",
-          "message": "Invalid transactionmode 'REGULAR_TRANSIT'. Must be REG, DIS, SHP, or CMB",
-          "reason": "A mandatory or optional field length violated NIC schema boundary",
-          "resolution": "Ensure field length conforms to official NIC character length constraints"
-        },
-        {
-          "error_code": 2289,
-          "field": "supplierdt1.supplier_gstin",
-          "message": "Invalid supplier_gstin length (14). Must be exactly 15 characters.",
-          "reason": "Supplier GSTIN or self_gstin length is not 15 characters or format mismatch",
-          "resolution": "Provide valid 15-character supplier GSTIN"
-        },
-        {
-          "error_code": 3039,
-          "field": "supplierdt1.supplier_pin",
-          "message": "Pincode '400001' of supplier does not belong to State '29' (Karnataka).",
-          "reason": "Pincode prefix does not match the State code passed for supplier",
-          "resolution": "Ensure PIN code belongs to the specified State code"
-        },
-        {
-          "error_code": 2212,
-          "field": "buyerdt1.buyer_gstin",
-          "message": "buyer_gstin cannot be 'URP' for transaction category 'B2B'.",
-          "reason": "URP passed for B2B/B2G/SEZ transaction",
-          "resolution": "For B2B, B2G, and SEZ, pass valid 15-character recipient GSTIN"
-        },
-        {
-          "error_code": 2176,
-          "field": "itemdtls[1].hsncd",
-          "message": "hsncd is mandatory for item 1",
-          "reason": "Wrong HSN code passed",
-          "resolution": "Check HSN code against NIC master (minimum 4 to 8 digits for goods, 6 for services 99xxxx)"
-        },
-        {
-          "error_code": 4019,
-          "field": "ewbdt1.transporter_id",
-          "message": "Provide Transporter ID in order to generate Part A of e-Way Bill.",
-          "reason": "",
-          "resolution": ""
-        },
-        {
-          "error_code": 4029,
-          "field": "ewbdt1.distance_of_transport",
-          "message": "distance_of_transport is required and must be greater than 0 when ewayreq is 'Y'",
-          "reason": "",
-          "resolution": ""
-        },
-        {
-          "error_code": 4011,
-          "field": "ewbdt1.veh_number",
-          "message": "Vehicle number should be passed in case transportation mode is Road.",
-          "reason": "",
-          "resolution": ""
-        }
-      ],
-      "corrections_applied_count": 5,
+      "invoice_number": "INV26762610",
+      "status": "VALID",
+      "error_count": 0,
+      "errors": [],
+      "corrections_applied_count": 9,
       "corrections_applied": [
         {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].unitprice",
-          "original": "unitprice",
-          "corrected": "unitrate",
-          "description": "Standardized non-compliant key 'unitprice' to schema key 'unitrate'"
+          "category": "DATE_FORMAT_NORMALIZATION",
+          "field": "expdt1.shipbdt",
+          "original": "05.09.2026",
+          "corrected": "05-09-2026",
+          "description": "Standardized date format from '05.09.2026' to '05-09-2026'"
         },
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-10",
-          "corrected": "10-10-2026",
-          "description": "Standardized date format from '2026-10-10' to '10-10-2026'"
+          "original": "2026-08-03",
+          "corrected": "03-08-2026",
+          "description": "Standardized date format from '2026-08-03' to '03-08-2026'"
         },
         {
-          "category": "TAX_MATH_RECALCULATION",
+          "category": "FORMAT_NORMALIZATION",
           "field": "itemdtls[1].grossamt",
-          "original": "",
-          "corrected": "50000.00",
-          "description": "Recalculated Gross Amount as Qty (5.000) * UnitRate (10000.00) (Rule 2192)"
+          "original": "5531,46",
+          "corrected": "5531.46",
+          "description": "Replaced comma decimal separator '5531,46' with standard point notation '5531.46'"
         },
         {
-          "category": "TAX_MATH_RECALCULATION",
-          "field": "itemdtls[1].assamt",
-          "original": "",
-          "corrected": "50000.00",
-          "description": "Recalculated Assessable Value as Gross (50000.00) - Discount (0.00) (Rule 2193)"
-        },
-        {
-          "category": "TAX_MATH_RECALCULATION",
+          "category": "FORMAT_NORMALIZATION",
           "field": "itemdtls[1].totitemval",
-          "original": 59000,
-          "corrected": "50000.00",
-          "description": "Recalculated Total Item Value to match sum of assessable value and all taxes (Rule 2194)"
+          "original": "6200,77",
+          "corrected": "6200.77",
+          "description": "Replaced comma decimal separator '6200,77' with standard point notation '6200.77'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[2].grossamt",
+          "original": "12926,93",
+          "corrected": "12926.93",
+          "description": "Replaced comma decimal separator '12926,93' with standard point notation '12926.93'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[2].totitemval",
+          "original": "14188,60",
+          "corrected": "14188.60",
+          "description": "Replaced comma decimal separator '14188,60' with standard point notation '14188.60'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[3].assamt",
+          "original": "145423,37",
+          "corrected": "145423.37",
+          "description": "Replaced comma decimal separator '145423,37' with standard point notation '145423.37'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[3].totitemval",
+          "original": "152694,54",
+          "corrected": "152694.54",
+          "description": "Replaced comma decimal separator '152694,54' with standard point notation '152694.54'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "valdt1.totinvval",
+          "original": "173083,91",
+          "corrected": "173083.91",
+          "description": "Replaced comma decimal separator '173083,91' with standard point notation '173083.91'"
+        }
+      ]
+    },
+    {
+      "invoice_number": "INV26575920",
+      "status": "VALID",
+      "error_count": 0,
+      "errors": [],
+      "corrections_applied_count": 3,
+      "corrections_applied": [
+        {
+          "category": "DATE_FORMAT_NORMALIZATION",
+          "field": "docdt1.docdt",
+          "original": "2026-07-26",
+          "corrected": "26-07-2026",
+          "description": "Standardized date format from '2026-07-26' to '26-07-2026'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[1].assamt",
+          "original": "65206,18",
+          "corrected": "65206.18",
+          "description": "Replaced comma decimal separator '65206,18' with standard point notation '65206.18'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[1].totitemval",
+          "original": "68466,49",
+          "corrected": "68466.49",
+          "description": "Replaced comma decimal separator '68466,49' with standard point notation '68466.49'"
         }
       ]
     }

@@ -2709,7 +2709,7 @@ class PayloadBuilder:
             "distance_of_transport": clean_int_str(ewbdt1.get("distance_of_transport", "")),
             "transporter_id": raw_trans_id,
             "transporter_name": clean_str(ewbdt1.get("transporter_name", "")),
-            "mode_of_transport": clean_str(ewbdt1.get("mode_of_transport") or ewbdt1.get("transmode") or inv.get("mode_of_transport") or inv.get("transmode") or ""),
+            "mode_of_transport": clean_str(ewbdt1.get("mode_of_transport") or ewbdt1.get("transmode") or data.get("mode_of_transport") or data.get("transmode") or ""),
             "transport_doc_no": clean_str(ewbdt1.get("transport_doc_no", "")).upper(),
             "transporter_doc_date": normalize_date_to_standard(ewbdt1.get("transporter_doc_date", ""), audit_log=audit_log, field="ewbdt1.transporter_doc_date"),
             "veh_type": clean_str(ewbdt1.get("veh_type", "")).upper(),

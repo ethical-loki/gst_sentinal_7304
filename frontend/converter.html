@@ -876,7 +876,347 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
+        /* ================= FULL-HEIGHT MODULE ENDPOINTS & INTEGRATION HUB ================= */
+        .module-endpoints-panel {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 0;
+            flex: 1;
+            background: rgba(10, 15, 30, 0.95);
+            overflow: hidden;
+        }
+
+        .endpoints-summary-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 14px;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.74rem;
+        }
+
+        .summary-stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+
+        .stat-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .stat-dot.green {
+            background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+
+        .summary-env-tag {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+        }
+
+        .summary-env-tag code {
+            color: #38bdf8;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 1px 4px;
+            border-radius: 4px;
+        }
+
+        .endpoints-cards-feed {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            scrollbar-width: thin;
+        }
+
+        .endpoints-cards-feed::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .endpoints-cards-feed::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.18);
+            border-radius: 3px;
+        }
+
+        .module-card {
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+        }
+
+        .module-card:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.15);
+            background: rgba(18, 28, 52, 0.82);
+        }
+
+        .module-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .module-title-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .module-card-icon {
+            font-size: 1.25rem;
+            line-height: 1;
+            padding: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+        }
+
+        .module-title-box h4 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin: 0;
+        }
+
+        .module-title-box p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .module-badge-live {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 8px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            letter-spacing: 0.4px;
+            white-space: nowrap;
+        }
+
+        .module-badge-statutory {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 8px;
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            letter-spacing: 0.4px;
+            white-space: nowrap;
+        }
+
+        .module-card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field-label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .method-tag {
+            font-size: 0.62rem;
+            font-weight: 800;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .method-tag.get {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+        }
+
+        .method-tag.post {
+            background: rgba(56, 189, 248, 0.2);
+            color: #38bdf8;
+        }
+
+        .method-tag.portal {
+            background: rgba(192, 132, 252, 0.2);
+            color: #c084fc;
+        }
+
+        .url-copy-box {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(6, 9, 17, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 5px 8px;
+        }
+
+        .url-copy-box code {
+            flex: 1;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: #93c5fd;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .btn-copy-url {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #cbd5e1;
+            font-size: 0.68rem;
+            padding: 2px 7px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .btn-copy-url:hover {
+            background: rgba(99, 102, 241, 0.35);
+            color: #ffffff;
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+
+        .auth-details-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            padding: 2px 0;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .auth-meta {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .auth-meta code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1px 4px;
+            border-radius: 3px;
+            color: #e2e8f0;
+        }
+
+        .auth-key-label {
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        .quick-tester-box {
+            margin-top: 4px;
+            background: rgba(6, 9, 17, 0.6);
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 6px 8px;
+        }
+
+        .tester-input-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .tester-input {
+            flex: 1;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.72rem;
+            color: #ffffff;
+            font-family: 'JetBrains Mono', monospace;
+            outline: none;
+        }
+
+        .tester-input:focus {
+            border-color: var(--accent-primary);
+        }
+
+        .btn-test-action {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            border: none;
+            color: #ffffff;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .btn-test-action:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+
+        .tester-result-box {
+            margin-top: 6px;
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 6px 8px;
+            border-radius: 4px;
+            background: rgba(10, 15, 30, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            line-height: 1.4;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+
+        .portal-links-strip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+
+        .portal-links-strip a {
+            color: #38bdf8;
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+
+        .portal-links-strip a:hover {
+            color: #7dd3fc;
+            text-decoration: underline;
+        }
+
+
         /* Quick Suggestions Pills Bar */
+
         .copilot-pills-bar {
             padding: 8px 12px;
             background: rgba(6, 9, 17, 0.6);
@@ -1914,65 +2254,280 @@
 
                 <!-- Right: AI Compliance Copilot & Assistant -->
                 <div class="copilot-container" id="copilotPanel">
-                    <!-- Copilot Top Header -->
+                    <!-- Column Header -->
                     <div class="copilot-header">
                         <div class="copilot-brand">
-                            <div class="copilot-avatar">🤖</div>
+                            <div class="copilot-avatar">🌐</div>
                             <div class="copilot-title-block">
-                                <h3>GST Compliance Copilot</h3>
-                                <span>Real-Time NIC Diagnostics & Smart Patcher</span>
+                                <h3 id="panelPrimaryTitle">Module Endpoints &amp; Live URLs</h3>
+                                <span id="panelPrimarySubtitle">Government Portals, API Verification &amp; Statutory Schemas</span>
                             </div>
                         </div>
                         <div class="copilot-header-actions">
+                            <!-- View Switcher Tabs: Endpoints Hub vs Copilot Assistant -->
+                            <div class="copilot-layout-group" style="background: rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.4);">
+                                <button type="button" class="copilot-layout-btn active" id="tabBtnEndpoints" onclick="switchRightPanelView('endpoints')" title="View Active Module URLs &amp; Endpoints">🔗 Module URLs</button>
+                                <button type="button" class="copilot-layout-btn" id="tabBtnCopilot" onclick="switchRightPanelView('copilot')" title="Switch to Copilot Assistant">🤖 Chatbot</button>
+                            </div>
+
                             <!-- Resolution & Layout Switcher -->
-                            <div class="copilot-layout-group" title="Adjust Chatbot Resolution / Width">
+                            <div class="copilot-layout-group" title="Adjust Resolution / Width">
                                 <button type="button" class="copilot-layout-btn active" id="btnSplitAuto" onclick="setCopilotLayout('auto')" title="Smart Auto Resolution">Auto</button>
                                 <button type="button" class="copilot-layout-btn" id="btnSplitHalf" onclick="setCopilotLayout('half')" title="50:50 Balanced Split">50:50</button>
-                                <button type="button" class="copilot-layout-btn" id="btnSplitWide" onclick="setCopilotLayout('wide')" title="Wide Chat Mode (65% width)">Wide</button>
-                                <button type="button" class="copilot-layout-btn" id="btnSplitFull" onclick="setCopilotLayout('full')" title="Maximize Chat Window">⤢ Full</button>
-                            </div>
-                            <div class="copilot-status-badge" id="copilotStatusPill">
-                                <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10b981;"></span>
-                                <span id="copilotStatusText">Active</span>
-                            </div>
-                            <button type="button" class="copilot-icon-btn" onclick="clearCopilotChat()" title="Clear Chat History">🧹 Clear</button>
-                        </div>
-                    </div>
-
-                    <!-- Quick Context Prompt Pills -->
-                    <div class="copilot-pills-bar" id="copilotPillsBar">
-                        <button class="copilot-pill" onclick="sendCopilotQuickMessage('Why did my invoice fail?')">💡 Explain Errors</button>
-                        <button class="copilot-pill" onclick="sendCopilotQuickMessage('How do I fix supplier GSTIN?')">🏢 Fix Supplier GSTIN</button>
-                        <button class="copilot-pill" onclick="sendCopilotQuickMessage('Fix state and pin code mismatch')">📍 Fix State / PIN</button>
-                        <button class="copilot-pill" onclick="sendCopilotQuickMessage('Add vehicle number for E-Way Bill')">🚚 Fix Vehicle Number</button>
-                        <button class="copilot-pill" onclick="sendCopilotQuickMessage('Rebalance tax math and invoice value')">🧮 Rebalance Tax Math</button>
-                    </div>
-
-                    <!-- Chat Message Feed -->
-                    <div class="copilot-messages-feed" id="copilotMessagesFeed">
-                        <!-- Welcome Bot Message -->
-                        <div class="copilot-msg bot">
-                            <div class="msg-bubble">
-                                👋 <strong>Hello! I am your GST Sentinel Compliance Copilot.</strong><br><br>
-                                I inspect your payload in real-time against official NIC IRN & E-Way Bill rules. If your GSTIN is locked, invalid, or failing validation, tell me your details right here (e.g., <em>"My GSTIN is 29ABCDE1234F1Z5"</em> or <em>"Vehicle number is KA01AB1234"</em>), and I will <strong>automatically patch your JSON payload</strong> and re-validate it for you!
+                                <button type="button" class="copilot-layout-btn" id="btnSplitWide" onclick="setCopilotLayout('wide')" title="Wide View (65%)">Wide</button>
+                                <button type="button" class="copilot-layout-btn" id="btnSplitFull" onclick="setCopilotLayout('full')" title="Maximize Window">⤢ Full</button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Chat Input Bar -->
-                    <form class="copilot-input-area" id="copilotChatForm" onsubmit="handleCopilotSubmit(event)">
-                        <input 
-                            type="text" 
-                            id="copilotInputBox" 
-                            class="copilot-input-box" 
-                            placeholder="Tell me your GSTIN, ask to fix an error, or ask a question..." 
-                            autocomplete="off"
-                        >
-                        <button type="submit" class="copilot-send-btn" id="copilotSendBtn">
-                            <span>Send</span> ↵
-                        </button>
-                    </form>
+                    <!-- VIEW 1: MODULE ENDPOINTS & URLS (FULL HEIGHT - FILLS THE BLANK SPACE AREA!) -->
+                    <div class="module-endpoints-panel" id="moduleEndpointsPanelView">
+                        
+                        <!-- Top Summary Banner -->
+                        <div class="endpoints-summary-bar">
+                            <div class="summary-stat-badge">
+                                <span class="stat-dot green"></span>
+                                <span>3 Live Integration Engines Connected</span>
+                            </div>
+                            <span class="summary-env-tag">Loaded via <code>.env</code></span>
+                        </div>
+
+                        <!-- Scrollable Cards Feed -->
+                        <div class="endpoints-cards-feed">
+                            
+                            <!-- Card 1: GSTIN Online Verification -->
+                            <div class="module-card">
+                                <div class="module-card-header">
+                                    <div class="module-title-box">
+                                        <span class="module-card-icon">🏛️</span>
+                                        <div>
+                                            <h4>GSTIN Online Verification Module</h4>
+                                            <p>Live Taxpayer Registry Check &amp; Modulo-36 Checksum</p>
+                                        </div>
+                                    </div>
+                                    <span class="module-badge-live">🟢 LIVE ONLINE</span>
+                                </div>
+
+                                <div class="module-card-body">
+                                    <div class="field-label-row">
+                                        <span>Configured API Endpoint (URL)</span>
+                                        <span class="method-tag get">GET</span>
+                                    </div>
+                                    <div class="url-copy-box">
+                                        <code id="epGstinUrlCard">https://gstinapi.in/v1/gstin/{gstin}</code>
+                                        <button type="button" class="btn-copy-url" onclick="copyEndpointText('https://gstinapi.in/v1/gstin/{gstin}', this)">📋 Copy</button>
+                                    </div>
+
+                                    <div class="auth-details-row">
+                                        <div class="auth-meta">
+                                            <span class="auth-key-label">Header:</span>
+                                            <code>x-api-key: gak_bdd1...4fd8</code>
+                                        </div>
+                                        <div class="auth-meta">
+                                            <span class="auth-key-label">Status:</span>
+                                            <span style="color:#10b981; font-weight:600;">Active &amp; Online</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Quick Interactive Live GSTIN Tester -->
+                                    <div class="quick-tester-box">
+                                        <div class="tester-input-row">
+                                            <input type="text" id="testGstinInput" class="tester-input" placeholder="Enter 15-digit GSTIN (e.g. 36AAACR4849R1ZM)" value="36AAACR4849R1ZM" maxlength="15">
+                                            <button type="button" class="btn-test-action" onclick="runLiveGstinTest()">⚡ Test Live API</button>
+                                        </div>
+                                        <div class="tester-result-box" id="testGstinResult" style="display:none;"></div>
+                                    </div>
+
+                                    <!-- External Portal Links -->
+                                    <div class="portal-links-strip">
+                                        <span>Reference Portals:</span>
+                                        <a href="https://services.gst.gov.in/services/searchtp" target="_blank" rel="noopener noreferrer">🏛️ GST Common Portal ↗</a>
+                                        <a href="https://cleartax.in/gst-number-search/" target="_blank" rel="noopener noreferrer">🔍 ClearTax Taxpayer Search ↗</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 2: Vahan 4.0 Vehicle RC Verification -->
+                            <div class="module-card">
+                                <div class="module-card-header">
+                                    <div class="module-title-box">
+                                        <span class="module-card-icon">🚚</span>
+                                        <div>
+                                            <h4>Vahan 4.0 Vehicle RC Verification</h4>
+                                            <p>MoRTH Transport Authority, RTO Jurisdiction &amp; E-Way Bill Rule 138</p>
+                                        </div>
+                                    </div>
+                                    <span class="module-badge-statutory">🟡 MoRTH STATUTORY / ARYA AUTH</span>
+                                </div>
+
+                                <div class="module-card-body">
+                                    <div class="field-label-row">
+                                        <span>Primary API Endpoint (URL)</span>
+                                        <span class="method-tag post">POST</span>
+                                    </div>
+                                    <div class="url-copy-box">
+                                        <code id="epVahanUrlCard">https://ping.arya.ai/api/v1/rc-verification</code>
+                                        <button type="button" class="btn-copy-url" onclick="copyEndpointText('https://ping.arya.ai/api/v1/rc-verification', this)">📋 Copy</button>
+                                    </div>
+
+                                    <div class="auth-details-row">
+                                        <div class="auth-meta">
+                                            <span class="auth-key-label">Header:</span>
+                                            <code>token: 9a20...a817</code>
+                                        </div>
+                                        <div class="auth-meta">
+                                            <span class="auth-key-label">Rule:</span>
+                                            <span style="color:#fbbf24; font-weight:600;">EWB Rule 138 Validated</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="field-label-row" style="margin-top:8px;">
+                                        <span>RapidAPI Fallback Endpoint (URL)</span>
+                                        <span class="method-tag get">GET / POST</span>
+                                    </div>
+                                    <div class="url-copy-box">
+                                        <code>https://rto-vehicle-information-india.p.rapidapi.com/?vehicle_number={veh_num}</code>
+                                        <button type="button" class="btn-copy-url" onclick="copyEndpointText('https://rto-vehicle-information-india.p.rapidapi.com/?vehicle_number={veh_num}', this)">📋 Copy</button>
+                                    </div>
+
+                                    <!-- Quick Interactive Vehicle Tester -->
+                                    <div class="quick-tester-box">
+                                        <div class="tester-input-row">
+                                            <input type="text" id="testVehInput" class="tester-input" placeholder="Enter Vehicle Plate (e.g. KA01AB1234 or 22BH1234AA)" value="KA01AB1234" maxlength="13">
+                                            <button type="button" class="btn-test-action" onclick="runLiveVehicleTest()">⚡ Check Vehicle</button>
+                                        </div>
+                                        <div class="tester-result-box" id="testVehResult" style="display:none;"></div>
+                                    </div>
+
+                                    <!-- External Portal Links -->
+                                    <div class="portal-links-strip">
+                                        <span>Official Portals:</span>
+                                        <a href="https://vahan.parivahan.gov.in/" target="_blank" rel="noopener noreferrer">🚦 Parivahan Vahan Portal ↗</a>
+                                        <a href="https://carinfo.app/rc-search" target="_blank" rel="noopener noreferrer">🚗 CarInfo RC Lookup ↗</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 3: NIC IRN & E-Way Bill Engine -->
+                            <div class="module-card">
+                                <div class="module-card-header">
+                                    <div class="module-title-box">
+                                        <span class="module-card-icon">📋</span>
+                                        <div>
+                                            <h4>NIC IRN &amp; E-Way Bill Rulebook Engine</h4>
+                                            <p>Pre-Flight Schema Validator (IRN 2143–9999 &amp; EWB 4000–4076)</p>
+                                        </div>
+                                    </div>
+                                    <span class="module-badge-live">🟢 SCHEMA v1.04 ACTIVE</span>
+                                </div>
+
+                                <div class="module-card-body">
+                                    <div class="field-label-row">
+                                        <span>Government E-Invoice (IRN) Portal URL</span>
+                                        <span class="method-tag portal">PORTAL</span>
+                                    </div>
+                                    <div class="url-copy-box">
+                                        <code>https://einvoice1.gst.gov.in</code>
+                                        <button type="button" class="btn-copy-url" onclick="copyEndpointText('https://einvoice1.gst.gov.in', this)">📋 Copy</button>
+                                    </div>
+
+                                    <div class="field-label-row" style="margin-top:8px;">
+                                        <span>Government E-Way Bill (EWB) Portal URL</span>
+                                        <span class="method-tag portal">PORTAL</span>
+                                    </div>
+                                    <div class="url-copy-box">
+                                        <code>https://ewaybillgst.gov.in</code>
+                                        <button type="button" class="btn-copy-url" onclick="copyEndpointText('https://ewaybillgst.gov.in', this)">📋 Copy</button>
+                                    </div>
+
+                                    <div class="auth-details-row">
+                                        <div class="auth-meta">
+                                            <span class="auth-key-label">Standards:</span>
+                                            <span>Modulo-36 &bull; PIN-State Matrix &bull; &plusmn;₹2 Tolerance</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="portal-links-strip">
+                                        <span>Official Portals:</span>
+                                        <a href="https://einvoice1.gst.gov.in" target="_blank" rel="noopener noreferrer">📜 NIC E-Invoice 1 System ↗</a>
+                                        <a href="https://ewaybillgst.gov.in" target="_blank" rel="noopener noreferrer">🚛 NIC E-Way Bill System ↗</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card 4: Product HSN / SAC Tariff Master -->
+                            <div class="module-card">
+                                <div class="module-card-header">
+                                    <div class="module-title-box">
+                                        <span class="module-card-icon">📦</span>
+                                        <div>
+                                            <h4>Product HSN / SAC Tariff Master</h4>
+                                            <p>21,935 Official CBIC Goods &amp; Services Classifications</p>
+                                        </div>
+                                    </div>
+                                    <span class="module-badge-live">🟢 LOCAL HIGH-SPEED</span>
+                                </div>
+
+                                <div class="module-card-body">
+                                    <div class="field-label-row">
+                                        <span>Internal API Search Endpoint</span>
+                                        <span class="method-tag get">GET</span>
+                                    </div>
+                                    <div class="url-copy-box">
+                                        <code>/api/hsn-search?q={query}</code>
+                                        <button type="button" class="btn-copy-url" onclick="copyEndpointText('/api/hsn-search?q=', this)">📋 Copy</button>
+                                    </div>
+                                    <div class="auth-details-row">
+                                        <div class="auth-meta">
+                                            <span class="auth-key-label">Data File:</span>
+                                            <code>data/raw/HSN_SAC.xlsx</code>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- VIEW 2: AI COMPLIANCE COPILOT (TOGGLEABLE) -->
+                    <div class="copilot-chat-view" id="copilotChatView" style="display:none; flex-direction:column; flex:1; min-height:0;">
+                        <!-- Quick Context Prompt Pills -->
+                        <div class="copilot-pills-bar" id="copilotPillsBar">
+                            <button class="copilot-pill" onclick="sendCopilotQuickMessage('Show active module URLs &amp; API endpoints')">🔗 Active Module URLs</button>
+                            <button class="copilot-pill" onclick="sendCopilotQuickMessage('Why did my invoice fail?')">💡 Explain Errors</button>
+                            <button class="copilot-pill" onclick="sendCopilotQuickMessage('How do I fix supplier GSTIN?')">🏢 Fix Supplier GSTIN</button>
+                            <button class="copilot-pill" onclick="sendCopilotQuickMessage('Fix state and pin code mismatch')">📍 Fix State / PIN</button>
+                            <button class="copilot-pill" onclick="sendCopilotQuickMessage('Add vehicle number for E-Way Bill')">🚚 Fix Vehicle Number</button>
+                            <button class="copilot-pill" onclick="sendCopilotQuickMessage('Rebalance tax math and invoice value')">🧮 Rebalance Tax Math</button>
+                        </div>
+
+                        <!-- Chat Message Feed -->
+                        <div class="copilot-messages-feed" id="copilotMessagesFeed">
+                            <!-- Welcome Bot Message -->
+                            <div class="copilot-msg bot">
+                                <div class="msg-bubble">
+                                    👋 <strong>Hello! I am your GST Sentinel Compliance Copilot.</strong><br><br>
+                                    I inspect your payload in real-time against official NIC IRN &amp; E-Way Bill rules. If your GSTIN is locked, invalid, or failing validation, tell me your details right here (e.g., <em>"My GSTIN is 29ABCDE1234F1Z5"</em> or <em>"Vehicle number is KA01AB1234"</em>), and I will <strong>automatically patch your JSON payload</strong> and re-validate it for you!
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chat Input Bar -->
+                        <form class="copilot-input-area" id="copilotChatForm" onsubmit="handleCopilotSubmit(event)">
+                            <input 
+                                type="text" 
+                                id="copilotInputBox" 
+                                class="copilot-input-box" 
+                                placeholder="Tell me your GSTIN, ask to fix an error, or ask a question..." 
+                                autocomplete="off"
+                            >
+                            <button type="submit" class="copilot-send-btn" id="copilotSendBtn">
+                                <span>Send</span> ↵
+                            </button>
+                        </form>
+                    </div>
                 </div>
+
 
             </div>
 
@@ -2257,9 +2812,12 @@
             initSplitResizer();
             const savedLayout = localStorage.getItem('copilot_layout_mode') || 'auto';
             setCopilotLayout(savedLayout);
+            // Fetch live API module endpoint configurations
+            await loadConfiguredEndpoints();
             // Load initial random batch so the user has immediate data to explore
             await handleGenerateRandom();
         });
+
 
         // Mode Switching
         function selectInputMode(mode) {
@@ -3063,10 +3621,170 @@
             `).join('');
         }
 
+        // Toggle Connected Module Endpoints Hub Drawer
+        function toggleEndpointsHub() {
+            const body = document.getElementById('endpointsHubBody');
+            const arrow = document.getElementById('endpointsToggleArrow');
+            const text = document.getElementById('endpointsToggleText');
+            if (!body) return;
+            const isCollapsed = body.classList.toggle('is-collapsed');
+            if (isCollapsed) {
+                if (arrow) arrow.textContent = '▼';
+                if (text) text.textContent = 'Show Details';
+            } else {
+                if (arrow) arrow.textContent = '▲';
+                if (text) text.textContent = 'Hide Details';
+            }
+        }
+
+        // Copy Endpoint URL to Clipboard
+        function copyEndpointText(text, btn) {
+            if (!navigator.clipboard) {
+                showToast(`Endpoint: ${text}`, 'info');
+                return;
+            }
+            navigator.clipboard.writeText(text).then(() => {
+                const orig = btn.innerHTML;
+                btn.innerHTML = '✓ Copied!';
+                btn.style.color = '#34d399';
+                showToast(`Copied URL: ${text}`, 'success');
+                setTimeout(() => {
+                    btn.innerHTML = orig;
+                    btn.style.color = '';
+                }, 2000);
+            }).catch(() => {
+                showToast(`Copied URL: ${text}`, 'info');
+            });
+        }
+
+        // Switch Right Column View: Module Endpoints vs Copilot Assistant
+        function switchRightPanelView(view) {
+            const endpointsView = document.getElementById('moduleEndpointsPanelView');
+            const chatView = document.getElementById('copilotChatView');
+            const btnEndpoints = document.getElementById('tabBtnEndpoints');
+            const btnCopilot = document.getElementById('tabBtnCopilot');
+            const title = document.getElementById('panelPrimaryTitle');
+            const subtitle = document.getElementById('panelPrimarySubtitle');
+
+            if (view === 'endpoints') {
+                if (endpointsView) endpointsView.style.display = 'flex';
+                if (chatView) chatView.style.display = 'none';
+                if (btnEndpoints) btnEndpoints.classList.add('active');
+                if (btnCopilot) btnCopilot.classList.remove('active');
+                if (title) title.textContent = 'Module Endpoints & Live URLs';
+                if (subtitle) subtitle.textContent = 'Government Portals, API Verification & Statutory Schemas';
+            } else {
+                if (endpointsView) endpointsView.style.display = 'none';
+                if (chatView) chatView.style.display = 'flex';
+                if (btnEndpoints) btnEndpoints.classList.remove('active');
+                if (btnCopilot) btnCopilot.classList.add('active');
+                if (title) title.textContent = 'GST Compliance Copilot';
+                if (subtitle) subtitle.textContent = 'Real-Time NIC Diagnostics & Smart Patcher';
+            }
+        }
+
+        // Quick Interactive GSTIN Live Tester
+        async function runLiveGstinTest() {
+            const input = document.getElementById('testGstinInput');
+            const resultBox = document.getElementById('testGstinResult');
+            if (!input || !resultBox) return;
+            const gstin = input.value.trim().toUpperCase();
+            if (!gstin) {
+                showToast('Please enter a GSTIN to test', 'warning');
+                return;
+            }
+            resultBox.style.display = 'block';
+            resultBox.innerHTML = '<span style="color:#38bdf8;">⏳ Querying live GSTIN API...</span>';
+            try {
+                const res = await fetch(`/api/converter/verify-gstin/${encodeURIComponent(gstin)}`);
+                const data = await res.json();
+                if (data.is_live && data.trade_name) {
+                    resultBox.innerHTML = `
+                        <div style="color:#10b981; font-weight:700;">🟢 LIVE VERIFIED (GST Common Portal)</div>
+                        <div style="color:#ffffff;">• Legal Name: <strong>${escapeHtml(data.legal_name || data.trade_name)}</strong></div>
+                        <div style="color:#94a3b8;">• Trade Name: ${escapeHtml(data.trade_name)}</div>
+                        <div style="color:#94a3b8;">• State: ${escapeHtml(data.state || '')} (Code ${escapeHtml(data.state_code || '')})</div>
+                        <div style="color:#94a3b8;">• Status: <span style="color:#10b981;">${escapeHtml(data.status || 'Active')}</span> | Type: ${escapeHtml(data.taxpayer_type || 'Regular')}</div>
+                    `;
+                } else if (data.is_valid) {
+                    resultBox.innerHTML = `
+                        <div style="color:#10b981; font-weight:700;">🟢 Modulo-36 Checksum Valid</div>
+                        <div style="color:#ffffff;">• State: ${escapeHtml(data.state || '')} (Code ${escapeHtml(data.state_code || '')})</div>
+                        <div style="color:#94a3b8;">• Entity: ${escapeHtml(data.entity_type || 'Regular')}</div>
+                    `;
+                } else {
+                    resultBox.innerHTML = `
+                        <div style="color:#f43f5e; font-weight:700;">❌ Checksum / API Notice</div>
+                        <div style="color:#fca5a5;">${escapeHtml(data.error || 'Invalid GSTIN')}</div>
+                        ${data.corrected_gstin ? `<div style="color:#38bdf8;">• Suggested: <code>${escapeHtml(data.corrected_gstin)}</code></div>` : ''}
+                    `;
+                }
+            } catch (err) {
+                resultBox.innerHTML = `<span style="color:#f43f5e;">Error: ${escapeHtml(err.message)}</span>`;
+            }
+        }
+
+        // Quick Interactive Vehicle Plate Tester
+        async function runLiveVehicleTest() {
+            const input = document.getElementById('testVehInput');
+            const resultBox = document.getElementById('testVehResult');
+            if (!input || !resultBox) return;
+            const veh = input.value.trim().toUpperCase();
+            if (!veh) {
+                showToast('Please enter a vehicle plate number', 'warning');
+                return;
+            }
+            resultBox.style.display = 'block';
+            resultBox.innerHTML = '<span style="color:#38bdf8;">⏳ Verifying vehicle format &amp; MoRTH jurisdiction...</span>';
+            try {
+                const res = await fetch(`/api/converter/verify-vehicle/${encodeURIComponent(veh)}`);
+                const data = await res.json();
+                if (data.is_valid) {
+                    resultBox.innerHTML = `
+                        <div style="color:#fbbf24; font-weight:700;">🟡 MoRTH Statutory Validated (EWB Rule 138)</div>
+                        <div style="color:#ffffff;">• Jurisdiction: <strong>${escapeHtml(data.rto_name || '')}</strong></div>
+                        <div style="color:#94a3b8;">• State: ${escapeHtml(data.state || '')}</div>
+                        <div style="color:#94a3b8;">• Series: ${escapeHtml(data.series_type || 'State RTO')}</div>
+                        <div style="margin-top:4px;"><a href="${escapeHtml(data.carinfo_url || 'https://carinfo.app/rc-search')}" target="_blank" style="color:#38bdf8; text-decoration:underline;">View RC Details on CarInfo ↗</a></div>
+                    `;
+                } else {
+                    resultBox.innerHTML = `
+                        <div style="color:#f43f5e; font-weight:700;">❌ Invalid MoRTH Vehicle Plate</div>
+                        <div style="color:#fca5a5;">${escapeHtml(data.error || 'Format invalid')}</div>
+                    `;
+                }
+            } catch (err) {
+                resultBox.innerHTML = `<span style="color:#f43f5e;">Error: ${escapeHtml(err.message)}</span>`;
+            }
+        }
+
+        // Fetch Live Configured Endpoints from Server and dynamically sync UI
+        async function loadConfiguredEndpoints() {
+            try {
+                const res = await fetch('/api/converter/endpoints');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data && data.modules) {
+                    const gstinMod = data.modules.find(m => m.module_id === 'gstin');
+                    const vahanMod = data.modules.find(m => m.module_id === 'vahan');
+                    if (gstinMod && document.getElementById('epGstinUrl')) {
+                        document.getElementById('epGstinUrl').textContent = gstinMod.url;
+                    }
+                    if (vahanMod && document.getElementById('epVahanUrl')) {
+                        document.getElementById('epVahanUrl').textContent = vahanMod.url;
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not fetch live endpoints info:', e);
+            }
+        }
+
         // Format Markdown-like text to safe HTML
         function formatMarkdownReply(text) {
             if (!text) return '';
             let html = escapeHtml(text);
+            // Clickable Links [title](url)
+            html = html.replace(/\[(.*?)\]\((https?:\/\/[^\s\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:#38bdf8; text-decoration:underline; font-weight:600;">$1 ↗</a>');
             // Bold **text**
             html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
             // Italic *text*
@@ -3079,6 +3797,7 @@
             html = html.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
             return html;
         }
+
 
         // Submit message to Copilot
         async function handleCopilotSubmit(e) {

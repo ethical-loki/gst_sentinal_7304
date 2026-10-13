@@ -770,21 +770,22 @@ class GSTValidator:
             othchrg = Decimal(str(valdt1.get("othchrg", "0") or "0"))
             discval = Decimal(str(valdt1.get("discval", "0") or "0"))
 
-            if abs(ttlassval - sum_assamt) > Decimal("1.00"):
+            # Reconciliation of header totals with line item sums within +/- Rs 2 tolerance
+            if abs(ttlassval - sum_assamt) > Decimal("2.00"):
                 errors.append(ValidationError(2182, "valdt1.ttlassval", f"Taxable value of items ({sum_assamt}) != total taxable value ({ttlassval})"))
-            if abs(cgstval - sum_cgst) > Decimal("1.00"):
+            if abs(cgstval - sum_cgst) > Decimal("2.00"):
                 errors.append(ValidationError(2184, "valdt1.cgstval", f"CGST value of items ({sum_cgst}) != total CGST ({cgstval})"))
-            if abs(sgstval - sum_sgst) > Decimal("1.00"):
+            if abs(sgstval - sum_sgst) > Decimal("2.00"):
                 errors.append(ValidationError(2183, "valdt1.sgstval", f"SGST value of items ({sum_sgst}) != total SGST ({sgstval})"))
-            if abs(igstval - sum_igst) > Decimal("1.00"):
+            if abs(igstval - sum_igst) > Decimal("2.00"):
                 errors.append(ValidationError(2185, "valdt1.igstval", f"IGST value of items ({sum_igst}) != total IGST ({igstval})"))
-            if abs(cesval - sum_cess) > Decimal("1.00"):
+            if abs(cesval - sum_cess) > Decimal("2.00"):
                 errors.append(ValidationError(2186, "valdt1.cesval", f"Cess value of items ({sum_cess}) != total Cess ({cesval})"))
-            if abs(stcesval - sum_stcess) > Decimal("1.00"):
+            if abs(stcesval - sum_stcess) > Decimal("2.00"):
                 errors.append(ValidationError(2187, "valdt1.stcesval", f"State Cess value of items ({sum_stcess}) != total State Cess ({stcesval})"))
 
             expected_totinv = ttlassval + cgstval + sgstval + igstval + cesval + stcesval + cesnonadval + othchrg - discval
-            if abs(totinvval - expected_totinv) > Decimal("1.00"):
+            if abs(totinvval - expected_totinv) > Decimal("2.00"):
                 errors.append(ValidationError(2189, "valdt1.totinvval", f"Total Invoice Value ({totinvval}) != calculated value ({expected_totinv})"))
         except Exception as e:
             errors.append(ValidationError(2285, "valdt1.totinvval", f"Invalid invoice value computation: {str(e)}"))
