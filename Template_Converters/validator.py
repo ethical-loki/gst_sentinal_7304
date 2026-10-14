@@ -43,6 +43,14 @@ except ImportError:
         MAJOR_INDIAN_PORTS
     )
 
+try:
+    from .price_anomaly_detector import PriceAnomalyDetector
+except ImportError:
+    try:
+        from price_anomaly_detector import PriceAnomalyDetector
+    except ImportError:
+        PriceAnomalyDetector = None
+
 GSTIN_REGEX = r"^[0-9]{2}[0-9A-Z]{13}$"
 DATE_REGEX_DASH = r"^[0-3][0-9]-[0-1][0-9]-[2][0][1-2][0-9]$"
 DATE_REGEX_ANY = r"^[0-3][0-9][/-][0-1][0-9][/-]20[1-2][0-9]$"
@@ -918,21 +926,36 @@ class GSTValidator:
             "results": []
         }
 
+        total_anomalies = 0
+
         for idx, inv in enumerate(invoices, start=1):
             docno = inv.get("docdt1", {}).get("docno", inv.get("docno", f"INV_INDEX_{idx}"))
             errors = cls.validate_invoice(inv)
             is_valid = len(errors) == 0
+
+            price_anom = None
+            if PriceAnomalyDetector:
+                try:
+                    price_anom = PriceAnomalyDetector.scan_invoice_payload(inv)
+                    total_anomalies += price_anom.get("anomaly_count", 0)
+                except Exception:
+                    price_anom = None
 
             if is_valid:
                 report["valid_invoices"] += 1
             else:
                 report["failed_invoices"] += 1
 
-            report["results"].append({
+            res_entry = {
                 "invoice_number": docno,
                 "status": "VALID" if is_valid else "INVALID",
                 "error_count": len(errors),
                 "errors": errors
-            })
+            }
+            if price_anom:
+                res_entry["price_anomaly_report"] = price_anom
+            report["results"].append(res_entry)
+
+        report["total_price_anomalies"] = total_anomalies
 
         return report

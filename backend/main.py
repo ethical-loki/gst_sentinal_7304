@@ -29,48 +29,23 @@ app.add_middleware(
 )
 
 # --- CONFIGURABLE FILE PATH ---
-# Files should be placed in data/raw/
+# Files should be placed in data/raw/ or data/
 RAW_DATA_DIR = os.path.join("data", "raw")
 
-# 👉 CHANGE THIS if your actual Excel filename is different (e.g., "GST_Master.xlsx")
-EXCEL_FILENAME = "HSN_SAC.xlsx"
+# 👉 Updated to latest HSN/SAC master file
+EXCEL_FILENAME = "Final_hsn_sac_copy.xlsx"
 
 # Full dynamic path computation
 HSN_EXCEL_PATH = os.path.join(RAW_DATA_DIR, EXCEL_FILENAME)
 
-# Cached DataFrame variable to avoid reading Excel from disk on every search request
-_hsn_df_cache = None
-
 
 def get_hsn_df():
-    """Load the HSN Excel file into memory (cached after first read)."""
-    global _hsn_df_cache
-    if _hsn_df_cache is not None:
-        return _hsn_df_cache
-
-    abs_path = os.path.abspath(HSN_EXCEL_PATH)
-    if not os.path.exists(abs_path):
-        return None
-
+    """Load the HSN Excel file into memory via converter_service (cached after first read)."""
     try:
-        # Read Excel once into memory with dtype=str to preserve leading zeros
-        df = pd.read_excel(abs_path, dtype=str)
-        df.columns = df.columns.str.strip()
-
-        hsn_col = 'HSN_CD' if 'HSN_CD' in df.columns else df.columns[0]
-        desc_col = 'HSN_Description' if 'HSN_Description' in df.columns else df.columns[1]
-
-        df[hsn_col] = df[hsn_col].fillna('').astype(str).str.strip()
-        df[desc_col] = df[desc_col].fillna('').astype(str).str.strip()
-
-        # Precompute lowercase search columns for fast string matching
-        df['_search_hsn'] = df[hsn_col].str.lower()
-        df['_search_desc'] = df[desc_col].str.lower()
-
-        _hsn_df_cache = (df, hsn_col, desc_col)
-        return _hsn_df_cache
+        from backend.converter_service import get_hsn_dataframe
+        return get_hsn_dataframe()
     except Exception as e:
-        print(f"[ERROR] Error loading HSN Excel file: {str(e)}")
+        print(f"[ERROR] Error loading HSN Excel file via converter_service: {str(e)}")
         return None
 
 
@@ -87,7 +62,13 @@ async def preload_hsn_cache():
 
 @app.get("/api/hsn-search")
 async def search_hsn(query: str = Query("", min_length=0)):
-    """Search HSN codes and descriptions using exact column names HSN_CD and HSN_Description."""
+    """
+    Search HSN codes and descriptions in Final_hsn_sac_copy.xlsx.
+    Returns matching tariff items with statutory tax rates:
+    - IGST: full rate
+    - CGST: half rate
+    - SGST: half rate
+    """
     q_trimmed = query.strip()
     if not q_trimmed:
         return {"query": query, "matches": []}
@@ -101,7 +82,7 @@ async def search_hsn(query: str = Query("", min_length=0)):
         df, hsn_col, desc_col = hsn_data
         q = q_trimmed.lower()
 
-        # Fast literal string search
+        # Fast literal string search across HSN code and description
         filtered = df[
             df['_search_hsn'].str.contains(q, na=False, regex=False) |
             df['_search_desc'].str.contains(q, na=False, regex=False)
@@ -109,10 +90,17 @@ async def search_hsn(query: str = Query("", min_length=0)):
 
         results = []
         for _, row in filtered.head(20).iterrows():
+            igst = float(row.get("igst_rate", row.get("gst_rate", 18.0)))
+            cgst = float(row.get("cgst_rate", round(igst / 2.0, 2)))
+            sgst = float(row.get("sgst_rate", round(igst / 2.0, 2)))
+
             results.append({
                 "hsn_code": str(row[hsn_col]),
                 "description": str(row[desc_col]),
-                "gst_rate": 18.0
+                "gst_rate": igst,
+                "igst_rate": igst,
+                "cgst_rate": cgst,
+                "sgst_rate": sgst
             })
 
         return {"query": query, "matches": results}

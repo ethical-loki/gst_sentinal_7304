@@ -31,7 +31,7 @@ PRODUCT_POOL = [
     {"prdnm": "ALUM-INGOT", "desc": "Primary Aluminum Ingot 99.7%", "hsn": "760110", "uqc": "KGS", "rate_range": (180.0, 240.0), "tax": 18.0},
     {"prdnm": "COTTON-YARN", "desc": "Carded Weaving Yarn 30s", "hsn": "520522", "uqc": "KGS", "rate_range": (220.0, 340.0), "tax": 5.0},
     {"prdnm": "LED-DRIVER", "desc": "Constant Current Electronic Driver", "hsn": "850440", "uqc": "NOS", "rate_range": (150.0, 400.0), "tax": 18.0},
-    {"prdnm": "SOLAR-CABLE", "desc": "4 sq mm Solar DC Copper Cable", "hsn": "854449", "uqc": "MTR", "rate_range": (45.0, 95.0), "tax": 12.0},
+    {"prdnm": "SOLAR-CABLE", "desc": "4 sq mm Solar DC Copper Cable", "hsn": "854449", "uqc": "MTR", "rate_range": (45.0, 95.0), "tax": 18.0},
     {"prdnm": "ORGANIC-SOY", "desc": "Non-GMO Raw Soya Beans", "hsn": "120190", "uqc": "QTL", "rate_range": (4200.0, 5600.0), "tax": 5.0},
 ]
 
@@ -322,6 +322,27 @@ def generate_dynamic_dirty_payload(count: int = 1) -> Dict[str, Any]:
     invoices = [generate_random_invoice(i + 1) for i in range(count)]
     return {"einvoices": invoices}
 
+def generate_comprehensive_dirty_payload() -> Dict[str, Any]:
+    """
+    Returns one unified, master dummy payload covering ALL statutory & business scenarios:
+    1. B2B Inter-State + Road E-Way Bill (Part A & B) + Key Aliases + Comma Decimals
+    2. B2B Intra-State (CGST + SGST) + Multi-Item + Statutory Rounding Tolerance (+/- Rs 2) + Rail E-Way Bill
+    3. Direct Export (EXP) + Shipping Bill + Foreign Currency (USD) + Port INMAA1 + Shipping Terminal
+    4. Special Economic Zone Supply (SEZWP) + Mandatory IGST Treatment
+    5. Bharat (BH) Series Plate Registration + Commodity Benchmarks
+    """
+    sample_file = os.path.join(os.path.dirname(__file__), "dirty_customer_input.json")
+    if os.path.exists(sample_file):
+        try:
+            with open(sample_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if "einvoices" in data and len(data["einvoices"]) >= 5:
+                    return data
+        except Exception:
+            pass
+    # If not on disk, return default dynamic batch
+    return generate_dynamic_dirty_payload(count=5)
+
 def generate_dirty_input_file(output_path: str = "dirty_customer_input.json", count: int = 1):
     payload = generate_dynamic_dirty_payload(count=count)
     with open(output_path, "w", encoding="utf-8") as f:
@@ -333,3 +354,4 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1].isdigit():
         count_arg = int(sys.argv[1])
     generate_dirty_input_file(count=count_arg)
+

@@ -1147,10 +1147,14 @@
             const badge = document.getElementById('detailBadge');
             if (badge) badge.innerHTML = getBadgeInnerHTML(item.hsn_code);
 
-            const gst = item.gst_rate || 18.0;
-            document.getElementById('igstVal').innerText = `${gst}%`;
-            document.getElementById('cgstVal').innerText = `${(gst / 2).toFixed(1)}%`;
-            document.getElementById('sgstVal').innerText = `${(gst / 2).toFixed(1)}%`;
+            const gst = (item.gst_rate !== undefined && item.gst_rate !== null) ? parseFloat(item.gst_rate) : 18.0;
+            const igst = (item.igst_rate !== undefined && item.igst_rate !== null) ? parseFloat(item.igst_rate) : gst;
+            const cgst = (item.cgst_rate !== undefined && item.cgst_rate !== null) ? parseFloat(item.cgst_rate) : (gst / 2.0);
+            const sgst = (item.sgst_rate !== undefined && item.sgst_rate !== null) ? parseFloat(item.sgst_rate) : (gst / 2.0);
+
+            document.getElementById('igstVal').innerText = `${igst}%`;
+            document.getElementById('cgstVal').innerText = `${cgst}%`;
+            document.getElementById('sgstVal').innerText = `${sgst}%`;
             detailCard.style.display = 'block';
         }
 

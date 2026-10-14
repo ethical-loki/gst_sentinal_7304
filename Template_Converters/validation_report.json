@@ -1,109 +1,470 @@
 {
-  "total_invoices": 2,
-  "valid_invoices": 2,
+  "total_invoices": 5,
+  "valid_invoices": 5,
   "failed_invoices": 0,
   "results": [
     {
-      "invoice_number": "INV26762610",
+      "invoice_number": "INV-2026-001",
       "status": "VALID",
       "error_count": 0,
       "errors": [],
-      "corrections_applied_count": 9,
+      "price_anomaly_report": {
+        "status": "CLEAN",
+        "has_anomalies": false,
+        "anomaly_count": 0,
+        "over_invoicing_count": 0,
+        "under_invoicing_count": 0,
+        "typo_count": 0,
+        "max_risk_score": 0,
+        "items_scanned": 2,
+        "findings": [
+          {
+            "item_index": 1,
+            "prdnm": "COTTON-SHIRTS",
+            "hsncd": "610510",
+            "uqc": "NOS",
+            "unitrate": 800.0,
+            "qty": 200.0,
+            "assamt": 160000.0,
+            "is_anomaly": false,
+            "anomaly_type": "NORMAL",
+            "severity": "NONE",
+            "risk_score": 0,
+            "benchmark_min": 180.0,
+            "benchmark_max": 420.0,
+            "benchmark_median": 280.0,
+            "ratio_to_median": 2.86,
+            "suggested_rate": null,
+            "reason": "Unit rate is within normal statutory benchmark range.",
+            "statutory_risk": "",
+            "benchmark_source": "Keyword:cotton"
+          },
+          {
+            "item_index": 2,
+            "prdnm": "Cotton Yarn 40s Combed",
+            "hsncd": "520522",
+            "uqc": "KGS",
+            "unitrate": 280.0,
+            "qty": 100.0,
+            "assamt": 28000.0,
+            "is_anomaly": false,
+            "anomaly_type": "NORMAL",
+            "severity": "NONE",
+            "risk_score": 0,
+            "benchmark_min": 220.0,
+            "benchmark_max": 380.0,
+            "benchmark_median": 300.0,
+            "ratio_to_median": 0.93,
+            "suggested_rate": null,
+            "reason": "Unit rate is within normal statutory benchmark range.",
+            "statutory_risk": "",
+            "benchmark_source": "HSN:520522"
+          }
+        ]
+      },
+      "corrections_applied_count": 18,
       "corrections_applied": [
         {
-          "category": "DATE_FORMAT_NORMALIZATION",
-          "field": "expdt1.shipbdt",
-          "original": "05.09.2026",
-          "corrected": "05-09-2026",
-          "description": "Standardized date format from '05.09.2026' to '05-09-2026'"
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "system cd",
+          "original": "system cd",
+          "corrected": "system_cd",
+          "description": "Standardized non-compliant key 'system cd' to schema key 'system_cd'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "branch cd",
+          "original": "branch cd",
+          "corrected": "branch_cd",
+          "description": "Standardized non-compliant key 'branch cd' to schema key 'branch_cd'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "vertical cd",
+          "original": "vertical cd",
+          "corrected": "vertical_cd",
+          "description": "Standardized non-compliant key 'vertical cd' to schema key 'vertical_cd'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "trandt1.igst_on_intra",
+          "original": "igst_on_intra",
+          "corrected": "igstonintra",
+          "description": "Standardized non-compliant key 'igst_on_intra' to schema key 'igstonintra'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "supplierdt1.supplier_lginm",
+          "original": "supplier_lginm",
+          "corrected": "supplier_lglnm",
+          "description": "Standardized non-compliant key 'supplier_lginm' to schema key 'supplier_lglnm'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "supplierdt1.supplier flno",
+          "original": "supplier flno",
+          "corrected": "supplier_flno",
+          "description": "Standardized non-compliant key 'supplier flno' to schema key 'supplier_flno'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "supplierdt1.supplier state",
+          "original": "supplier state",
+          "corrected": "supplier_state",
+          "description": "Standardized non-compliant key 'supplier state' to schema key 'supplier_state'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "buyerdt1.buyer loc",
+          "original": "buyer loc",
+          "corrected": "buyer_loc",
+          "description": "Standardized non-compliant key 'buyer loc' to schema key 'buyer_loc'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "buyerdt1.buyer pin",
+          "original": "buyer pin",
+          "corrected": "buyer_pin",
+          "description": "Standardized non-compliant key 'buyer pin' to schema key 'buyer_pin'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "buyerdt1.buyer state",
+          "original": "buyer state",
+          "corrected": "buyer_state",
+          "description": "Standardized non-compliant key 'buyer state' to schema key 'buyer_state'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].ugc",
+          "original": "ugc",
+          "corrected": "uqc",
+          "description": "Standardized non-compliant key 'ugc' to schema key 'uqc'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].unit_rate",
+          "original": "unit_rate",
+          "corrected": "unitrate",
+          "description": "Standardized non-compliant key 'unit_rate' to schema key 'unitrate'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[2].unitprice",
+          "original": "unitprice",
+          "corrected": "unitrate",
+          "description": "Standardized non-compliant key 'unitprice' to schema key 'unitrate'"
         },
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-08-03",
-          "corrected": "03-08-2026",
-          "description": "Standardized date format from '2026-08-03' to '03-08-2026'"
+          "original": "2026-09-15",
+          "corrected": "15-09-2026",
+          "description": "Standardized date format from '2026-09-15' to '15-09-2026'"
         },
         {
           "category": "FORMAT_NORMALIZATION",
           "field": "itemdtls[1].grossamt",
-          "original": "5531,46",
-          "corrected": "5531.46",
-          "description": "Replaced comma decimal separator '5531,46' with standard point notation '5531.46'"
+          "original": "160000,00",
+          "corrected": "160000.00",
+          "description": "Replaced comma decimal separator '160000,00' with standard point notation '160000.00'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[1].assamt",
+          "original": "160000,00",
+          "corrected": "160000.00",
+          "description": "Replaced comma decimal separator '160000,00' with standard point notation '160000.00'"
         },
         {
           "category": "FORMAT_NORMALIZATION",
           "field": "itemdtls[1].totitemval",
-          "original": "6200,77",
-          "corrected": "6200.77",
-          "description": "Replaced comma decimal separator '6200,77' with standard point notation '6200.77'"
+          "original": "188800,00",
+          "corrected": "188800.00",
+          "description": "Replaced comma decimal separator '188800,00' with standard point notation '188800.00'"
         },
         {
-          "category": "FORMAT_NORMALIZATION",
-          "field": "itemdtls[2].grossamt",
-          "original": "12926,93",
-          "corrected": "12926.93",
-          "description": "Replaced comma decimal separator '12926,93' with standard point notation '12926.93'"
-        },
-        {
-          "category": "FORMAT_NORMALIZATION",
-          "field": "itemdtls[2].totitemval",
-          "original": "14188,60",
-          "corrected": "14188.60",
-          "description": "Replaced comma decimal separator '14188,60' with standard point notation '14188.60'"
-        },
-        {
-          "category": "FORMAT_NORMALIZATION",
-          "field": "itemdtls[3].assamt",
-          "original": "145423,37",
-          "corrected": "145423.37",
-          "description": "Replaced comma decimal separator '145423,37' with standard point notation '145423.37'"
-        },
-        {
-          "category": "FORMAT_NORMALIZATION",
-          "field": "itemdtls[3].totitemval",
-          "original": "152694,54",
-          "corrected": "152694.54",
-          "description": "Replaced comma decimal separator '152694,54' with standard point notation '152694.54'"
-        },
-        {
-          "category": "FORMAT_NORMALIZATION",
+          "category": "INVOICE_TOTALS_RECONCILIATION",
           "field": "valdt1.totinvval",
-          "original": "173083,91",
-          "corrected": "173083.91",
-          "description": "Replaced comma decimal separator '173083,91' with standard point notation '173083.91'"
+          "original": "18908000.00",
+          "corrected": "216800.00",
+          "description": "Reconciled Total Invoice Value with sum of items, taxes, other charges minus discounts (Rule 2189)"
         }
       ]
     },
     {
-      "invoice_number": "INV26575920",
+      "invoice_number": "INV-2026-002",
       "status": "VALID",
       "error_count": 0,
       "errors": [],
+      "price_anomaly_report": {
+        "status": "CLEAN",
+        "has_anomalies": false,
+        "anomaly_count": 0,
+        "over_invoicing_count": 0,
+        "under_invoicing_count": 0,
+        "typo_count": 0,
+        "max_risk_score": 0,
+        "items_scanned": 2,
+        "findings": [
+          {
+            "item_index": 1,
+            "prdnm": "COTTON-YARN",
+            "hsncd": "520522",
+            "uqc": "KGS",
+            "unitrate": 280.0,
+            "qty": 100.0,
+            "assamt": 28000.0,
+            "is_anomaly": false,
+            "anomaly_type": "NORMAL",
+            "severity": "NONE",
+            "risk_score": 0,
+            "benchmark_min": 220.0,
+            "benchmark_max": 380.0,
+            "benchmark_median": 300.0,
+            "ratio_to_median": 0.93,
+            "suggested_rate": null,
+            "reason": "Unit rate is within normal statutory benchmark range.",
+            "statutory_risk": "",
+            "benchmark_source": "HSN:520522"
+          },
+          {
+            "item_index": 2,
+            "prdnm": "LED-DRIVER",
+            "hsncd": "850440",
+            "uqc": "NOS",
+            "unitrate": 260.0,
+            "qty": 50.0,
+            "assamt": 13000.0,
+            "is_anomaly": false,
+            "anomaly_type": "NORMAL",
+            "severity": "NONE",
+            "risk_score": 0,
+            "benchmark_min": 140.0,
+            "benchmark_max": 550.0,
+            "benchmark_median": 260.0,
+            "ratio_to_median": 1.0,
+            "suggested_rate": null,
+            "reason": "Unit rate is within normal statutory benchmark range.",
+            "statutory_risk": "",
+            "benchmark_source": "HSN:850440"
+          }
+        ]
+      },
+      "corrections_applied_count": 2,
+      "corrections_applied": [
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[1].grossamt",
+          "original": "28000,00",
+          "corrected": "28000.00",
+          "description": "Replaced comma decimal separator '28000,00' with standard point notation '28000.00'"
+        },
+        {
+          "category": "INVOICE_TOTALS_RECONCILIATION",
+          "field": "valdt1.totinvval",
+          "original": "44741.20",
+          "corrected": "44740.00",
+          "description": "Reconciled Total Invoice Value with sum of items, taxes, other charges minus discounts (Rule 2189)"
+        }
+      ]
+    },
+    {
+      "invoice_number": "EXP-2026-003",
+      "status": "VALID",
+      "error_count": 0,
+      "errors": [],
+      "price_anomaly_report": {
+        "status": "CLEAN",
+        "has_anomalies": false,
+        "anomaly_count": 0,
+        "over_invoicing_count": 0,
+        "under_invoicing_count": 0,
+        "typo_count": 0,
+        "max_risk_score": 0,
+        "items_scanned": 1,
+        "findings": [
+          {
+            "item_index": 1,
+            "prdnm": "STEEL-ROD",
+            "hsncd": "720839",
+            "uqc": "TON",
+            "unitrate": 52000.0,
+            "qty": 20.0,
+            "assamt": 1040000.0,
+            "is_anomaly": false,
+            "anomaly_type": "NORMAL",
+            "severity": "NONE",
+            "risk_score": 0,
+            "benchmark_min": 45000.0,
+            "benchmark_max": 65000.0,
+            "benchmark_median": 55000.0,
+            "ratio_to_median": 0.95,
+            "suggested_rate": null,
+            "reason": "Unit rate is within normal statutory benchmark range.",
+            "statutory_risk": "",
+            "benchmark_source": "HSN:720839"
+          }
+        ]
+      },
+      "corrections_applied_count": 4,
+      "corrections_applied": [
+        {
+          "category": "DATE_FORMAT_NORMALIZATION",
+          "field": "expdt1.shipbdt",
+          "original": "25/08/2026",
+          "corrected": "25-08-2026",
+          "description": "Standardized date format from '25/08/2026' to '25-08-2026'"
+        },
+        {
+          "category": "DATE_FORMAT_NORMALIZATION",
+          "field": "docdt1.docdt",
+          "original": "2026-08-25",
+          "corrected": "25-08-2026",
+          "description": "Standardized date format from '2026-08-25' to '25-08-2026'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[1].grossamt",
+          "original": "1040000,00",
+          "corrected": "1040000.00",
+          "description": "Replaced comma decimal separator '1040000,00' with standard point notation '1040000.00'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[1].totitemval",
+          "original": "1227200,00",
+          "corrected": "1227200.00",
+          "description": "Replaced comma decimal separator '1227200,00' with standard point notation '1227200.00'"
+        }
+      ]
+    },
+    {
+      "invoice_number": "SEZ-2026-004",
+      "status": "VALID",
+      "error_count": 0,
+      "errors": [],
+      "price_anomaly_report": {
+        "status": "CLEAN",
+        "has_anomalies": false,
+        "anomaly_count": 0,
+        "over_invoicing_count": 0,
+        "under_invoicing_count": 0,
+        "typo_count": 0,
+        "max_risk_score": 0,
+        "items_scanned": 1,
+        "findings": [
+          {
+            "item_index": 1,
+            "prdnm": "POLY-HANGER",
+            "hsncd": "39269069",
+            "uqc": "PCS",
+            "unitrate": 20.0,
+            "qty": 500.0,
+            "assamt": 10000.0,
+            "is_anomaly": false,
+            "anomaly_type": "NORMAL",
+            "severity": "NONE",
+            "risk_score": 0,
+            "benchmark_min": 10.0,
+            "benchmark_max": 45.0,
+            "benchmark_median": 22.0,
+            "ratio_to_median": 0.91,
+            "suggested_rate": null,
+            "reason": "Unit rate is within normal statutory benchmark range.",
+            "statutory_risk": "",
+            "benchmark_source": "HSN:39269069"
+          }
+        ]
+      },
+      "corrections_applied_count": 3,
+      "corrections_applied": [
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[1].grossamt",
+          "original": "10000,00",
+          "corrected": "10000.00",
+          "description": "Replaced comma decimal separator '10000,00' with standard point notation '10000.00'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[1].assamt",
+          "original": "10000,00",
+          "corrected": "10000.00",
+          "description": "Replaced comma decimal separator '10000,00' with standard point notation '10000.00'"
+        },
+        {
+          "category": "FORMAT_NORMALIZATION",
+          "field": "itemdtls[1].totitemval",
+          "original": "11800,00",
+          "corrected": "11800.00",
+          "description": "Replaced comma decimal separator '11800,00' with standard point notation '11800.00'"
+        }
+      ]
+    },
+    {
+      "invoice_number": "INV-2026-005",
+      "status": "VALID",
+      "error_count": 0,
+      "errors": [],
+      "price_anomaly_report": {
+        "status": "CLEAN",
+        "has_anomalies": false,
+        "anomaly_count": 0,
+        "over_invoicing_count": 0,
+        "under_invoicing_count": 0,
+        "typo_count": 0,
+        "max_risk_score": 0,
+        "items_scanned": 1,
+        "findings": [
+          {
+            "item_index": 1,
+            "prdnm": "ALUM-INGOT",
+            "hsncd": "760110",
+            "uqc": "KGS",
+            "unitrate": 210.0,
+            "qty": 500.0,
+            "assamt": 105000.0,
+            "is_anomaly": false,
+            "anomaly_type": "NORMAL",
+            "severity": "NONE",
+            "risk_score": 0,
+            "benchmark_min": 180.0,
+            "benchmark_max": 260.0,
+            "benchmark_median": 215.0,
+            "ratio_to_median": 0.98,
+            "suggested_rate": null,
+            "reason": "Unit rate is within normal statutory benchmark range.",
+            "statutory_risk": "",
+            "benchmark_source": "HSN:760110"
+          }
+        ]
+      },
       "corrections_applied_count": 3,
       "corrections_applied": [
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-07-26",
-          "corrected": "26-07-2026",
-          "description": "Standardized date format from '2026-07-26' to '26-07-2026'"
+          "original": "12/09/2026",
+          "corrected": "12-09-2026",
+          "description": "Standardized date format from '12/09/2026' to '12-09-2026'"
         },
         {
           "category": "FORMAT_NORMALIZATION",
-          "field": "itemdtls[1].assamt",
-          "original": "65206,18",
-          "corrected": "65206.18",
-          "description": "Replaced comma decimal separator '65206,18' with standard point notation '65206.18'"
+          "field": "itemdtls[1].grossamt",
+          "original": "105000,00",
+          "corrected": "105000.00",
+          "description": "Replaced comma decimal separator '105000,00' with standard point notation '105000.00'"
         },
         {
           "category": "FORMAT_NORMALIZATION",
           "field": "itemdtls[1].totitemval",
-          "original": "68466,49",
-          "corrected": "68466.49",
-          "description": "Replaced comma decimal separator '68466,49' with standard point notation '68466.49'"
+          "original": "123900,00",
+          "corrected": "123900.00",
+          "description": "Replaced comma decimal separator '123900,00' with standard point notation '123900.00'"
         }
       ]
     }
-  ]
+  ],
+  "total_price_anomalies": 0
 }

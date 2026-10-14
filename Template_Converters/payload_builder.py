@@ -34,6 +34,14 @@ except ImportError:
         VALID_STATE_CODES,
     )
 
+try:
+    from .price_anomaly_detector import PriceAnomalyDetector
+except ImportError:
+    try:
+        from price_anomaly_detector import PriceAnomalyDetector
+    except ImportError:
+        PriceAnomalyDetector = None
+
 KEY_ALIASES = {
     # Header
     "system.cd": "system_cd", "system cd": "system_cd",
@@ -2657,6 +2665,26 @@ class PayloadBuilder:
                 "statecessamt": str(statecessamt_d),
                 "totitemval": str(calculated_totitemval)
             })
+
+        # AI Price & Unit Rate Anomaly Detection Scan
+        if PriceAnomalyDetector:
+            try:
+                anomaly_report = PriceAnomalyDetector.scan_invoice_payload({"itemdtls": clean_itemdtls})
+                if anomaly_report.get("has_anomalies"):
+                    for anom in anomaly_report.get("findings", []):
+                        if anom.get("is_anomaly"):
+                            audit_log.append({
+                                "category": "PRICE_UNIT_RATE_ANOMALY",
+                                "field": f"itemdtls[{anom['item_index']}].unitrate",
+                                "original": str(anom['unitrate']),
+                                "corrected": str(anom.get('suggested_rate') or anom['unitrate']),
+                                "severity": anom.get("severity", "MEDIUM"),
+                                "anomaly_type": anom.get("anomaly_type"),
+                                "risk_score": anom.get("risk_score", 0),
+                                "description": anom.get("reason", "Unit rate anomaly detected against statutory benchmark.")
+                            })
+            except Exception:
+                pass
 
         # Value Summary (valdt1) Reconciliation
         inv_disc = Decimal(clean_decimal_str(valdt1.get("discval", "0.00"), 2))

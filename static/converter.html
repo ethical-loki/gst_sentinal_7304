@@ -2480,7 +2480,7 @@
                                     <div class="auth-details-row">
                                         <div class="auth-meta">
                                             <span class="auth-key-label">Data File:</span>
-                                            <code>data/raw/HSN_SAC.xlsx</code>
+                                            <code>data/raw/Final_hsn_sac_copy.xlsx</code>
                                         </div>
                                     </div>
                                 </div>
@@ -2608,6 +2608,10 @@
                     <span class="fin-label">Total Invoice Valuation</span>
                     <span class="fin-value fin-highlight" id="finTotinvval">₹ 0.00</span>
                 </div>
+                <div class="financial-item" id="finPriceAnomalyItem" style="border-left: 2px solid rgba(99, 102, 241, 0.4);">
+                    <span class="fin-label">AI Price Outlier Status</span>
+                    <span class="fin-value" id="finPriceAnomalyStatus" style="font-size: 0.85rem; color: #10b981;">🛡️ Clean (0 Anomaly)</span>
+                </div>
             </div>
 
         </section>
@@ -2632,6 +2636,10 @@
                 <button class="dash-tab-btn" id="tabBtnTerminal" data-tab="tabTerminal" onclick="switchDashboardTab('tabTerminal', this)">
                     🖥️ Audit Summary Log (.txt)
                     <span class="tab-counter-pill">Report</span>
+                </button>
+                <button class="dash-tab-btn" id="tabBtnPriceAnomaly" data-tab="tabPriceAnomaly" onclick="switchDashboardTab('tabPriceAnomaly', this)">
+                    🎯 AI Price Anomaly Audit
+                    <span class="tab-counter-pill" id="tabCountPriceAnomalies">0</span>
                 </button>
             </div>
 
@@ -2766,6 +2774,47 @@
                 </div>
             </div>
 
+            <!-- ================= TAB 5: AI PRICE ANOMALY AUDIT ================= -->
+            <div class="tab-pane" id="tabPriceAnomaly">
+                <div class="anomaly-audit-header" style="padding: 16px 20px; background: rgba(30, 41, 59, 0.5); border-radius: var(--radius-md); margin-bottom: 20px; border: 1px solid var(--border-glass); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+                            <span>🎯</span> AI Unit Rate & Commodity Outlier Inspector
+                        </h3>
+                        <p style="margin: 4px 0 0; font-size: 0.8rem; color: var(--text-muted);">
+                            Scans all line item unit prices against statutory commodity benchmarks to detect Under-Invoicing (tax evasion), Over-Invoicing (ITC inflation), and Keystroke Typos.
+                        </p>
+                    </div>
+                    <div id="priceAnomalyOverviewBadge">
+                        <span class="pill-status status-valid">🛡️ No Price Anomalies</span>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="audit-data-table" id="priceAnomalyTable">
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Item &amp; Product</th>
+                                <th>HSN / UQC</th>
+                                <th>Reported Rate</th>
+                                <th>Market Benchmark</th>
+                                <th>Anomaly Class</th>
+                                <th>Risk Score</th>
+                                <th>Diagnostics &amp; Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="priceAnomalyTableBody">
+                            <tr>
+                                <td colspan="8" style="text-align: center; padding: 36px; color: var(--text-dim);">
+                                    Run the conversion pipeline to view AI price anomaly diagnostics.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </section>
 
     </main>
@@ -2795,6 +2844,7 @@
         let lastCleanJsonStr = '';
         let lastSummaryText = '';
         let fullAuditRecords = [];
+        let cumulativeErrorLogs = [];
 
         // DOM Elements
         const rawJsonEditor = document.getElementById('rawJsonEditor');
@@ -2816,6 +2866,7 @@
             // Load initial random batch so the user has immediate data to explore
             await handleGenerateRandom();
         });
+
 
         // Mode Switching
         function selectInputMode(mode) {
@@ -3068,6 +3119,7 @@
                 renderDiffPanes(lastRawJsonStr, lastCleanJsonStr);
                 renderValidationCards(pipelineData.validation_report);
                 renderTerminalSummary(pipelineData.summary_text);
+                renderPriceAnomalyPane(pipelineData.validation_report);
 
                 // Show Dashboard Sections
                 document.getElementById('kpiDashboardSection').style.display = 'block';
@@ -3102,6 +3154,19 @@
             document.getElementById('tabCountCorrections').textContent = metrics.total_corrections || 0;
             document.getElementById('tabCountErrors').textContent = metrics.total_errors || 0;
 
+            // AI Price Anomaly Metrics
+            const anom = metrics.price_anomalies || {};
+            const anomStatusEl = document.getElementById('finPriceAnomalyStatus');
+            const anomTabCount = document.getElementById('tabCountPriceAnomalies');
+            if (anomTabCount) anomTabCount.textContent = anom.total_anomalies || 0;
+            if (anomStatusEl) {
+                if (anom.total_anomalies > 0) {
+                    anomStatusEl.innerHTML = `<span style="color:#f43f5e; font-weight:700;">🚨 ${anom.total_anomalies} Anomaly (${anom.status})</span>`;
+                } else {
+                    anomStatusEl.innerHTML = `<span style="color:#10b981; font-weight:700;">🛡️ Clean (0 Anomaly)</span>`;
+                }
+            }
+
             // Financial valuations
             const fin = metrics.financials || {};
             document.getElementById('finTtlassval').textContent = formatCurrency(fin.ttlassval || 0);
@@ -3112,6 +3177,110 @@
 
             // Populate category dropdown in table filter
             populateCategoryFilter(metrics.category_counts || {});
+        }
+
+        // Render AI Price Anomaly Diagnostic Table (Tab 5)
+        function renderPriceAnomalyPane(report) {
+            const tbody = document.getElementById('priceAnomalyTableBody');
+            const overviewBadge = document.getElementById('priceAnomalyOverviewBadge');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const results = report?.results || [];
+            let allFindings = [];
+
+            results.forEach(invRes => {
+                const invNum = invRes.invoice_number || 'INV';
+                const anomReport = invRes.price_anomaly_report;
+                if (anomReport && anomReport.findings) {
+                    anomReport.findings.forEach(f => {
+                        allFindings.push({ ...f, invoice_number: invNum });
+                    });
+                }
+            });
+
+            if (allFindings.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 36px; color: var(--text-dim);">
+                            🛡️ All line items conform to statutory price benchmarks. No anomalies detected.
+                        </td>
+                    </tr>
+                `;
+                if (overviewBadge) {
+                    overviewBadge.innerHTML = '<span class="pill-status status-valid">🛡️ No Price Anomalies (Clean)</span>';
+                }
+                return;
+            }
+
+            const anomaliesOnly = allFindings.filter(f => f.is_anomaly);
+            if (overviewBadge) {
+                if (anomaliesOnly.length > 0) {
+                    overviewBadge.innerHTML = `<span class="pill-status status-invalid" style="background: rgba(244,63,94,0.2); color:#fda4af; border:1px solid rgba(244,63,94,0.4);">🚨 ${anomaliesOnly.length} Price Anomaly Flagged</span>`;
+                } else {
+                    overviewBadge.innerHTML = '<span class="pill-status status-valid">🛡️ All Items Within Normal Benchmarks</span>';
+                }
+            }
+
+            allFindings.forEach(f => {
+                const tr = document.createElement('tr');
+                if (f.is_anomaly) {
+                    tr.style.background = f.severity === 'CRITICAL' ? 'rgba(244, 63, 94, 0.08)' : 'rgba(245, 158, 11, 0.05)';
+                }
+
+                let typeBadge = '';
+                if (f.anomaly_type === 'OVER_INVOICING') {
+                    typeBadge = '<span class="type-pill" style="background: rgba(244,63,94,0.25); color:#fda4af; border:1px solid #f43f5e;">OVER-INVOICING</span>';
+                } else if (f.anomaly_type === 'UNDER_INVOICING') {
+                    typeBadge = '<span class="type-pill" style="background: rgba(245,158,11,0.25); color:#fde68a; border:1px solid #f59e0b;">UNDER-INVOICING</span>';
+                } else if (f.anomaly_type === 'DECIMAL_SHIFT_TYPO') {
+                    typeBadge = '<span class="type-pill" style="background: rgba(168,85,247,0.25); color:#e9d5ff; border:1px solid #a855f7;">TYPO DETECTED</span>';
+                } else {
+                    typeBadge = '<span class="type-pill type-correction" style="background: rgba(16,185,129,0.2); color:#6ee7b7; border:1px solid #10b981;">NORMAL</span>';
+                }
+
+                let riskMeter = '';
+                if (f.risk_score >= 80) {
+                    riskMeter = `<span style="color:#f43f5e; font-weight:700;">🔴 ${f.risk_score}/100 (Critical)</span>`;
+                } else if (f.risk_score >= 50) {
+                    riskMeter = `<span style="color:#f59e0b; font-weight:700;">🟡 ${f.risk_score}/100 (High)</span>`;
+                } else if (f.risk_score > 0) {
+                    riskMeter = `<span style="color:#38bdf8; font-weight:600;">🔵 ${f.risk_score}/100 (Moderate)</span>`;
+                } else {
+                    riskMeter = '<span style="color:#10b981; font-weight:600;">🟢 0/100 (Safe)</span>';
+                }
+
+                let actionBtn = '';
+                if (f.is_anomaly) {
+                    const fixRate = f.suggested_rate || f.benchmark_median;
+                    actionBtn = `
+                        <button type="button" class="btn-copy-url" style="margin-top:4px; font-size:0.75rem; background:rgba(99,102,241,0.25); color:#a5b4fc; border:1px solid #6366f1; cursor:pointer;" 
+                            onclick="sendCopilotQuickMessage('Fix Item ${f.item_index} rate to ${fixRate}')">
+                            🔧 Auto-Fix to ₹${Number(fixRate).toLocaleString('en-IN', {minimumFractionDigits: 2})}
+                        </button>
+                    `;
+                } else {
+                    actionBtn = '<span style="color:var(--text-dim); font-size:0.75rem;">Verified OK</span>';
+                }
+
+                const benchText = f.benchmark_min !== undefined ? `₹${Number(f.benchmark_min).toLocaleString('en-IN')} - ₹${Number(f.benchmark_max).toLocaleString('en-IN')}` : 'General UQC';
+
+                tr.innerHTML = `
+                    <td style="font-family:'JetBrains Mono', monospace; font-weight:700;">${escapeHtml(f.invoice_number)}</td>
+                    <td><strong>Item #${f.item_index}:</strong> ${escapeHtml(f.prdnm)}</td>
+                    <td><span class="field-tag">${escapeHtml(f.hsncd || '-')} / ${escapeHtml(f.uqc)}</span></td>
+                    <td style="font-family:'JetBrains Mono', monospace; font-weight:700; ${f.is_anomaly ? 'color:#fda4af;' : ''}">₹${Number(f.unitrate).toLocaleString('en-IN', {minimumFractionDigits: 2})}</td>
+                    <td style="font-size:0.78rem; color:var(--text-muted);">${benchText}</td>
+                    <td>${typeBadge}</td>
+                    <td>${riskMeter}</td>
+                    <td style="max-width:320px; font-size:0.78rem; line-height:1.4;">
+                        <div>${escapeHtml(f.reason)}</div>
+                        ${actionBtn}
+                    </td>
+                `;
+
+                tbody.appendChild(tr);
+            });
         }
 
         function formatCurrency(val) {
@@ -3765,20 +3934,17 @@
                 if (data && data.modules) {
                     const gstinMod = data.modules.find(m => m.module_id === 'gstin');
                     const vahanMod = data.modules.find(m => m.module_id === 'vahan');
-                    if (gstinMod) {
-                        const el1 = document.getElementById('epGstinUrlCard');
-                        if (el1) el1.textContent = gstinMod.url;
+                    if (gstinMod && document.getElementById('epGstinUrl')) {
+                        document.getElementById('epGstinUrl').textContent = gstinMod.url;
                     }
-                    if (vahanMod) {
-                        const el2 = document.getElementById('epVahanUrlCard');
-                        if (el2) el2.textContent = vahanMod.url;
+                    if (vahanMod && document.getElementById('epVahanUrl')) {
+                        document.getElementById('epVahanUrl').textContent = vahanMod.url;
                     }
                 }
             } catch (e) {
                 console.warn('Could not fetch live endpoints info:', e);
             }
         }
-
 
         // Format Markdown-like text to safe HTML
         function formatMarkdownReply(text) {
