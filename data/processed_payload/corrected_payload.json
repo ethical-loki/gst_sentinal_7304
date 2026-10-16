@@ -1,0 +1,103 @@
+{
+  "einvoices": [
+    {
+      "self_gstin": "29ABCDE1234F1ZW",
+      "system_cd": "SAP_ERP",
+      "branch_cd": "BLR01",
+      "vertical_cd": "DOM",
+      "irnreq": "Y",
+      "trandt1": {
+        "trancatg": "B2B",
+        "reversecharge": "N",
+        "transactionmode": "REG",
+        "igstonintra": "N"
+      },
+      "docdt1": {
+        "document_type": "INV",
+        "docno": "INV-2026-B2B01",
+        "docdt": "10-10-2026"
+      },
+      "supplierdt1": {
+        "supplier_gstin": "29ABCDE1234F1ZW",
+        "supplier_lglnm": "BHARAT   TECH SOLUTIONS PVT LTD",
+        "supplier_trdnm": "BHARAT TECH",
+        "supplier_bno": "104",
+        "supplier_bnm": "Cyber Towers",
+        "supplier_flno": "4th Floor",
+        "supplier_loc": "Bengaluru",
+        "supplier_dst": "Bengaluru",
+        "supplier_pin": "560001",
+        "supplier_state": "29",
+        "supplier_phone": "9876543210",
+        "supplier_email": "accounts@bharattech.in"
+      },
+      "buyerdt1": {
+        "buyer_gstin": "29AABCT1332L1ZA",
+        "buyer_trdnm": "APEX COMMERCE",
+        "buyer_lglnm": "APEX COMMERCE ENTERPRISES",
+        "buyer_bno": "55",
+        "buyer_bnm": "MG Road Commercial Plaza",
+        "buyer_flno": "NAA",
+        "buyer_loc": "Bengaluru",
+        "buyer_dst": "Bengaluru",
+        "buyer_pin": "560001",
+        "buyer_state": "29",
+        "pos": "29",
+        "buyer_phone": "",
+        "buyer_email": ""
+      },
+      "itemdtls": [
+        {
+          "prdnm": "Industrial Servo Motor",
+          "prddesc": "High torque servo motor for automation assembly line",
+          "isservc": "N",
+          "hsncd": "22071012",
+          "qty": "5.000",
+          "uqc": "NOS",
+          "unitrate": "10000.00",
+          "grossamt": "50000.00",
+          "discount": "",
+          "othchrg": "",
+          "assamt": "50000.00",
+          "taxability": "TAX",
+          "cgstrt": "9.00",
+          "cgstamt": "4500.00",
+          "sgstrt": "9.00",
+          "sgstamt": "4500.00",
+          "igstrt": "0.00",
+          "igstamt": "0.00",
+          "cessrt": "0.00",
+          "cessamt": "0.00",
+          "cessnonadval": "",
+          "statecessrt": "0.00",
+          "statecessamt": "0.00",
+          "totitemval": "59000.00"
+        }
+      ],
+      "valdt1": {
+        "ttlassval": "50000.00",
+        "cgstval": "4500.00",
+        "sgstval": "4500.00",
+        "igstval": "0.00",
+        "cesval": "0.00",
+        "stcesval": "0.00",
+        "cesnonadval": "0.00",
+        "discval": "",
+        "totinvval": "59000.00",
+        "othchrg": "0.00"
+      },
+      "ewbdt1": {
+        "ewayreq": "Y",
+        "subsupplytype": "1",
+        "distance_of_transport": "250",
+        "transporter_id": "29ABCDE1234F1ZW",
+        "transporter_name": "Registered Fleet Carrier",
+        "mode_of_transport": "1",
+        "transport_doc_no": "",
+        "transporter_doc_date": "",
+        "veh_type": "R",
+        "veh_number": "KA01AB1234"
+      }
+    }
+  ]
+}

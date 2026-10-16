@@ -186,9 +186,10 @@
 
         /* Main Container */
         .page-container {
-            max-width: 1440px;
+            max-width: 1780px;
+            width: 96%;
             margin: 0 auto;
-            padding: 28px 24px 60px 24px;
+            padding: 24px 16px 60px 16px;
             position: relative;
             z-index: 10;
         }
@@ -252,9 +253,10 @@
         /* ================= INPUT HUB STYLES ================= */
         .input-hub-grid {
             display: grid;
-            grid-template-columns: 360px 1fr;
-            gap: 20px;
+            grid-template-columns: 310px minmax(0, 1fr);
+            gap: 18px;
             margin-bottom: 28px;
+            width: 100%;
         }
 
         @media (max-width: 1024px) {
@@ -598,15 +600,166 @@
             transform: translateY(0);
         }
 
-        /* ================= EMBEDDED SPLIT-SCREEN COPILOT (RESPONSIVE & AUTO-ADJUSTABLE) ================= */
+        /* ================= WORKBENCH SHEET-WISE NAVIGATION & VIEWS ================= */
+        .workbench-main-content {
+            min-width: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .workbench-sheet-nav {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 8px;
+            background: rgba(13, 19, 34, 0.95);
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+            border-radius: 12px;
+            padding: 8px 12px;
+            backdrop-filter: blur(12px);
+            width: 100%;
+            box-sizing: border-box;
+            overflow-x: auto;
+        }
+
+        .sheet-tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-muted, #94a3b8);
+            font-size: 0.86rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .sheet-tab-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .sheet-tab-btn.active {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.22), rgba(59, 130, 246, 0.22));
+            border-color: rgba(6, 182, 212, 0.55);
+            color: #38bdf8;
+            box-shadow: 0 0 16px rgba(6, 182, 212, 0.3);
+        }
+
+        .sheet-tab-btn .badge-pill {
+            font-size: 0.7rem;
+            padding: 2px 7px;
+            border-radius: 10px;
+            background: rgba(6, 182, 212, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+
+        /* ================= EMBEDDED SPLIT-SCREEN & SHEET COPILOT ================= */
         .editor-copilot-split {
             display: grid;
-            grid-template-columns: minmax(360px, 1.05fr) minmax(360px, 0.95fr);
+            grid-template-columns: minmax(320px, 1.05fr) minmax(320px, 0.95fr);
             gap: 16px;
             width: 100%;
             transition: grid-template-columns 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             align-items: stretch;
+            box-sizing: border-box;
+        }
+
+        /* Sheet Mode 1: Full-Width Dirty Payload Inspector (No dead space) */
+        .editor-copilot-split.sheet-mode-editor {
+            grid-template-columns: 1fr !important;
+        }
+        .editor-copilot-split.sheet-mode-editor .editor-container {
+            grid-column: 1 / -1 !important;
+            width: 100% !important;
+            display: flex !important;
+        }
+        .editor-copilot-split.sheet-mode-editor .copilot-container,
+        .editor-copilot-split.sheet-mode-editor .split-resizer {
+            display: none !important;
+        }
+
+        /* Sheet Mode 2: Full-Width AI Compliance Copilot Chat (No dead space) */
+        .editor-copilot-split.sheet-mode-copilot {
+            grid-template-columns: 1fr !important;
+        }
+        .editor-copilot-split.sheet-mode-copilot .editor-container,
+        .editor-copilot-split.sheet-mode-copilot .split-resizer {
+            display: none !important;
+        }
+        .editor-copilot-split.sheet-mode-copilot .copilot-container {
+            grid-column: 1 / -1 !important;
+            width: 100% !important;
+            display: flex !important;
+            min-height: 600px;
+        }
+        .editor-copilot-split.sheet-mode-copilot #moduleEndpointsPanelView {
+            display: none !important;
+        }
+        .editor-copilot-split.sheet-mode-copilot #copilotChatView {
+            display: flex !important;
+            flex-direction: column !important;
+            flex: 1 !important;
+            width: 100% !important;
+            min-height: 580px;
+        }
+        .editor-copilot-split.sheet-mode-copilot .copilot-messages-feed {
+            max-height: 620px !important;
+        }
+
+        /* Sheet Mode 3: Full-Width Module Endpoints & Live URLs (No dead space) */
+        .editor-copilot-split.sheet-mode-endpoints {
+            grid-template-columns: 1fr !important;
+        }
+        .editor-copilot-split.sheet-mode-endpoints .editor-container,
+        .editor-copilot-split.sheet-mode-endpoints .split-resizer {
+            display: none !important;
+        }
+        .editor-copilot-split.sheet-mode-endpoints .copilot-container {
+            grid-column: 1 / -1 !important;
+            width: 100% !important;
+            display: flex !important;
+            min-height: 600px;
+        }
+        .editor-copilot-split.sheet-mode-endpoints #copilotChatView {
+            display: none !important;
+        }
+        .editor-copilot-split.sheet-mode-endpoints #moduleEndpointsPanelView {
+            display: block !important;
+            width: 100% !important;
+        }
+        .editor-copilot-split.sheet-mode-endpoints .endpoints-cards-feed {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)) !important;
+            gap: 18px !important;
+            max-height: none !important;
+            overflow-y: visible !important;
+        }
+
+        /* Sheet Mode 4: Dual Split View */
+        .editor-copilot-split.sheet-mode-split {
+            display: grid !important;
+            grid-template-columns: minmax(320px, 1.05fr) minmax(320px, 0.95fr) !important;
+            gap: 16px;
+        }
+        .editor-copilot-split.sheet-mode-split .editor-container {
+            display: flex !important;
+        }
+        .editor-copilot-split.sheet-mode-split .copilot-container {
+            display: flex !important;
+        }
+        .editor-copilot-split.sheet-mode-split .split-resizer {
+            display: flex !important;
         }
 
         /* Interactive Resolution & Layout Presets */
@@ -666,7 +819,7 @@
             }
         }
 
-        @media (max-width: 980px) {
+        @media (max-width: 860px) {
             .editor-copilot-split {
                 grid-template-columns: 1fr !important;
                 gap: 20px;
@@ -2098,6 +2251,9 @@
             <a href="/converter" class="nav-tab-link active">
                 ⚡ E-Invoice & E-Way Converter
             </a>
+            <a href="/ingestion" class="nav-tab-link">
+                🛡️ Data Ingestion & Lakehouse
+            </a>
         </nav>
 
         <div class="header-status-pill">
@@ -2180,8 +2336,34 @@
 
             </div>
 
-            <!-- Embedded Split-Screen: Editor & AI Compliance Copilot -->
-            <div class="editor-copilot-split" id="editorCopilotSplit">
+            <!-- Main Workbench Container with Sheet Navigation -->
+            <div class="workbench-main-content">
+                
+                <!-- Workbench Sheet Navigation Bar -->
+                <div class="workbench-sheet-nav" id="workbenchSheetNav">
+                    <button type="button" class="sheet-tab-btn active" id="sheetBtnEditor" onclick="switchWorkbenchSheet('editor')" title="View Full Dirty Payload Inspector">
+                        <span>📝</span>
+                        <span class="sheet-tab-text">Sheet 1: Dirty Payload Inspector</span>
+                        <span class="badge-pill">JSON</span>
+                    </button>
+                    <button type="button" class="sheet-tab-btn" id="sheetBtnCopilot" onclick="switchWorkbenchSheet('copilot')" title="View Full AI Compliance Copilot Chat">
+                        <span>🤖</span>
+                        <span class="sheet-tab-text">Sheet 2: AI Compliance Copilot</span>
+                        <span class="badge-pill">AI Chat</span>
+                    </button>
+                    <button type="button" class="sheet-tab-btn" id="sheetBtnEndpoints" onclick="switchWorkbenchSheet('endpoints')" title="View Module Endpoints & Live Verification URLs">
+                        <span>🔗</span>
+                        <span class="sheet-tab-text">Sheet 3: Module Endpoints & URLs</span>
+                        <span class="badge-pill">3 Engines</span>
+                    </button>
+                    <button type="button" class="sheet-tab-btn" id="sheetBtnSplit" onclick="switchWorkbenchSheet('split')" title="View Side-by-Side Dual Workbench">
+                        <span>🪟</span>
+                        <span class="sheet-tab-text">Sheet 4: Dual Split View</span>
+                    </button>
+                </div>
+
+                <!-- Embedded Split-Screen: Editor & AI Compliance Copilot -->
+                <div class="editor-copilot-split sheet-mode-editor" id="editorCopilotSplit">
                 
                 <!-- Left: Editor & Ingestion Panel -->
                 <div class="editor-container">
@@ -2530,6 +2712,7 @@
 
 
             </div>
+            </div>
 
         </section>
 
@@ -2859,12 +3042,10 @@
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', async () => {
             initSplitResizer();
-            const savedLayout = localStorage.getItem('copilot_layout_mode') || 'auto';
-            setCopilotLayout(savedLayout);
+            const savedSheet = localStorage.getItem('workbench_active_sheet') || 'editor';
+            switchWorkbenchSheet(savedSheet);
             // Fetch live API module endpoint configurations
             await loadConfiguredEndpoints();
-            // Load initial random batch so the user has immediate data to explore
-            await handleGenerateRandom();
         });
 
 
@@ -3490,11 +3671,17 @@
 
         // Utility: Toast
         function showToast(msg, type = 'success') {
-            toastMessage.textContent = msg;
-            toastBox.className = `toast-notification show ${type === 'success' ? 'toast-success' : 'toast-error'}`;
-            setTimeout(() => {
-                toastBox.classList.remove('show');
-            }, 3500);
+            const box = document.getElementById('toastBox');
+            const messageEl = document.getElementById('toastMessage');
+            if (messageEl) messageEl.textContent = msg;
+            if (box) {
+                box.className = `toast-notification show ${type === 'success' ? 'toast-success' : type === 'error' ? 'toast-error' : 'toast-info'}`;
+                box.style.display = 'flex';
+                setTimeout(() => {
+                    box.classList.remove('show');
+                    setTimeout(() => { if (box) box.style.display = 'none'; }, 300);
+                }, 3500);
+            }
         }
 
         // Utility: Loading
@@ -3519,11 +3706,143 @@
         }
 
         // ==============================================================
-        // AI COMPLIANCE COPILOT & SPLIT-SCREEN CHATBOT LOGIC
+        // ==============================================================
+        // AI COMPLIANCE COPILOT & WORKBENCH SHEET-WISE LOGIC
         // ==============================================================
         let copilotChatHistory = [];
-        let isCopilotSplitActive = true;
+        let currentWorkbenchSheet = localStorage.getItem('workbench_active_sheet') || 'editor';
         let activeCopilotLayout = localStorage.getItem('copilot_layout_mode') || 'auto';
+
+        // Sheet-Wise Navigation Switcher (Sheet 1: Editor | Sheet 2: Copilot | Sheet 3: Endpoints | Sheet 4: Split)
+        function switchWorkbenchSheet(sheetName) {
+            currentWorkbenchSheet = sheetName;
+            const splitContainer = document.getElementById('editorCopilotSplit');
+            if (!splitContainer) return;
+
+            const editorContainer = splitContainer.querySelector('.editor-container');
+            const copilotContainer = document.getElementById('copilotPanel');
+            const resizer = document.getElementById('splitResizer');
+            const endpointsView = document.getElementById('moduleEndpointsPanelView');
+            const chatView = document.getElementById('copilotChatView');
+            const panelTitle = document.getElementById('panelPrimaryTitle');
+            const panelSubtitle = document.getElementById('panelPrimarySubtitle');
+            const toggleText = document.getElementById('toggleCopilotText');
+
+            // Update active state on sheet buttons
+            document.querySelectorAll('.sheet-tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.copilot-layout-btn').forEach(btn => btn.classList.remove('active'));
+
+            // Remove legacy layout classes
+            splitContainer.classList.remove(
+                'sheet-mode-editor', 
+                'sheet-mode-copilot', 
+                'sheet-mode-endpoints', 
+                'sheet-mode-split', 
+                'editor-only', 
+                'split-half', 
+                'split-wide', 
+                'split-max'
+            );
+            splitContainer.style.gridTemplateColumns = '';
+
+            if (sheetName === 'editor') {
+                document.getElementById('sheetBtnEditor')?.classList.add('active');
+                splitContainer.classList.add('sheet-mode-editor');
+                if (editorContainer) editorContainer.style.display = 'flex';
+                if (copilotContainer) copilotContainer.style.display = 'none';
+                if (resizer) resizer.style.display = 'none';
+                if (toggleText) toggleText.textContent = 'Copilot (Sheet 2)';
+                showToast('📝 Sheet 1: Full-Width Dirty Payload Inspector Active', 'info');
+            } else if (sheetName === 'copilot') {
+                document.getElementById('sheetBtnCopilot')?.classList.add('active');
+                document.getElementById('tabBtnCopilot')?.classList.add('active');
+                splitContainer.classList.add('sheet-mode-copilot');
+                if (editorContainer) editorContainer.style.display = 'none';
+                if (copilotContainer) {
+                    copilotContainer.style.display = 'flex';
+                    copilotContainer.style.width = '100%';
+                }
+                if (resizer) resizer.style.display = 'none';
+                if (endpointsView) endpointsView.style.display = 'none';
+                if (chatView) {
+                    chatView.style.display = 'flex';
+                    chatView.style.flexDirection = 'column';
+                    chatView.style.flex = '1';
+                }
+                if (panelTitle) panelTitle.textContent = 'AI Compliance Copilot & Assistant';
+                if (panelSubtitle) panelSubtitle.textContent = 'Statutory NIC IRN & E-Way Bill Rule Remediation';
+                if (toggleText) toggleText.textContent = 'Editor (Sheet 1)';
+                showToast('🤖 Sheet 2: Full-Width AI Compliance Copilot Active', 'info');
+            } else if (sheetName === 'endpoints') {
+                document.getElementById('sheetBtnEndpoints')?.classList.add('active');
+                document.getElementById('tabBtnEndpoints')?.classList.add('active');
+                splitContainer.classList.add('sheet-mode-endpoints');
+                if (editorContainer) editorContainer.style.display = 'none';
+                if (copilotContainer) {
+                    copilotContainer.style.display = 'flex';
+                    copilotContainer.style.width = '100%';
+                }
+                if (resizer) resizer.style.display = 'none';
+                if (chatView) chatView.style.display = 'none';
+                if (endpointsView) endpointsView.style.display = 'block';
+                if (panelTitle) panelTitle.textContent = 'Module Endpoints & Live URLs';
+                if (panelSubtitle) panelSubtitle.textContent = 'Government Portals, API Verification & Statutory Schemas';
+                if (toggleText) toggleText.textContent = 'Editor (Sheet 1)';
+                showToast('🔗 Sheet 3: Full-Width Module Endpoints & Live URLs Active', 'info');
+            } else if (sheetName === 'split') {
+                document.getElementById('sheetBtnSplit')?.classList.add('active');
+                splitContainer.classList.add('sheet-mode-split');
+                if (editorContainer) editorContainer.style.display = 'flex';
+                if (copilotContainer) copilotContainer.style.display = 'flex';
+                if (resizer) resizer.style.display = 'flex';
+                const savedView = localStorage.getItem('copilot_right_view') || 'endpoints';
+                switchRightPanelView(savedView, false);
+                const savedLayout = localStorage.getItem('copilot_layout_mode') || 'half';
+                setCopilotLayout(savedLayout);
+                if (toggleText) toggleText.textContent = 'Full Editor';
+                showToast('🪟 Sheet 4: Side-by-Side Dual Workbench Active', 'info');
+            }
+
+            localStorage.setItem('workbench_active_sheet', sheetName);
+        }
+
+        // Function to handle switching right panel between Endpoints Hub and Chatbot
+        function switchRightPanelView(view, changeSheet = true) {
+            const endpointsView = document.getElementById('moduleEndpointsPanelView');
+            const chatView = document.getElementById('copilotChatView');
+            const tabEndpoints = document.getElementById('tabBtnEndpoints');
+            const tabCopilot = document.getElementById('tabBtnCopilot');
+            const panelTitle = document.getElementById('panelPrimaryTitle');
+            const panelSubtitle = document.getElementById('panelPrimarySubtitle');
+
+            if (view === 'endpoints') {
+                if (tabEndpoints) tabEndpoints.classList.add('active');
+                if (tabCopilot) tabCopilot.classList.remove('active');
+                if (endpointsView) endpointsView.style.display = 'block';
+                if (chatView) chatView.style.display = 'none';
+                if (panelTitle) panelTitle.textContent = 'Module Endpoints & Live URLs';
+                if (panelSubtitle) panelSubtitle.textContent = 'Government Portals, API Verification & Statutory Schemas';
+                localStorage.setItem('copilot_right_view', 'endpoints');
+                if (changeSheet && currentWorkbenchSheet !== 'split') {
+                    switchWorkbenchSheet('endpoints');
+                }
+            } else if (view === 'copilot') {
+                if (tabCopilot) tabCopilot.classList.add('active');
+                if (tabEndpoints) tabEndpoints.classList.remove('active');
+                if (endpointsView) endpointsView.style.display = 'none';
+                if (chatView) {
+                    chatView.style.display = 'flex';
+                    chatView.style.flexDirection = 'column';
+                    chatView.style.flex = '1';
+                }
+                if (panelTitle) panelTitle.textContent = 'AI Compliance Copilot & Assistant';
+                if (panelSubtitle) panelSubtitle.textContent = 'Statutory NIC IRN & E-Way Bill Rule Remediation';
+                localStorage.setItem('copilot_right_view', 'copilot');
+                if (changeSheet && currentWorkbenchSheet !== 'split') {
+                    switchWorkbenchSheet('copilot');
+                }
+            }
+        }
 
         // Set Copilot Layout & Screen Split Width
         function setCopilotLayout(mode) {
@@ -3532,50 +3851,36 @@
             const buttons = document.querySelectorAll('.copilot-layout-btn');
             buttons.forEach(btn => btn.classList.remove('active'));
 
-            // Clear any inline drag styling
             splitContainer.style.gridTemplateColumns = '';
-
             splitContainer.classList.remove('split-half', 'split-wide', 'split-max', 'editor-only');
             activeCopilotLayout = mode;
 
             if (mode === 'half') {
                 splitContainer.classList.add('split-half');
                 document.getElementById('btnSplitHalf')?.classList.add('active');
-                showToast('📐 50:50 Balanced Split Activated', 'info');
             } else if (mode === 'wide') {
                 splitContainer.classList.add('split-wide');
                 document.getElementById('btnSplitWide')?.classList.add('active');
-                showToast('📐 Wide Chat Window Activated (65% width)', 'info');
             } else if (mode === 'full') {
-                splitContainer.classList.add('split-max');
-                document.getElementById('btnSplitFull')?.classList.add('active');
-                showToast('⤢ Full Chat Mode Activated', 'info');
+                // If user clicks full, switch directly to full-width sheet!
+                const activeRight = localStorage.getItem('copilot_right_view') || 'copilot';
+                switchWorkbenchSheet(activeRight);
+                return;
             } else {
-                // 'auto'
                 document.getElementById('btnSplitAuto')?.classList.add('active');
-                showToast('⚡ Smart Resolution Auto-Adjust Active', 'info');
             }
 
             localStorage.setItem('copilot_layout_mode', mode);
         }
 
-        // Toggle between Split Screen and Full-Width Editor
+        // Toggle between sheets from the editor toolbar button
         function toggleCopilotSplit() {
-            const splitContainer = document.getElementById('editorCopilotSplit');
-            const toggleText = document.getElementById('toggleCopilotText');
-            isCopilotSplitActive = !isCopilotSplitActive;
-
-            if (isCopilotSplitActive) {
-                splitContainer.classList.remove('editor-only');
-                toggleText.textContent = 'Copilot Split';
-                const savedMode = localStorage.getItem('copilot_layout_mode') || 'auto';
-                setCopilotLayout(savedMode);
-                showToast('AI Copilot Split-Screen Enabled', 'success');
+            if (currentWorkbenchSheet === 'editor') {
+                switchWorkbenchSheet('copilot');
+            } else if (currentWorkbenchSheet === 'copilot') {
+                switchWorkbenchSheet('split');
             } else {
-                splitContainer.classList.remove('split-half', 'split-wide', 'split-max');
-                splitContainer.classList.add('editor-only');
-                toggleText.textContent = 'Show Copilot';
-                showToast('Full-Width Editor Mode Activated', 'success');
+                switchWorkbenchSheet('editor');
             }
         }
 
@@ -3764,10 +4069,30 @@
             }
         }
 
-        // Clear Chat History and Auto-Detect Active Errors Immediately
-        async function clearCopilotChat() {
-            showToast('Chat cleared — re-evaluating invoice errors...', 'info');
-            await triggerCopilotAutoDiagnostic('🧹 Chat history cleared. Active payload re-inspected:');
+        const DEFAULT_COPILOT_PILLS_HTML = `
+            <button class="copilot-pill" onclick="sendCopilotQuickMessage('Show active module URLs &amp; API endpoints')">🔗 Active Module URLs</button>
+            <button class="copilot-pill" onclick="sendCopilotQuickMessage('Why did my invoice fail?')">💡 Explain Errors</button>
+            <button class="copilot-pill" onclick="sendCopilotQuickMessage('How do I fix supplier GSTIN?')">🏢 Fix Supplier GSTIN</button>
+            <button class="copilot-pill" onclick="sendCopilotQuickMessage('Fix state and pin code mismatch')">📍 Fix State / PIN</button>
+            <button class="copilot-pill" onclick="sendCopilotQuickMessage('Add vehicle number for E-Way Bill')">🚚 Fix Vehicle Number</button>
+            <button class="copilot-pill" onclick="sendCopilotQuickMessage('Rebalance tax math and invoice value')">🧮 Rebalance Tax Math</button>
+        `;
+
+        // Clear Chat History and Restore Default State
+        function clearCopilotChat() {
+            showToast('Chat cleared', 'info');
+            const feed = document.getElementById('copilotMessagesFeed');
+            if (feed) {
+                feed.innerHTML = `
+                    <div class="copilot-msg bot">
+                        <div class="msg-bubble">
+                            👋 <strong>Hello! I am your GST Sentinel Compliance Copilot.</strong><br><br>
+                            I inspect your payload in real-time against official NIC IRN &amp; E-Way Bill rules. If your GSTIN is locked, invalid, or failing validation, tell me your details right here (e.g., <em>"My GSTIN is 29ABCDE1234F1Z5"</em> or <em>"Vehicle number is KA01AB1234"</em>), and I will <strong>automatically patch your JSON payload</strong> and re-validate it for you!
+                        </div>
+                    </div>
+                `;
+            }
+            updateCopilotPills();
         }
 
         // Quick Message Pill Click
@@ -3777,15 +4102,12 @@
             handleCopilotSubmit(new Event('submit'));
         }
 
-        // Update Quick Prompt Pills
+        // Update Quick Prompt Pills - Always preserve the 6 primary compliance tools
         function updateCopilotPills(prompts) {
-            if (!prompts || !prompts.length) return;
             const container = document.getElementById('copilotPillsBar');
-            container.innerHTML = prompts.map(p => `
-                <button type="button" class="copilot-pill" onclick="sendCopilotQuickMessage('${escapeHtml(p)}')">
-                    ${escapeHtml(p)}
-                </button>
-            `).join('');
+            if (!container) return;
+            // Always retain the 6 core compliance tools from Image 1
+            container.innerHTML = DEFAULT_COPILOT_PILLS_HTML;
         }
 
         // Toggle Connected Module Endpoints Hub Drawer

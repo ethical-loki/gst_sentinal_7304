@@ -1,544 +1,1299 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GST_Sentinel - HSN Code Intelligence</title>
+    <title>GST_Sentinel Modern HSN Search Engine</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
         :root {
-            --bg: #0b0f19;
-            --glass-bg: rgba(22, 31, 51, 0.80);
-            --glass-border: rgba(255,255,255,0.12);
-            --accent-glow: rgba(99,102,241,0.35);
-            --accent: #6366f1;
-            --text: #f3f4f6;
-            --muted: #9ca3af;
-            --green: #34d399;
-            --purple: #c084fc;
-            --blue: #38bdf8;
+            --glass-bg: rgba(22, 31, 51, 0.72);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --accent-glow: rgba(99, 102, 241, 0.35);
+            --accent-primary: #6366f1;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --badge-chapter: #c084fc;
+            --badge-heading: #38bdf8;
+            --badge-tariff: #34d399;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        html,
+        body {
+            min-height: 100vh;
+            background: #060911;
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
 
         body {
-            background: radial-gradient(circle at 50% 0%, #1a233a 0%, var(--bg) 100%);
-            min-height: 100vh;
-            color: var(--text);
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 24px;
+            position: relative;
         }
 
-        .glow {
-            position: fixed; width: 500px; height: 500px; border-radius: 50%;
-            background: radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%);
-            top: 0; left: 50%; transform: translateX(-50%);
-            pointer-events: none; filter: blur(60px); z-index: 0;
+        /* ============ 3D CANVAS BACKGROUND ============ */
+        #bg3d {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            display: block;
         }
 
-        .container { width: 100%; max-width: 700px; position: relative; z-index: 1; }
+        /* Vignette + color grading overlay */
+        .bg-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.18) 0%, rgba(0, 0, 0, 0) 60%),
+                radial-gradient(circle at 15% 85%, rgba(52, 211, 153, 0.10) 0%, rgba(0, 0, 0, 0) 55%),
+                radial-gradient(circle at 85% 15%, rgba(192, 132, 252, 0.10) 0%, rgba(0, 0, 0, 0) 55%),
+                linear-gradient(180deg, rgba(6, 9, 17, 0.55) 0%, rgba(6, 9, 17, 0.85) 100%);
+        }
 
-        /* ---- Navigation ---- */
-        .nav-links {
+        .container {
+            width: 100%;
+            max-width: 680px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #a5b4fc;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .brand-badge .pulse {
+            width: 8px;
+            height: 8px;
+            background-color: #34d399;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #34d399;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 8px rgba(52, 211, 153, 0);
+            }
+
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+            }
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+            text-shadow: 0 0 40px rgba(99, 102, 241, 0.4);
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 400;
+        }
+
+        .search-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow:
+                0 20px 50px rgba(0, 0, 0, 0.4),
+                0 0 60px rgba(99, 102, 241, 0.10),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transform-style: preserve-3d;
+            transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+        }
+
+        .search-card:hover {
+            box-shadow:
+                0 30px 70px rgba(0, 0, 0, 0.5),
+                0 0 90px rgba(99, 102, 241, 0.20),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        .search-box {
+            position: relative;
+            width: 100%;
+        }
+
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            width: 20px;
+            height: 20px;
+            color: var(--text-muted);
+            pointer-events: none;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 16px 44px 16px 48px;
+            font-size: 1rem;
+            font-weight: 500;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1.5px solid var(--glass-border);
+            border-radius: 14px;
+            color: var(--text-main);
+            outline: none;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 4px var(--accent-glow), 0 4px 20px rgba(0, 0, 0, 0.25);
+            background: rgba(15, 23, 42, 0.85);
+        }
+
+        input[type="text"]::placeholder {
+            color: #64748b;
+            font-weight: 400;
+        }
+
+        .clear-btn {
+            position: absolute;
+            right: 14px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: var(--text-muted);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .clear-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+            align-items: center;
+        }
+
+        .chip-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chip {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #cbd5e1;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .chip:hover {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: rgba(99, 102, 241, 0.4);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .suggestions-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            max-height: 320px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            display: none;
+            padding: 8px;
+        }
+
+        .suggestions-dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .suggestions-dropdown::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .suggestions-dropdown::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+        }
+
+        .dropdown-header {
+            padding: 8px 12px 6px 12px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 4px;
+        }
+
+        .suggestion-item {
+            padding: 10px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+            margin-bottom: 2px;
+        }
+
+        .suggestion-item:hover,
+        .suggestion-item.active {
+            background: rgba(99, 102, 241, 0.18);
+            border-color: rgba(99, 102, 241, 0.35);
+        }
+
+        .item-left {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .item-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hsn-code {
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #818cf8;
+            letter-spacing: 0.5px;
+        }
+
+        .badge {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .badge-chapter {
+            background: rgba(192, 132, 252, 0.15);
+            color: var(--badge-chapter);
+            border: 1px solid rgba(192, 132, 252, 0.3);
+        }
+
+        .badge-heading {
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--badge-heading);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .badge-tariff {
+            background: rgba(52, 211, 153, 0.15);
+            color: var(--badge-tariff);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+        }
+
+        .description {
+            font-size: 0.86rem;
+            color: #cbd5e1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .highlight {
+            background: rgba(250, 204, 21, 0.25);
+            color: #fde047;
+            font-weight: 700;
+            border-radius: 2px;
+            padding: 0 2px;
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            padding: 5px 9px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            font-weight: 600;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+        }
+
+        .no-result {
+            padding: 20px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .detail-card {
+            margin-top: 20px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .detail-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .detail-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-code {
+            font-family: monospace;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #a5b4fc;
+        }
+
+        .detail-desc {
+            font-size: 0.92rem;
+            color: #f1f5f9;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .rate-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .rate-box {
+            background: rgba(30, 41, 59, 0.5);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .rate-box .label {
+            font-size: 0.68rem;
+            color: #64748b;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .rate-box .value {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #34d399;
+            margin-top: 2px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #1e293b;
+            border: 1px solid #34d399;
+            color: #34d399;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
         }
 
         .btn-custom-outline {
             background: transparent;
-            border: 1px solid var(--glass-border);
-            color: var(--muted);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #94a3b8;
             border-radius: 8px;
             padding: 6px 14px;
             font-size: 0.85rem;
             text-decoration: none;
             transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+            display: inline-block;
         }
 
         .btn-custom-outline:hover {
             background: rgba(255, 255, 255, 0.05);
-            color: var(--text);
-            border-color: rgba(255, 255, 255, 0.25);
+            color: #f8fafc;
+            border-color: rgba(255, 255, 255, 0.3);
         }
 
-        /* ---- Header ---- */
-        .header { text-align: center; margin-bottom: 28px; }
-
-        .badge-live {
-            display: inline-flex; align-items: center; gap: 8px;
-            padding: 5px 14px; background: rgba(99,102,241,0.15);
-            border: 1px solid rgba(99,102,241,0.3); border-radius: 30px;
-            font-size: 0.78rem; font-weight: 700; color: #a5b4fc;
-            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px;
+        @media (prefers-reduced-motion: reduce) {
+            .brand-badge .pulse {
+                animation: none;
+            }
         }
-
-        .dot {
-            width: 8px; height: 8px; background: var(--green); border-radius: 50%;
-            box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.6); }
-            50%       { box-shadow: 0 0 0 8px rgba(52,211,153,0); }
-        }
-
-        h1 {
-            font-size: clamp(1.8rem, 4vw, 2.4rem); font-weight: 800;
-            background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
-        }
-
-        .subtitle { color: var(--muted); font-size: 0.95rem; }
-
-        /* ---- Card ---- */
-        .card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 22px; padding: 26px;
-            box-shadow: 0 24px 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08);
-        }
-
-        /* ---- Search input ---- */
-        .search-wrap { position: relative; }
-
-        .input-row { display: flex; align-items: center; position: relative; }
-
-        .search-ico {
-            position: absolute; left: 16px; width: 20px; height: 20px;
-            stroke: var(--muted); fill: none; stroke-width: 2;
-            stroke-linecap: round; stroke-linejoin: round; pointer-events: none;
-        }
-
-        #searchInput {
-            width: 100%; padding: 16px 48px 16px 50px;
-            font-size: 1rem; font-weight: 500; font-family: inherit;
-            background: rgba(10,15,30,0.65); border: 1.5px solid var(--glass-border);
-            border-radius: 14px; color: var(--text); outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        #searchInput:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 4px var(--accent-glow);
-        }
-
-        #searchInput::placeholder { color: #4b5563; font-weight: 400; }
-
-        #clearBtn {
-            position: absolute; right: 14px; width: 26px; height: 26px;
-            background: rgba(255,255,255,0.1); border: none; border-radius: 50%;
-            color: var(--muted); font-size: 16px; cursor: pointer;
-            display: none; align-items: center; justify-content: center;
-            transition: background 0.2s;
-        }
-        #clearBtn:hover { background: rgba(255,255,255,0.2); color: #fff; }
-
-        /* ---- Dropdown ---- */
-        #dropdown {
-            position: absolute; top: calc(100% + 8px); left: 0; right: 0;
-            background: rgba(10,15,30,0.97);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border); border-radius: 16px;
-            max-height: 340px; overflow-y: auto;
-            z-index: 200; padding: 8px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
-            display: none;
-        }
-
-        #dropdown::-webkit-scrollbar { width: 5px; }
-        #dropdown::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 8px; }
-
-        .dd-header {
-            padding: 6px 12px 8px; font-size: 0.7rem; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.5px; color: #4b5563;
-            border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 4px;
-            display: flex; justify-content: space-between;
-        }
-
-        .dd-item {
-            display: flex; align-items: center; justify-content: space-between;
-            gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer;
-            border: 1px solid transparent; transition: all 0.14s;
-        }
-
-        .dd-item:hover, .dd-item.active {
-            background: rgba(99,102,241,0.18); border-color: rgba(99,102,241,0.35);
-        }
-
-        .dd-left { display: flex; flex-direction: column; gap: 3px; flex: 1; overflow: hidden; }
-        .dd-top  { display: flex; align-items: center; gap: 8px; }
-
-        .hsn-code { font-family: 'Courier New', monospace; font-size: 0.92rem; font-weight: 700; color: #818cf8; }
-
-        .badge {
-            font-size: 0.62rem; font-weight: 700; padding: 2px 7px;
-            border-radius: 6px; text-transform: uppercase; letter-spacing: 0.4px;
-            flex-shrink: 0;
-        }
-        .b-ch { background: rgba(192,132,252,0.15); color: var(--purple); border: 1px solid rgba(192,132,252,0.3); }
-        .b-hd { background: rgba(56,189,248,0.15);  color: var(--blue);   border: 1px solid rgba(56,189,248,0.3); }
-        .b-tc { background: rgba(52,211,153,0.15);  color: var(--green);  border: 1px solid rgba(52,211,153,0.3); }
-
-        .dd-desc { font-size: 0.84rem; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        mark {
-            background: rgba(250,204,21,0.25); color: #fde047;
-            font-weight: 700; border-radius: 2px; padding: 0 2px; font-style: normal;
-        }
-
-        .copy-btn {
-            flex-shrink: 0; background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1); color: var(--muted);
-            font-size: 0.72rem; font-weight: 600; padding: 4px 9px;
-            border-radius: 6px; cursor: pointer; transition: all 0.15s; font-family: inherit;
-        }
-        .copy-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
-
-        .dd-empty { padding: 20px; text-align: center; color: var(--muted); font-size: 0.9rem; }
-
-        /* ---- Chips ---- */
-        .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; align-items: center; }
-
-        .chip-label { font-size: 0.72rem; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.5px; }
-
-        .chip {
-            padding: 5px 13px; font-size: 0.8rem; font-weight: 500; font-family: inherit;
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
-            border-radius: 20px; color: #cbd5e1; cursor: pointer;
-            transition: all 0.18s; user-select: none;
-        }
-        .chip:hover { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.4); color: #fff; transform: translateY(-1px); }
-
-        /* ---- Detail card ---- */
-        #detailCard {
-            margin-top: 20px; background: rgba(10,15,30,0.6);
-            border: 1px solid var(--glass-border); border-radius: 16px;
-            padding: 20px; display: none;
-            animation: fadeUp 0.28s ease;
-        }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .dc-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .dc-label { font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
-        #dcCode  { font-family: monospace; font-size: 1.2rem; font-weight: 800; color: #a5b4fc; margin-bottom: 6px; }
-        #dcDesc  { font-size: 0.9rem; color: #e2e8f0; line-height: 1.55; margin-bottom: 16px; }
-
-        .rate-row {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-            padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.07);
-        }
-
-        .rate-box {
-            background: rgba(30,41,59,0.55); padding: 11px; border-radius: 10px;
-            text-align: center; border: 1px solid rgba(255,255,255,0.05);
-        }
-        .rate-box .rl { font-size: 0.65rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
-        .rate-box .rv { font-size: 0.95rem; font-weight: 700; color: var(--green); margin-top: 3px; }
-
-        /* ---- Toast ---- */
-        #toast {
-            position: fixed; bottom: 24px; left: 50%;
-            transform: translateX(-50%) translateY(80px);
-            background: #1e293b; border: 1px solid var(--green); color: var(--green);
-            padding: 10px 20px; border-radius: 30px; font-size: 0.84rem; font-weight: 600;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
-            opacity: 0; pointer-events: none; z-index: 999; font-family: inherit;
-        }
-        #toast.on { transform: translateX(-50%) translateY(0); opacity: 1; }
     </style>
 </head>
+<!-- This is the html code part -->
+
 <body>
-<div class="glow"></div>
-<div class="container">
-
-    <div class="nav-links">
+    <canvas id="bg3d"></canvas>
+    <div style="position: relative; z-index: 20; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; width: 100%; max-width: 680px;">
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <a href="/" class="btn-custom-outline" style="background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color: #fff; border-color: transparent;">🔍 HSN Intelligence</a>
-            <a href="/converter" class="btn-custom-outline" style="border-color: rgba(99,102,241,0.4); color: #a5b4fc;">⚡ E-Invoice & E-Way Converter</a>
+            <a href="/" style="padding: 7px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;
+                              background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color: #fff; text-decoration: none; box-shadow: 0 2px 10px rgba(99,102,241,0.4);">
+                🔍 HSN Intelligence
+            </a>
+            <a href="/converter" style="padding: 7px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;
+                              background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.35);
+                              color: #a5b4fc; text-decoration: none; transition: all 0.2s ease;">
+                ⚡ E-Invoice & E-Way Converter
+            </a>
+            <a href="/ingestion" style="padding: 7px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;
+                              background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35);
+                              color: #38bdf8; text-decoration: none; transition: all 0.2s ease;">
+                🛡️ Data Ingestion & Lakehouse
+            </a>
         </div>
     </div>
 
-    <div class="header">
-        <div class="badge-live"><span class="dot"></span> GST_Sentinel Engine v2.0</div>
-        <h1>HSN Code Intelligence</h1>
-        <p class="subtitle">Lightning-fast auto-suggest &amp; tax breakdown for goods &amp; services</p>
+    <div class="container" style="position: relative; z-index: 10;">
+        <div class="header" style="position: relative; z-index: 10;">
+            <div class="brand-badge">
+                <span class="pulse"></span> GST_Sentinel Engine v2.0
+            </div>
+            <h1>HSN Code Intelligence</h1>
+            <p class="subtitle">Lightning-fast auto-suggestions &amp; tax breakdown for goods &amp; services</p>
+        </div>
+
+        <div class="search-card" id="searchCard">
+            <div class="search-box">
+                <div class="input-wrapper">
+                    <svg class="search-icon" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="itemInput"
+                        placeholder="Search item name or HSN code (e.g. 0101, Live Animals, Chemicals)..."
+                        autocomplete="off">
+                    <button id="clearBtn" class="clear-btn" title="Clear search">&times;</button>
+                </div>
+
+                <div id="suggestions" class="suggestions-dropdown"></div>
+            </div>
+
+            <div class="chips-container">
+                <span class="chip-label">Quick Try:</span>
+                <span class="chip" onclick="setQuery('Live Animals')">Live Animals</span>
+                <span class="chip" onclick="setQuery('0101')">HSN 0101</span>
+                <span class="chip" onclick="setQuery('Chemicals')">Chemicals</span>
+                <span class="chip" onclick="setQuery('Horses')">Horses</span>
+                <span class="chip" onclick="setQuery('Bovine')">Bovine</span>
+            </div>
+
+            <div id="detailCard" class="detail-card">
+                <div class="detail-header">
+                    <span class="detail-title">Selected HSN Summary</span>
+                    <span id="detailBadge" class="badge badge-tariff">Tariff Item</span>
+                </div>
+                <div id="detailCode" class="detail-code">[0000]</div>
+                <div id="detailDesc" class="detail-desc">Item Description</div>
+                <div class="rate-grid">
+                    <div class="rate-box">
+                        <div class="label">IGST Rate</div>
+                        <div id="igstVal" class="value">18%</div>
+                    </div>
+                    <div class="rate-box">
+                        <div class="label">CGST Rate</div>
+                        <div id="cgstVal" class="value">9%</div>
+                    </div>
+                    <div class="rate-box">
+                        <div class="label">SGST Rate</div>
+                        <div id="sgstVal" class="value">9%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="card">
-        <div class="search-wrap">
-            <div class="input-row">
-                <svg class="search-ico" viewBox="0 0 24 24">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                <input id="searchInput" type="text" autocomplete="off"
-                       placeholder="Type item name or HSN code... (e.g. Live Animals, 0101, Chemicals)">
-                <button id="clearBtn" title="Clear">&#x2715;</button>
-            </div>
-            <div id="dropdown"></div>
-        </div>
+    <div id="toast" class="toast">Copied to clipboard!</div>
 
-        <div class="chips">
-            <span class="chip-label">Quick Try:</span>
-            <button class="chip" onclick="setQuery('Live Animals')">Live Animals</button>
-            <button class="chip" onclick="setQuery('0101')">HSN 0101</button>
-            <button class="chip" onclick="setQuery('Chemicals')">Chemicals</button>
-            <button class="chip" onclick="setQuery('Horses')">Horses</button>
-            <button class="chip" onclick="setQuery('Bovine')">Bovine</button>
-        </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        /* ==========================================================
+           GST-THEMED 3D BACKGROUND
+           ========================================================== */
+        (function initGSTBackground() {
+            const canvas = document.getElementById('bg3d');
+            if (!canvas || typeof THREE === 'undefined') return;
 
-        <div id="detailCard">
-            <div class="dc-top">
-                <span class="dc-label">Selected HSN</span>
-                <span id="dcBadge" class="badge b-tc">Tariff Code</span>
-            </div>
-            <div id="dcCode">-</div>
-            <div id="dcDesc">-</div>
-            <div class="rate-row">
-                <div class="rate-box"><div class="rl">IGST</div><div id="igst" class="rv">18%</div></div>
-                <div class="rate-box"><div class="rl">CGST</div><div id="cgst" class="rv">9%</div></div>
-                <div class="rate-box"><div class="rl">SGST</div><div id="sgst" class="rv">9%</div></div>
-            </div>
-        </div>
-    </div>
-</div>
+            const scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x060911, 0.032);
 
-<div id="toast"></div>
+            const camera = new THREE.PerspectiveCamera(
+                60, window.innerWidth / window.innerHeight, 0.1, 1000
+            );
+            camera.position.set(0, 0, 16);
 
-<script>
-    // ---- Elements ----
-    const searchInput = document.getElementById('searchInput');
-    const dropdown    = document.getElementById('dropdown');
-    const clearBtn    = document.getElementById('clearBtn');
-    const detailCard  = document.getElementById('detailCard');
+            const renderer = new THREE.WebGLRenderer({
+                canvas, antialias: true, alpha: true,
+                powerPreference: 'high-performance'
+            });
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 0);
 
-    // ---- State ----
-    let debounce = null;
-    let controller = null;
-    let cursor = -1;
-    let results = [];
+            const root = new THREE.Group();
+            scene.add(root);
 
-    // ---- Toast ----
-    function toast(msg) {
-        const el = document.getElementById('toast');
-        el.textContent = msg;
-        el.classList.add('on');
-        setTimeout(function() { el.classList.remove('on'); }, 2200);
-    }
+            /* ==========================================================
+               1. BIG FLOATING RUPEE (₹) SYMBOL
+               ========================================================== */
+            function createRupeeShape() {
+                const shape = new THREE.Shape();
+                // Top horizontal bar
+                shape.moveTo(-1.0, 1.6);
+                shape.lineTo(1.0, 1.6);
+                shape.lineTo(1.0, 1.25);
+                shape.lineTo(-1.0, 1.25);
+                shape.lineTo(-1.0, 1.6);
 
-    // ---- Badge ----
-    function badgeClass(code) {
-        if (code.length <= 2) return 'b-ch';
-        if (code.length <= 4) return 'b-hd';
-        return 'b-tc';
-    }
-    function badgeLabel(code) {
-        if (code.length <= 2) return 'Chapter';
-        if (code.length <= 4) return 'Heading';
-        return 'Tariff Code';
-    }
+                // Second horizontal bar (hole)
+                const bar2 = new THREE.Path();
+                bar2.moveTo(-1.0, 0.95);
+                bar2.lineTo(1.0, 0.95);
+                bar2.lineTo(1.0, 0.6);
+                bar2.lineTo(-1.0, 0.6);
+                bar2.lineTo(-1.0, 0.95);
+                shape.holes.push(bar2);
 
-    // ---- Highlight ----
-    function hl(text, q) {
-        if (!q || !text) return text || '';
-        try {
-            var esc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            return text.replace(new RegExp('(' + esc + ')', 'gi'), '<mark>$1</mark>');
-        } catch(e) { return text; }
-    }
+                // Vertical-left stem of R
+                const stem = new THREE.Path();
+                stem.moveTo(-1.0, 1.25);
+                stem.lineTo(-0.45, 1.25);
+                stem.lineTo(-0.45, -1.6);
+                stem.lineTo(-1.0, -1.6);
+                stem.lineTo(-1.0, 1.25);
+                shape.holes.push(stem);
 
-    // ---- Copy ----
-    function copyCode(e, code) {
-        e.stopPropagation();
-        navigator.clipboard.writeText(code).then(function() {
-            toast('Copied HSN: ' + code);
-        }).catch(function() {
-            toast('Copy failed');
-        });
-    }
+                // Loop / bowl of R
+                const diag1 = new THREE.Path();
+                diag1.moveTo(-0.45, 1.25);
+                diag1.lineTo(0.9, -0.15);
+                diag1.lineTo(0.55, -0.5);
+                diag1.lineTo(-0.45, 0.35);
+                diag1.lineTo(-0.45, 1.25);
+                shape.holes.push(diag1);
 
-    // ---- Select Item ----
-    function selectItem(item) {
-        searchInput.value = item.description + ' (HSN: ' + item.hsn_code + ')';
-        dropdown.style.display = 'none';
-        cursor = -1;
+                // Leg of R
+                const diag2 = new THREE.Path();
+                diag2.moveTo(-0.1, 0.15);
+                diag2.lineTo(0.95, -1.6);
+                diag2.lineTo(0.45, -1.6);
+                diag2.lineTo(-0.45, -0.35);
+                diag2.lineTo(-0.1, 0.15);
+                shape.holes.push(diag2);
 
-        var gst = (item.gst_rate !== undefined && item.gst_rate !== null) ? parseFloat(item.gst_rate) : 18;
-        var igst = (item.igst_rate !== undefined && item.igst_rate !== null) ? parseFloat(item.igst_rate) : gst;
-        var cgst = (item.cgst_rate !== undefined && item.cgst_rate !== null) ? parseFloat(item.cgst_rate) : (gst / 2);
-        var sgst = (item.sgst_rate !== undefined && item.sgst_rate !== null) ? parseFloat(item.sgst_rate) : (gst / 2);
+                return shape;
+            }
 
-        document.getElementById('dcCode').textContent = 'HSN: ' + item.hsn_code;
-        document.getElementById('dcDesc').textContent = item.description;
+            const rupeeShape = createRupeeShape();
+            const rupeeGeo = new THREE.ExtrudeGeometry(rupeeShape, {
+                depth: 0.35,
+                bevelEnabled: true,
+                bevelThickness: 0.06,
+                bevelSize: 0.05,
+                bevelSegments: 3,
+                curveSegments: 12
+            });
+            rupeeGeo.center();
 
-        var badge = document.getElementById('dcBadge');
-        badge.textContent = badgeLabel(item.hsn_code);
-        badge.className = 'badge ' + badgeClass(item.hsn_code);
+            const rupeeWireMat = new THREE.MeshBasicMaterial({
+                color: 0x34d399, wireframe: true,
+                transparent: true, opacity: 0.55
+            });
+            const rupeeWire = new THREE.Mesh(rupeeGeo, rupeeWireMat);
+            rupeeWire.scale.set(1.4, 1.4, 1.4);
+            root.add(rupeeWire);
 
-        document.getElementById('igst').textContent = igst + '%';
-        document.getElementById('cgst').textContent = cgst + '%';
-        document.getElementById('sgst').textContent = sgst + '%';
+            const rupeeGlassMat = new THREE.MeshBasicMaterial({
+                color: 0x6366f1, transparent: true, opacity: 0.06
+            });
+            const rupeeGlass = new THREE.Mesh(rupeeGeo.clone(), rupeeGlassMat);
+            rupeeGlass.scale.set(1.42, 1.42, 1.42);
+            root.add(rupeeGlass);
 
-        detailCard.style.display = 'block';
-    }
+            /* ==========================================================
+               2. ORBITING TAX DOCUMENT CARDS
+               ========================================================== */
+            const docGroup = new THREE.Group();
+            root.add(docGroup);
 
-    // ---- Render Dropdown ----
-    function renderDropdown(matches, q) {
-        results = matches;
-        cursor = -1;
-        dropdown.innerHTML = '';
+            const docColors = [0x6366f1, 0x38bdf8, 0xc084fc, 0x34d399];
+            const documents = [];
+            const docCount = 12;
 
-        if (!matches || matches.length === 0) {
-            dropdown.innerHTML = '<div class="dd-empty">No HSN code found for "' + q + '"</div>';
-            dropdown.style.display = 'block';
-            return;
-        }
+            for (let i = 0; i < docCount; i++) {
+                const w = 1.0 + Math.random() * 0.5;
+                const h = 1.3 + Math.random() * 0.4;
+                const geo = new THREE.BoxGeometry(w, h, 0.03);
 
-        var hdr = document.createElement('div');
-        hdr.className = 'dd-header';
-        hdr.innerHTML = '<span>' + matches.length + ' result' + (matches.length !== 1 ? 's' : '') + '</span><span>Arrow keys + Enter to pick</span>';
-        dropdown.appendChild(hdr);
-
-        matches.forEach(function(item, idx) {
-            var row = document.createElement('div');
-            row.className = 'dd-item';
-            row.setAttribute('data-idx', idx);
-
-            var left = document.createElement('div');
-            left.className = 'dd-left';
-
-            var top = document.createElement('div');
-            top.className = 'dd-top';
-
-            var code = document.createElement('span');
-            code.className = 'hsn-code';
-            code.innerHTML = '[' + hl(item.hsn_code, q) + ']';
-
-            var badge = document.createElement('span');
-            badge.className = 'badge ' + badgeClass(item.hsn_code);
-            badge.textContent = badgeLabel(item.hsn_code);
-
-            top.appendChild(code);
-            top.appendChild(badge);
-
-            var desc = document.createElement('div');
-            desc.className = 'dd-desc';
-            desc.innerHTML = hl(item.description, q);
-
-            left.appendChild(top);
-            left.appendChild(desc);
-
-            var cpBtn = document.createElement('button');
-            cpBtn.className = 'copy-btn';
-            cpBtn.textContent = 'Copy';
-            cpBtn.title = 'Copy HSN ' + item.hsn_code;
-            (function(capturedItem) {
-                cpBtn.addEventListener('click', function(e) { copyCode(e, capturedItem.hsn_code); });
-                row.addEventListener('click', function() { selectItem(capturedItem); });
-            })(item);
-
-            row.appendChild(left);
-            row.appendChild(cpBtn);
-            dropdown.appendChild(row);
-        });
-
-        dropdown.style.display = 'block';
-    }
-
-    // ---- Trigger Search ----
-    function doSearch(q) {
-        clearBtn.style.display = q.length > 0 ? 'flex' : 'none';
-
-        if (debounce) clearTimeout(debounce);
-        if (controller) { controller.abort(); controller = null; }
-
-        if (!q) { dropdown.style.display = 'none'; return; }
-
-        debounce = setTimeout(function() {
-            controller = new AbortController();
-            fetch('/api/hsn-search?query=' + encodeURIComponent(q), { signal: controller.signal })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (searchInput.value.trim() !== q) return;
-                    renderDropdown(data.matches || [], q);
-                })
-                .catch(function(err) {
-                    if (err.name === 'AbortError') return;
-                    console.error('HSN search error:', err);
-                    toast('Server offline - restart uvicorn');
+                const mat = new THREE.MeshBasicMaterial({
+                    color: docColors[i % docColors.length],
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.28
                 });
-        }, 180);
-    }
+                const card = new THREE.Mesh(geo, mat);
 
-    // ---- Public: setQuery (called by chips) ----
-    function setQuery(q) {
-        searchInput.value = q;
-        doSearch(q);
-        searchInput.focus();
-    }
+                const faceMat = new THREE.MeshBasicMaterial({
+                    color: docColors[i % docColors.length],
+                    transparent: true,
+                    opacity: 0.05,
+                    side: THREE.DoubleSide
+                });
+                const face = new THREE.Mesh(geo.clone(), faceMat);
+                card.add(face);
 
-    // ---- Events ----
-    searchInput.addEventListener('input', function() {
-        doSearch(this.value.trim());
-    });
+                const angle = (i / docCount) * Math.PI * 2;
+                const radius = 6 + Math.random() * 3;
+                const yOffset = (Math.random() - 0.5) * 6;
 
-    clearBtn.addEventListener('click', function() {
-        searchInput.value = '';
-        clearBtn.style.display = 'none';
-        dropdown.style.display = 'none';
-        detailCard.style.display = 'none';
-        results = [];
-        searchInput.focus();
-    });
+                card.userData = {
+                    angle,
+                    radius,
+                    yOffset,
+                    speed: 0.08 + Math.random() * 0.08,
+                    rotSpeed: (Math.random() - 0.5) * 0.4,
+                    bobPhase: Math.random() * Math.PI * 2,
+                    bobAmp: 0.3 + Math.random() * 0.4
+                };
 
-    searchInput.addEventListener('keydown', function(e) {
-        var items = dropdown.querySelectorAll('.dd-item');
-        if (!items.length || dropdown.style.display === 'none') return;
+                docGroup.add(card);
+                documents.push(card);
+            }
 
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            cursor = Math.min(cursor + 1, items.length - 1);
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            cursor = Math.max(cursor - 1, 0);
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (cursor >= 0 && cursor < results.length) selectItem(results[cursor]);
-            return;
-        } else if (e.key === 'Escape') {
-            dropdown.style.display = 'none';
-            return;
-        } else { return; }
+            /* ==========================================================
+               3. ROTATING TAX NETWORK GLOBE
+               ========================================================== */
+            const networkGroup = new THREE.Group();
+            networkGroup.position.set(0, 0, -4);
+            root.add(networkGroup);
 
-        items.forEach(function(el, i) {
-            el.classList.toggle('active', i === cursor);
-        });
-        if (items[cursor]) items[cursor].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    });
+            const nodesCount = 42;
+            const nodePositions = [];
+            const nodeRadius = 6.5;
 
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.search-wrap')) {
-            dropdown.style.display = 'none';
+            const phi = Math.PI * (3 - Math.sqrt(5));
+            for (let i = 0; i < nodesCount; i++) {
+                const y = 1 - (i / (nodesCount - 1)) * 2;
+                const radiusAtY = Math.sqrt(1 - y * y);
+                const theta = phi * i;
+                const x = Math.cos(theta) * radiusAtY;
+                const z = Math.sin(theta) * radiusAtY;
+                nodePositions.push(new THREE.Vector3(
+                    x * nodeRadius, y * nodeRadius, z * nodeRadius
+                ));
+            }
+
+            const nodeDotGeo = new THREE.SphereGeometry(0.06, 8, 8);
+            const nodeDotMat = new THREE.MeshBasicMaterial({
+                color: 0x38bdf8, transparent: true, opacity: 0.85
+            });
+            nodePositions.forEach(p => {
+                const dot = new THREE.Mesh(nodeDotGeo, nodeDotMat);
+                dot.position.copy(p);
+                networkGroup.add(dot);
+            });
+
+            const lineMat = new THREE.LineBasicMaterial({
+                color: 0x6366f1, transparent: true, opacity: 0.18
+            });
+
+            for (let i = 0; i < nodePositions.length; i++) {
+                for (let j = i + 1; j < nodePositions.length; j++) {
+                    const d = nodePositions[i].distanceTo(nodePositions[j]);
+                    if (d < 3.2) {
+                        const geo = new THREE.BufferGeometry().setFromPoints([
+                            nodePositions[i], nodePositions[j]
+                        ]);
+                        networkGroup.add(new THREE.Line(geo, lineMat));
+                    }
+                }
+            }
+
+            /* ==========================================================
+               4. DRIFTING COIN PARTICLES
+               ========================================================== */
+            const coinCount = 90;
+            const coinGeo = new THREE.CircleGeometry(0.08, 12);
+            const coinColors = [0xfbbf24, 0xfde047, 0x34d399, 0x818cf8];
+            const coins = [];
+
+            for (let i = 0; i < coinCount; i++) {
+                const mat = new THREE.MeshBasicMaterial({
+                    color: coinColors[i % coinColors.length],
+                    transparent: true,
+                    opacity: 0.35 + Math.random() * 0.4,
+                    side: THREE.DoubleSide
+                });
+                const coin = new THREE.Mesh(coinGeo, mat);
+
+                coin.position.set(
+                    (Math.random() - 0.5) * 40,
+                    (Math.random() - 0.5) * 24,
+                    (Math.random() - 0.5) * 20 - 2
+                );
+
+                coin.userData = {
+                    velY: 0.005 + Math.random() * 0.015,
+                    rotSpeed: (Math.random() - 0.5) * 0.02,
+                    driftX: (Math.random() - 0.5) * 0.005,
+                    baseZ: coin.position.z
+                };
+
+                scene.add(coin);
+                coins.push(coin);
+            }
+
+            /* ==========================================================
+               5. DEEP STARFIELD
+               ========================================================== */
+            const starCount = 500;
+            const starPos = new Float32Array(starCount * 3);
+            for (let i = 0; i < starCount; i++) {
+                starPos[i * 3] = (Math.random() - 0.5) * 120;
+                starPos[i * 3 + 1] = (Math.random() - 0.5) * 80;
+                starPos[i * 3 + 2] = -20 - Math.random() * 60;
+            }
+            const starGeo = new THREE.BufferGeometry();
+            starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+            const starMat = new THREE.PointsMaterial({
+                color: 0x9ca3af, size: 0.06, transparent: true,
+                opacity: 0.5, depthWrite: false
+            });
+            const stars = new THREE.Points(starGeo, starMat);
+            scene.add(stars);
+
+            /* ==========================================================
+               6. FLOATING "GST / IGST / HSN" TEXT SPRITES
+               ========================================================== */
+            function makeTextSprite(text, color) {
+                const cvs = document.createElement('canvas');
+                cvs.width = 256;
+                cvs.height = 128;
+                const ctx = cvs.getContext('2d');
+                ctx.font = 'bold 72px "Plus Jakarta Sans", sans-serif';
+                ctx.fillStyle = color;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 20;
+                ctx.fillText(text, 128, 64);
+
+                const texture = new THREE.CanvasTexture(cvs);
+                const mat = new THREE.SpriteMaterial({
+                    map: texture, transparent: true, opacity: 0.55,
+                    depthWrite: false
+                });
+                return new THREE.Sprite(mat);
+            }
+
+            const labels = ['GST', 'IGST', 'CGST', 'SGST', 'HSN', 'SAC'];
+            const labelSprites = [];
+            const labelColors = ['#34d399', '#818cf8', '#38bdf8', '#c084fc', '#fbbf24', '#f472b6'];
+
+            labels.forEach((txt, i) => {
+                const sprite = makeTextSprite(txt, labelColors[i % labelColors.length]);
+                sprite.scale.set(2.2, 1.1, 1);
+                sprite.position.set(
+                    (Math.random() - 0.5) * 24,
+                    (Math.random() - 0.5) * 14,
+                    (Math.random() - 0.5) * 10 - 3
+                );
+                sprite.userData = {
+                    velY: (Math.random() - 0.5) * 0.008,
+                    velX: (Math.random() - 0.5) * 0.006,
+                    phase: Math.random() * Math.PI * 2,
+                    baseOpacity: 0.35 + Math.random() * 0.3
+                };
+                scene.add(sprite);
+                labelSprites.push(sprite);
+            });
+
+            /* ==========================================================
+               MOUSE PARALLAX
+               ========================================================== */
+            let mouseX = 0, mouseY = 0, targetX = 0, targetY = 0;
+
+            window.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+                mouseY = (e.clientY / window.innerHeight) * 2 - 1;
+            });
+
+            window.addEventListener('touchmove', (e) => {
+                if (e.touches.length > 0) {
+                    mouseX = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
+                    mouseY = (e.touches[0].clientY / window.innerHeight) * 2 - 1;
+                }
+            }, { passive: true });
+
+            /* ==========================================================
+               ANIMATION LOOP
+               ========================================================== */
+            const clock = new THREE.Clock();
+            let rafId = null;
+
+            function animate() {
+                rafId = requestAnimationFrame(animate);
+                const t = clock.getElapsedTime();
+
+                // Rupee gentle float + slow rotation
+                rupeeWire.rotation.y = Math.sin(t * 0.3) * 0.5 + t * 0.05;
+                rupeeWire.rotation.x = Math.sin(t * 0.2) * 0.15;
+                rupeeWire.position.y = Math.sin(t * 0.7) * 0.2;
+                rupeeGlass.rotation.copy(rupeeWire.rotation);
+                rupeeGlass.position.copy(rupeeWire.position);
+
+                // Orbiting documents
+                documents.forEach((doc) => {
+                    const d = doc.userData;
+                    d.angle += d.speed * 0.01;
+                    doc.position.x = Math.cos(d.angle) * d.radius;
+                    doc.position.z = Math.sin(d.angle) * d.radius * 0.6;
+                    doc.position.y = d.yOffset + Math.sin(t * 0.6 + d.bobPhase) * d.bobAmp;
+
+                    doc.rotation.y = -d.angle + Math.PI / 2;
+                    doc.rotation.x = Math.sin(t * 0.5 + d.bobPhase) * 0.25;
+                    doc.rotation.z = Math.cos(t * 0.4 + d.bobPhase) * 0.15;
+                });
+
+                // Rotate the tax network globe
+                networkGroup.rotation.y = t * 0.12;
+                networkGroup.rotation.x = Math.sin(t * 0.1) * 0.15;
+
+                // Drifting coins
+                coins.forEach((coin) => {
+                    coin.position.y += coin.userData.velY;
+                    coin.position.x += coin.userData.driftX;
+                    coin.rotation.z += coin.userData.rotSpeed;
+
+                    // Wrap around vertically
+                    if (coin.position.y > 14) {
+                        coin.position.y = -14;
+                        coin.position.x = (Math.random() - 0.5) * 40;
+                    }
+                    if (coin.position.x > 22) coin.position.x = -22;
+                    if (coin.position.x < -22) coin.position.x = 22;
+                });
+
+                // Floating GST labels
+                labelSprites.forEach((sprite, i) => {
+                    const d = sprite.userData;
+                    sprite.position.y += d.velY;
+                    sprite.position.x += d.velX;
+
+                    // Wrap
+                    if (sprite.position.y > 10) sprite.position.y = -10;
+                    if (sprite.position.y < -10) sprite.position.y = 10;
+                    if (sprite.position.x > 15) sprite.position.x = -15;
+                    if (sprite.position.x < -15) sprite.position.x = 15;
+
+                    // Pulse opacity
+                    sprite.material.opacity =
+                        d.baseOpacity + Math.sin(t * 1.2 + d.phase) * 0.15;
+                });
+
+                // Starfield very slow drift
+                stars.rotation.y = t * 0.008;
+
+                // Whole-scene parallax from mouse
+                targetX += (mouseX - targetX) * 0.05;
+                targetY += (mouseY - targetY) * 0.05;
+
+                root.rotation.y = targetX * 0.15;
+                root.rotation.x = -targetY * 0.10;
+
+                camera.position.x = targetX * 1.6;
+                camera.position.y = -targetY * 1.2;
+                camera.lookAt(0, 0, 0);
+
+                renderer.render(scene, camera);
+            }
+
+            animate();
+
+            /* ==========================================================
+               RESIZE HANDLER
+               ========================================================== */
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            });
+
+            /* ==========================================================
+               PAUSE WHEN TAB HIDDEN (perf)
+               ========================================================== */
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    cancelAnimationFrame(rafId);
+                } else {
+                    animate();
+                }
+            });
+        })();
+
+        /* ==========================================================
+           3D TILT on the search card (mouse move)
+           ========================================================== */
+        (function initCardTilt() {
+            const card = document.getElementById('searchCard');
+            if (!card) return;
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width;
+                const y = (e.clientY - rect.top) / rect.height;
+                const rotateY = (x - 0.5) * 6;
+                const rotateX = -(y - 0.5) * 6;
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0)';
+            });
+        })();
+
+        /* ==========================================================
+           HSN SEARCH APP LOGIC
+           ========================================================== */
+        const input = document.getElementById('itemInput');
+        const dropdown = document.getElementById('suggestions');
+        const clearBtn = document.getElementById('clearBtn');
+        const detailCard = document.getElementById('detailCard');
+
+        let debounceTimer = null;
+        let activeAbortController = null;
+        let selectedIndex = -1;
+        let matchesData = [];
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
         }
-    });
-</script>
+
+        function copyToClipboard(e, text) {
+            e.stopPropagation();
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(`Copied HSN: ${text}`);
+            });
+        }
+
+        function getBadgeHTML(hsnCode) {
+            const len = hsnCode.length;
+            if (len <= 2) return '<span class="badge badge-chapter">Chapter</span>';
+            if (len <= 4) return '<span class="badge badge-heading">Heading</span>';
+            return '<span class="badge badge-tariff">Tariff Code</span>';
+        }
+
+        function getBadgeInnerHTML(hsnCode) {
+            const len = hsnCode.length;
+            if (len <= 2) return 'Chapter';
+            if (len <= 4) return 'Heading';
+            return 'Tariff Code';
+        }
+
+        function highlightText(text, query) {
+            if (!query) return text;
+            const esc = query.replace(/[.*+?^${}()|\[\]\\]/g, '\\$&');
+            const regex = new RegExp(`(${esc})`, 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        function setQuery(text) {
+            input.value = text;
+            triggerSearch(text);
+        }
+
+        function selectItem(item) {
+            input.value = `${item.description} (HSN: ${item.hsn_code})`;
+            dropdown.style.display = 'none';
+
+            document.getElementById('detailCode').innerText = `HSN: ${item.hsn_code}`;
+            document.getElementById('detailDesc').innerText = item.description;
+            const badge = document.getElementById('detailBadge');
+            if (badge) badge.innerHTML = getBadgeInnerHTML(item.hsn_code);
+
+            const gst = (item.gst_rate !== undefined && item.gst_rate !== null) ? parseFloat(item.gst_rate) : 18.0;
+            const igst = (item.igst_rate !== undefined && item.igst_rate !== null) ? parseFloat(item.igst_rate) : gst;
+            const cgst = (item.cgst_rate !== undefined && item.cgst_rate !== null) ? parseFloat(item.cgst_rate) : (gst / 2.0);
+            const sgst = (item.sgst_rate !== undefined && item.sgst_rate !== null) ? parseFloat(item.sgst_rate) : (gst / 2.0);
+
+            document.getElementById('igstVal').innerText = `${igst}%`;
+            document.getElementById('cgstVal').innerText = `${cgst}%`;
+            document.getElementById('sgstVal').innerText = `${sgst}%`;
+            detailCard.style.display = 'block';
+        }
+
+        function renderDropdown(matches, query) {
+            matchesData = matches;
+            selectedIndex = -1;
+            dropdown.innerHTML = '';
+
+            if (!matches || matches.length === 0) {
+                dropdown.innerHTML = '<div class="no-result">🔍 No matching HSN code or description found</div>';
+                dropdown.style.display = 'block';
+                return;
+            }
+
+            const header = document.createElement('div');
+            header.className = 'dropdown-header';
+            header.innerHTML = `<span>Results (${matches.length})</span><span>Use ↑ ↓ Enter to select</span>`;
+            dropdown.appendChild(header);
+
+            matches.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.dataset.index = index;
+
+                const codeHighlighted = highlightText(item.hsn_code, query);
+                const descHighlighted = highlightText(item.description, query);
+                const badge = getBadgeHTML(item.hsn_code);
+
+                div.innerHTML = `
+                    <div class="item-left">
+                        <div class="item-header">
+                            <span class="hsn-code">[${codeHighlighted}]</span>
+                            ${badge}
+                        </div>
+                        <div class="description">${descHighlighted}</div>
+                    </div>
+                    <button class="copy-btn" title="Copy HSN">Copy</button>
+                `;
+
+                div.querySelector('.copy-btn').addEventListener('click', (e) => {
+                    copyToClipboard(e, item.hsn_code);
+                });
+
+                div.addEventListener('click', () => selectItem(item));
+                dropdown.appendChild(div);
+            });
+
+            dropdown.style.display = 'block';
+        }
+
+        function triggerSearch(currentQuery) {
+            clearBtn.style.display = currentQuery.length > 0 ? 'flex' : 'none';
+
+            if (debounceTimer) clearTimeout(debounceTimer);
+            if (activeAbortController) {
+                activeAbortController.abort();
+                activeAbortController = null;
+            }
+
+            if (currentQuery.length < 1) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            debounceTimer = setTimeout(async () => {
+                activeAbortController = new AbortController();
+                const signal = activeAbortController.signal;
+
+                try {
+                    const response = await fetch(`/api/hsn-search?query=${encodeURIComponent(currentQuery)}`, { signal });
+                    const data = await response.json();
+
+                    if (input.value.trim() !== currentQuery) return;
+                    renderDropdown(data.matches || [], currentQuery);
+                } catch (err) {
+                    if (err.name === 'AbortError') return;
+                    console.error('Error fetching HSN:', err);
+                    showToast('⚠️ Server unreachable — restart uvicorn');
+                }
+            }, 180);
+        }
+
+        input.addEventListener('input', function () {
+            triggerSearch(this.value.trim());
+        });
+
+        clearBtn.addEventListener('click', function () {
+            input.value = '';
+            clearBtn.style.display = 'none';
+            dropdown.style.display = 'none';
+            detailCard.style.display = 'none';
+            input.focus();
+        });
+
+        // Keyboard navigation
+        input.addEventListener('keydown', function (e) {
+            const items = dropdown.querySelectorAll('.suggestion-item');
+            if (items.length === 0 || dropdown.style.display === 'none') return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = (selectedIndex + 1) % items.length;
+                updateActiveItem(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+                updateActiveItem(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0 && selectedIndex < matchesData.length) {
+                    selectItem(matchesData[selectedIndex]);
+                }
+            } else if (e.key === 'Escape') {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        function updateActiveItem(items) {
+            items.forEach((item, i) => {
+                if (i === selectedIndex) {
+                    item.classList.add('active');
+                    item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.search-box')) {
+                dropdown.style.display = 'none';
+            }
+        });
+    </script>
 </body>
+
 </html>

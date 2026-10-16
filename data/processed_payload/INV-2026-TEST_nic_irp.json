@@ -1,0 +1,92 @@
+{
+  "self_gstin": "29ABCDE1234F1Z5",
+  "system_cd": "SAP_ERP",
+  "branch_cd": "BLR01",
+  "vertical_cd": "DOM",
+  "irnreq": "Y",
+  "trandt1": {
+    "trancatg": "B2B",
+    "reversecharge": "N",
+    "transactionmode": "REG",
+    "igstonintra": "N"
+  },
+  "docdt1": {
+    "document_type": "INV",
+    "docno": "INV-2026-TEST",
+    "docdt": "10-10-2026"
+  },
+  "supplierdt1": {
+    "supplier_gstin": "29ABCDE1234F1Z5",
+    "supplier_lglnm": "BHARAT TECH SOLUTIONS PVT LTD",
+    "supplier_trdnm": "BHARAT TECH SOLUTIONS PVT LTD",
+    "supplier_bno": "",
+    "supplier_bnm": "",
+    "supplier_flno": "",
+    "supplier_loc": "Bengaluru",
+    "supplier_dst": "",
+    "supplier_pin": "560001",
+    "supplier_state": "29",
+    "supplier_phone": "",
+    "supplier_email": ""
+  },
+  "buyerdt1": {
+    "buyer_gstin": "29XYZAB5678C1Z2",
+    "buyer_lglnm": "KARNATAKA TRADERS",
+    "buyer_trdnm": "KARNATAKA TRADERS",
+    "buyer_bno": "",
+    "buyer_bnm": "",
+    "buyer_flno": "",
+    "buyer_loc": "Bengaluru",
+    "buyer_dst": "",
+    "buyer_pin": "560002",
+    "buyer_state": "29",
+    "buyer_phone": "",
+    "buyer_email": ""
+  },
+  "itemdtls": [
+    {
+      "item_no": "1",
+      "product_name": "Industrial Motor",
+      "product_desc": "",
+      "is_service": "N",
+      "hsn_cd": "8481",
+      "qty": "2.000",
+      "unit": "NOS",
+      "unit_price": "10000.00",
+      "tot_amt": "20000.00",
+      "discount": "0.00",
+      "pre_tax_val": "20000.00",
+      "ass_val": "20000.00",
+      "gst_rate": "18.00",
+      "igst_amt": "0.00",
+      "cgst_amt": "1800.00",
+      "sgst_amt": "1800.00",
+      "cess_amt": "0.00",
+      "tot_item_val": "23600.00"
+    }
+  ],
+  "valdt1": {
+    "ttlassval": "20000.00",
+    "cgstval": "1800.00",
+    "sgstval": "1800.00",
+    "igstval": "0.00",
+    "cesval": "0.00",
+    "stcesval": "0.00",
+    "cesnonadval": "0.00",
+    "discval": "",
+    "totinvval": "23600.00",
+    "othchrg": "0.00"
+  },
+  "ewbdt1": {
+    "ewayreq": "Y",
+    "subsupplytype": "1",
+    "distance_of_transport": "150",
+    "transporter_id": "29XYZAB5678C1Z2",
+    "transporter_name": "",
+    "mode_of_transport": "1",
+    "transport_doc_no": "",
+    "transporter_doc_date": "",
+    "veh_type": "R",
+    "veh_number": "KA01AB1234"
+  }
+}

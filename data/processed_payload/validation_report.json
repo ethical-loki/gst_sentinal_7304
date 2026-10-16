@@ -1,0 +1,49 @@
+{
+  "total_invoices": 1,
+  "valid_invoices": 1,
+  "failed_invoices": 0,
+  "results": [
+    {
+      "invoice_number": "INV-2026-B2B01",
+      "status": "VALID",
+      "error_count": 0,
+      "errors": [],
+      "price_anomaly_report": {
+        "status": "CLEAN",
+        "has_anomalies": false,
+        "anomaly_count": 0,
+        "over_invoicing_count": 0,
+        "under_invoicing_count": 0,
+        "typo_count": 0,
+        "max_risk_score": 0,
+        "items_scanned": 1,
+        "findings": [
+          {
+            "item_index": 1,
+            "prdnm": "Industrial Servo Motor",
+            "hsncd": "22071012",
+            "uqc": "NOS",
+            "unitrate": 10000.0,
+            "qty": 5.0,
+            "assamt": 50000.0,
+            "is_anomaly": false,
+            "anomaly_type": "NORMAL",
+            "severity": "NONE",
+            "risk_score": 0,
+            "benchmark_min": 1.0,
+            "benchmark_max": 50000.0,
+            "benchmark_median": 250.0,
+            "ratio_to_median": 40.0,
+            "suggested_rate": null,
+            "reason": "Unit rate is within normal statutory benchmark range.",
+            "statutory_risk": "",
+            "benchmark_source": "UQC:NOS"
+          }
+        ]
+      },
+      "corrections_applied_count": 0,
+      "corrections_applied": []
+    }
+  ],
+  "total_price_anomalies": 0
+}

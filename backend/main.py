@@ -5,11 +5,17 @@ Description: Complete FastAPI backend serving Excel-based HSN/SAC search with
 """
 
 import os
+import json
+from pathlib import Path
+from typing import Optional, List, Dict, Any, Union
 import pandas as pd
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+
+# Define root directory based on backend/main.py location
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 app = FastAPI(title="GST_Sentinel HSN Auto-Suggest API")
 
@@ -61,17 +67,22 @@ async def preload_hsn_cache():
 
 
 @app.get("/api/hsn-search")
-async def search_hsn(query: str = Query("", min_length=0)):
+async def search_hsn(
+    query: str = Query("", min_length=0),
+    q: Optional[str] = Query(None)
+):
     """
     Search HSN codes and descriptions in Final_hsn_sac_copy.xlsx.
+    Accepts either ?query= or ?q= parameter.
     Returns matching tariff items with statutory tax rates:
     - IGST: full rate
     - CGST: half rate
     - SGST: half rate
     """
-    q_trimmed = query.strip()
+    raw_query = q if q is not None else query
+    q_trimmed = raw_query.strip()
     if not q_trimmed:
-        return {"query": query, "matches": []}
+        return {"query": raw_query, "matches": []}
 
     hsn_data = get_hsn_df()
     if hsn_data is None:
@@ -80,12 +91,12 @@ async def search_hsn(query: str = Query("", min_length=0)):
 
     try:
         df, hsn_col, desc_col = hsn_data
-        q = q_trimmed.lower()
+        search_key = q_trimmed.lower()
 
         # Fast literal string search across HSN code and description
         filtered = df[
-            df['_search_hsn'].str.contains(q, na=False, regex=False) |
-            df['_search_desc'].str.contains(q, na=False, regex=False)
+            df['_search_hsn'].str.contains(search_key, na=False, regex=False) |
+            df['_search_desc'].str.contains(search_key, na=False, regex=False)
         ]
 
         results = []
@@ -103,7 +114,7 @@ async def search_hsn(query: str = Query("", min_length=0)):
                 "sgst_rate": sgst
             })
 
-        return {"query": query, "matches": results}
+        return {"query": raw_query, "matches": results}
 
     except Exception as e:
         print(f"[ERROR] EXCEPTION: {str(e)}")
@@ -112,23 +123,19 @@ async def search_hsn(query: str = Query("", min_length=0)):
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
-    """Serves the modernized interactive HSN auto-suggest UI from static/index.html."""
-    html_path = os.path.abspath(os.path.join(STATIC_DIR, "index.html"))
-    if not os.path.exists(html_path):
-        return HTMLResponse(
-            "<h2>Frontend not found. Place index.html in the static/ folder.</h2>",
-            status_code=404
-        )
-    with open(html_path, "r", encoding="utf-8") as f:
-        return HTMLResponse(content=f.read())
-from pathlib import Path
-import json
-import pandas as pd
-from fastapi import HTTPException, Request, Response
-from fastapi.responses import HTMLResponse, FileResponse
-
-# Define root directory based on backend/main.py location
-BASE_DIR = Path(__file__).resolve().parent.parent
+    """Serves the modernized interactive HSN auto-suggest UI from frontend or static directory."""
+    candidates = [
+        BASE_DIR / "frontend" / "index.html",
+        BASE_DIR / "static" / "index.html"
+    ]
+    for p in candidates:
+        if p.exists():
+            with open(p, "r", encoding="utf-8") as f:
+                return HTMLResponse(content=f.read())
+    return HTMLResponse(
+        "<h2>Frontend not found. Place index.html in frontend/ or static/ directory.</h2>",
+        status_code=404
+    )
 
 # Import converter service
 from backend.converter_service import (
@@ -308,10 +315,365 @@ async def download_converted_file(file_type: str):
     )
 
 
+# =========================================================================
+# GST SENTINEL INGESTION & RAW DATA LAKEHOUSE ENDPOINTS
+# =========================================================================
+
+from backend.ingestion_service import (
+    list_raw_files_metadata,
+    get_raw_file_records,
+    get_processed_lakehouse_records,
+    get_audit_trail_records,
+    run_live_validation,
+    persist_invoice_pipeline,
+    get_dashboard_summary_stats,
+    process_ingestion_pipeline,
+    process_ingestion_chat,
+    PROCESSED_DIR
+)
+from src.ingestion.generate_sample_dirty_input import (
+    generate_dynamic_dirty_payload as generate_ingestion_dirty_payload_fn,
+    load_default_sample_dirty as load_ingestion_sample_dirty_fn,
+)
+
+
+@app.get("/ingestion", response_class=HTMLResponse)
+@app.get("/lakehouse", response_class=HTMLResponse)
+async def serve_ingestion_page():
+    """Serves the modernized GST Sentinel Data Ingestion & Lakehouse Explorer dashboard UI."""
+    candidates = [
+        BASE_DIR / "frontend" / "ingestion.html",
+        BASE_DIR / "static" / "ingestion.html",
+        BASE_DIR / "src" / "ui" / "ingestion.html"
+    ]
+    for p in candidates:
+        if p.exists():
+            with open(p, "r", encoding="utf-8") as f:
+                return HTMLResponse(content=f.read())
+    raise HTTPException(status_code=404, detail="ingestion.html not found in frontend or static directory.")
+
+
+@app.get("/api/ingestion/stats")
+async def get_ingestion_stats():
+    """Returns top-level KPI metrics for the ingestion dashboard."""
+    try:
+        return get_dashboard_summary_stats()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error computing dashboard stats: {str(e)}")
+
+
+@app.get("/api/ingestion/raw-files")
+async def get_raw_files_list():
+    """Returns metadata for all data files located in data/raw/."""
+    try:
+        return list_raw_files_metadata()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error listing raw files: {str(e)}")
+
+
+@app.get("/api/ingestion/raw-data")
+async def get_raw_data_content(
+    filename: str = Query(..., description="Name of the file in data/raw/"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=5, le=100),
+    search: str = Query("", description="Search term across columns"),
+    sort_by: Optional[str] = Query(None),
+    sort_dir: str = Query("asc")
+):
+    """Returns paginated, searchable, sorted records from any data/raw/ dataset."""
+    try:
+        return get_raw_file_records(
+            filename=filename,
+            page=page,
+            page_size=page_size,
+            search_query=search,
+            sort_by=sort_by,
+            sort_dir=sort_dir
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading raw data: {str(e)}")
+
+
+@app.get("/api/ingestion/lakehouse-master")
+async def get_lakehouse_master_content(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=5, le=100),
+    search: str = Query("")
+):
+    """Returns paginated records from data/processed_payload/invoices_master.parquet."""
+    try:
+        return get_processed_lakehouse_records(page=page, page_size=page_size, search_query=search)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading lakehouse master: {str(e)}")
+
+
+@app.get("/api/ingestion/audit-trail")
+async def get_audit_trail_content(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=10, le=200),
+    search: str = Query(""),
+    category: str = Query("")
+):
+    """Returns parsed records from data/processed_payload/transformation_audit_report.csv."""
+    try:
+        return get_audit_trail_records(
+            page=page,
+            page_size=page_size,
+            search_query=search,
+            error_category=category
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading audit trail: {str(e)}")
+
+
+@app.get("/api/ingestion/sample-payload")
+async def get_sample_ingestion_payload(invoice_index: int = Query(0, ge=0, le=10)):
+    """Loads realistic dirty customer payload from dirty_customer_input.json."""
+    sample_path = BASE_DIR / "Template_Converters" / "dirty_customer_input.json"
+    if not sample_path.exists():
+        sample_path = BASE_DIR / "dirty_customer_input.json"
+
+    if sample_path.exists():
+        with open(sample_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        invoices = data.get("einvoices", [])
+        if invoices:
+            idx = min(invoice_index, len(invoices) - 1)
+            return {"status": "success", "invoice_index": idx, "total_available": len(invoices), "payload": invoices[idx]}
+
+    # Fallback dirty sample
+    fallback = {
+        "self gstin": "29AAACR4849R1ZH",
+        "system cd": "ERP_SAP",
+        "branch cd": "BLR-HQ",
+        "vertical cd": "DOMESTIC",
+        "trandt1": {"trancatg": "B2B", "reversecharge": "N"},
+        "docdt1": {"docno": "INV-2026-001", "invoice_date": "2026-09-15"},
+        "supplierdt1": {
+            "supplier_gstin": "29AAACR4849R1ZH",
+            "supplier_lginm": "  ZENITH   ENTERPRISES PVT LTD  ",
+            "supplier_loc": "BENGALURU",
+            "supplier_pin": "560001",
+            "supplier state": "29"
+        },
+        "buyerdt1": {
+            "buyer_gstin": "27TUHCN2957U5ZN",
+            "buyer_lglnm": "MAHARASHTRA INDUSTRIAL DISTRIBUTORS",
+            "buyer loc": "MUMBAI",
+            "buyer pin": "400001",
+            "buyer state": "27",
+            "pos": "27"
+        },
+        "itemdtls": [
+            {
+                "prdnm": "COTTON-SHIRTS",
+                "hsn": "6205",
+                "ugc": "nos",
+                "qty": "100",
+                "unit_rate": "1600.00",
+                "grossamt": "160000,00",
+                "discount": "0.0",
+                "assval": "160000,00",
+                "igstval": "28800,00",
+                "totitemval": "188800,00"
+            }
+        ],
+        "valdt1": {"assval": 160000.0, "igstval": 28800.0, "totinvval": "188800,00"}
+    }
+    return {"status": "success", "invoice_index": 0, "total_available": 1, "payload": fallback}
+
+
+@app.get("/api/ingestion/sample")
+async def get_sample_ingestion_dirty_payload():
+    """Returns full sample dirty customer input payload for interactive demonstration."""
+    try:
+        sample_data = load_ingestion_sample_dirty_fn()
+        return {"status": "success", "payload": sample_data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error loading sample payload: {str(e)}")
+
+
+@app.post("/api/ingestion/process")
+async def process_ingestion_endpoint(request: Request):
+    """
+    Ingestion Converter Pipeline:
+    Auto-corrects dirty customer keys and formats, validates NIC IRN/EWB compliance rules
+    via native Pydantic v2 schemas, persists to Parquet Lakehouse & Excel, and returns
+    all 4 canonical reports and executive metrics.
+    """
+    try:
+        body = await request.json()
+        raw_payload = body.get("payload") if isinstance(body, dict) and "payload" in body else body
+
+        if not raw_payload:
+            raise HTTPException(status_code=400, detail="Empty payload provided.")
+
+        # 2-Stage Layer: Stage 1 UI passes persist_to_lakehouse=False; defaults to True for full test & pipeline compatibility
+        persist_lakehouse = body.get("persist_to_lakehouse", True) if isinstance(body, dict) else True
+        result = process_ingestion_pipeline(raw_payload, sync_to_disk=True, persist_to_lakehouse=persist_lakehouse)
+        result["stage"] = "STAGE_2_PERSISTED" if persist_lakehouse else "STAGE_1_VALIDATED"
+        return result
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid JSON syntax: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing ingestion conversion: {str(e)}")
+
+
+@app.post("/api/ingestion/validate")
+async def validate_ingestion_payload(request: Request):
+    """Validates raw customer invoice payload via Pydantic v2 schemas and outputs auto-corrections."""
+    try:
+        body = await request.json()
+        payload = body.get("payload") if (isinstance(body, dict) and "payload" in body) else body
+        if not payload:
+            raise HTTPException(status_code=400, detail="No payload provided.")
+        return run_live_validation(payload)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Validation failed: {str(e)}")
+
+
+@app.post("/api/ingestion/persist")
+async def persist_ingestion_payload(request: Request):
+    """Validates, auto-corrects, and persists invoice into Lakehouse Parquet, Excel, JSON, and CSV."""
+    try:
+        body = await request.json()
+        payload = body.get("payload") if (isinstance(body, dict) and "payload" in body) else body
+        force = body.get("force", False) if isinstance(body, dict) else False
+        if not payload:
+            raise HTTPException(status_code=400, detail="No payload provided.")
+        return persist_invoice_pipeline(payload, require_100_percent_compliant=not force)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Persistence failed: {str(e)}")
+
+
+@app.post("/api/ingestion/generate")
+@app.post("/api/ingestion/generate-dirty")
+async def generate_dirty_ingestion_payload(request: Request):
+    """Generates random realistic dirty invoices with comma decimals, unaligned keys, and status codes."""
+    try:
+        body = await request.json() if (await request.body()) else {}
+        count = int(body.get("count", 1))
+        dirty_payload = generate_ingestion_dirty_payload_fn(count=count)
+        return {
+            "status": "success",
+            "count": count,
+            "payload": dirty_payload
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating random payload: {str(e)}")
+
+
+@app.post("/api/ingestion/chat")
+async def chat_with_ingestion_copilot(request: Request):
+    """
+    AI Compliance Assistant & Copilot for GST Ingestion.
+    Answers compliance queries, explains validation errors in plain English,
+    accepts user corrections (GSTIN, PAN, PIN, Vehicle, etc.), patches payload,
+    re-validates, synchronizes Ingestion Lakehouse Parquet/Excel, and returns live status.
+    """
+    try:
+        body = await request.json()
+        message = body.get("message", "").strip()
+        raw_payload = body.get("payload")
+        validation_report = body.get("validation_report")
+        chat_history = body.get("chat_history", [])
+
+        if not raw_payload:
+            raw_payload = load_default_sample_dirty()
+
+        response = process_ingestion_chat(
+            user_message=message,
+            raw_payload=raw_payload,
+            validation_report=validation_report,
+            chat_history=chat_history,
+            sync_to_disk=True,
+            persist_to_lakehouse=True
+        )
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error in compliance copilot: {str(e)}")
+
+
+@app.get("/api/ingestion/endpoints")
+async def get_ingestion_endpoints():
+    """Returns active portal URLs, API credentials status, and integration engines for ingestion dashboard."""
+    return get_configured_endpoints_info()
+
+
+@app.get("/api/ingestion/verify-gstin/{gstin}")
+async def verify_gstin_ingestion(gstin: str):
+    """Live verification of GSTIN against configured portal / Modulo-36 checksum."""
+    try:
+        return verify_gstin_government_portal(gstin.strip())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error verifying GSTIN: {str(e)}")
+
+
+@app.get("/api/ingestion/verify-vehicle/{veh_num}")
+async def verify_vehicle_ingestion(veh_num: str):
+    """Verification of Vehicle Number against MoRTH format / Live API."""
+    try:
+        return verify_vahan_vehicle_portal(veh_num.strip())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error verifying vehicle: {str(e)}")
+
+
+@app.get("/api/ingestion/download/{file_type}")
+async def download_ingestion_file(file_type: str):
+    """Downloads processed lakehouse, canonical converter outputs, and audit files."""
+    file_map = {
+        # Canonical Converter Files
+        "corrected": (PROCESSED_DIR / "corrected_payload.json", "corrected_payload.json", "application/json"),
+        "report": (PROCESSED_DIR / "validation_report.json", "validation_report.json", "application/json"),
+        "csv": (PROCESSED_DIR / "correction_audit_report.csv", "correction_audit_report.csv", "text/csv; charset=utf-8"),
+        "summary": (PROCESSED_DIR / "audit_summary.txt", "audit_summary.txt", "text/plain; charset=utf-8"),
+        # Lakehouse & Audit Files
+        "parquet": (PROCESSED_DIR / "invoices_master.parquet", "invoices_master.parquet", "application/octet-stream"),
+        "excel": (PROCESSED_DIR / "invoices_export.xlsx", "invoices_export.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+        "audit_csv": (PROCESSED_DIR / "transformation_audit_report.csv", "transformation_audit_report.csv", "text/csv; charset=utf-8"),
+        "nic_json": (PROCESSED_DIR / "corrected_payload.json", "nic_irp_payload.json", "application/json"),
+        "ewb_json": (PROCESSED_DIR / "INV-2026-TEST_standalone_ewb.json", "standalone_ewb.json", "application/json")
+    }
+
+    if file_type not in file_map:
+        raise HTTPException(status_code=400, detail=f"Invalid file type. Available: {list(file_map.keys())}")
+
+    path, name, media_type = file_map[file_type]
+    if not path.exists():
+        # Fallback to alternate filenames if available
+        if file_type in ["csv", "audit_csv"]:
+            for cand_csv in [
+                PROCESSED_DIR / "transformation_audit_report.csv",
+                PROCESSED_DIR / "correction_audit_report.csv",
+                BASE_DIR / "Template_Converters" / "correction_audit_report.csv"
+            ]:
+                if cand_csv.exists() and cand_csv.stat().st_size > 0:
+                    path = cand_csv
+                    break
+        elif file_type == "nic_json":
+            cand = list(PROCESSED_DIR.glob("*_nic_irp.json"))
+            if cand:
+                path = cand[0]
+        elif file_type == "ewb_json":
+            cand = list(PROCESSED_DIR.glob("*_standalone_ewb.json"))
+            if cand:
+                path = cand[0]
+
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"File {name} not found on disk. Run ingestion pipeline first.")
+
+    return FileResponse(path=str(path), filename=name, media_type=media_type)
+
+
 if __name__ == "__main__":
     import uvicorn
     print("\n🚀 Starting GST Sentinel Server at http://127.0.0.1:8000 ...")
-    print("👉 E-Invoice & E-Way Converter Dashboard: http://127.0.0.1:8000/converter")
-    print("👉 HSN Code Search Engine               : http://127.0.0.1:8000/\n")
+    print("👉 GST Sentinel Ingestion & Lakehouse Portal: http://127.0.0.1:8000/ingestion")
+    print("👉 E-Invoice & E-Way Converter Dashboard    : http://127.0.0.1:8000/converter")
+    print("👉 HSN Code Search Engine                   : http://127.0.0.1:8000/\n")
     uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)
 

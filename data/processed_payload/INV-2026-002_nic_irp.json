@@ -1,0 +1,113 @@
+{
+  "self_gstin": "27TUHCN2957U5ZN",
+  "system_cd": "TALLY_PRIME",
+  "branch_cd": "MUM-01",
+  "vertical_cd": "DOMESTIC",
+  "irnreq": "Y",
+  "trandt1": {
+    "trancatg": "B2B",
+    "reversecharge": "N",
+    "transactionmode": "REG",
+    "igstonintra": "N"
+  },
+  "docdt1": {
+    "document_type": "INV",
+    "docno": "INV-2026-002",
+    "docdt": "10-09-2026"
+  },
+  "supplierdt1": {
+    "supplier_gstin": "27TUHCN2957U5ZN",
+    "supplier_lglnm": "MAHARASHTRA INDUSTRIAL DISTRIBUTORS",
+    "supplier_trdnm": "MID SOLUTIONS",
+    "supplier_bno": "PLOT 88",
+    "supplier_bnm": "ANDHERI MIDC TECH ZONE",
+    "supplier_flno": "SUITE 101",
+    "supplier_loc": "MUMBAI",
+    "supplier_dst": "MUMBAI",
+    "supplier_pin": "400001",
+    "supplier_state": "27",
+    "supplier_phone": "9820012345",
+    "supplier_email": "billing@midistributors.in"
+  },
+  "buyerdt1": {
+    "buyer_gstin": "27AAACR4849R1ZL",
+    "buyer_lglnm": "PUNE ENGINEERING WORKS PVT LTD",
+    "buyer_trdnm": "PEW PUNE",
+    "buyer_bno": "GAT 234",
+    "buyer_bnm": "CHAKAN INDUSTRIAL AREA",
+    "buyer_flno": "BLDG 3",
+    "buyer_loc": "PUNE",
+    "buyer_dst": "PUNE",
+    "buyer_pin": "411001",
+    "buyer_state": "27",
+    "buyer_phone": "9765432100",
+    "buyer_email": "procurement@puneengg.com",
+    "pos": "27"
+  },
+  "itemdtls": [
+    {
+      "item_no": "1",
+      "product_name": "COTTON-YARN",
+      "product_desc": "Carded Weaving Yarn 30s",
+      "is_service": "N",
+      "hsn_cd": "520522",
+      "qty": "100.000",
+      "unit": "KGS",
+      "unit_price": "280.00",
+      "tot_amt": "28000.00",
+      "discount": "0.00",
+      "pre_tax_val": "28000.00",
+      "ass_val": "28000.00",
+      "gst_rate": "5.00",
+      "igst_amt": "0.00",
+      "cgst_amt": "700.00",
+      "sgst_amt": "700.00",
+      "cess_amt": "0.00",
+      "tot_item_val": "29400.00"
+    },
+    {
+      "item_no": "1",
+      "product_name": "LED-DRIVER",
+      "product_desc": "Constant Current Electronic Driver 40W",
+      "is_service": "N",
+      "hsn_cd": "850440",
+      "qty": "50.000",
+      "unit": "NOS",
+      "unit_price": "260.00",
+      "tot_amt": "13000.00",
+      "discount": "0.00",
+      "pre_tax_val": "13000.00",
+      "ass_val": "13000.00",
+      "gst_rate": "18.00",
+      "igst_amt": "0.00",
+      "cgst_amt": "1170.00",
+      "sgst_amt": "1170.00",
+      "cess_amt": "0.00",
+      "tot_item_val": "15340.00"
+    }
+  ],
+  "valdt1": {
+    "ttlassval": "41000.00",
+    "cgstval": "1870.00",
+    "sgstval": "1870.00",
+    "igstval": "0.00",
+    "cesval": "0.00",
+    "stcesval": "0.00",
+    "cesnonadval": "0.00",
+    "discval": "",
+    "totinvval": "44740.00",
+    "othchrg": "0.00"
+  },
+  "ewbdt1": {
+    "ewayreq": "Y",
+    "subsupplytype": "1",
+    "distance_of_transport": "160",
+    "transporter_id": "27TUHCN2957U5ZN",
+    "transporter_name": "INDIAN RAILWAYS FREIGHT",
+    "mode_of_transport": "2",
+    "transport_doc_no": "RR-998822",
+    "transporter_doc_date": "10-09-2026",
+    "veh_type": "R",
+    "veh_number": ""
+  }
+}

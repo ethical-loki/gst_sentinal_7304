@@ -1,0 +1,93 @@
+{
+  "self_gstin": "19AAACR4849R1ZI",
+  "system_cd": "SAP_ERP",
+  "branch_cd": "KOL-01",
+  "vertical_cd": "METALS",
+  "irnreq": "Y",
+  "trandt1": {
+    "trancatg": "B2B",
+    "reversecharge": "N",
+    "transactionmode": "REG",
+    "igstonintra": "N"
+  },
+  "docdt1": {
+    "document_type": "INV",
+    "docno": "INV-2026-005",
+    "docdt": "12-09-2026"
+  },
+  "supplierdt1": {
+    "supplier_gstin": "19AAACR4849R1ZI",
+    "supplier_lglnm": "EASTERN METALS & ALLOYS CORPORATION",
+    "supplier_trdnm": "EASTERN METALS",
+    "supplier_bno": "TOWER 4",
+    "supplier_bnm": "SALT LAKE SECTOR V",
+    "supplier_flno": "8TH FLOOR",
+    "supplier_loc": "KOLKATA",
+    "supplier_dst": "KOLKATA",
+    "supplier_pin": "700001",
+    "supplier_state": "19",
+    "supplier_phone": "9830012345",
+    "supplier_email": "sales@easternmetals.co.in"
+  },
+  "buyerdt1": {
+    "buyer_gstin": "07TUHCN2957U5ZP",
+    "buyer_lglnm": "CAPITAL CABLE & CONDUCTORS LTD",
+    "buyer_trdnm": "CAPITAL CABLES",
+    "buyer_bno": "PLOT 56",
+    "buyer_bnm": "OKHLA INDUSTRIAL AREA PHASE III",
+    "buyer_flno": "GROUND FL",
+    "buyer_loc": "NEW DELHI",
+    "buyer_dst": "NEW DELHI",
+    "buyer_pin": "110001",
+    "buyer_state": "07",
+    "buyer_phone": "9811012345",
+    "buyer_email": "accounts@capitalcables.in",
+    "pos": "07"
+  },
+  "itemdtls": [
+    {
+      "item_no": "1",
+      "product_name": "ALUM-INGOT",
+      "product_desc": "Primary Aluminum Ingot 99.7%",
+      "is_service": "N",
+      "hsn_cd": "760110",
+      "qty": "500.000",
+      "unit": "KGS",
+      "unit_price": "210.00",
+      "tot_amt": "105000.00",
+      "discount": "0.00",
+      "pre_tax_val": "105000.00",
+      "ass_val": "105000.00",
+      "gst_rate": "18.00",
+      "igst_amt": "18900.00",
+      "cgst_amt": "0.00",
+      "sgst_amt": "0.00",
+      "cess_amt": "0.00",
+      "tot_item_val": "123900.00"
+    }
+  ],
+  "valdt1": {
+    "ttlassval": "105000.00",
+    "cgstval": "0.00",
+    "sgstval": "0.00",
+    "igstval": "18900.00",
+    "cesval": "0.00",
+    "stcesval": "0.00",
+    "cesnonadval": "0.00",
+    "discval": "",
+    "totinvval": "123900.00",
+    "othchrg": "0.00"
+  },
+  "ewbdt1": {
+    "ewayreq": "Y",
+    "subsupplytype": "1",
+    "distance_of_transport": "1450",
+    "transporter_id": "19AAACR4849R1ZI",
+    "transporter_name": "NATIONAL FREIGHT CARRIERS",
+    "mode_of_transport": "1",
+    "transport_doc_no": "",
+    "transporter_doc_date": "",
+    "veh_type": "R",
+    "veh_number": "22BH1234AA"
+  }
+}

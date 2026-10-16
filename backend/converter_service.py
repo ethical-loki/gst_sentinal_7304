@@ -1424,6 +1424,8 @@ def process_converter_chat(
     if isinstance(payload, dict):
         if "einvoices" in payload and isinstance(payload["einvoices"], list) and len(payload["einvoices"]) > 0:
             target_inv = payload["einvoices"][0]
+        elif "invoices" in payload and isinstance(payload["invoices"], list) and len(payload["invoices"]) > 0:
+            target_inv = payload["invoices"][0]
         else:
             target_inv = payload
     elif isinstance(payload, list) and len(payload) > 0:
