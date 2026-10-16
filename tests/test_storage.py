@@ -196,9 +196,16 @@ def test_store_invoice_and_export_to_excel(tmp_path, sample_raw_invoice_dict):
     count1 = store_invoice_payload(payload, storage_path=parquet_target)
     assert count1 == 1
 
-    # 2. verify append mode
-    count2 = store_invoice_payload(payload, storage_path=parquet_target)
+    # 2. verify storing a second distinct invoice
+    import copy
+    sample_raw_2 = copy.deepcopy(sample_raw_invoice_dict)
+    sample_raw_2["docdt1"]["docno"] = "INV-2026-B2B-02"
+    payload2 = InvoicePayload.model_validate(sample_raw_2)
+    count2 = store_invoice_payload(payload2, storage_path=parquet_target)
     assert count2 == 1
+
+    # verify idempotency: storing existing invoice does not create duplicates
+    store_invoice_payload(payload, storage_path=parquet_target)
 
     df_parquet = read_parquet(parquet_target)
     assert len(df_parquet) == 2
@@ -212,7 +219,7 @@ def test_store_invoice_and_export_to_excel(tmp_path, sample_raw_invoice_dict):
 
     df_excel = pd.read_excel(out_excel, sheet_name="Invoices", dtype={"hsn": str})
     assert len(df_excel) == 2
-    assert df_excel.iloc[0]["invoice_id"] == "INV-2026-B2B"
+    assert set(df_excel["invoice_id"].tolist()) == {"INV-2026-B2B", "INV-2026-B2B-02"}
     assert df_excel.iloc[0]["hsn"] == "8481"
 
 

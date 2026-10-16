@@ -312,7 +312,26 @@ def get_processed_lakehouse_records(page: int = 1, page_size: int = 25, search_q
     end_idx = start_idx + page_size
 
     page_slice = filtered_df.iloc[start_idx:end_idx]
-    clean_records = [{k: safe_serialize_cell(v) for k, v in row.items()} for row in page_slice.to_dict(orient="records")]
+    clean_records = []
+    for row in page_slice.to_dict(orient="records"):
+        rec = {k: safe_serialize_cell(v) for k, v in row.items()}
+        # Normalize helper fields for UI table compatibility
+        rec["docno"] = rec.get("invoice_id") or rec.get("docno") or "—"
+        rec["docdt"] = rec.get("doc_date") or rec.get("docdt") or "—"
+        rec["assval"] = rec.get("taxable_value") if rec.get("taxable_value") != "" else 0.0
+        rec["totinvval"] = rec.get("inv_total_value") if rec.get("inv_total_value") != "" else (rec.get("total_item_value") or 0.0)
+        try:
+            dist = float(rec.get("transit_distance_km") or 0)
+        except Exception:
+            dist = 0.0
+        try:
+            tot = float(rec.get("totinvval") or 0)
+        except Exception:
+            tot = 0.0
+        veh = str(rec.get("vehicle_number") or "").strip()
+        rec["ewb_required"] = "Y" if (dist > 0 or tot >= 50000 or (veh and veh not in ["-", "None", ""])) else "N"
+        rec["created_at"] = rec.get("doc_date") or "—"
+        clean_records.append(rec)
 
     return {
         "exists": True,
@@ -430,15 +449,33 @@ def process_ingestion_pipeline(
         except Exception as e:
             print(f"[WARN] Failed writing ingestion output files: {e}")
 
-    # 2. Persist to Lakehouse Parquet and Excel
+    # 2. Persist ONLY validated invoices to Lakehouse Parquet and Excel
     lakehouse_rows = 0
     invoices_list = corrected_payload.get("einvoices", []) if isinstance(corrected_payload, dict) else (corrected_payload if isinstance(corrected_payload, list) else [corrected_payload])
-    if persist_to_lakehouse and invoices_list:
+    
+    # Filter ONLY invoices that passed statutory validation
+    valid_ids = {
+        str(res.get("invoice_number")).strip() 
+        for res in validation_report.get("results", []) 
+        if res.get("status") == "VALID"
+    }
+    
+    validated_invoices = []
+    for inv in invoices_list:
+        inv_no = ""
+        if isinstance(inv, dict):
+            inv_no = str(inv.get("docdt1", {}).get("docno") or inv.get("docno") or "").strip()
+        elif hasattr(inv, "docno"):
+            inv_no = str(inv.docno).strip()
+        if inv_no and (inv_no in valid_ids or (not valid_ids and metrics.get("failed_invoices", 0) == 0)):
+            validated_invoices.append(inv)
+
+    if persist_to_lakehouse and validated_invoices:
         try:
             PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
             master_parquet = str(PROCESSED_DIR / "invoices_master.parquet")
             excel_out = str(PROCESSED_DIR / "invoices_export.xlsx")
-            lakehouse_rows = store_invoice_batch(invoices_list, storage_path=master_parquet)
+            lakehouse_rows = store_invoice_batch(validated_invoices, storage_path=master_parquet, only_validated=True)
             export_invoices_to_excel(parquet_path=master_parquet, excel_path=excel_out)
         except Exception as e:
             print(f"[WARN] Failed persisting to lakehouse in ingestion pipeline: {e}")

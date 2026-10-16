@@ -458,20 +458,27 @@ def process_and_convert_payload(
     export_text_summary_report(validation_report, output_txt_file)
     print(f"[FILE GENERATED] Audit Summary (Text File) : {output_txt_file}")
 
-    # Persist to Ingestion Lakehouse if requested
+    # Persist to Ingestion Lakehouse if requested - ONLY VALIDATED INVOICES
     if persist_to_lakehouse and models:
-        print("[LAKEHOUSE] Persisting validated invoices into Parquet master & Excel...")
-        os.makedirs(DEFAULT_STORAGE_DIR, exist_ok=True)
-        store_invoice_batch(models, storage_path=DEFAULT_STORAGE_PATH)
-        for m in models:
-            store_processed_json(m)
-            store_nic_payload(m)
-            store_ewb_payload(m)
-        export_invoices_to_excel(parquet_path=DEFAULT_STORAGE_PATH, excel_path=DEFAULT_EXCEL_PATH)
-        # Also sync transformation_audit_report.csv in data/processed_payload
-        audit_csv_lakehouse = os.path.join(DEFAULT_STORAGE_DIR, "transformation_audit_report.csv")
-        export_csv_audit_report(validation_report, audit_csv_lakehouse)
-        print(f"[LAKEHOUSE UPDATED] Master Parquet: {DEFAULT_STORAGE_PATH} | Excel: {DEFAULT_EXCEL_PATH}")
+        valid_indices = [
+            i for i, r in enumerate(validation_report.get("results", []))
+            if r.get("status") == "VALID"
+        ]
+        validated_models = [models[i] for i in valid_indices if i < len(models)]
+        if validated_models:
+            print(f"[LAKEHOUSE] Persisting {len(validated_models)} validated invoices into Parquet master & Excel...")
+            os.makedirs(DEFAULT_STORAGE_DIR, exist_ok=True)
+            store_invoice_batch(validated_models, storage_path=DEFAULT_STORAGE_PATH, only_validated=True)
+            for m in validated_models:
+                store_processed_json(m)
+                store_nic_payload(m)
+                store_ewb_payload(m)
+            export_invoices_to_excel(parquet_path=DEFAULT_STORAGE_PATH, excel_path=DEFAULT_EXCEL_PATH)
+            audit_csv_lakehouse = os.path.join(DEFAULT_STORAGE_DIR, "transformation_audit_report.csv")
+            export_csv_audit_report(validation_report, audit_csv_lakehouse)
+            print(f"[LAKEHOUSE UPDATED] Master Parquet: {DEFAULT_STORAGE_PATH} | Excel: {DEFAULT_EXCEL_PATH}")
+        else:
+            print("[LAKEHOUSE] No invoices met validation criteria; Lakehouse master table was not updated.")
 
     total = validation_report["total_invoices"]
     valid = validation_report["valid_invoices"]

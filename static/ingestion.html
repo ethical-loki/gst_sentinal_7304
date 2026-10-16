@@ -5885,10 +5885,13 @@
               <i class="fa-solid fa-layer-group" style="color:var(--accent-purple)"></i>
               Lakehouse Master Storage
               <span class="pill pill-purple">invoices_master.parquet</span>
+              <span class="pill pill-cyan" id="lakehouseColsCountBadge">All Normalized Columns</span>
             </h2>
-            <div class="dataset-desc">Direct query of the persisted Master Invoices Lakehouse table in <code>data/processed_payload/</code>.</div>
+            <div class="dataset-desc">Direct query of the persisted Master Invoices Lakehouse table in <code>data/processed_payload/</code> with full normalized statutory attributes.</div>
           </div>
-          <div style="display:flex; gap:0.5rem;">
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <button class="btn" onclick="openLakehouseSchemaModal()"><i class="fa-solid fa-diagram-project" style="color:var(--accent-purple)"></i> View Schema</button>
+            <button class="btn" onclick="exportLakehouseCSV()"><i class="fa-solid fa-file-csv" style="color:var(--accent-cyan)"></i> Export CSV</button>
             <button class="btn" onclick="downloadArtifact('excel')"><i class="fa-solid fa-file-excel" style="color:var(--accent-green)"></i> Excel Export</button>
             <button class="btn" onclick="fetchLakehouseMaster()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
           </div>
@@ -5897,8 +5900,19 @@
         <div class="viewer-toolbar">
           <div class="search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="lakehouseSearchInput" placeholder="Search master lakehouse records..." onkeyup="handleLakehouseSearch(event)">
+            <input type="text" id="lakehouseSearchInput" placeholder="Search across all normalized Lakehouse fields..." onkeyup="handleLakehouseSearch(event)">
           </div>
+
+          <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">
+            <span>Rows:</span>
+            <select id="lakehousePageSizeSelect" class="btn" style="padding: 7px 10px;" onchange="changeLakehousePageSize()">
+              <option value="10">10</option>
+              <option value="25" selected>25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+
           <div style="display: flex; align-items: center; gap: 6px;">
             <span style="font-size: 0.75rem; color: var(--text-muted);">Scroll:</span>
             <button class="btn" style="padding: 6px 11px; font-size: 0.75rem; font-weight: 600;" onclick="scrollTableHorizontally('lakehouseTableWrapper', -450)" title="Scroll Left">
@@ -5915,19 +5929,57 @@
             <thead>
               <tr id="lakehouseTableHeaders">
                 <th>#</th>
+                <th>Action</th>
                 <th>Doc No</th>
+                <th>Doc Type</th>
                 <th>Date</th>
+                <th>Category</th>
                 <th>Supplier GSTIN</th>
+                <th>Supplier Legal Name</th>
+                <th>Supplier Trade Name</th>
+                <th>Supplier State</th>
+                <th>Supplier PIN</th>
+                <th>Supplier Loc</th>
                 <th>Buyer GSTIN</th>
-                <th>Taxable Value (₹)</th>
-                <th>Total Value (₹)</th>
+                <th>Buyer Legal Name</th>
+                <th>Buyer Trade Name</th>
+                <th>Buyer State</th>
+                <th>Buyer PIN</th>
+                <th>Buyer POS</th>
+                <th>Line Item ID</th>
+                <th>Item SlNo</th>
+                <th>Product Name</th>
+                <th>Description</th>
+                <th>Is Service</th>
+                <th>HSN</th>
+                <th>Qty</th>
+                <th>Unit</th>
+                <th>Unit Price (₹)</th>
+                <th>Gross Amt (₹)</th>
+                <th>Discount (₹)</th>
+                <th>Pretax Val (₹)</th>
+                <th>Taxable Val (₹)</th>
+                <th>GST Rate (%)</th>
+                <th>CGST (₹)</th>
+                <th>SGST (₹)</th>
+                <th>IGST (₹)</th>
+                <th>Cess (₹)</th>
+                <th>Total Item Val (₹)</th>
+                <th>Inv Taxable (₹)</th>
+                <th>Inv Total (₹)</th>
                 <th>EWB Req</th>
-                <th>Created At</th>
+                <th>Distance (km)</th>
+                <th>Vehicle No</th>
+                <th>Veh Type</th>
+                <th>Transporter ID</th>
+                <th>Transporter Name</th>
+                <th>Payment Mode</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody id="lakehouseTableBody">
               <tr>
-                <td colspan="9" style="text-align:center; padding: 2.5rem; color: var(--text-dim);">
+                <td colspan="47" style="text-align:center; padding: 2.5rem; color: var(--text-dim);">
                   <div class="spinner"></div> Loading Master Lakehouse table...
                 </td>
               </tr>
@@ -6470,16 +6522,24 @@ async function fetchRawFiles() {
     // ========================================================
     // TAB 3: PROCESSED LAKEHOUSE MASTER & TAB 4: AUDIT TRAIL
     // ========================================================
-async function fetchLakehouseMaster() {
+    let currentLakehouseData = null;
+
+    async function fetchLakehouseMaster() {
       const tbody = document.getElementById("lakehouseTableBody");
       try {
         const url = `/api/ingestion/lakehouse-master?page=${lakehousePage}&page_size=${lakehousePageSize}&search=${encodeURIComponent(lakehouseSearch)}`;
         const res = await fetch(url);
         const data = await res.json();
+        currentLakehouseData = data;
+
+        const colsBadge = document.getElementById("lakehouseColsCountBadge");
+        if (colsBadge && data.columns) {
+          colsBadge.innerText = `${data.columns.length} Normalized Columns`;
+        }
 
         tbody.innerHTML = "";
         if (!data.exists || data.records.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:2.5rem; color:var(--text-dim);">No processed invoices in lakehouse yet. Run ingestion to persist records.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="47" style="text-align:center; padding:2.5rem; color:var(--text-dim);">No processed invoices in lakehouse yet. Run ingestion to persist records.</td></tr>`;
           document.getElementById("lakehousePageInfo").innerText = "0 records";
           return;
         }
@@ -6487,26 +6547,188 @@ async function fetchLakehouseMaster() {
         data.records.forEach((row, idx) => {
           const tr = document.createElement("tr");
           const rowNum = (data.page - 1) * data.page_size + idx + 1;
+          const docNo = row.invoice_id || row.docno || '—';
+          const docType = row.doc_type || 'INV';
+          const docDate = row.doc_date || row.docdt || '—';
+          const catg = row.transaction_category || 'B2B';
+
+          const supGstin = row.supplier_gstin || '—';
+          const supName = row.supplier_lglnm || '—';
+          const supTrd = row.supplier_trdnm || '—';
+          const supState = row.supplier_state || '—';
+          const supPin = row.supplier_pin || '—';
+          const supLoc = row.supplier_loc || '—';
+
+          const buyGstin = row.buyer_gstin || '—';
+          const buyName = row.buyer_lglnm || '—';
+          const buyTrd = row.buyer_trdnm || '—';
+          const buyState = row.buyer_state || '—';
+          const buyPin = row.buyer_pin || '—';
+          const buyPos = row.buyer_pos || '—';
+
+          const lineItemId = row.line_item_id || '—';
+          const itemSlNo = row.item_slno || '1';
+          const prodName = row.product_name || '—';
+          const prodDesc = row.product_description || '—';
+          const isService = row.is_service || 'N';
+          const hsn = row.hsn || '—';
+          const qty = Number(row.quantity || 0);
+          const unit = row.unit || 'NOS';
+          const unitPrice = Number(row.unit_price || 0);
+          const grossAmt = Number(row.gross_amount || (qty * unitPrice));
+          const discount = Number(row.item_discount || 0);
+          const pretaxVal = Number(row.pretax_value || (grossAmt - discount));
+          const taxableVal = Number(row.taxable_value !== undefined && row.taxable_value !== "" ? row.taxable_value : (row.assval || pretaxVal));
+          const gstRate = Number(row.gst_rate || 0);
+          const cgstAmt = Number(row.cgst_amount || row.cgstval || 0);
+          const sgstAmt = Number(row.sgst_amount || row.sgstval || 0);
+          const igstAmt = Number(row.igst_amount || row.igstval || 0);
+          const cessAmt = Number(row.cess_amount || row.cesval || 0);
+          const itemTotVal = Number(row.total_item_value || (taxableVal + cgstAmt + sgstAmt + igstAmt + cessAmt));
+
+          const invTaxable = Number(row.inv_taxable_value || taxableVal);
+          const invTotal = Number(row.inv_total_value !== undefined && row.inv_total_value !== "" ? row.inv_total_value : (row.totinvval || itemTotVal));
+
+          const isEwbReq = (row.ewb_required === 'Y' || (Number(row.transit_distance_km || 0) > 0 || invTotal >= 50000 || (row.vehicle_number && row.vehicle_number !== '—' && row.vehicle_number !== '')));
+          const distance = Number(row.transit_distance_km || 0);
+          const vehNum = row.vehicle_number || '—';
+          const vehType = row.vehicle_type || 'R';
+          const transId = row.transporter_id || '—';
+          const transName = row.transporter_name || '—';
+          const pmtMode = row.payment_mode || '—';
+          const status = row.compliance_status || 'VALID';
+
           tr.innerHTML = `
             <td style="font-family:var(--font-mono); color:var(--text-dim);">${rowNum}</td>
-            <td style="font-family:var(--font-mono); font-weight:600; color:var(--accent-cyan);">${row.docno || '—'}</td>
-            <td>${row.docdt || '—'}</td>
-            <td style="font-family:var(--font-mono);">${row.supplier_gstin || '—'}</td>
-            <td style="font-family:var(--font-mono);">${row.buyer_gstin || '—'}</td>
-            <td style="font-family:var(--font-mono); font-weight:600;">₹${Number(row.assval || 0).toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
-            <td style="font-family:var(--font-mono); font-weight:700; color:var(--accent-green);">₹${Number(row.totinvval || 0).toLocaleString('en-IN', {minimumFractionDigits:2})}</td>
-            <td><span class="pill ${row.ewb_required === 'Y' ? 'pill-green' : 'pill-amber'}">${row.ewb_required || 'N'}</span></td>
-            <td style="font-size:0.75rem; color:var(--text-dim);">${row.created_at || '—'}</td>
+            <td>
+              <button class="btn" style="padding:4px 8px; font-size:0.72rem;" onclick="viewLakehouseRecordInspector(${idx})">
+                <i class="fa-solid fa-eye" style="color:var(--accent-cyan)"></i> View
+              </button>
+            </td>
+            <td style="font-family:var(--font-mono); font-weight:600; color:var(--accent-cyan);">${docNo}</td>
+            <td><span class="pill pill-purple">${docType}</span></td>
+            <td>${docDate}</td>
+            <td><span class="pill pill-cyan">${catg}</span></td>
+
+            <td style="font-family:var(--font-mono);">${supGstin}</td>
+            <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${supName}">${supName}</td>
+            <td style="max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${supTrd}">${supTrd}</td>
+            <td>${supState}</td>
+            <td>${supPin}</td>
+            <td>${supLoc}</td>
+
+            <td style="font-family:var(--font-mono);">${buyGstin}</td>
+            <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${buyName}">${buyName}</td>
+            <td style="max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${buyTrd}">${buyTrd}</td>
+            <td>${buyState}</td>
+            <td>${buyPin}</td>
+            <td>${buyPos}</td>
+
+            <td style="font-family:var(--font-mono); font-size:0.75rem;">${lineItemId}</td>
+            <td style="font-family:var(--font-mono); text-align:center;">${itemSlNo}</td>
+            <td style="font-weight:600;">${prodName}</td>
+            <td style="max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${prodDesc}">${prodDesc}</td>
+            <td><span class="pill ${isService === 'Y' ? 'pill-purple' : 'pill-cyan'}">${isService}</span></td>
+            <td style="font-family:var(--font-mono);">${hsn}</td>
+            <td style="font-family:var(--font-mono);">${qty}</td>
+            <td>${unit}</td>
+            <td style="font-family:var(--font-mono);">₹${unitPrice.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+            <td style="font-family:var(--font-mono);">₹${grossAmt.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+            <td style="font-family:var(--font-mono); color:var(--text-muted);">₹${discount.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+            <td style="font-family:var(--font-mono);">₹${pretaxVal.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+            <td style="font-family:var(--font-mono); font-weight:600;">₹${taxableVal.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+            <td><span class="pill pill-purple">${gstRate}%</span></td>
+            <td style="font-family:var(--font-mono);">₹${cgstAmt.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+            <td style="font-family:var(--font-mono);">₹${sgstAmt.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+            <td style="font-family:var(--font-mono);">₹${igstAmt.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+            <td style="font-family:var(--font-mono);">₹${cessAmt.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+            <td style="font-family:var(--font-mono); font-weight:600;">₹${itemTotVal.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+
+            <td style="font-family:var(--font-mono);">₹${invTaxable.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+            <td style="font-family:var(--font-mono); font-weight:700; color:var(--accent-green);">₹${invTotal.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+
+            <td><span class="pill ${isEwbReq ? 'pill-green' : 'pill-amber'}">${isEwbReq ? 'Y' : 'N'}</span></td>
+            <td>${distance > 0 ? distance + ' km' : '—'}</td>
+            <td style="font-family:var(--font-mono); font-weight:600;">${vehNum}</td>
+            <td>${vehType}</td>
+            <td style="font-family:var(--font-mono); font-size:0.75rem;">${transId}</td>
+            <td style="max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${transName}">${transName}</td>
+            <td><span class="pill pill-cyan">${pmtMode}</span></td>
+            <td><span class="pill pill-green">${status}</span></td>
           `;
           tbody.appendChild(tr);
         });
 
-        document.getElementById("lakehousePageInfo").innerText = `Showing ${data.records.length} of ${data.total_filtered} records`;
+        document.getElementById("lakehousePageInfo").innerText = `Showing ${data.records.length} of ${data.total_filtered} records (${data.columns ? data.columns.length : 79} normalized columns)`;
         document.getElementById("lakehouseCurrentPageBadge").innerText = `${data.page} / ${data.total_pages}`;
         document.getElementById("lakehousePrevBtn").disabled = (data.page <= 1);
         document.getElementById("lakehouseNextBtn").disabled = (data.page >= data.total_pages);
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:2rem; color:var(--accent-red);">${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="47" style="text-align:center; padding:2rem; color:var(--accent-red);">${err.message}</td></tr>`;
+      }
+    }
+
+    function viewLakehouseRecordInspector(recordIndex) {
+      if (!currentLakehouseData || !currentLakehouseData.records[recordIndex]) return;
+      const record = currentLakehouseData.records[recordIndex];
+      const docNo = record.invoice_id || record.docno || 'Unknown';
+      document.getElementById("modalRecordTitle").innerText = `Lakehouse Master: invoices_master.parquet | Invoice: ${docNo} | Row #${(lakehousePage - 1) * lakehousePageSize + recordIndex + 1}`;
+      document.getElementById("modalJsonViewer").innerText = JSON.stringify(record, null, 2);
+      document.getElementById("recordModal").classList.add("active");
+    }
+
+    function openLakehouseSchemaModal() {
+      if (!currentLakehouseData) return;
+      const tbody = document.getElementById("schemaTableBody");
+      tbody.innerHTML = "";
+      const cols = currentLakehouseData.columns || Object.keys(currentLakehouseData.records[0] || {});
+      cols.forEach((col, idx) => {
+        const colName = typeof col === 'string' ? col : (col.name || String(col));
+        const sampleVal = currentLakehouseData.records[0]?.[colName];
+        let colType = typeof sampleVal === 'number' ? (Number.isInteger(sampleVal) ? 'int64' : 'float64') : 'string';
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td style="font-family:var(--font-mono); color:var(--text-dim);">${idx + 1}</td>
+          <td style="font-family:var(--font-mono); color:var(--text-main); font-weight:600;">${colName}</td>
+          <td><span class="pill pill-purple">${colType}</span></td>
+          <td><span class="pill pill-green">YES</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+      document.getElementById("schemaModal").classList.add("active");
+    }
+
+    function exportLakehouseCSV() {
+      if (!currentLakehouseData || currentLakehouseData.records.length === 0) {
+        showToast("No lakehouse records to export", "error");
+        return;
+      }
+      const headers = currentLakehouseData.columns || Object.keys(currentLakehouseData.records[0]);
+      const rows = currentLakehouseData.records.map(row => 
+        headers.map(h => {
+          let val = row[h];
+          if (val === null || val === undefined) val = "";
+          val = String(val).replace(/"/g, '""');
+          return `"${val}"`;
+        }).join(",")
+      );
+      const csvContent = [headers.join(","), ...rows].join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `lakehouse_master_invoices_full.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast(`Exported all ${headers.length} columns to CSV!`, "success");
+    }
+
+    function changeLakehousePageSize() {
+      const select = document.getElementById("lakehousePageSizeSelect");
+      if (select) {
+        lakehousePageSize = parseInt(select.value, 10) || 25;
+        lakehousePage = 1;
+        fetchLakehouseMaster();
       }
     }
 
