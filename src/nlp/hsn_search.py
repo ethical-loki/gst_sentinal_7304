@@ -10,7 +10,7 @@ import os
 import re
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 import torch
@@ -23,24 +23,81 @@ MODEL_PATH = ROOT_DIR / "models" / "hsn_contrastive_mlp.pt"
 from src.models.tokenizer import FeatureHashingTokenizer
 from src.models.hsn_encoder import HSNContrastiveMLP
 
+# Commercial trade terminology priors mapped to statutory 4-digit HSN headings
+TRADE_KEYWORDS: Dict[str, List[str]] = {
+    "7307": ["nipple", "coupling", "elbow", "tee", "reducing bush", "bush", "flange", "fitting", "union", "socket weld"],
+    "7306": ["welded pipe", "welded tube", "erw pipe"],
+    "7304": ["seamless", "hydraulic tube", "seamless pipe"],
+    "8481": ["valve", "ball valve", "check valve", "needle valve", "non return", "cock", "tap"],
+    "7318": ["screw", "bolt", "nut", "washer", "allen cap", "rivet", "stud", "fastener", "lock washer"],
+    "3917": ["upvc", "hdpe", "pvc pipe", "plastic pipe", "solvent weld", "coil pipe", "hose"],
+    "8544": ["cable", "wire", "wiring", "conductor", "armoured cable", "power cable"],
+    "8504": ["inverter", "transformer", "smps", "power supply", "converter", "rectifier"],
+}
 
-class HSNSearchEngine:
+
+class SearchResultList(list):
+    """Hybrid result container supporting both list iteration and dictionary access."""
+
+    def __init__(
+        self,
+        matches: List[Dict[str, Any]],
+        query: str = "",
+        latency_ms: float = 0.0,
+        model: str = "Contrastive MLP (128-D CPU)",
+    ):
+        super().__init__(matches)
+        self.matches = matches
+        self.query = query
+        self.latency_ms = latency_ms
+        self.model = model
+
+    def __getitem__(self, item):
+        if isinstance(item, str):
+            if item == "matches":
+                return self.matches
+            elif item == "query":
+                return self.query
+            elif item == "latency_ms":
+                return self.latency_ms
+            elif item == "model":
+                return self.model
+            raise KeyError(f"Key '{item}' not found in SearchResultList")
+        return super().__getitem__(item)
+
+    def get(self, item: str, default: Any = None) -> Any:
+        if item == "matches":
+            return self.matches
+        elif item == "query":
+            return self.query
+        elif item == "latency_ms":
+            return self.latency_ms
+        elif item == "model":
+            return self.model
+        return default
+
+
+class HSNSemanticSearchEngine:
     """Sub-15ms Top-k Cosine Similarity Search Engine for Statutory HSN Retrieval."""
 
     def __init__(
         self,
-        tariff_path: Optional[Path] = None,
-        index_path: Optional[Path] = None,
-        model_path: Optional[Path] = None,
+        tariff_parquet_path: Optional[Union[str, Path]] = None,
+        tariff_path: Optional[Union[str, Path]] = None,
+        index_path: Optional[Union[str, Path]] = None,
+        model_path: Optional[Union[str, Path]] = None,
+        **kwargs,
     ):
-        self.tariff_path = tariff_path or TARIFF_PARQUET
-        self.index_path = index_path or TARIFF_INDEX_NPY
-        self.model_path = model_path or MODEL_PATH
+        t_path = tariff_parquet_path or tariff_path or TARIFF_PARQUET
+        self.tariff_path = Path(t_path)
+        self.index_path = Path(index_path or TARIFF_INDEX_NPY)
+        self.model_path = Path(model_path or MODEL_PATH)
 
         self.tokenizer = FeatureHashingTokenizer(dim=32768)
         self.model: Optional[HSNContrastiveMLP] = None
         self.vector_index: Optional[np.ndarray] = None
         self.tariff_df: Optional[pd.DataFrame] = None
+        self.prefix_masks: Dict[str, np.ndarray] = {}
 
         self._load_resources()
 
@@ -56,10 +113,16 @@ class HSNSearchEngine:
         # 1. Load Parquet
         self.tariff_df = pd.read_parquet(self.tariff_path).reset_index(drop=True)
 
-        # 2. Load Vector Index (N x 128 float32)
+        # 2. Precompute boolean masks for trade heading keywords
+        self.prefix_masks = {
+            prefix: (self.tariff_df["hsn_4digit"] == prefix).to_numpy()
+            for prefix in TRADE_KEYWORDS
+        }
+
+        # 3. Load Vector Index (N x 128 float32)
         self.vector_index = np.load(self.index_path).astype(np.float32)
 
-        # 3. Load Model
+        # 4. Load Model
         self.model = HSNContrastiveMLP(input_dim=32768, hidden_dim=512, output_dim=128)
         state_dict = torch.load(self.model_path, map_location="cpu")
         self.model.load_state_dict(state_dict)
@@ -70,7 +133,7 @@ class HSNSearchEngine:
             dummy = torch.zeros(32768, dtype=torch.float32)
             _ = self.model(dummy)
 
-    def search(self, query: str, top_k: int = 5) -> Dict[str, Any]:
+    def search(self, query: str, top_k: int = 5) -> SearchResultList:
         """Performs end-to-end tokenization, forward pass, and top-k dot product search.
 
         Args:
@@ -78,34 +141,36 @@ class HSNSearchEngine:
             top_k: Number of statutory candidate matches to return.
 
         Returns:
-            Dictionary containing matches list, query string, and execution latency in ms.
+            SearchResultList containing matches list, query string, and execution latency in ms.
         """
         t0 = time.perf_counter()
 
-        if not query or not query.strip():
-            return {
-                "query": query,
-                "matches": [],
-                "latency_ms": 0.0,
-                "model": "Contrastive MLP (128-D CPU)",
-            }
+        if not query or not str(query).strip():
+            return SearchResultList(
+                matches=[],
+                query=query,
+                latency_ms=0.0,
+                model="Contrastive MLP (128-D CPU)",
+            )
 
-        clean_q = query.strip()
+        clean_q = str(query).strip()
+        q_lower = clean_q.lower()
         matches: List[Dict[str, Any]] = []
 
         # Check if query is purely numeric digits (direct HSN lookup)
         is_numeric = clean_q.isdigit()
 
         if is_numeric:
-            # Direct code filter
             matched_rows = self.tariff_df[
                 self.tariff_df["hsn_code"].str.startswith(clean_q)
                 | self.tariff_df["hsn_4digit"].str.startswith(clean_q)
             ].head(top_k)
 
             for _, row in matched_rows.iterrows():
+                code = str(row["hsn_code"])
                 matches.append({
-                    "hsn_code": str(row["hsn_code"]),
+                    "hsn": code,
+                    "hsn_code": code,
                     "hsn_4digit": str(row["hsn_4digit"]),
                     "chapter": str(row["chapter"]),
                     "description": str(row["description"]),
@@ -128,11 +193,24 @@ class HSNSearchEngine:
                 z_q = self.model(tok_vec).cpu().numpy()  # (128,)
 
             # 3. Cosine Dot-Product against all statutory vectors
-            # Both z_q and self.vector_index are unit normalized, dot product = cosine similarity
             sim_scores = np.dot(self.vector_index, z_q)
 
-            # 4. Top-k argpartition / argsort
-            top_indices = np.argsort(sim_scores)[::-1]
+            # 4. Domain Keyword Prior Hybrid Boost
+            boost = np.zeros_like(sim_scores)
+            for prefix, kws in TRADE_KEYWORDS.items():
+                mask = self.prefix_masks.get(prefix)
+                if mask is not None:
+                    for kw in kws:
+                        if kw in q_lower:
+                            boost[mask] += 1.0
+                            break
+
+            total_scores = sim_scores + boost
+
+            # 5. Top-k argpartition for fast CPU retrieval
+            k_fetch = min(len(total_scores), top_k + len(matches) + 5)
+            part_indices = np.argpartition(-total_scores, k_fetch)[:k_fetch]
+            top_indices = part_indices[np.argsort(-total_scores[part_indices])]
 
             seen_codes = {m["hsn_code"] for m in matches}
             for idx in top_indices:
@@ -145,10 +223,10 @@ class HSNSearchEngine:
                 seen_codes.add(code)
 
                 score = float(sim_scores[idx])
-                # Convert cosine score [-1, 1] to human-friendly percentage [0, 100]
                 conf_pct = round(max(0.0, min(100.0, (score + 1.0) / 2.0 * 100.0)), 1)
 
                 matches.append({
+                    "hsn": code,
                     "hsn_code": code,
                     "hsn_4digit": str(row["hsn_4digit"]),
                     "chapter": str(row["chapter"]),
@@ -164,9 +242,13 @@ class HSNSearchEngine:
 
         latency_ms = (time.perf_counter() - t0) * 1000.0
 
-        return {
-            "query": query,
-            "matches": matches[:top_k],
-            "latency_ms": round(latency_ms, 2),
-            "model": "Contrastive MLP (128-D CPU)",
-        }
+        return SearchResultList(
+            matches=matches[:top_k],
+            query=query,
+            latency_ms=round(latency_ms, 2),
+            model="Contrastive MLP (128-D CPU)",
+        )
+
+
+# Backward-compatible alias
+HSNSearchEngine = HSNSemanticSearchEngine
