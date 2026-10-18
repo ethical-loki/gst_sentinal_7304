@@ -158,9 +158,9 @@
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-17",
-          "corrected": "17-10-2026",
-          "description": "Standardized date format from '2026-10-17' to '17-10-2026'"
+          "original": "2026-10-18",
+          "corrected": "18-10-2026",
+          "description": "Standardized date format from '2026-10-18' to '18-10-2026'"
         },
         {
           "category": "HSN_TARIFF_SCHEDULE_LOOKUP",
@@ -306,9 +306,9 @@
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-17",
-          "corrected": "17-10-2026",
-          "description": "Standardized date format from '2026-10-17' to '17-10-2026'"
+          "original": "2026-10-18",
+          "corrected": "18-10-2026",
+          "description": "Standardized date format from '2026-10-18' to '18-10-2026'"
         },
         {
           "category": "HSN_TARIFF_SCHEDULE_LOOKUP",
@@ -432,9 +432,9 @@
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-17",
-          "corrected": "17-10-2026",
-          "description": "Standardized date format from '2026-10-17' to '17-10-2026'"
+          "original": "2026-10-18",
+          "corrected": "18-10-2026",
+          "description": "Standardized date format from '2026-10-18' to '18-10-2026'"
         },
         {
           "category": "FORMAT_NORMALIZATION",
@@ -523,9 +523,9 @@
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-17",
-          "corrected": "17-10-2026",
-          "description": "Standardized date format from '2026-10-17' to '17-10-2026'"
+          "original": "2026-10-18",
+          "corrected": "18-10-2026",
+          "description": "Standardized date format from '2026-10-18' to '18-10-2026'"
         },
         {
           "category": "FORMAT_NORMALIZATION",
@@ -621,9 +621,9 @@
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-17",
-          "corrected": "17-10-2026",
-          "description": "Standardized date format from '2026-10-17' to '17-10-2026'"
+          "original": "2026-10-18",
+          "corrected": "18-10-2026",
+          "description": "Standardized date format from '2026-10-18' to '18-10-2026'"
         },
         {
           "category": "HSN_TARIFF_SCHEDULE_LOOKUP",

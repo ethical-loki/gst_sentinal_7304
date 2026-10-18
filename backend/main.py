@@ -6,6 +6,7 @@ Description: Complete FastAPI backend serving Excel-based HSN/SAC search with
 
 import os
 import json
+import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any, Union
 import pandas as pd
@@ -66,28 +67,75 @@ async def preload_hsn_cache():
         print("[WARN] HSN Excel file not found at startup - will retry on first search.")
 
 
+_hsn_search_engine = None
+
+
+def get_hsn_search_engine():
+    global _hsn_search_engine
+    if _hsn_search_engine is None:
+        try:
+            from src.nlp.hsn_search import HSNSearchEngine
+            _hsn_search_engine = HSNSearchEngine()
+            print("[OK] HSNSearchEngine initialized with Contrastive MLP (128-D CPU)")
+        except Exception as e:
+            # Not yet ready or weights still training
+            _hsn_search_engine = None
+    return _hsn_search_engine
+
+
 @app.get("/api/hsn-search")
 async def search_hsn(
     query: str = Query("", min_length=0),
     q: Optional[str] = Query(None)
 ):
     """
-    Search HSN codes and descriptions in Final_hsn_sac_copy.xlsx.
+    Search HSN codes and descriptions via In-House Contrastive Semantic HSN Encoder.
     Accepts either ?query= or ?q= parameter.
-    Returns matching tariff items with statutory tax rates:
-    - IGST: full rate
-    - CGST: half rate
-    - SGST: half rate
+    Returns top candidate statutory items with confidence percentage, Section 17(5) flag,
+    statutory tax rates, and exact CPU execution latency in milliseconds.
     """
+    t_start = time.perf_counter()
     raw_query = q if q is not None else query
     q_trimmed = raw_query.strip()
     if not q_trimmed:
-        return {"query": raw_query, "matches": []}
+        return {"query": raw_query, "matches": [], "latency_ms": 0.0, "model": "None"}
 
+    # 1. Attempt High-Performance Contrastive Semantic Search
+    engine = get_hsn_search_engine()
+    if engine is not None:
+        try:
+            res = engine.search(q_trimmed, top_k=20)
+            formatted = []
+            for m in res["matches"]:
+                gst_val = float(m.get("standard_rate", 18.0))
+                formatted.append({
+                    "hsn_code": m["hsn_code"],
+                    "hsn_4digit": m.get("hsn_4digit", m["hsn_code"][:4]),
+                    "description": m["description"],
+                    "gst_rate": gst_val,
+                    "igst_rate": gst_val,
+                    "cgst_rate": round(gst_val / 2.0, 2),
+                    "sgst_rate": round(gst_val / 2.0, 2),
+                    "score": m.get("score", 1.0),
+                    "confidence_pct": m.get("confidence_pct", 100.0),
+                    "match_type": m.get("match_type", "Semantic Match"),
+                    "is_blocked_17_5": m.get("is_blocked_17_5", 0),
+                    "blocked_17_5_reason": m.get("blocked_17_5_reason", "Eligible")
+                })
+            return {
+                "query": raw_query,
+                "matches": formatted,
+                "latency_ms": res.get("latency_ms", round((time.perf_counter() - t_start) * 1000.0, 2)),
+                "model": res.get("model", "Contrastive MLP (128-D CPU)")
+            }
+        except Exception as e:
+            print(f"[WARN] HSNSearchEngine execution error: {e}, falling back to literal index")
+
+    # 2. Fallback to literal search
     hsn_data = get_hsn_df()
     if hsn_data is None:
         abs_path = os.path.abspath(HSN_EXCEL_PATH)
-        return {"error": f"File not found at {abs_path}", "matches": []}
+        return {"error": f"File not found at {abs_path}", "matches": [], "latency_ms": 0.0}
 
     try:
         df, hsn_col, desc_col = hsn_data
@@ -111,14 +159,18 @@ async def search_hsn(
                 "gst_rate": igst,
                 "igst_rate": igst,
                 "cgst_rate": cgst,
-                "sgst_rate": sgst
+                "sgst_rate": sgst,
+                "score": 1.0,
+                "confidence_pct": 100.0,
+                "match_type": "Literal Match"
             })
 
-        return {"query": raw_query, "matches": results}
+        lat = round((time.perf_counter() - t_start) * 1000.0, 2)
+        return {"query": raw_query, "matches": results, "latency_ms": lat, "model": "Literal String Index"}
 
     except Exception as e:
         print(f"[ERROR] EXCEPTION: {str(e)}")
-        return {"error": str(e), "matches": []}
+        return {"error": str(e), "matches": [], "latency_ms": 0.0}
 
 
 @app.get("/", response_class=HTMLResponse)

@@ -1,0 +1,27 @@
+rules:
+  rule_01:
+    name: "Missing Mandatory Field"
+    description: "Ensures all statutory invoice and line-item mandatory fields are populated."
+    mandatory_fields:
+      - "invoice_id"
+      - "line_item_id"
+      - "supplier_gstin"
+      - "recipient_gstin"
+      - "supplier_state"
+      - "declared_pos"
+      - "declared_hsn"
+      - "quantity"
+      - "item_taxable_value"
+      - "declared_effective_rate"
+  rule_02:
+    name: "POS Interstate Mismatch"
+    description: "Ensures intra-state supplies bear CGST/SGST and inter-state supplies bear IGST."
+    enabled: true
+  rule_03:
+    name: "Arithmetic Variance Exceeded"
+    description: "Detects tax rounding errors exceeding tolerance threshold."
+    tolerance: 0.05
+  rule_04:
+    name: "Modulo-36 GSTIN Checksum"
+    description: "Validates 15-character GSTIN against official GSTN Modulo-36 check character."
+    enabled: true
