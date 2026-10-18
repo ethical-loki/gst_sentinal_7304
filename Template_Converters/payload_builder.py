@@ -42,6 +42,15 @@ except ImportError:
     except ImportError:
         PriceAnomalyDetector = None
 
+try:
+    from .hsn_resolver import lookup_hsn_code, validate_nic_2day_rule
+except ImportError:
+    try:
+        from hsn_resolver import lookup_hsn_code, validate_nic_2day_rule
+    except ImportError:
+        lookup_hsn_code = None
+        validate_nic_2day_rule = None
+
 KEY_ALIASES = {
     # Header
     "system.cd": "system_cd", "system cd": "system_cd",
@@ -101,10 +110,16 @@ KEY_ALIASES = {
     "ship state": "ship_state", "ship phone": "ship_phone", "ship email": "ship_email",
     
     # Line items
-    "ugc": "uqc", "uom": "uqc",
-    "unit_rate": "unitrate", "unitprice": "unitrate",
-    "gross_amt": "grossamt", "gross_amount": "grossamt",
-    "ass_amt": "assamt", "taxable_amt": "assamt",
+    "hsn": "hsncd", "hsn_code": "hsncd", "hsn code": "hsncd",
+    "is_service": "isservc", "is service": "isservc", "isservice": "isservc",
+    "unit": "uqc", "ugc": "uqc", "uom": "uqc",
+    "unit_rate": "unitrate", "unitprice": "unitrate", "unit_price": "unitrate",
+    "gross_amt": "grossamt", "gross_amount": "grossamt", "totamt": "grossamt", "total_amt": "grossamt",
+    "pretaxval": "assamt", "ass_amt": "assamt", "taxable_amt": "assamt", "assval": "assamt", "taxable_val": "assamt", "taxable_value": "assamt",
+    "gstrate": "igstrt", "gst_rate": "igstrt", "gst rate": "igstrt",
+    "cgstval": "cgstamt", "sgstval": "sgstamt", "igstval": "igstamt",
+    "cesrate": "cessrt", "cesval": "cessamt", "cesnonadvl": "cessnonadval",
+    "statecesrate": "statecessrt", "statecesval": "statecessamt",
     "tot_item_val": "totitemval", "total_item_value": "totitemval",
     
     # valdt1
@@ -2209,12 +2224,16 @@ class PayloadBuilder:
     """
 
     @classmethod
-    def auto_correct_and_build(cls, raw_invoice: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    def auto_correct_and_build(cls, raw_invoice: Dict[str, Any], taxable_value_input: Optional[Union[float, Decimal, Dict[str, Any]]] = None) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
         """
         Takes raw/dirty invoice data, applies key aliasing, value normalization,
-        and tax calculations, returning (corrected_invoice, audit_log).
+        HSN lookups against Final_hsn_sac_copy.xlsx, statutory tax rates reconciliation,
+        and tax calculations (with optional user taxable value override), returning (corrected_invoice, audit_log).
         """
         audit_log: List[Dict[str, Any]] = []
+
+        if taxable_value_input is None and isinstance(raw_invoice, dict):
+            taxable_value_input = raw_invoice.get("taxable_value_input") or raw_invoice.get("custom_taxable_value") or raw_invoice.get("override_taxable_value")
 
         # Step 1: Normalize dictionary keys and collect key modifications
         data, key_mods = normalize_dict_keys_with_log(raw_invoice)
@@ -2340,6 +2359,22 @@ class PayloadBuilder:
             "docno": clean_docno,
             "docdt": normalize_date_to_standard(docdt1.get("docdt", ""), audit_log=audit_log, field="docdt1.docdt")
         }
+
+        # NIC 2-Day rule compliance check for IRN generation
+        if clean_docdt1["docdt"]:
+            try:
+                inv_dt = datetime.strptime(clean_docdt1["docdt"], "%d-%m-%Y").date()
+                days_diff = (datetime.today().date() - inv_dt).days
+                if days_diff > 2 and irnreq == "Y":
+                    audit_log.append({
+                        "category": "NIC_RULE_DATE_RESTRICTION",
+                        "field": "docdt1.docdt",
+                        "original": clean_docdt1["docdt"],
+                        "corrected": clean_docdt1["docdt"],
+                        "description": f"NIC 2-day rule violation: Document date '{clean_docdt1['docdt']}' is {days_diff} days old. IRN cannot be generated or changed. Prompt: change the date."
+                    })
+            except Exception:
+                pass
 
         # Supplier Details (supplierdt1)
         raw_sup_state = clean_str(supplierdt1.get("supplier_state", ""))
@@ -2542,6 +2577,36 @@ class PayloadBuilder:
             prddesc = normalize_product_name(item.get("prddesc", prdnm))
             isservc = normalize_uppercase(item.get("isservc", "N")) or "N"
             hsncd = normalize_numeric_string(item.get("hsncd", ""))
+            orig_hsn = hsncd
+            hsn_statutory_rate = None
+            if lookup_hsn_code:
+                # 1. Check if HSN is missing, incomplete (< 4 digits), or invalid length
+                needs_lookup = not hsncd or len(hsncd) not in [4, 6, 8] or len(hsncd) < 4
+                matches = lookup_hsn_code(prdnm, prddesc, hsn_prefix=hsncd if len(hsncd) in [2, 3, 4] else None, top_k=3)
+                if matches:
+                    best_m = matches[0]
+                    official_hsn = best_m["hsn_code"]
+                    # If HSN is incomplete or completely mismatching official tariff for this product
+                    if needs_lookup or (hsncd and not official_hsn.startswith(hsncd[:2]) and not hsncd.startswith(official_hsn[:2])):
+                        hsncd = official_hsn
+                        hsn_statutory_rate = Decimal(str(best_m.get("gst_rate", 18.0)))
+                        audit_log.append({
+                            "category": "HSN_TARIFF_SCHEDULE_LOOKUP",
+                            "field": f"itemdtls[{idx}].hsncd",
+                            "original": orig_hsn or "(blank)",
+                            "corrected": hsncd,
+                            "description": f"⚠️ Wrong HSN Code Detected: Customer entered '{orig_hsn or '(blank)'}', which is not the correct statutory code for '{prdnm}' ('{prddesc}'). Based on Final_hsn_sac_copy.xlsx, the correct official HSN is '{hsncd}' ({best_m.get('description', '')[:50]}...) with statutory {hsn_statutory_rate}% GST. Auto-corrected to ensure NIC IRN compliance."
+                        })
+                        audit_log.append({
+                            "category": "WRONG_HSN_CODE_DETECTED",
+                            "field": f"itemdtls[{idx}].hsncd",
+                            "original": orig_hsn or "(blank)",
+                            "corrected": hsncd,
+                            "description": f"⚠️ Wrong HSN Code Detected: Customer entered '{orig_hsn or '(blank)'}', which is not the correct statutory code for '{prdnm}' ('{prddesc}'). Based on Final_hsn_sac_copy.xlsx, the correct official HSN is '{hsncd}' ({best_m.get('description', '')[:50]}...) with statutory {hsn_statutory_rate}% GST. Auto-corrected to ensure NIC IRN compliance."
+                        })
+                    elif hsn_statutory_rate is None:
+                        hsn_statutory_rate = Decimal(str(best_m.get("gst_rate", 18.0)))
+
             raw_uqc = normalize_uppercase(item.get("uqc", "NOS")) or "NOS"
             uqc = raw_uqc if raw_uqc in ALLOWED_UQC else "OTH"
 
@@ -2579,13 +2644,41 @@ class PayloadBuilder:
                 })
                 assamt_d = calculated_assamt
 
+            # User taxable value input option override
+            override_assamt = None
+            if taxable_value_input is not None:
+                if isinstance(taxable_value_input, (int, float, Decimal, str)) and str(taxable_value_input).strip():
+                    override_assamt = Decimal(clean_decimal_str(taxable_value_input, 2))
+                elif isinstance(taxable_value_input, dict):
+                    if idx in taxable_value_input or str(idx) in taxable_value_input:
+                        v = taxable_value_input.get(idx, taxable_value_input.get(str(idx)))
+                        override_assamt = Decimal(clean_decimal_str(v, 2))
+                    elif "assval" in taxable_value_input or "assamt" in taxable_value_input:
+                        override_assamt = Decimal(clean_decimal_str(taxable_value_input.get("assval", taxable_value_input.get("assamt")), 2))
+            elif item.get("custom_taxable_value") or item.get("taxable_value_input"):
+                v = item.get("custom_taxable_value") or item.get("taxable_value_input")
+                override_assamt = Decimal(clean_decimal_str(v, 2))
+
+            if override_assamt is not None and override_assamt > Decimal("0.00"):
+                if abs(assamt_d - override_assamt) > Decimal("0.01"):
+                    audit_log.append({
+                        "category": "TAXABLE_VALUE_MODIFICATION",
+                        "field": f"itemdtls[{idx}].assamt",
+                        "original": str(assamt_d),
+                        "corrected": str(override_assamt),
+                        "description": f"Applied user-provided taxable value input option Rs {override_assamt} and recalculated statutory taxes."
+                    })
+                assamt_d = override_assamt
+
             taxability = clean_str(item.get("taxability", "TAX")).upper() or "TAX"
 
             raw_igstrt = Decimal(clean_decimal_str(item.get("igstrt", "0.00"), 2))
             raw_cgstrt = Decimal(clean_decimal_str(item.get("cgstrt", "0.00"), 2))
             raw_sgstrt = Decimal(clean_decimal_str(item.get("sgstrt", "0.00"), 2))
 
-            if raw_igstrt > 0:
+            if hsn_statutory_rate is not None:
+                gst_rate = hsn_statutory_rate
+            elif raw_igstrt > 0:
                 gst_rate = raw_igstrt
             elif raw_cgstrt + raw_sgstrt > 0:
                 gst_rate = raw_cgstrt + raw_sgstrt
@@ -2773,11 +2866,14 @@ class PayloadBuilder:
         return out_invoice, audit_log
 
     @classmethod
-    def convert_payload_document_with_audit(cls, input_data: Any) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    def convert_payload_document_with_audit(cls, input_data: Any, taxable_value_input: Optional[Union[float, Decimal, Dict[str, Any]]] = None) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
         """
         Converts full payload document and returns (corrected_payload, audit_reports).
+        Supports optional taxable_value_input override.
         """
         if isinstance(input_data, dict):
+            if taxable_value_input is None:
+                taxable_value_input = input_data.get("taxable_value_input") or input_data.get("custom_taxable_value")
             raw_invoices = input_data.get("einvoices", [input_data]) if "einvoices" in input_data else [input_data]
         elif isinstance(input_data, list):
             raw_invoices = input_data
@@ -2788,7 +2884,7 @@ class PayloadBuilder:
         audit_reports = []
 
         for idx, inv in enumerate(raw_invoices, start=1):
-            clean_inv, audit_log = cls.auto_correct_and_build(inv)
+            clean_inv, audit_log = cls.auto_correct_and_build(inv, taxable_value_input=taxable_value_input)
             corrected_invoices.append(clean_inv)
             docno = clean_inv.get("docdt1", {}).get("docno", f"INV_INDEX_{idx}")
             audit_reports.append({

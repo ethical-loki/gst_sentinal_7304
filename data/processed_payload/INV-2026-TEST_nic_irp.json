@@ -10,6 +10,11 @@
     "transactionmode": "REG",
     "igstonintra": "N"
   },
+  "docdtl": {
+    "document_type": "INV",
+    "docno": "INV-2026-TEST",
+    "docdt": "10-10-2026"
+  },
   "docdt1": {
     "document_type": "INV",
     "docno": "INV-2026-TEST",

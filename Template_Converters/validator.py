@@ -157,6 +157,15 @@ class GSTValidator:
                 errors.append(ValidationError(2282, "docdt1.docdt", f"Invalid docdt format '{docdt_str}'. Expected date normalized to DD-MM-YYYY."))
             elif inv_date.date() > datetime.today().date():
                 errors.append(ValidationError(2163, "docdt1.docdt", f"Document date '{docdt_str}' cannot be a future date."))
+            else:
+                days_diff = (datetime.today().date() - inv_date.date()).days
+                irn_req = str(invoice.get("irnreq", "Y") or "Y").strip().upper()
+                if days_diff > 2 and irn_req == "Y":
+                    errors.append(ValidationError(
+                        2164,
+                        "docdt1.docdt",
+                        f"Document date '{docdt_str}' is more than 2 days old ({days_diff} days ago). As per NIC rule, IRN cannot be generated or changed for invoices older than 2 days. Prompt: change the date."
+                    ))
 
         orginvno = str(docdt1.get("orginvno", "") or "").strip()
         if orginvno and len(orginvno) > 16:

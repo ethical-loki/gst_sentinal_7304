@@ -8,6 +8,7 @@ import os
 import sys
 import json
 import pytest
+from datetime import datetime, timedelta
 from pathlib import Path
 from fastapi.testclient import TestClient
 
@@ -59,7 +60,7 @@ def sample_dirty_file(tmp_path):
                 "docdt1": {
                     "document_type": "INV",
                     "docno": "INV-INGEST-001",
-                    "docdt": "15/10/2026"
+                    "docdt": (datetime.now() - timedelta(days=1)).strftime("%d/%m/%Y")
                 },
                 "supplierdt1": {
                     "supplier_gstin": "29ABCDE1234F1Z5",
@@ -150,7 +151,7 @@ def test_convert_and_validate_in_memory_direct():
     """Verifies convert_and_validate_in_memory with direct dictionary payload."""
     dirty_inv = {
         "self gstin": "29ABCDE1234F1Z5",
-        "docdt1": {"docno": "INV-MEM-001", "invoice_date": "2026-10-15"},
+        "docdt1": {"docno": "INV-MEM-001", "invoice_date": (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")},
         "trandt1": {"trancatg": "B2B", "reversecharge": "N"},
         "supplierdt1": {
             "supplier_gstin": "29ABCDE1234F1Z5",

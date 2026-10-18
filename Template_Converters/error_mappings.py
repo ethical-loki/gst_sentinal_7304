@@ -212,6 +212,11 @@ IRN_ERRORS: Dict[int, Dict[str, str]] = {
         "reason": "Attempting to set future date for the document date",
         "resolution": "Check the document date; docdt cannot be in the future"
     },
+    2164: {
+        "message": "Document date is older than 2 days from current date. IRN cannot be generated or changed.",
+        "reason": "NIC Rule: IRN generation/modification is restricted if document date is older than 2 days from current date",
+        "resolution": "Please change the document date to within 2 days of current date (Prompt: change the date)"
+    },
     2169: {
         "message": "Request for IRN is neither from supplier GSTIN or e-Commerce GSTIN",
         "reason": "Logged in user GSTIN does not match supplier or e-commerce GSTIN",

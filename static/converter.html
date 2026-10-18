@@ -48,6 +48,39 @@
                 radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.10) 0%, transparent 45%),
                 radial-gradient(circle at 50% 90%, rgba(16, 185, 129, 0.08) 0%, transparent 50%);
             background-attachment: fixed;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(56, 189, 248, 0.7) rgba(15, 23, 42, 0.75);
+        }
+
+        /* Universal High-Visibility Cyber Scrollbar System for All Modules */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(56, 189, 248, 0.7) rgba(15, 23, 42, 0.75);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.75);
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #0ea5e9 0%, #6366f1 100%);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #38bdf8 0%, #818cf8 100%);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+        }
+
+        ::-webkit-scrollbar-corner {
+            background: rgba(15, 23, 42, 0.8);
         }
 
         /* Ambient Glow Elements */
@@ -1865,17 +1898,63 @@
             transform: translateY(-1px);
         }
 
-        .table-responsive-container {
+        .table-responsive-container,
+        .table-responsive,
+        .table-wrapper {
             border: 1px solid var(--border-glass);
             border-radius: var(--radius-md);
-            overflow: hidden;
-            background: rgba(10, 15, 30, 0.4);
+            background: rgba(10, 15, 30, 0.45);
             max-height: 600px;
-            overflow-y: auto;
+            overflow-x: auto !important;
+            overflow-y: auto !important;
+            scrollbar-width: thin !important;
+            scrollbar-color: #06b6d4 #090e1a !important;
+            scrollbar-gutter: stable;
+            position: relative;
+            -webkit-overflow-scrolling: touch;
         }
 
-        .audit-table {
+        .table-responsive-container::-webkit-scrollbar,
+        .table-responsive::-webkit-scrollbar,
+        .table-wrapper::-webkit-scrollbar {
+            width: 10px !important;
+            height: 10px !important;
+            display: block !important;
+        }
+
+        .table-responsive-container::-webkit-scrollbar-track,
+        .table-responsive::-webkit-scrollbar-track,
+        .table-wrapper::-webkit-scrollbar-track {
+            background: #090e1a !important;
+            border-radius: 6px;
+        }
+
+        .table-responsive-container::-webkit-scrollbar-thumb,
+        .table-responsive::-webkit-scrollbar-thumb,
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #06b6d4 0%, #4f46e5 100%) !important;
+            border-radius: 6px;
+            border: 2px solid #090e1a;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.6) !important;
+        }
+
+        .table-responsive-container::-webkit-scrollbar-thumb:hover,
+        .table-responsive::-webkit-scrollbar-thumb:hover,
+        .table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%) !important;
+            box-shadow: 0 0 14px rgba(56, 189, 248, 0.9) !important;
+        }
+
+        .table-responsive-container::-webkit-scrollbar-corner,
+        .table-responsive::-webkit-scrollbar-corner,
+        .table-wrapper::-webkit-scrollbar-corner {
+            background: #090e1a !important;
+        }
+
+        .audit-table,
+        .audit-data-table {
             width: 100%;
+            min-width: 1320px;
             border-collapse: collapse;
             font-size: 0.84rem;
             text-align: left;
@@ -3515,15 +3594,25 @@
                     ? `<span class="val-corrected">${escapeHtml(row.corrected)}</span>` 
                     : '<span style="color:var(--text-dim);">-</span>';
 
+                let catBadge = `<span style="font-size: 0.78rem; font-weight: 600; color: #a5b4fc;">${escapeHtml(row.category)}</span>`;
+                if (row.category === 'WRONG_HSN_CODE_DETECTED') {
+                    catBadge = `<span class="pill-status" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid #f59e0b; font-weight: 800; font-size: 0.75rem; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">⚠️ WRONG HSN DETECTED</span>`;
+                }
+
+                let descHtml = escapeHtml(row.description);
+                if (row.category === 'WRONG_HSN_CODE_DETECTED' || (row.description && row.description.toLowerCase().includes('wrong hsn code'))) {
+                    descHtml = `<div style="background: rgba(245, 158, 11, 0.12); border-left: 3px solid #f59e0b; padding: 6px 8px; border-radius: 4px; color: #fbbf24; font-weight: 600;">${descHtml}</div>`;
+                }
+
                 tr.innerHTML = `
-                    <td style="font-weight: 700; font-family: 'JetBrains Mono', monospace;">${escapeHtml(row.invoice_number)}</td>
-                    <td>${statusPill}</td>
-                    <td>${typePill}</td>
-                    <td><span style="font-size: 0.78rem; font-weight: 600; color: #a5b4fc;">${escapeHtml(row.category)}</span></td>
-                    <td><span class="field-tag">${escapeHtml(row.field)}</span></td>
-                    <td>${origVal}</td>
-                    <td>${corrVal}</td>
-                    <td style="max-width: 320px; color: var(--text-muted); line-height: 1.4;">${escapeHtml(row.description)}</td>
+                    <td style="font-weight: 700; font-family: 'JetBrains Mono', monospace; white-space: nowrap;">${escapeHtml(row.invoice_number)}</td>
+                    <td style="white-space: nowrap;">${statusPill}</td>
+                    <td style="white-space: nowrap;">${typePill}</td>
+                    <td style="white-space: nowrap;">${catBadge}</td>
+                    <td><span class="field-tag" style="white-space: nowrap;">${escapeHtml(row.field)}</span></td>
+                    <td style="white-space: nowrap;">${origVal}</td>
+                    <td style="white-space: nowrap;">${corrVal}</td>
+                    <td style="min-width: 380px; max-width: 600px; color: var(--text-muted); line-height: 1.5;">${descHtml}</td>
                 `;
 
                 tbody.appendChild(tr);
@@ -3587,7 +3676,29 @@
 
                 let errorBlocks = '';
                 if (invRes.errors && invRes.errors.length > 0) {
-                    errorBlocks = invRes.errors.map(err => `
+                    errorBlocks = invRes.errors.map((err, eIdx) => {
+                        const isDateErr = err.error_code === 2164 || (err.field && (err.field.toLowerCase().includes('docdt') || err.field.toLowerCase().includes('docat'))) || (err.message && err.message.toLowerCase().includes('older than 2 days'));
+                        const todayIso = new Date().toISOString().split('T')[0];
+                        const dateFixHtml = isDateErr ? `
+                            <div class="rule-quick-date-fix" style="margin-top: 10px; padding: 8px 12px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="font-size: 0.8rem; font-weight: 700; color: #38bdf8;">📅 Input Valid Date:</span>
+                                <input type="date" id="ruleDateInput_${index}_${eIdx}" value="${todayIso}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 4px 8px; font-size: 0.82rem; outline: none; font-family: 'JetBrains Mono', monospace;">
+                                <button type="button" class="copilot-action-btn" onclick="applyDirectDateChange('ruleDateInput_${index}_${eIdx}')" style="background: #0ea5e9; color: #fff; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 700;">Change Date</button>
+                                <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Change date to Today (${todayIso})')" style="background: rgba(16,185,129,0.2); border: 1px solid #10b981; color: #34d399; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600;">⚡ Set to Today</button>
+                            </div>
+                        ` : '';
+
+                        const isVehErr = err.error_code === 4011 || (err.field && err.field.toLowerCase().includes('veh')) || (err.message && (err.message.toLowerCase().includes('vehicle') || err.message.toLowerCase().includes('plate')));
+                        const vehicleFixHtml = isVehErr ? `
+                            <div class="rule-quick-vehicle-fix" style="margin-top: 10px; padding: 8px 12px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="font-size: 0.8rem; font-weight: 700; color: #38bdf8;">🚚 Input Vehicle Plate:</span>
+                                <input type="text" id="ruleVehInput_${index}_${eIdx}" placeholder="e.g. KA01AB1234" value="KA01AB1234" onkeydown="if(event.key==='Enter'){event.preventDefault();applyDirectVehicleChange('ruleVehInput_${index}_${eIdx}');}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 4px 8px; font-size: 0.82rem; outline: none; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; width: 140px;">
+                                <button type="button" class="copilot-action-btn" onclick="applyDirectVehicleChange('ruleVehInput_${index}_${eIdx}')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 700;">🚚 Set Vehicle</button>
+                                <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Vehicle is KA01AB1234')" style="background: rgba(16,185,129,0.2); border: 1px solid #10b981; color: #34d399; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600;">⚡ Use KA01AB1234</button>
+                            </div>
+                        ` : '';
+
+                        return `
                         <div class="rule-issue-box">
                             <div>
                                 <span class="rule-code-badge">NIC Code ${err.error_code}</span>
@@ -3601,8 +3712,10 @@
                                     💡 <strong>Recommended Fix:</strong> ${escapeHtml(err.resolution)}
                                 </div>
                             ` : ''}
+                            ${dateFixHtml}
+                            ${vehicleFixHtml}
                         </div>
-                    `).join('');
+                    `}).join('');
                 } else {
                     errorBlocks = `
                         <div class="clean-pass-box">
@@ -4035,6 +4148,35 @@
                 let noticePrefix = customNotice ? `<div style="font-size:0.85rem; color:#94a3b8; margin-bottom:8px;">${escapeHtml(customNotice)}</div>` : '';
                 let replyHtml = `<div class="msg-bubble">${noticePrefix}${formatMarkdownReply(data.reply)}</div>`;
 
+                // Check for Date Input prompt or actions
+                const hasDateAction = (data.interactive_actions && data.interactive_actions.some(a => a.toLowerCase().includes('date') || a.toLowerCase().includes('today') || a.toLowerCase().includes('yesterday'))) ||
+                                      (data.reply && (data.reply.toLowerCase().includes('document date') || data.reply.toLowerCase().includes('rule 2164') || data.reply.toLowerCase().includes('docdt') || data.reply.toLowerCase().includes('docat')));
+                if (hasDateAction) {
+                    const todayIso = new Date().toISOString().split('T')[0];
+                    replyHtml += `
+                        <div class="copilot-date-picker-bar" style="margin-top: 10px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">📅 Change Date:</span>
+                            <input type="date" class="copilot-inline-date-input" value="${todayIso}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace;">
+                            <button type="button" class="copilot-action-btn" onclick="submitCopilotDatePicker(this)" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">📅 Apply Date</button>
+                            <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Change date to Today (${todayIso})')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer;">⚡ Set Today</button>
+                        </div>
+                    `;
+                }
+
+                // Check for Vehicle Input prompt or actions
+                const hasVehicleAction = (data.interactive_actions && data.interactive_actions.some(a => a.toLowerCase().includes('veh') || a.toLowerCase().includes('plate') || a.toLowerCase().includes('ka01') || a.toLowerCase().includes('mh12'))) ||
+                                         (data.reply && (data.reply.toLowerCase().includes('vehicle registration') || data.reply.toLowerCase().includes('vehicle number') || data.reply.toLowerCase().includes('vehicle plate') || data.reply.toLowerCase().includes('vahan') || data.reply.toLowerCase().includes('vehno') || data.reply.toLowerCase().includes('road transit')));
+                if (hasVehicleAction) {
+                    replyHtml += `
+                        <div class="copilot-vehicle-picker-bar" style="margin-top: 10px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">🚚 Vehicle Number:</span>
+                            <input type="text" class="copilot-inline-vehicle-input" placeholder="e.g. KA01AB1234" value="KA01AB1234" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotVehicleInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; width: 140px;">
+                            <button type="button" class="copilot-action-btn" onclick="submitCopilotVehicleInput(this)" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">🚚 Apply Vehicle</button>
+                            <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Vehicle is KA01AB1234')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer;">⚡ Use KA01AB1234</button>
+                        </div>
+                    `;
+                }
+
                 if (data.interactive_actions && data.interactive_actions.length > 0) {
                     const actionBtns = data.interactive_actions.map(act => 
                         `<button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('${escapeHtml(act)}')">${escapeHtml(act)}</button>`
@@ -4288,6 +4430,43 @@
         }
 
 
+        // Inline Date Picker Submission for Copilot
+        function submitCopilotDatePicker(btn) {
+            const parentBar = btn.closest('.copilot-date-picker-bar') || btn.parentElement;
+            const input = parentBar ? parentBar.querySelector('input[type="date"]') : null;
+            let pickedDate = input ? input.value : '';
+            if (!pickedDate) {
+                pickedDate = new Date().toISOString().split('T')[0];
+            }
+            sendCopilotQuickMessage(`Change date to ${pickedDate}`);
+        }
+
+        // Apply Direct Date Change from Error Card
+        function applyDirectDateChange(inputId) {
+            const input = document.getElementById(inputId);
+            const dateVal = input ? input.value : new Date().toISOString().split('T')[0];
+            switchRightPanelView('copilot');
+            sendCopilotQuickMessage(`Change date to ${dateVal}`);
+        }
+
+        // Inline Vehicle Number Submission for Copilot
+        function submitCopilotVehicleInput(btnOrInput) {
+            const parentBar = btnOrInput.closest('.copilot-vehicle-picker-bar') || btnOrInput.parentElement;
+            const input = parentBar ? parentBar.querySelector('input.copilot-inline-vehicle-input') : null;
+            let vehNum = input ? input.value.trim().toUpperCase() : '';
+            if (!vehNum) vehNum = 'KA01AB1234';
+            sendCopilotQuickMessage(`Vehicle is ${vehNum}`);
+        }
+
+        // Apply Direct Vehicle Change from Error Card
+        function applyDirectVehicleChange(inputId) {
+            const input = document.getElementById(inputId);
+            let vehNum = input ? input.value.trim().toUpperCase() : 'KA01AB1234';
+            if (!vehNum) vehNum = 'KA01AB1234';
+            switchRightPanelView('copilot');
+            sendCopilotQuickMessage(`Vehicle is ${vehNum}`);
+        }
+
         // Submit message to Copilot
         async function handleCopilotSubmit(e) {
             if (e && e.preventDefault) e.preventDefault();
@@ -4363,6 +4542,35 @@
                 botMsgDiv.className = 'copilot-msg bot';
 
                 let replyHtml = `<div class="msg-bubble">${formatMarkdownReply(data.reply)}</div>`;
+
+                // Check for Date Input prompt or actions
+                const hasDateAction = (data.interactive_actions && data.interactive_actions.some(a => a.toLowerCase().includes('date') || a.toLowerCase().includes('today') || a.toLowerCase().includes('yesterday'))) ||
+                                      (data.reply && (data.reply.toLowerCase().includes('document date') || data.reply.toLowerCase().includes('rule 2164') || data.reply.toLowerCase().includes('docdt') || data.reply.toLowerCase().includes('docat')));
+                if (hasDateAction) {
+                    const todayIso = new Date().toISOString().split('T')[0];
+                    replyHtml += `
+                        <div class="copilot-date-picker-bar" style="margin-top: 10px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">📅 Change Date:</span>
+                            <input type="date" class="copilot-inline-date-input" value="${todayIso}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace;">
+                            <button type="button" class="copilot-action-btn" onclick="submitCopilotDatePicker(this)" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">📅 Apply Date</button>
+                            <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Change date to Today (${todayIso})')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer;">⚡ Set Today</button>
+                        </div>
+                    `;
+                }
+
+                // Check for Vehicle Input prompt or actions
+                const hasVehicleAction = (data.interactive_actions && data.interactive_actions.some(a => a.toLowerCase().includes('veh') || a.toLowerCase().includes('plate') || a.toLowerCase().includes('ka01') || a.toLowerCase().includes('mh12'))) ||
+                                         (data.reply && (data.reply.toLowerCase().includes('vehicle registration') || data.reply.toLowerCase().includes('vehicle number') || data.reply.toLowerCase().includes('vehicle plate') || data.reply.toLowerCase().includes('vahan') || data.reply.toLowerCase().includes('vehno') || data.reply.toLowerCase().includes('road transit')));
+                if (hasVehicleAction) {
+                    replyHtml += `
+                        <div class="copilot-vehicle-picker-bar" style="margin-top: 10px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">🚚 Vehicle Number:</span>
+                            <input type="text" class="copilot-inline-vehicle-input" placeholder="e.g. KA01AB1234" value="KA01AB1234" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotVehicleInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; width: 140px;">
+                            <button type="button" class="copilot-action-btn" onclick="submitCopilotVehicleInput(this)" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">🚚 Apply Vehicle</button>
+                            <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Vehicle is KA01AB1234')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer;">⚡ Use KA01AB1234</button>
+                        </div>
+                    `;
+                }
 
                 // Interactive Action Buttons inside Chat Bubble
                 if (data.interactive_actions && data.interactive_actions.length > 0) {

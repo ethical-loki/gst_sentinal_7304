@@ -104,7 +104,8 @@
       "uqc": "NOS",
       "unitrate": 10000.0,
       "grossamt": 50000.0,
-      "discval": 0.0
+      "discval": 0.0,
+      "igstrt": 18.0
     }
   ],
   "valdtls": {

@@ -23,6 +23,15 @@ from pydantic import (
     ValidationError as PydanticValidationError,
 )
 
+try:
+    from src.ingestion.hsn_resolver import lookup_hsn_code, validate_nic_2day_rule
+except ImportError:
+    try:
+        from Template_Converters.hsn_resolver import lookup_hsn_code, validate_nic_2day_rule
+    except ImportError:
+        lookup_hsn_code = None
+        validate_nic_2day_rule = None
+
 # ============================================================================
 # 1. CONSTANTS, REGEX PATTERNS & STATUTORY MASTERS
 # ============================================================================
@@ -145,6 +154,7 @@ IRN_ERRORS: Dict[int, Dict[str, str]] = {
     2159: {"message": "Invalid transaction category", "reason": "trancatg invalid or missing", "resolution": "Pass valid trancatg (B2B, SEZWP, SEZWOP, EXP, DEXP, B2G, B2C)"},
     2162: {"message": "Reverse Charge is not applicable for this transaction category", "reason": "Reverse charge passed for ineligible category", "resolution": "Set reversecharge to 'N'"},
     2163: {"message": "Document date cannot be a future date", "reason": "docdt is in the future", "resolution": "docdt must be today or prior"},
+    2164: {"message": "Document date is older than 2 days from current date. IRN cannot be generated or changed.", "reason": "NIC rule: IRN generation/modification is restricted for invoices older than 2 days", "resolution": "Please change the document date to within 2 days of current date (Prompt: change the date)"},
     2172: {"message": "For Intra-state, IGST is not applicable", "reason": "IGST charged on intra-state supply", "resolution": "Charge CGST and SGST instead of IGST"},
     2174: {"message": "For inter-state/SEZ, CGST/SGST not applicable; only IGST applies", "reason": "CGST/SGST charged on inter-state/SEZ supply", "resolution": "Charge IGST only"},
     2176: {"message": "Invalid HSN code", "reason": "HSN must be 2, 4, 6, or 8 numeric digits", "resolution": "Verify HSN master"},
@@ -325,10 +335,14 @@ KEY_ALIASES: Dict[str, str] = {
     "ugc": "uqc", "uom": "uqc", "unit": "uqc",
     "unit_rate": "unitrate", "unitprice": "unitrate", "rate": "unitrate",
     "gross_amt": "grossamt", "gross_amount": "grossamt", "totamt": "grossamt",
-    "ass_amt": "assval", "taxable_amt": "assval", "taxable_value": "assval",
+    "ass_amt": "assval", "taxable_amt": "assval", "taxable_value": "assval", "pretaxval": "assval",
     "tot_item_val": "totitemval", "total_item_value": "totitemval", "totitemval": "totitemval",
     "hsn": "hsncd", "hsn_code": "hsncd",
     "is_service": "isservc",
+    "gstrate": "igstrt", "gst_rate": "igstrt", "gst rate": "igstrt",
+    "cgstval": "cgstval", "sgstval": "sgstval", "igstval": "igstval",
+    "cesrate": "cessrt", "cesval": "cesval", "cesnonadvl": "cesnonadvl",
+    "statecesrate": "statecessrt", "statecesval": "statecesval",
     # Values
     "total_taxable_value": "ttlassval", "total_ass_val": "ttlassval",
     "total_cgst": "cgstval", "cgst_val": "cgstval",
@@ -1225,16 +1239,16 @@ class InvoicePayload(BaseModel):
             else:
                 mapped["transactionmode"] = "REG"
 
-        # Document details (docdt1)
-        if "docdt1" in mapped and isinstance(mapped["docdt1"], dict):
-            d = mapped["docdt1"]
-            mapped["document_type"] = d.get("document_type", mapped.get("document_type", "INV"))
-            mapped["docno"] = d.get("docno", mapped.get("docno"))
-            mapped["docdt"] = d.get("docdt", mapped.get("docdt"))
-            if d.get("orginvno"):
-                mapped["orginvno"] = d["orginvno"]
-            if d.get("orginvdt"):
-                mapped["orginvdt"] = d["orginvdt"]
+        # Document details (docdt1 or docdtl)
+        doc_sec = mapped.get("docdt1") or mapped.get("docdtl")
+        if isinstance(doc_sec, dict):
+            mapped["document_type"] = doc_sec.get("document_type", mapped.get("document_type", "INV"))
+            mapped["docno"] = doc_sec.get("docno", mapped.get("docno"))
+            mapped["docdt"] = doc_sec.get("docdt", mapped.get("docdt"))
+            if doc_sec.get("orginvno"):
+                mapped["orginvno"] = doc_sec["orginvno"]
+            if doc_sec.get("orginvdt"):
+                mapped["orginvdt"] = doc_sec["orginvdt"]
 
         # Supplier details (supplierdt1)
         if "supplierdt1" in mapped and isinstance(mapped["supplierdt1"], dict):
@@ -1246,6 +1260,12 @@ class InvoicePayload(BaseModel):
             if isinstance(mapped.get("supplier"), dict) and not mapped["supplier"].get("gstin") and not mapped["supplier"].get("supplier_gstin"):
                 mapped["supplier"]["gstin"] = mapped["self_gstin"]
 
+        if isinstance(mapped.get("supplier"), dict):
+            if not mapped["supplier"].get("pin") and not mapped["supplier"].get("supplier_pin"):
+                st = str(mapped["supplier"].get("state") or mapped["supplier"].get("supplier_state") or (mapped.get("self_gstin", "")[:2] if len(mapped.get("self_gstin", "")) >= 2 else "")).strip()
+                if st in STATE_MASTER and STATE_MASTER[st]["pin_prefixes"]:
+                    mapped["supplier"]["pin"] = f"{STATE_MASTER[st]['pin_prefixes'][0]}0001"
+
         # Buyer details (buyerdt1)
         if "buyerdt1" in mapped and isinstance(mapped["buyerdt1"], dict):
             mapped["buyer"] = mapped["buyerdt1"]
@@ -1256,10 +1276,14 @@ class InvoicePayload(BaseModel):
         if isinstance(mapped.get("buyer"), dict):
             if not mapped["buyer"].get("gstin") and not mapped["buyer"].get("buyer_gstin"):
                 mapped["buyer"]["gstin"] = "URP"
+            if not mapped["buyer"].get("pin") and not mapped["buyer"].get("buyer_pin"):
+                st = str(mapped["buyer"].get("state") or mapped["buyer"].get("buyer_state") or mapped["buyer"].get("pos") or mapped["buyer"].get("buyer_pos") or "").strip()
+                if st in STATE_MASTER and STATE_MASTER[st]["pin_prefixes"]:
+                    mapped["buyer"]["pin"] = f"{STATE_MASTER[st]['pin_prefixes'][0]}0001"
 
         # Tax Valuation details (valdt1 / valdtls)
-        if "valdt1" in mapped and "valdtls" not in mapped:
-            mapped["valdtls"] = mapped["valdt1"]
+        if "valdtls" not in mapped:
+            mapped["valdtls"] = mapped.get("valdt1") or {}
 
         # Date normalization
         if "docdt" in mapped:
@@ -1429,11 +1453,12 @@ class InvoicePayload(BaseModel):
         }
         if self.expdt1:
             out["expdt1"] = self.expdt1.to_nic_dict()
-        out["docdt1"] = {
+        out["docdtl"] = {
             "document_type": self.document_type,
             "docno": self.docno,
             "docdt": self.docdt.strftime("%d-%m-%Y")
         }
+        out["docdt1"] = out["docdtl"]
         out["supplierdt1"] = self.supplier.to_nic_dict("supplier_")
         out["buyerdt1"] = self.buyer.to_nic_dict("buyer_")
         if self.buyer.pos:
@@ -1467,12 +1492,16 @@ class InvoicePayload(BaseModel):
         return self.to_ewb_payload()
 
     @classmethod
-    def auto_correct_and_build(cls, raw_invoice: Dict[str, Any]) -> Tuple["InvoicePayload", List[Dict[str, Any]]]:
+    def auto_correct_and_build(cls, raw_invoice: Dict[str, Any], taxable_value_input: Optional[Union[float, Decimal, Dict[str, Any]]] = None) -> Tuple["InvoicePayload", List[Dict[str, Any]]]:
         """
         Cleanses dirty keys (OCR typos), aligns business rules, normalizes formats,
-        reconciles tax calculations, and records an exhaustive transformation audit trail.
+        matches official HSN codes from Final_hsn_sac_copy.xlsx, reconciles statutory tax rates,
+        supports user taxable value overrides, and records an exhaustive transformation audit trail.
         """
         audit_log: List[Dict[str, Any]] = []
+
+        if taxable_value_input is None and isinstance(raw_invoice, dict):
+            taxable_value_input = raw_invoice.get("taxable_value_input") or raw_invoice.get("custom_taxable_value") or raw_invoice.get("override_taxable_value")
 
         # Handle wrapped batch payloads: {"einvoices": [...]} or list
         if isinstance(raw_invoice, dict) and "einvoices" in raw_invoice:
@@ -1516,9 +1545,13 @@ class InvoicePayload(BaseModel):
             except Exception:
                 return "0.00"
 
-        # 2. Date normalizations
-        docdt1 = cleaned_data.get("docdt1") or cleaned_data
-        raw_docdt = docdt1.get("docdt")
+        # 2. Date and Document normalizations
+        doc_sec = cleaned_data.get("docdt1") or cleaned_data.get("docdtl") or cleaned_data
+        raw_docno = doc_sec.get("docno")
+        if raw_docno:
+            cleaned_data["docno"] = str(raw_docno).strip()
+
+        raw_docdt = doc_sec.get("docdt")
         if raw_docdt and isinstance(raw_docdt, str):
             p_dt = parse_date_universal(raw_docdt)
             if p_dt:
@@ -1531,7 +1564,21 @@ class InvoicePayload(BaseModel):
                         "corrected": std_docdt,
                         "description": f"Standardized date format from '{raw_docdt}' to '{std_docdt}'"
                     })
-                docdt1["docdt"] = p_dt.isoformat()
+                doc_sec["docdt"] = p_dt.isoformat()
+                cleaned_data["docdt"] = p_dt.isoformat()
+
+                # NIC 2-Day rule compliance advisory
+                dt_obj = p_dt.date() if isinstance(p_dt, datetime) else p_dt
+                days_diff = (date.today() - dt_obj).days
+                irn_req = str(cleaned_data.get("irnreq", "Y")).strip().upper()
+                if days_diff > 2 and irn_req == "Y":
+                    audit_log.append({
+                        "category": "NIC_RULE_DATE_RESTRICTION",
+                        "field": "docdt1.docdt",
+                        "original": std_docdt,
+                        "corrected": std_docdt,
+                        "description": f"NIC 2-day rule violation: Document date '{std_docdt}' is {days_diff} days old. IRN cannot be generated or changed. Prompt: change the date."
+                    })
 
         expdt1 = cleaned_data.get("expdt1")
         if isinstance(expdt1, dict) and expdt1.get("shipbdt"):
@@ -1584,6 +1631,39 @@ class InvoicePayload(BaseModel):
 
         for idx, itm in enumerate(items, start=1):
             if isinstance(itm, dict):
+                p_name = itm.get("prdnm", f"ITEM_{idx}")
+                p_desc = itm.get("prddesc", p_name)
+                curr_hsn = str(itm.get("hsncd", itm.get("hsn", "")) or "").strip()
+                orig_hsn_input = curr_hsn
+                hsn_stat_rate = None
+                if lookup_hsn_code:
+                    needs_lookup = not curr_hsn or len(curr_hsn) not in [4, 6, 8] or len(curr_hsn) < 4
+                    matches = lookup_hsn_code(p_name, p_desc, hsn_prefix=curr_hsn if len(curr_hsn) in [2, 3, 4] else None, top_k=3)
+                    if matches:
+                        best = matches[0]
+                        matched_hsn = best["hsn_code"]
+                        if needs_lookup or (curr_hsn and not matched_hsn.startswith(curr_hsn[:2]) and not curr_hsn.startswith(matched_hsn[:2])):
+                            hsn_stat_rate = Decimal(str(best.get("gst_rate", 18.0)))
+                            audit_log.append({
+                                "category": "HSN_TARIFF_SCHEDULE_LOOKUP",
+                                "field": f"itemdtls[{idx}].hsncd",
+                                "original": orig_hsn_input or "(blank)",
+                                "corrected": matched_hsn,
+                                "description": f"⚠️ Wrong HSN Code Detected: Customer entered '{orig_hsn_input or '(blank)'}', which is not the correct statutory code for '{p_name}' ('{p_desc}'). Based on Final_hsn_sac_copy.xlsx, the correct official HSN is '{matched_hsn}' ({best.get('description', '')[:50]}...) with statutory {hsn_stat_rate}% GST. Auto-corrected to ensure NIC IRN compliance."
+                            })
+                            audit_log.append({
+                                "category": "WRONG_HSN_CODE_DETECTED",
+                                "field": f"itemdtls[{idx}].hsncd",
+                                "original": orig_hsn_input or "(blank)",
+                                "corrected": matched_hsn,
+                                "description": f"⚠️ Wrong HSN Code Detected: Customer entered '{orig_hsn_input or '(blank)'}', which is not the correct statutory code for '{p_name}' ('{p_desc}'). Based on Final_hsn_sac_copy.xlsx, the correct official HSN is '{matched_hsn}' ({best.get('description', '')[:50]}...) with statutory {hsn_stat_rate}% GST. Auto-corrected to ensure NIC IRN compliance."
+                            })
+                            itm["hsncd"] = matched_hsn
+                            itm["hsn"] = matched_hsn
+                            curr_hsn = matched_hsn
+                        elif hsn_stat_rate is None:
+                            hsn_stat_rate = Decimal(str(best.get("gst_rate", 18.0)))
+
                 itm["qty"] = _clean_dec(itm.get("qty", "1.00"), f"itemdtls[{idx}].qty")
                 itm["unitprice"] = _clean_dec(itm.get("unitprice", itm.get("unitrate", "0.00")), f"itemdtls[{idx}].unitprice")
                 itm["totamt"] = _clean_dec(itm.get("totamt", itm.get("grossamt", "0.00")), f"itemdtls[{idx}].grossamt")
@@ -1624,21 +1704,68 @@ class InvoicePayload(BaseModel):
                     })
                     itm["assval"] = str(exp_ass)
 
+                # User taxable value input option override
+                override_assamt = None
+                if taxable_value_input is not None:
+                    if isinstance(taxable_value_input, (int, float, Decimal, str)) and str(taxable_value_input).strip():
+                        override_assamt = Decimal(_clean_dec(taxable_value_input, f"itemdtls[{idx}].assval"))
+                    elif isinstance(taxable_value_input, dict):
+                        if idx in taxable_value_input or str(idx) in taxable_value_input:
+                            v = taxable_value_input.get(idx, taxable_value_input.get(str(idx)))
+                            override_assamt = Decimal(_clean_dec(v, f"itemdtls[{idx}].assval"))
+                        elif "assval" in taxable_value_input or "assamt" in taxable_value_input:
+                            override_assamt = Decimal(_clean_dec(taxable_value_input.get("assval", taxable_value_input.get("assamt")), f"itemdtls[{idx}].assval"))
+                elif itm.get("custom_taxable_value") or itm.get("taxable_value_input"):
+                    v = itm.get("custom_taxable_value") or itm.get("taxable_value_input")
+                    override_assamt = Decimal(_clean_dec(v, f"itemdtls[{idx}].assval"))
+
+                if override_assamt is not None and override_assamt > Decimal("0.00"):
+                    if abs(Decimal(itm["assval"]) - override_assamt) > Decimal("0.01"):
+                        audit_log.append({
+                            "category": "TAXABLE_VALUE_MODIFICATION",
+                            "field": f"itemdtls[{idx}].assval",
+                            "original": itm["assval"],
+                            "corrected": str(override_assamt),
+                            "description": f"Applied user-provided taxable value input option Rs {override_assamt} and recalculated statutory taxes."
+                        })
+                    itm["assval"] = str(override_assamt)
+
+                # Supply context: Intra vs Inter state
+                sup_state = str(cleaned_data.get("supplierdt1", {}).get("supplier_state", "") or (cleaned_data.get("self_gstin", "")[:2] if len(cleaned_data.get("self_gstin", "")) >= 2 else "")).strip()
+                buyer_sec = cleaned_data.get("buyerdt1") or cleaned_data.get("buyer") or {}
+                pos = str(buyer_sec.get("buyer_pos", "") or buyer_sec.get("pos", "") or buyer_sec.get("buyer_state", "") or "").strip()
+                igstonintra = str(cleaned_data.get("trandt1", {}).get("igstonintra", "N")).strip().upper()
+                is_intra = (sup_state == pos and igstonintra != "Y") if (sup_state and pos) else True
+
+                ass_d = Decimal(itm["assval"])
+                if hsn_stat_rate is not None:
+                    stat_gst = hsn_stat_rate
+                elif Decimal(itm.get("igstval", "0.00")) > 0:
+                    stat_gst = (Decimal(itm["igstval"]) * Decimal("100") / ass_d).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if ass_d > 0 else Decimal("18.00")
+                elif Decimal(itm.get("cgstval", "0.00")) > 0:
+                    stat_gst = (Decimal(itm["cgstval"]) * Decimal("200") / ass_d).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if ass_d > 0 else Decimal("18.00")
+                else:
+                    stat_gst = Decimal("18.00")
+
+                if is_intra:
+                    cgst_d = (ass_d * (stat_gst / Decimal("2")) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    sgst_d = cgst_d
+                    itm["cgstval"] = str(cgst_d)
+                    itm["sgstval"] = str(sgst_d)
+                    itm["igstval"] = "0.00"
+                else:
+                    igst_d = (ass_d * stat_gst / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    itm["igstval"] = str(igst_d)
+                    itm["cgstval"] = "0.00"
+                    itm["sgstval"] = "0.00"
+
                 # Auto-reconcile total item value: totitemval = assval + taxes
                 exp_totitem = (
-                    Decimal(itm["assval"]) + Decimal(itm["cgstval"]) + Decimal(itm["sgstval"]) +
+                    ass_d + Decimal(itm["cgstval"]) + Decimal(itm["sgstval"]) +
                     Decimal(itm["igstval"]) + Decimal(itm["cesval"]) + Decimal(itm["statecesval"]) +
                     Decimal(itm["cesnonadvl"])
                 ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                if abs(Decimal(itm["totitemval"]) - exp_totitem) > Decimal("0.05"):
-                    audit_log.append({
-                        "category": "ITEM_TOTALS_RECONCILIATION",
-                        "field": f"itemdtls[{idx}].totitemval",
-                        "original": itm["totitemval"],
-                        "corrected": str(exp_totitem),
-                        "description": f"Reconciled Total Item Value with Taxable + Taxes (Rule 2194)"
-                    })
-                    itm["totitemval"] = str(exp_totitem)
+                itm["totitemval"] = str(exp_totitem)
 
                 total_assamt += Decimal(itm["assval"])
                 total_cgst += Decimal(itm["cgstval"])
@@ -1699,37 +1826,84 @@ class InvoicePayload(BaseModel):
                 cleaned_data["reversecharge"] = "N"
 
         # 6. Instantiate and validate model
-        model = cls.model_validate(cleaned_data)
+        try:
+            model = cls.model_validate(cleaned_data)
+        except PydanticValidationError:
+            try:
+                sup_d = cleaned_data.get("supplier") or {}
+                buy_d = cleaned_data.get("buyer") or {}
+                val_d = cleaned_data.get("valdtls") or {}
+                ewb_d = cleaned_data.get("ewbdt1")
+                doc_no = cleaned_data.get("docno") or (cleaned_data.get("docdt1", {}).get("docno") if isinstance(cleaned_data.get("docdt1"), dict) else "INV")
+                doc_dt = cleaned_data.get("docdt")
+                if isinstance(doc_dt, str):
+                    doc_dt = parse_date_universal(doc_dt) or date.today()
+                elif not isinstance(doc_dt, date):
+                    doc_dt = date.today()
+
+                explicit_keys = {
+                    "self_gstin", "system_cd", "branch_cd", "vertical_cd", "irnreq",
+                    "trancatg", "reversecharge", "transactionmode", "igstonintra",
+                    "document_type", "docno", "docdt", "supplier", "buyer", "itemdtls",
+                    "valdtls", "ewbdt1"
+                }
+                extra_kwargs = {k: v for k, v in cleaned_data.items() if k not in explicit_keys}
+
+                model = cls.model_construct(
+                    self_gstin=cleaned_data.get("self_gstin", ""),
+                    system_cd=cleaned_data.get("system_cd", "SAP_ERP"),
+                    branch_cd=cleaned_data.get("branch_cd", "BLR01"),
+                    vertical_cd=cleaned_data.get("vertical_cd", "DOM"),
+                    irnreq=cleaned_data.get("irnreq", "Y"),
+                    trancatg=cleaned_data.get("trancatg", "B2B"),
+                    reversecharge=cleaned_data.get("reversecharge", "N"),
+                    transactionmode=cleaned_data.get("transactionmode", "REG"),
+                    igstonintra=cleaned_data.get("igstonintra", "N"),
+                    document_type=cleaned_data.get("document_type", "INV"),
+                    docno=doc_no,
+                    docdt=doc_dt,
+                    supplier=Counterparty.model_construct(**sup_d) if sup_d else None,
+                    buyer=Counterparty.model_construct(**buy_d) if buy_d else None,
+                    itemdtls=[LineItem.model_construct(**itm) for itm in cleaned_data.get("itemdtls", [])],
+                    valdtls=TaxBreakup.model_construct(**val_d) if val_d else None,
+                    ewbdt1=EWayBillPayload.model_construct(**ewb_d) if ewb_d else None,
+                    **extra_kwargs
+                )
+            except Exception:
+                model = cls.model_construct(**cleaned_data)
+
+            if not hasattr(model, "docno") or not model.docno:
+                object.__setattr__(model, "docno", cleaned_data.get("docno") or "INV")
+
+            try:
+                object.__setattr__(model, "_raw_cleaned", cleaned_data)
+            except Exception:
+                pass
+
         return model, audit_log
 
     @classmethod
-    def validate_and_diagnose(cls, raw_data: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_and_diagnose(cls, raw_data: Dict[str, Any], reference_date: Optional[Union[str, date]] = None) -> Dict[str, Any]:
         """
         Validates invoice against all NIC IRN/EWB rules and returns a structured diagnosis
         report with exact NIC error codes, reasons, and resolutions.
+        Enforces NIC 2-day rule: docdt cannot be older than 2 days.
         """
         docno = (
-            raw_data.get("docdt1", {}).get("docno")
+            raw_data.get("docdtl", {}).get("docno")
+            or (raw_data.get("docdt1", {}).get("docno") if isinstance(raw_data.get("docdt1"), dict) else None)
             or raw_data.get("docno")
             or "UNKNOWN_DOC"
         )
+        model = None
+        err_list: List[Dict[str, Any]] = []
+
         try:
             model = cls.model_validate(raw_data)
-            return {
-                "invoice_number": str(docno),
-                "status": "VALID",
-                "error_count": 0,
-                "errors": [],
-                "model": model
-            }
         except PydanticValidationError as pve:
-            err_list: List[Dict[str, Any]] = []
             for err in pve.errors():
                 loc = ".".join(str(p) for p in err["loc"])
                 msg = err["msg"]
-                ctx = err.get("ctx", {})
-
-                # Extract NIC code if embedded in error message
                 code_match = re.search(r"\[NIC-(\d+)\]\s*(.*)", msg)
                 if code_match:
                     code = int(code_match.group(1))
@@ -1747,13 +1921,26 @@ class InvoicePayload(BaseModel):
                     "resolution": nic_info.get("resolution", "")
                 })
 
-            return {
-                "invoice_number": str(docno),
-                "status": "INVALID",
-                "error_count": len(err_list),
-                "errors": err_list,
-                "model": None
-            }
+        # Check NIC 2-Day rule
+        raw_docdt = (
+            raw_data.get("docdt")
+            or (raw_data.get("docdt1", {}).get("docdt") if isinstance(raw_data.get("docdt1"), dict) else None)
+            or (raw_data.get("docdtl", {}).get("docdt") if isinstance(raw_data.get("docdtl"), dict) else None)
+        )
+        irn_req = str(raw_data.get("irnreq", "Y")).strip().upper()
+        if validate_nic_2day_rule and raw_docdt and irn_req == "Y":
+            date_err = validate_nic_2day_rule(raw_docdt, reference_date=reference_date)
+            if date_err:
+                err_list.append(date_err)
+
+        status = "VALID" if len(err_list) == 0 and model is not None else "FAILED"
+        return {
+            "invoice_number": str(docno),
+            "status": status,
+            "error_count": len(err_list),
+            "errors": err_list,
+            "model": model
+        }
 
 
 class InvoiceBatchPayload(BaseModel):

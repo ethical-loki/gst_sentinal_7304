@@ -208,18 +208,24 @@ def build_audit_records_and_csv(validation_report: Dict[str, Any]) -> Tuple[List
     return records, output_io.getvalue()
 
 
-def convert_and_validate_in_memory(raw_payload: Union[Dict[str, Any], List[Any], str]) -> Dict[str, Any]:
+def convert_and_validate_in_memory(
+    raw_payload: Union[Dict[str, Any], List[Any], str],
+    taxable_value_input: Optional[Union[float, Decimal, Dict[str, Any]]] = None
+) -> Dict[str, Any]:
     """
     In-memory transformation & validation engine using native Pydantic v2 schemas:
     1. Parses JSON if string.
     2. Identifies batch vs single invoice.
-    3. Runs InvoicePayload.auto_correct_and_build for each invoice.
-    4. Runs InvoicePayload.validate_and_diagnose.
+    3. Runs InvoicePayload.auto_correct_and_build for each invoice (with HSN matching & taxable value option).
+    4. Runs InvoicePayload.validate_and_diagnose (including NIC 2-day date check).
     5. Calculates valuation aggregates and metrics.
     6. Returns complete structured conversion artifact dictionary.
     """
     if isinstance(raw_payload, str):
         raw_payload = json.loads(raw_payload.strip())
+
+    if taxable_value_input is None and isinstance(raw_payload, dict):
+        taxable_value_input = raw_payload.get("taxable_value_input") or raw_payload.get("custom_taxable_value")
 
     # Detect batch vs single
     if isinstance(raw_payload, dict) and "einvoices" in raw_payload:
@@ -254,7 +260,9 @@ def convert_and_validate_in_memory(raw_payload: Union[Dict[str, Any], List[Any],
 
     for idx, raw_inv in enumerate(raw_invoices, start=1):
         try:
-            corrected_model, corrections = InvoicePayload.auto_correct_and_build(raw_inv)
+            corrected_model, corrections = InvoicePayload.auto_correct_and_build(
+                raw_inv, taxable_value_input=taxable_value_input
+            )
             all_models.append(corrected_model)
             transformation_audits.append({"corrections": corrections})
             total_corrections += len(corrections)
@@ -264,7 +272,14 @@ def convert_and_validate_in_memory(raw_payload: Union[Dict[str, Any], List[Any],
                 category_counts[cat] = category_counts.get(cat, 0) + 1
 
             # Validate against official NIC business rules
-            diag = InvoicePayload.validate_and_diagnose(corrected_model.to_payload())
+            cleaned_dict = getattr(corrected_model, "_raw_cleaned", None)
+            if not cleaned_dict:
+                try:
+                    cleaned_dict = corrected_model.to_payload()
+                except Exception:
+                    cleaned_dict = raw_inv
+
+            diag = InvoicePayload.validate_and_diagnose(cleaned_dict)
             status = "VALID" if diag["status"] == "VALID" and len(diag["errors"]) == 0 else "FAILED"
             if status == "VALID":
                 valid_count += 1
@@ -280,31 +295,41 @@ def convert_and_validate_in_memory(raw_payload: Union[Dict[str, Any], List[Any],
                 "corrections_applied": corrections
             }
             validation_results.append(val_res)
-            all_nic_payloads.append(corrected_model.to_nic_payload())
-            all_ewb_payloads.append(corrected_model.to_standalone_ewb())
+            try:
+                all_nic_payloads.append(corrected_model.to_nic_payload())
+                all_ewb_payloads.append(corrected_model.to_standalone_ewb())
+            except Exception:
+                pass
 
             # Aggregate financial valuation
-            v = corrected_model.valdtls
-            ttlassval += float(v.assval)
-            cgstval += float(v.cgstval)
-            sgstval += float(v.sgstval)
-            igstval += float(v.igstval)
-            totinvval += float(v.totinvval)
+            try:
+                v = corrected_model.valdtls
+                if v:
+                    ttlassval += float(v.assval or 0.0)
+                    cgstval += float(v.cgstval or 0.0)
+                    sgstval += float(v.sgstval or 0.0)
+                    igstval += float(v.igstval or 0.0)
+                    totinvval += float(v.totinvval or 0.0)
+            except Exception:
+                pass
 
         except Exception as e:
             failed_count += 1
             err_msg = str(e)
+            diag = InvoicePayload.validate_and_diagnose(raw_inv)
+            diag_errs = diag.get("errors", [])
+            errors = diag_errs if diag_errs else [{
+                "error_code": 9999,
+                "field": "root",
+                "message": err_msg,
+                "reason": "Payload schema parsing exception",
+                "resolution": "Check JSON structure conforms to NIC E-Invoice format"
+            }]
             val_res = {
                 "invoice_number": raw_inv.get("docno") or f"Invoice #{idx}",
                 "status": "FAILED",
-                "error_count": 1,
-                "errors": [{
-                    "error_code": 9999,
-                    "field": "root",
-                    "message": err_msg,
-                    "reason": "Payload schema parsing exception",
-                    "resolution": "Check JSON structure conforms to NIC E-Invoice format"
-                }],
+                "error_count": len(errors),
+                "errors": errors,
                 "corrections_applied_count": 0,
                 "corrections_applied": [],
                 "model": None
@@ -312,12 +337,21 @@ def convert_and_validate_in_memory(raw_payload: Union[Dict[str, Any], List[Any],
             validation_results.append(val_res)
 
     # Build clean payload document
+    def get_model_payload(m):
+        raw = getattr(m, "_raw_cleaned", None)
+        if raw:
+            return raw
+        try:
+            return m.to_payload()
+        except Exception:
+            return {}
+
     if is_batch or len(all_models) > 1:
-        corrected_payload = {"einvoices": [m.to_payload() for m in all_models]}
+        corrected_payload = {"einvoices": [get_model_payload(m) for m in all_models]}
         nic_irp_payload = {"einvoices": all_nic_payloads}
         standalone_ewb_payload = {"ewb_bills": all_ewb_payloads}
     else:
-        corrected_payload = all_models[0].to_payload() if all_models else raw_payload
+        corrected_payload = get_model_payload(all_models[0]) if all_models else raw_payload
         nic_irp_payload = all_nic_payloads[0] if all_nic_payloads else {}
         standalone_ewb_payload = all_ewb_payloads[0] if all_ewb_payloads else {}
 
@@ -406,7 +440,8 @@ def process_and_convert_payload(
     output_validation_report_file: str = "validation_report.json",
     output_csv_file: str = "correction_audit_report.csv",
     output_txt_file: str = "audit_summary.txt",
-    persist_to_lakehouse: bool = True
+    persist_to_lakehouse: bool = True,
+    taxable_value_input: Optional[Union[float, Decimal, Dict[str, Any]]] = None
 ) -> Dict[str, Any]:
     """
     Main ingestion pipeline entry point:
@@ -429,7 +464,7 @@ def process_and_convert_payload(
 
     # Execute in-memory schema conversion and validation
     print("[PROCESSING] Ingesting & auto-correcting dirty keys, formats, and re-calculating tax math...")
-    res = convert_and_validate_in_memory(raw_data)
+    res = convert_and_validate_in_memory(raw_data, taxable_value_input=taxable_value_input)
 
     corrected_payload = res["corrected_payload"]
     validation_report = res["validation_report"]

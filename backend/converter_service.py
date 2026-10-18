@@ -16,6 +16,7 @@ import urllib.error
 import urllib.parse
 from pathlib import Path
 from typing import Dict, Any, List, Union, Tuple, Optional
+from datetime import datetime, date, timedelta
 
 # Ensure Template_Converters directory is on sys.path
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -58,20 +59,34 @@ except ImportError as e:
 
 
 def load_default_sample_dirty() -> Dict[str, Any]:
-    """Loads default dirty customer input sample from Template_Converters or project root."""
+    """Loads default dirty customer input sample from Template_Converters or project root, keeping dates fresh."""
     sample_paths = [
         TEMPLATE_CONVERTERS_DIR / "dirty_customer_input.json",
         BASE_DIR / "dirty_customer_input.json"
     ]
+    data = None
     for p in sample_paths:
         if p.exists():
             try:
                 with open(p, "r", encoding="utf-8") as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    break
             except Exception:
                 pass
-    # If not found on disk, generate a fresh dynamic batch
-    return generate_dynamic_dirty_payload(count=2)
+    if not data:
+        data = generate_dynamic_dirty_payload(count=2)
+
+    # Keep dates within statutory 2-day window for default sample testing
+    try:
+        from datetime import datetime, timedelta
+        fresh_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        for inv in data.get("einvoices", []):
+            if isinstance(inv.get("docdt1"), dict) and "docdt" in inv["docdt1"]:
+                inv["docdt1"]["docdt"] = fresh_date
+    except Exception:
+        pass
+
+    return data
 
 
 def generate_random_dirty(count: int = 1) -> Dict[str, Any]:
@@ -1379,6 +1394,18 @@ def extract_vehicle_number(text: str) -> Optional[str]:
     return None
 
 
+def parse_date_universal(val: str) -> Optional[datetime]:
+    if not val:
+        return None
+    val = str(val).strip()
+    for fmt in ["%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d", "%Y.%m.%d", "%d.%m.%Y"]:
+        try:
+            return datetime.strptime(val, fmt)
+        except ValueError:
+            pass
+    return None
+
+
 # =========================================================================
 # AI COMPLIANCE COPILOT & REAL-TIME INTERACTIVE AUDITOR
 # =========================================================================
@@ -1561,15 +1588,42 @@ def process_converter_chat(
             return prompt_text, ["Set Mode: REG", "Set Mode: DIS", "Set Mode: SHP", "Set Mode: CMB"]
 
         # 4. Product Line Items / HSN Code
-        if any("hsn" in f for f in flds) or any(str(e.get("error_code")) == "2176" for e in err_list):
-            items_list = target_invoice.get("itemdtls", target_invoice.get("items", []))
-            first_prd = items_list[0].get("prdnm", "item") if items_list else "your product"
-            prompt_text = (
-                f"👉 **Quick Question on Products:**\n\n"
-                f"Item **'{first_prd}'** has an incomplete HSN code.\n"
-                "Should I auto-fetch the official HSN code from the government `Final_hsn_sac_copy` master data based on your product description?"
-            )
-            return prompt_text, ["Fix HSN from product description"]
+        items_list = target_invoice.get("itemdtls", target_invoice.get("items", []))
+        has_hsn_err = any("hsn" in f for f in flds) or any(str(e.get("error_code")) in ["2176", "2285"] and "hsn" in str(e.get("field", "")).lower() for e in err_list)
+        wrong_hsn_info = None
+        for it in items_list:
+            p_nm = str(it.get("prdnm", "")).strip()
+            p_desc = str(it.get("prddesc", p_nm)).strip()
+            h_cd = re.sub(r"[^0-9]", "", str(it.get("hsncd", it.get("hsn", "")) or ""))
+            if p_nm or p_desc:
+                m_list = lookup_hsn_by_description(p_nm, p_desc, top_k=1)
+                if m_list:
+                    best_h = m_list[0]["hsn_code"]
+                    if not h_cd or len(h_cd) < 4 or (not best_h.startswith(h_cd[:2]) and not h_cd.startswith(best_h[:2])):
+                        wrong_hsn_info = (p_nm, p_desc, h_cd, best_h, m_list[0].get("description", ""), m_list[0].get("igst_rate", 18.0))
+                        break
+
+        if has_hsn_err or wrong_hsn_info:
+            if wrong_hsn_info:
+                p_nm, p_desc, curr_h, correct_h, correct_desc, correct_rate = wrong_hsn_info
+                prompt_text = (
+                    f"👉 **Quick Question on Product HSN:**\n\n"
+                    f"⚠️ **Wrong HSN Code Detected:** You entered `{curr_h or '(blank)'}` for **'{p_nm}'**.\n"
+                    f"Based on product description *'{p_desc}'*, the official tariff in `Final_hsn_sac_copy.xlsx` is **`{correct_h}`** (*{correct_desc[:50]}*) at **{correct_rate}% GST**.\n\n"
+                    "Would you like to auto-correct this HSN code?"
+                )
+                return prompt_text, [f"Set HSN: {correct_h}", "Fix HSN from product description"]
+            else:
+                first_prd = items_list[0].get("prdnm", "item") if items_list else "your product"
+                curr_h = str(items_list[0].get("hsncd", items_list[0].get("hsn", "")) or "").strip() if items_list else ""
+                desc = items_list[0].get("prddesc", first_prd) if items_list else ""
+                prompt_text = (
+                    f"👉 **Quick Question on Products:**\n\n"
+                    f"⚠️ **Wrong / Incomplete HSN Code Detected:** You entered HSN `{curr_h or '(blank)'}` for **'{first_prd}'**.\n"
+                    f"Based on product description *'{desc}'*, this is not the correct statutory tariff code.\n\n"
+                    "Should I auto-resolve the correct official HSN code and statutory tax rates from `Final_hsn_sac_copy.xlsx`?"
+                )
+                return prompt_text, ["Fix HSN from product description"]
 
         # 5. Vehicle Number (Road Transit)
         curr_veh = target_invoice.get("veh_number", target_invoice.get("ewbdt1", {}).get("veh_number", ""))
@@ -1721,7 +1775,25 @@ def process_converter_chat(
                     f"`{ae.get('field', '')}` cannot be blank.\n\n"
                     "Click below to set or reply with your city:"
                 )
-                return prompt_text, [f"Set {role} Location: {sugg_loc}", f"Set {role} Location: Mumbai", f"Set {role} Location: Bengaluru"]
+                return prompt_text, [f"Set {role} City: {sugg_loc}"]
+
+        # 10C. Document Date & NIC 2-Day IRN Rule (Error 2164 / docdt / docat)
+        date_errs = [e for e in err_list if e.get("error_code") == 2164 or any(k in str(e.get("field", "")).lower() for k in ["docdt", "doc_dt", "docat", "invoicedate", "invoice_date"])]
+        if date_errs:
+            de = date_errs[0]
+            today_iso = datetime.now().strftime("%Y-%m-%d")
+            yesterday_iso = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+            prompt_text = (
+                f"👉 **Quick Question on [{de.get('field', 'docdt1.docdt')}]:**\n\n"
+                f"{de.get('message', '')}\n\n"
+                f"💡 **Action Required:** Change the document date to a compliant date within the last 2 days ({today_iso}):\n\n"
+                "*Click an option below or use the date picker to change the date:*"
+            )
+            return prompt_text, [
+                f"Change date to Today ({today_iso})",
+                f"Change date to Yesterday ({yesterday_iso})",
+                f"Set date: {today_iso}"
+            ]
 
         # 11. Fallback first single error
         if err_list:
@@ -1738,6 +1810,12 @@ def process_converter_chat(
                 fb_actions = ["Set Supplier PIN: 400001", "Set Buyer PIN: 560001", "Set Supplier State: 27"]
             elif any(k in f_lower for k in ["tax", "val", "tot", "assamt", "sum"]):
                 fb_actions = ["Rebalance tax math and invoice value", "Keep manual total"]
+            elif any(k in f_lower for k in ["date", "docdt", "doc_dt", "docat", "inv_date", "invoicedate"]):
+                today_iso = datetime.now().strftime("%Y-%m-%d")
+                yesterday_iso = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+                fb_actions = [f"Change date to Today ({today_iso})", f"Change date to Yesterday ({yesterday_iso})", f"Set date: {today_iso}"]
+            elif any(k in f_lower for k in ["hsn", "sac", "item"]):
+                fb_actions = ["Fix HSN from product description"]
             elif any(k in f_lower for k in ["ewb", "eway", "veh", "trans", "subsupply"]):
                 fb_actions = ["Disable E-Way Bill", "Vehicle is KA01AB1234", "Verify vehicle number"]
             elif any(k in f_lower for k in ["gstin"]):
@@ -1886,6 +1964,51 @@ def process_converter_chat(
                 "🎉 **Done! Set to Business-to-Government (B2G).**\n\n"
                 "• Category set to `B2G` for Government agency supplies."
             )
+
+    # -------------------------------------------------------------
+    # INTENT 1B: Update Document Date (docdt) / NIC 2-Day Rule Compliance
+    # Supports "Change date to Today", "Set date: YYYY-MM-DD", "change the date", etc.
+    # -------------------------------------------------------------
+    date_to_set = None
+    today_dt = datetime.now()
+    today_str = today_dt.strftime("%Y-%m-%d")
+    yesterday_str = (today_dt - timedelta(days=1)).strftime("%Y-%m-%d")
+
+    if any(k in msg_lower for k in ["change date to today", "set date to today", "date to today", "change to today", "set to today"]):
+        date_to_set = today_str
+    elif any(k in msg_lower for k in ["change date to yesterday", "set date to yesterday", "date to yesterday", "yesterday"]):
+        date_to_set = yesterday_str
+    elif any(k in msg_lower for k in ["change the date", "change date", "fix date", "set date", "prompt: change the date", "update date"]):
+        # Check if user provided an explicit date in the prompt or just asked to change date
+        m_d = re.search(r"\b(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2}[-/]\d{4})\b", user_message.strip())
+        if m_d:
+            parsed_d = parse_date_universal(m_d.group(1))
+            if parsed_d:
+                date_to_set = parsed_d.strftime("%Y-%m-%d")
+        else:
+            date_to_set = today_str
+    else:
+        # Check if user replied with just a date string (e.g. 2026-10-18 or 18/10/2026)
+        m_d = re.search(r"^\s*(\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2}[-/]\d{4})\s*$", user_message.strip())
+        if m_d:
+            parsed_d = parse_date_universal(m_d.group(1))
+            if parsed_d:
+                date_to_set = parsed_d.strftime("%Y-%m-%d")
+
+    if date_to_set:
+        target_inv["docdt"] = date_to_set
+        if "docdt1" in target_inv and isinstance(target_inv["docdt1"], dict):
+            target_inv["docdt1"]["docdt"] = date_to_set
+        if "docdtl" in target_inv and isinstance(target_inv["docdtl"], dict):
+            target_inv["docdtl"]["docdt"] = date_to_set
+
+        patch_applied = True
+        patch_summary.append(f"Updated document date to {date_to_set} (NIC Rule 2164 Compliant)")
+        reply_lines.append(
+            f"📅 **Successfully updated document date to `{date_to_set}`!**\n\n"
+            f"• **New Document Date:** `{date_to_set}` (Compliant with NIC 2-day IRN rule)\n"
+            "• **NIC Compliance:** IRN generation is now unrestricted and compliant for this invoice date.\n"
+        )
 
     # -------------------------------------------------------------
     # INTENT 2: Update Transaction Mode (transactionmode)

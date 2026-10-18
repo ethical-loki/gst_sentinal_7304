@@ -147,14 +147,16 @@ def process_and_convert_payload(
     output_corrected_file: str = "corrected_payload.json",
     output_validation_report_file: str = "validation_report.json",
     output_csv_file: str = "correction_audit_report.csv",
-    output_txt_file: str = "audit_summary.txt"
+    output_txt_file: str = "audit_summary.txt",
+    taxable_value_input: Optional[Union[float, Decimal, Dict[str, Any]]] = None
 ) -> Dict[str, Any]:
     """
     Main pipeline entry point:
     1. Reads customer input payload file.
-    2. Auto-corrects dirty keys, normalizes values, recalculates tax math,
+    2. Auto-corrects dirty keys, normalizes values, matches HSN from Final_hsn_sac_copy.xlsx,
+       applies statutory tax rates, recalculates tax math (supporting user taxable value option),
        and builds an exhaustive transformation audit trail.
-    3. Runs comprehensive NIC IRN and EWB validation checks.
+    3. Runs comprehensive NIC IRN and EWB validation checks (including the 2-day IRN rule).
     4. Exports clean JSON, validation report, Excel-compatible CSV, and formatted text summary.
     """
     if not os.path.exists(input_file):
@@ -169,8 +171,10 @@ def process_and_convert_payload(
             raise
 
     # Step 1: Auto-correct and build clean payload + transformation audit trail
-    print("[PROCESSING] Normalizing dirty keys, formats, and re-calculating tax math...")
-    corrected_payload, transformation_audits = PayloadBuilder.convert_payload_document_with_audit(raw_data)
+    print("[PROCESSING] Normalizing dirty keys, formats, matching HSN, and re-calculating tax math...")
+    corrected_payload, transformation_audits = PayloadBuilder.convert_payload_document_with_audit(
+        raw_data, taxable_value_input=taxable_value_input
+    )
 
     # Step 2: Validate against official NIC business rules
     print("[VALIDATING] Checking against official NIC IRN & EWB compliance rules...")
@@ -223,10 +227,25 @@ if __name__ == "__main__":
         from generate_sample_dirty_input import generate_dirty_input_file
         generate_dirty_input_file(default_input)
 
-    input_path = sys.argv[1] if len(sys.argv) > 1 else default_input
-    output_path = sys.argv[2] if len(sys.argv) > 2 else default_corrected
-    report_path = sys.argv[3] if len(sys.argv) > 3 else default_report
-    csv_path = sys.argv[4] if len(sys.argv) > 4 else default_csv
-    txt_path = sys.argv[5] if len(sys.argv) > 5 else default_txt
+    input_path = sys.argv[1] if len(sys.argv) > 1 and not sys.argv[1].startswith("--") else default_input
+    output_path = sys.argv[2] if len(sys.argv) > 2 and not sys.argv[2].startswith("--") else default_corrected
+    report_path = sys.argv[3] if len(sys.argv) > 3 and not sys.argv[3].startswith("--") else default_report
+    csv_path = sys.argv[4] if len(sys.argv) > 4 and not sys.argv[4].startswith("--") else default_csv
+    txt_path = sys.argv[5] if len(sys.argv) > 5 and not sys.argv[5].startswith("--") else default_txt
 
-    process_and_convert_payload(input_path, output_path, report_path, csv_path, txt_path)
+    cli_tax_input = None
+    for arg in sys.argv[1:]:
+        if arg.startswith("--taxable-value="):
+            try:
+                cli_tax_input = float(arg.split("=")[1])
+            except ValueError:
+                pass
+    if cli_tax_input is None and len(sys.argv) > 6:
+        try:
+            cli_tax_input = float(sys.argv[6])
+        except ValueError:
+            pass
+
+    process_and_convert_payload(
+        input_path, output_path, report_path, csv_path, txt_path, taxable_value_input=cli_tax_input
+    )

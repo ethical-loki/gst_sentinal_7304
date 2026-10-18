@@ -11,7 +11,7 @@
   "refclm": null,
   "document_type": "INV",
   "docno": "INV-INGEST-001",
-  "docdt": "2026-10-15",
+  "docdt": "2026-10-17",
   "orginvno": null,
   "orginvdt": null,
   "supplier": {
@@ -91,7 +91,8 @@
       "hsncd": "8481",
       "unitrate": "10000.00",
       "grossamt": "20000.00",
-      "discval": "0.00"
+      "discval": "0.00",
+      "igstrt": "18.0"
     }
   ],
   "valdtls": {
@@ -122,7 +123,7 @@
   "docdt1": {
     "document_type": "INV",
     "docno": "INV-INGEST-001",
-    "docdt": "2026-10-15"
+    "docdt": "2026-10-17"
   },
   "supplierdt1": {
     "supplier_gstin": "29ABCDE1234F1Z5",
