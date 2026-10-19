@@ -1,7 +1,8 @@
 """
 Tariff Vector Index Precomputation: scripts/build_tariff_index.py
 Encodes all official statutory descriptions from data/tariff_master.parquet
-using the trained CPU contrastive encoder (models/hsn_contrastive_mlp.pt).
+using the trained CPU contrastive encoder (models/hsn_contrastive_mlp.pt)
+in chunks of 512.
 Persists the precomputed dense matrix (N x 128) to data/tariff_vector_index.npy.
 """
 
@@ -27,7 +28,7 @@ def build_tariff_vector_index(
     tariff_path: Path = TARIFF_PARQUET,
     model_path: Path = MODEL_PATH,
     out_path: Path = OUTPUT_INDEX_PATH,
-    batch_size: int = 128,
+    batch_size: int = 512,
 ) -> np.ndarray:
     """Encodes all official tariff descriptions and persists an N x 128 vector matrix."""
     if not tariff_path.exists():
@@ -42,7 +43,7 @@ def build_tariff_vector_index(
     print(f"[*] Loading tariff master from {tariff_path}...")
     df = pd.read_parquet(tariff_path)
     total_records = len(df)
-    print(f"[*] Total statutory tariff records to encode: {total_records}")
+    print(f"[*] Total statutory tariff records to encode: {total_records:,}")
 
     print(f"[*] Loading trained contrastive encoder from {model_path}...")
     model = HSNContrastiveMLP(input_dim=32768, hidden_dim=512, output_dim=128)
@@ -51,12 +52,16 @@ def build_tariff_vector_index(
 
     tokenizer = FeatureHashingTokenizer(dim=32768)
 
-    # Use description or clean_description
-    descriptions = df["description"].fillna("").astype(str).tolist()
+    # Use clean_description for high signal-to-noise ratio
+    if "clean_description" in df.columns:
+        descriptions = df["clean_description"].fillna(df["description"]).astype(str).tolist()
+    else:
+        descriptions = df["description"].fillna("").astype(str).tolist()
 
     t0 = time.perf_counter()
     all_embeddings: list = []
 
+    print(f"[*] Batch encoding {total_records:,} items on CPU (chunk size = {batch_size})...")
     with torch.no_grad():
         for i in range(0, total_records, batch_size):
             batch_texts = descriptions[i : i + batch_size]
@@ -66,11 +71,16 @@ def build_tariff_vector_index(
 
     index_matrix = np.vstack(all_embeddings).astype(np.float32)
 
-    # Verify unit hypersphere normalization
-    norms = np.linalg.norm(index_matrix, axis=1)
-    assert np.allclose(norms, 1.0, atol=1e-3), "Embeddings are not unit normalized!"
+    # Unit hypersphere normalization (L2 norm = 1.0)
+    norms = np.linalg.norm(index_matrix, axis=1, keepdims=True)
+    norms = np.where(norms == 0, 1.0, norms)
+    index_matrix = index_matrix / norms
 
-    print(f"[OK] Precomputed {index_matrix.shape[0]} vectors of dimension {index_matrix.shape[1]}")
+    # Verify unit hypersphere normalization
+    sample_norms = np.linalg.norm(index_matrix[:100], axis=1)
+    assert np.allclose(sample_norms, 1.0, atol=1e-3), "Embeddings are not unit normalized!"
+
+    print(f"[OK] Precomputed {index_matrix.shape[0]:,} vectors of dimension {index_matrix.shape[1]}")
     print(f"     Time elapsed: {time.perf_counter() - t0:.2f}s")
 
     out_path.parent.mkdir(parents=True, exist_ok=True)

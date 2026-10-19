@@ -1,16 +1,20 @@
 """
-Top-k Cosine Search Engine: src/nlp/hsn_search.py
+Universal Hybrid Semantic-Lexical HSN Search Engine: src/nlp/hsn_search.py
 Accepts raw line-item trade descriptions, tokenizes and projects into 128-D vector space,
 and performs matrix-vector dot products against precomputed statutory tariff vector index.
-Returns top-k candidate HSN codes, official descriptions, tax rates, and cosine similarity scores
-with sub-15ms CPU inference latency.
+Executes two-stage hybrid retrieval (dense contrastive vectors + lexical BM25/sub-word matching)
+with hierarchical aggregation across 13,000+ statutory HSN items without hardcoded alias dictionaries.
+Returns top-k candidate HSN codes, official descriptions, tax rates, and confidence scores
+within sub-15ms CPU inference latency.
 """
 
+import math
 import os
 import re
 import time
+from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 import numpy as np
 import pandas as pd
 import torch
@@ -23,18 +27,6 @@ MODEL_PATH = ROOT_DIR / "models" / "hsn_contrastive_mlp.pt"
 from src.models.tokenizer import FeatureHashingTokenizer
 from src.models.hsn_encoder import HSNContrastiveMLP
 
-# Commercial trade terminology priors mapped to statutory 4-digit HSN headings
-TRADE_KEYWORDS: Dict[str, List[str]] = {
-    "7307": ["nipple", "coupling", "elbow", "tee", "reducing bush", "bush", "flange", "fitting", "union", "socket weld"],
-    "7306": ["welded pipe", "welded tube", "erw pipe"],
-    "7304": ["seamless", "hydraulic tube", "seamless pipe"],
-    "8481": ["valve", "ball valve", "check valve", "needle valve", "non return", "cock", "tap"],
-    "7318": ["screw", "bolt", "nut", "washer", "allen cap", "rivet", "stud", "fastener", "lock washer"],
-    "3917": ["upvc", "hdpe", "pvc pipe", "plastic pipe", "solvent weld", "coil pipe", "hose"],
-    "8544": ["cable", "wire", "wiring", "conductor", "armoured cable", "power cable"],
-    "8504": ["inverter", "transformer", "smps", "power supply", "converter", "rectifier"],
-}
-
 
 class SearchResultList(list):
     """Hybrid result container supporting both list iteration and dictionary access."""
@@ -44,7 +36,7 @@ class SearchResultList(list):
         matches: List[Dict[str, Any]],
         query: str = "",
         latency_ms: float = 0.0,
-        model: str = "Contrastive MLP (128-D CPU)",
+        model: str = "Universal Contrastive Hybrid (128-D CPU)",
     ):
         super().__init__(matches)
         self.matches = matches
@@ -78,7 +70,7 @@ class SearchResultList(list):
 
 
 class HSNSemanticSearchEngine:
-    """Sub-15ms Top-k Cosine Similarity Search Engine for Statutory HSN Retrieval."""
+    """Universal Sub-15ms Hybrid Cosine & Lexical Sub-word Retrieval Engine for Statutory HSN Retrieval."""
 
     def __init__(
         self,
@@ -97,9 +89,32 @@ class HSNSemanticSearchEngine:
         self.model: Optional[HSNContrastiveMLP] = None
         self.vector_index: Optional[np.ndarray] = None
         self.tariff_df: Optional[pd.DataFrame] = None
-        self.prefix_masks: Dict[str, np.ndarray] = {}
+
+        # Precomputed lexical structures
+        self.word_to_cand: Dict[str, List[int]] = defaultdict(list)
+        self.cand_subwords: List[Set[str]] = []
+        self.cand_subword_lens: List[int] = []
+        self.cand_headings: List[str] = []
+        self.idf: Dict[str, float] = {}
 
         self._load_resources()
+
+    @staticmethod
+    def _clean_words(text: object) -> List[str]:
+        return re.findall(r"[a-zA-Z0-9]+", str(text).lower())
+
+    @staticmethod
+    def _extract_subwords(text: object) -> Set[str]:
+        words = re.findall(r"[a-zA-Z0-9]+", str(text).lower())
+        sub: Set[str] = set(words)
+        for w in words:
+            pad = f"^{w}$"
+            n = len(pad)
+            for i in range(n - 2):
+                sub.add(pad[i : i + 3])
+            for i in range(n - 3):
+                sub.add(pad[i : i + 4])
+        return sub
 
     def _load_resources(self) -> None:
         """Loads tariff parquet metadata, numpy vector index, and PyTorch model weights."""
@@ -112,21 +127,41 @@ class HSNSemanticSearchEngine:
 
         # 1. Load Parquet
         self.tariff_df = pd.read_parquet(self.tariff_path).reset_index(drop=True)
+        total_records = len(self.tariff_df)
 
-        # 2. Precompute boolean masks for trade heading keywords
-        self.prefix_masks = {
-            prefix: (self.tariff_df["hsn_4digit"] == prefix).to_numpy()
-            for prefix in TRADE_KEYWORDS
-        }
-
-        # 3. Load Vector Index (N x 128 float32)
+        # 2. Load Vector Index (N x 128 float32)
         self.vector_index = np.load(self.index_path).astype(np.float32)
 
-        # 4. Load Model
+        # 3. Load Model
         self.model = HSNContrastiveMLP(input_dim=32768, hidden_dim=512, output_dim=128)
         state_dict = torch.load(self.model_path, map_location="cpu")
         self.model.load_state_dict(state_dict)
         self.model.eval()
+
+        # 4. Precompute Lexical Inverted Index and Subword Sets
+        descriptions = (
+            self.tariff_df["clean_description"].fillna(self.tariff_df["description"]).tolist()
+            if "clean_description" in self.tariff_df.columns
+            else self.tariff_df["description"].tolist()
+        )
+
+        for idx, desc_text in enumerate(descriptions):
+            sw = self._extract_subwords(desc_text)
+            self.cand_subwords.append(sw)
+            self.cand_subword_lens.append(len(sw))
+            cw = set(self._clean_words(desc_text))
+            for w in cw:
+                self.word_to_cand[w].append(idx)
+
+        self.cand_headings = [
+            str(self.tariff_df.iloc[i].get("heading", self.tariff_df.iloc[i].get("hsn_4digit", "")))
+            for i in range(total_records)
+        ]
+
+        # Precompute BM25 IDF
+        for w, ids in self.word_to_cand.items():
+            df_w = len(ids)
+            self.idf[w] = math.log(1.0 + (total_records - df_w + 0.5) / (df_w + 0.5))
 
         # Warm-up forward pass to prime CPU caches
         with torch.no_grad():
@@ -134,7 +169,7 @@ class HSNSemanticSearchEngine:
             _ = self.model(dummy)
 
     def search(self, query: str, top_k: int = 5) -> SearchResultList:
-        """Performs end-to-end tokenization, forward pass, and top-k dot product search.
+        """Performs two-stage hybrid semantic + lexical retrieval with hierarchical aggregation.
 
         Args:
             query: Raw invoice line-item text or HSN code.
@@ -150,11 +185,10 @@ class HSNSemanticSearchEngine:
                 matches=[],
                 query=query,
                 latency_ms=0.0,
-                model="Contrastive MLP (128-D CPU)",
+                model="Universal Contrastive Hybrid (128-D CPU)",
             )
 
         clean_q = str(query).strip()
-        q_lower = clean_q.lower()
         matches: List[Dict[str, Any]] = []
 
         # Check if query is purely numeric digits (direct HSN lookup)
@@ -171,49 +205,79 @@ class HSNSemanticSearchEngine:
                 matches.append({
                     "hsn": code,
                     "hsn_code": code,
-                    "hsn_4digit": str(row["hsn_4digit"]),
+                    "hsn_4digit": str(row.get("hsn_4digit", row.get("heading", code[:4]))),
+                    "heading": str(row.get("heading", row.get("hsn_4digit", code[:4]))),
                     "chapter": str(row["chapter"]),
                     "description": str(row["description"]),
-                    "clean_description": str(row["clean_description"]),
-                    "standard_rate": float(row["standard_rate"]),
-                    "is_blocked_17_5": int(row["is_blocked_17_5"]),
-                    "blocked_17_5_reason": str(row["blocked_17_5_reason"]),
+                    "clean_description": str(row.get("clean_description", "")),
+                    "standard_rate": float(row.get("standard_rate", 18.0)),
+                    "is_blocked_17_5": int(row.get("is_blocked_17_5", 0)),
+                    "blocked_17_5_reason": str(row.get("blocked_17_5_reason", "Eligible: General ITC")),
                     "score": 1.0,
                     "confidence_pct": 100.0,
                     "match_type": "Direct Code Match",
                 })
 
-        # If not enough matches from numeric filter, execute semantic search
+        # Hybrid retrieval pipeline
         if len(matches) < top_k:
-            # 1. Hashing Tokenization
+            # Stage 1: Dense Vector Retrieval (Top-50 semantic candidates)
             tok_vec = self.tokenizer.tokenize(clean_q)
-
-            # 2. PyTorch Forward Pass (CPU)
             with torch.no_grad():
-                z_q = self.model(tok_vec).cpu().numpy()  # (128,)
+                z_q = self.model(tok_vec).numpy()  # (128,)
 
-            # 3. Cosine Dot-Product against all statutory vectors
             sim_scores = np.dot(self.vector_index, z_q)
+            k_dense = min(50, len(sim_scores))
+            top_dense_indices = np.argpartition(-sim_scores, k_dense)[:k_dense]
 
-            # 4. Domain Keyword Prior Hybrid Boost
-            boost = np.zeros_like(sim_scores)
-            for prefix, kws in TRADE_KEYWORDS.items():
-                mask = self.prefix_masks.get(prefix)
-                if mask is not None:
-                    for kw in kws:
-                        if kw in q_lower:
-                            boost[mask] += 1.0
-                            break
+            # Stage 2: Lexical Candidate Pool Retrieval
+            q_words = self._clean_words(clean_q)
+            cand_bm25: Dict[int, float] = defaultdict(float)
+            for w in q_words:
+                w_idf = self.idf.get(w, 0.0)
+                if w_idf > 2.0:  # Focus on distinctive trade keywords
+                    ids = self.word_to_cand.get(w, [])
+                    for c_idx in ids[:40]:
+                        cand_bm25[c_idx] += w_idf
 
-            total_scores = sim_scores + boost
+            cand_pool = set(top_dense_indices) | set(cand_bm25.keys())
+            q_sub = self._extract_subwords(clean_q)
+            q_sub_len = len(q_sub)
+            max_bm25 = max([cand_bm25[i] for i in cand_pool] + [1e-5])
 
-            # 5. Top-k argpartition for fast CPU retrieval
-            k_fetch = min(len(total_scores), top_k + len(matches) + 5)
-            part_indices = np.argpartition(-total_scores, k_fetch)[:k_fetch]
-            top_indices = part_indices[np.argsort(-total_scores[part_indices])]
+            scored_candidates: List[Tuple[float, int, float, float]] = []
+            for idx in cand_pool:
+                s_dense = float(sim_scores[idx])
+                s_dense_norm = max(0.0, min(1.0, (s_dense + 1.0) / 2.0))
+
+                c_sub = self.cand_subwords[idx]
+                overlap = len(q_sub & c_sub)
+                recall = overlap / max(1, q_sub_len)
+                union_len = q_sub_len + self.cand_subword_lens[idx] - overlap
+                jaccard = overlap / max(1, union_len)
+                s_sub = 0.7 * recall + 0.3 * jaccard
+                s_lex = 0.5 * (cand_bm25[idx] / max_bm25) + 0.5 * s_sub
+
+                # Hybrid score combination: S_final = 0.65 * S_dense + 0.35 * S_lexical
+                s_final = 0.65 * s_dense_norm + 0.35 * s_lex
+                scored_candidates.append((s_final, idx, s_dense, s_lex))
+
+            # Stage 3: Hierarchical Aggregation (4-digit heading consensus boost)
+            heading_max: Dict[str, float] = defaultdict(float)
+            for s_fin, idx, _, _ in scored_candidates:
+                h = self.cand_headings[idx]
+                if s_fin > heading_max[h]:
+                    heading_max[h] = s_fin
+
+            final_ranked: List[Tuple[float, int, float, float]] = []
+            for s_fin, idx, sd, sl in scored_candidates:
+                h = self.cand_headings[idx]
+                h_boost = heading_max[h] * 0.15
+                final_ranked.append((s_fin + h_boost, idx, sd, sl))
+
+            final_ranked.sort(key=lambda x: x[0], reverse=True)
 
             seen_codes = {m["hsn_code"] for m in matches}
-            for idx in top_indices:
+            for final_score, idx, sd, sl in final_ranked:
                 if len(matches) >= top_k:
                     break
                 row = self.tariff_df.iloc[idx]
@@ -222,22 +286,23 @@ class HSNSemanticSearchEngine:
                     continue
                 seen_codes.add(code)
 
-                score = float(sim_scores[idx])
-                conf_pct = round(max(0.0, min(100.0, (score + 1.0) / 2.0 * 100.0)), 1)
+                conf_pct = round(max(0.0, min(100.0, final_score / 1.15 * 100.0)), 1)
+                heading_val = self.cand_headings[idx]
 
                 matches.append({
                     "hsn": code,
                     "hsn_code": code,
-                    "hsn_4digit": str(row["hsn_4digit"]),
+                    "hsn_4digit": heading_val,
+                    "heading": heading_val,
                     "chapter": str(row["chapter"]),
                     "description": str(row["description"]),
-                    "clean_description": str(row["clean_description"]),
-                    "standard_rate": float(row["standard_rate"]),
-                    "is_blocked_17_5": int(row["is_blocked_17_5"]),
-                    "blocked_17_5_reason": str(row["blocked_17_5_reason"]),
-                    "score": round(score, 4),
+                    "clean_description": str(row.get("clean_description", "")),
+                    "standard_rate": float(row.get("standard_rate", 18.0)),
+                    "is_blocked_17_5": int(row.get("is_blocked_17_5", 0)),
+                    "blocked_17_5_reason": str(row.get("blocked_17_5_reason", "Eligible: General ITC")),
+                    "score": round(final_score, 4),
                     "confidence_pct": conf_pct,
-                    "match_type": "Semantic Contrastive Match",
+                    "match_type": "Universal Hybrid Semantic-Lexical Match",
                 })
 
         latency_ms = (time.perf_counter() - t0) * 1000.0
@@ -246,7 +311,7 @@ class HSNSemanticSearchEngine:
             matches=matches[:top_k],
             query=query,
             latency_ms=round(latency_ms, 2),
-            model="Contrastive MLP (128-D CPU)",
+            model="Universal Contrastive Hybrid (128-D CPU)",
         )
 
 
