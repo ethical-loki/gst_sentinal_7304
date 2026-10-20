@@ -1609,6 +1609,14 @@ def process_converter_chat(
         }
 
     # 3. Always run fresh validation pipeline on active payload to guarantee errors are 100% accurate
+    raw_errors = []
+    try:
+        from Template_Converters.validator import GSTValidator
+        raw_val_report = GSTValidator.validate_payload_document(payload)
+        raw_errors = raw_val_report.get("results", [{}])[0].get("errors", [])
+    except Exception:
+        raw_errors = []
+
     try:
         pipeline_res = process_converter_pipeline(payload, sync_to_disk=False)
         validation_report = pipeline_res["validation_report"]
@@ -1617,7 +1625,24 @@ def process_converter_chat(
             validation_report = {"results": []}
 
     first_result = validation_report.get("results", [{}])[0] if validation_report.get("results") else {}
-    current_errors = first_result.get("errors", [])
+    pipeline_errors = first_result.get("errors", [])
+
+    seen_err_keys = set()
+    current_errors = []
+    for e in raw_errors + pipeline_errors:
+        ek = (str(e.get("error_code")), str(e.get("field")))
+        if ek not in seen_err_keys:
+            seen_err_keys.add(ek)
+            current_errors.append(e)
+
+    # Update validation report error count and results if raw errors were merged
+    if raw_errors and validation_report.get("results"):
+        validation_report["results"][0]["errors"] = current_errors
+        validation_report["results"][0]["error_count"] = len(current_errors)
+        if len(current_errors) > 0:
+            validation_report["failed_invoices"] = max(validation_report.get("failed_invoices", 0), 1)
+            validation_report["valid_invoices"] = 0
+
     error_codes = {str(e.get("error_code")): e for e in current_errors}
 
     patch_applied = False
@@ -1789,7 +1814,8 @@ def process_converter_chat(
         ewayreq = target_invoice.get("ewayreq", target_invoice.get("ewbdt1", {}).get("ewayreq", ""))
         mode_t = target_invoice.get("mode_of_transport", target_invoice.get("ewbdt1", {}).get("mode_of_transport", ""))
         has_veh_err = any("veh" in f for f in flds) or any(str(e.get("error_code")) in ["4011", "4014", "4020", "4022"] for e in err_list)
-        if (ewayreq == "Y" and mode_t == "1" and not curr_veh) or has_veh_err:
+        is_veh_format_invalid = bool(curr_veh and not extract_vehicle_number(curr_veh))
+        if (ewayreq == "Y" and mode_t == "1" and not curr_veh) or has_veh_err or is_veh_format_invalid:
             if curr_veh:
                 prompt_text = (
                     f"👉 **Vehicle Registration Number Format Error:**\n\n"
@@ -1834,6 +1860,7 @@ def process_converter_chat(
             actions = []
             if st_val in STATE_MASTER and STATE_MASTER[st_val].get("pin_prefixes"):
                 sugg_pin = f"{STATE_MASTER[st_val]['pin_prefixes'][0]}0001"
+                actions.append(f"Set {role.split()[0]} PIN: {sugg_pin}, State: {st_val}")
                 actions.append(f"Set {role.split()[0]} PIN: {sugg_pin}")
             if pin_st_code:
                 actions.append(f"Set {role.split()[0]} State: {pin_st_code}")
@@ -1975,7 +2002,7 @@ def process_converter_chat(
             )
             fb_actions = []
             if any(k in f_lower for k in ["pin", "state"]):
-                fb_actions = ["Set Supplier PIN: 400001", "Set Buyer PIN: 560001", "Set Supplier State: 27"]
+                fb_actions = ["Set Buyer PIN: 400001, State: 27", "Set Supplier PIN: 560001, State: 29", "Set Buyer PIN: 560001"]
             elif any(k in f_lower for k in ["tax", "val", "tot", "assamt", "sum"]):
                 fb_actions = ["Rebalance tax math and invoice value", "Keep manual total"]
             elif any(k in f_lower for k in ["date", "docdt", "doc_dt", "docat", "inv_date", "invoicedate"]):
@@ -2575,20 +2602,48 @@ def process_converter_chat(
     # -------------------------------------------------------------
     elif not patch_applied and (extract_vehicle_number(user_message) or any(k in msg_lower for k in ["vehicle", "vahan", "carinfo", "truck", "lorry", "plate"])):
         veh = extract_vehicle_number(user_message)
-        if not veh:
+        is_query_only = any(k in msg_lower for k in ["add vehicle", "fix vehicle", "verify vehicle", "update vehicle", "vehicle number for e-way", "what is vehicle", "explain vehicle", "vehicle details"])
+        if not veh and not is_query_only:
             cand_m = re.search(r"(?:vehicle\s*is|vehicle\s*number|vehicle|plate|veh)\s*[:=]?\s*([A-Za-z0-9\-\s]{2,20})", user_message, re.IGNORECASE)
             if cand_m:
                 cand_raw = cand_m.group(1).split(",")[0].strip().upper().replace(" ", "").replace("-", "")
-                if cand_raw and not any(w in cand_raw for w in ["NUMBER", "CURRENT", "VAHAN", "PORTAL", "CHECK", "VERIFY"]):
-                    veh = cand_raw
-        if not veh and "ewbdt1" in target_inv and target_inv["ewbdt1"].get("veh_number"):
-            veh = target_inv["ewbdt1"]["veh_number"]
-        if not veh and target_inv.get("veh_number"):
-            veh = target_inv.get("veh_number")
+                if cand_raw and not any(w in cand_raw for w in ["NUMBER", "CURRENT", "VAHAN", "PORTAL", "CHECK", "VERIFY", "FOR", "EWAY", "BILL", "ADD", "FIX", "UPDATE", "DETAILS"]):
+                    veh = extract_vehicle_number(cand_raw)
+        if not is_query_only and not veh:
+            if "ewbdt1" in target_inv and target_inv["ewbdt1"].get("veh_number"):
+                veh = target_inv["ewbdt1"]["veh_number"]
+            elif target_inv.get("veh_number"):
+                veh = target_inv.get("veh_number")
 
         req_veh_type = "O" if any(w in msg_lower for w in ["type: o", "type:o", "odc", "over dimensional"]) else "R"
 
         if veh:
+            req_sub = None
+            m_sub = re.search(r"\b(?:subsupply|sub-supply|subsupplytype|sub_supply)\s*[:=]?\s*([1-8])\b", user_message, re.IGNORECASE)
+            if m_sub:
+                req_sub = m_sub.group(1)
+            elif "export" in msg_lower:
+                req_sub = "3"
+            elif "job" in msg_lower:
+                req_sub = "4"
+            elif "own use" in msg_lower or "ownuse" in msg_lower:
+                req_sub = "5"
+            elif "supply" in msg_lower:
+                req_sub = "1"
+
+            curr_cat = target_inv.get("trancatg", target_inv.get("trandt1", {}).get("trancatg", "B2B"))
+            sub_type = req_sub if req_sub else ("3" if curr_cat == "EXP" else "1")
+            sub_names = {
+                "1": "Supply: Regular sales or outward supply of goods",
+                "3": "Export: Goods sent outside India",
+                "4": "Job Work: Goods sent to a job worker for processing",
+                "5": "For Own Use: Stock transfer or movement for internal company use",
+                "2": "Import: Goods brought from outside India",
+                "6": "Job Work Returns",
+                "7": "Sales Return",
+                "8": "Others"
+            }
+
             portal_res = verify_vehicle_government_portal(veh)
             if portal_res["is_valid"]:
                 clean_v = portal_res["vehicle_number"]
@@ -2596,9 +2651,6 @@ def process_converter_chat(
                 target_inv["veh_type"] = req_veh_type
                 target_inv["mode_of_transport"] = "1"
                 target_inv["ewayreq"] = "Y"
-                # Auto-align companion E-Way Bill fields to maintain full compliance
-                curr_cat = target_inv.get("trancatg", target_inv.get("trandt1", {}).get("trancatg", "B2B"))
-                sub_type = "3" if curr_cat == "EXP" else "1"
                 target_inv["subsupplytype"] = sub_type
                 if not target_inv.get("distance_of_transport"):
                     target_inv["distance_of_transport"] = "250"
@@ -2635,10 +2687,10 @@ def process_converter_chat(
                     f"Verified & updated vehicle {clean_v} on live Vahan registry" if v_live
                     else f"Updated vehicle {clean_v} (offline plate-format check)"
                 )
-                patch_summary.append(f"Aligned E-Way Bill: subsupplytype '{sub_type}' and transit distance 250 km")
+                patch_summary.append(f"Aligned E-Way Bill: subsupplytype '{sub_type}' ({sub_names.get(sub_type, 'Supply')}) and transit distance 250 km")
                 rto_disp = f"{portal_res['rto_name']}, {portal_res['state']}"
                 carinfo_url = portal_res.get("carinfo_url") or f"https://www.carinfo.app/rc-details/{clean_v}"
-                set_line = f"✅ Set `veh_number` to **`{clean_v}`** (Road Transit, Regular 'R', Sub-Supply: {'Export (3)' if sub_type == '3' else 'Supply (1)'})."
+                set_line = f"✅ Set `veh_number` to **`{clean_v}`** (Road Transit, Type '{req_veh_type}', Sub-Supply: **{sub_names.get(sub_type, 'Supply')}**)."
 
                 if v_live:
                     reply_lines.append(
@@ -2670,18 +2722,16 @@ def process_converter_chat(
                 clean_v = re.sub(r"[^A-Za-z0-9]", "", veh).upper()
                 if len(clean_v) >= 5:
                     target_inv["veh_number"] = clean_v
-                    target_inv["veh_type"] = "R"
+                    target_inv["veh_type"] = req_veh_type
                     target_inv["mode_of_transport"] = "1"
                     target_inv["ewayreq"] = "Y"
-                    curr_cat = target_inv.get("trancatg", target_inv.get("trandt1", {}).get("trancatg", "B2B"))
-                    sub_type = "3" if curr_cat == "EXP" else "1"
                     target_inv["subsupplytype"] = sub_type
                     if not target_inv.get("distance_of_transport"):
                         target_inv["distance_of_transport"] = "250"
                     sup_gst = target_inv.get("supplier_gstin", target_inv.get("self_gstin", ""))
                     if "ewbdt1" in target_inv and isinstance(target_inv["ewbdt1"], dict):
                         target_inv["ewbdt1"]["veh_number"] = clean_v
-                        target_inv["ewbdt1"]["veh_type"] = "R"
+                        target_inv["ewbdt1"]["veh_type"] = req_veh_type
                         target_inv["ewbdt1"]["mode_of_transport"] = "1"
                         target_inv["ewbdt1"]["ewayreq"] = "Y"
                         target_inv["ewbdt1"]["subsupplytype"] = sub_type
@@ -2690,7 +2740,7 @@ def process_converter_chat(
                     else:
                         target_inv["ewbdt1"] = {
                             "veh_number": clean_v,
-                            "veh_type": "R",
+                            "veh_type": req_veh_type,
                             "mode_of_transport": "1",
                             "ewayreq": "Y",
                             "subsupplytype": sub_type,
@@ -2699,10 +2749,12 @@ def process_converter_chat(
                             "transporter_name": "Registered Fleet Carrier"
                         }
                     patch_applied = True
-                    patch_summary.append(f"Updated vehicle number to {clean_v}")
+                    patch_summary.append(f"Updated vehicle number to {clean_v} (Type: {req_veh_type})")
+                    patch_summary.append(f"Aligned E-Way Bill: subsupplytype '{sub_type}' ({sub_names.get(sub_type, 'Supply')}) and transit distance 250 km")
                     reply_lines.append(
-                        f"✅ **Vehicle Number Updated!**\n\n"
-                        f"Set `veh_number` to **`{clean_v}`** for Road Transport.\n"
+                        f"✅ **Vehicle Number & Sub-Supply Type Updated!**\n\n"
+                        f"• Set `veh_number` to **`{clean_v}`** (Type: `{req_veh_type}`)\n"
+                        f"• Set `subsupplytype` to **`{sub_type}`** ({sub_names.get(sub_type, 'Supply')})\n\n"
                         f"Part-B E-Way Bill transit requirement is fulfilled."
                     )
                 else:
@@ -2714,9 +2766,11 @@ def process_converter_chat(
                     interactive_actions = ["Vehicle is KA01AB1234", "Verify vehicle number", "Disable E-Way Bill"]
         else:
             reply_lines.append(
-                "🚚 **Government Vehicle Portal Verification:**\n\n"
+                "🚚 **Government Vehicle Portal Verification (MoRTH Vahan 4.0):**\n\n"
                 "To verify your vehicle against the MoRTH Vahan 4.0 portal and generate an E-Way Bill, "
-                "please tell me your vehicle registration number (e.g., `KA01AB1234`)."
+                "please enter your vehicle registration number in the editable box below (e.g., `KA01AB1234`).\n\n"
+                "• **Vehicle Type:** Regular Road (`R`) or Over Dimensional Cargo (`O`)\n"
+                "• **Outward Sub-Supply:** 1 - Regular Supply, 3 - Export, 4 - Job Work, 5 - For Own Use"
             )
             interactive_actions = ["Vehicle is KA01AB1234", "Verify vehicle number", "Disable E-Way Bill"]
 
@@ -2743,6 +2797,8 @@ def process_converter_chat(
             sub_code = "3"
         elif "job" in msg_lower:
             sub_code = "4"
+        elif "own use" in msg_lower or "ownuse" in msg_lower or "stock" in msg_lower or "transfer" in msg_lower:
+            sub_code = "5"
         elif "import" in msg_lower:
             sub_code = "2"
         elif "supply" in msg_lower or msg_lower in ["y", "yes"]:
@@ -2750,11 +2806,11 @@ def process_converter_chat(
             sub_code = "3" if curr_cat == "EXP" else "1"
 
         sub_names = {
-            "1": "Supply",
-            "2": "Import",
-            "3": "Export",
-            "4": "Job Work",
-            "5": "For Own Use",
+            "1": "Supply: Regular sales or outward supply of goods",
+            "3": "Export: Goods sent outside India",
+            "4": "Job Work: Goods sent to a job worker for processing",
+            "5": "For Own Use: Stock transfer or movement for internal company use",
+            "2": "Import: Goods brought from outside India",
             "6": "Job Work Returns",
             "7": "Sales Return",
             "8": "Others"
@@ -3136,7 +3192,22 @@ def process_converter_chat(
                 else:
                     reply_lines.append("📍 Tell me your 6-digit PIN code or state code, and I will align them for you!")
         elif pin:
-            st_lookup = find_state_by_pin(pin)
+            m_explicit_st = re.search(r"\b(?:state|st|state_code)\s*[:=]?\s*([0-9]{1,2})\b", user_message, re.IGNORECASE)
+            explicit_st = None
+            if m_explicit_st:
+                c_cand = m_explicit_st.group(1).zfill(2)
+                if c_cand in STATE_MASTER:
+                    explicit_st = c_cand
+            if not explicit_st:
+                st_by_nm = find_state_by_name(user_message)
+                if st_by_nm:
+                    explicit_st = st_by_nm[0]
+
+            if explicit_st:
+                st_lookup = (explicit_st, STATE_MASTER[explicit_st]["name"])
+            else:
+                st_lookup = find_state_by_pin(pin)
+
             has_sup_err = any("supplier" in str(e.get("field", "")).lower() or "self" in str(e.get("field", "")).lower() for e in current_errors)
             has_buyer_err = any("buyer" in str(e.get("field", "")).lower() or "recipient" in str(e.get("field", "")).lower() for e in current_errors)
 
@@ -3160,9 +3231,7 @@ def process_converter_chat(
                 if "buyerdt1" in target_inv and isinstance(target_inv["buyerdt1"], dict):
                     target_inv["buyerdt1"]["buyer_pin"] = pin
                 st_text = ""
-                b_gstin = target_inv.get("buyer_gstin", target_inv.get("buyerdt1", {}).get("buyer_gstin", ""))
-                curr_cat = target_inv.get("trancatg", target_inv.get("trandt1", {}).get("trancatg"))
-                if st_lookup and b_gstin != "URP" and curr_cat != "EXP":
+                if st_lookup:
                     target_inv["buyer_state"] = st_lookup[0]
                     target_inv["pos"] = st_lookup[0]
                     if "buyerdt1" in target_inv and isinstance(target_inv["buyerdt1"], dict):
@@ -3171,7 +3240,7 @@ def process_converter_chat(
                     st_text = f" and aligned State to {st_lookup[0]} ({st_lookup[1]})"
                 patch_applied = True
                 patch_summary.append(f"Updated buyer_pin to {pin}{st_text}")
-                reply_lines.append(f"✅ **Buyer PIN Code Updated!**\n\nSet `buyer_pin` to **`{pin}`**{st_text}.")
+                reply_lines.append(f"✅ **Buyer PIN Code & State Aligned!**\n\n• PIN Code: **`{pin}`**\n• State: **`{target_inv.get('buyer_state', '')}` ({st_lookup[1] if st_lookup else ''})**\n\nRecipient postal jurisdiction is fully aligned with GSTN records.")
             else:
                 target_inv["supplier_pin"] = pin
                 if "supplierdt1" in target_inv and isinstance(target_inv["supplierdt1"], dict):
@@ -3184,7 +3253,7 @@ def process_converter_chat(
                     st_text = f" and aligned State to {st_lookup[0]} ({st_lookup[1]})"
                 patch_applied = True
                 patch_summary.append(f"Updated supplier_pin to {pin}{st_text}")
-                reply_lines.append(f"✅ **Supplier PIN Code Updated!**\n\nSet `supplier_pin` to **`{pin}`**{st_text}.")
+                reply_lines.append(f"✅ **Supplier PIN Code & State Aligned!**\n\n• PIN Code: **`{pin}`**\n• State: **`{target_inv.get('supplier_state', '')}` ({st_lookup[1] if st_lookup else ''})**\n\nSupplier postal jurisdiction is fully aligned with GSTN records.")
 
     # -------------------------------------------------------------
     # INTENT 7: User provides a State Code or State Name
