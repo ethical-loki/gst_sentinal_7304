@@ -11,7 +11,7 @@
   "refclm": null,
   "document_type": "INV",
   "docno": "INV-INGEST-001",
-  "docdt": "2026-10-18",
+  "docdt": "2026-10-19",
   "orginvno": null,
   "orginvdt": null,
   "supplier": {
@@ -123,7 +123,7 @@
   "docdt1": {
     "document_type": "INV",
     "docno": "INV-INGEST-001",
-    "docdt": "2026-10-18"
+    "docdt": "2026-10-19"
   },
   "supplierdt1": {
     "supplier_gstin": "29ABCDE1234F1Z5",

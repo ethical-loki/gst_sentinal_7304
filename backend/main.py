@@ -346,6 +346,7 @@ async def download_converted_file(file_type: str):
     """
     file_map = {
         "corrected": ("corrected_payload.json", "application/json"),
+        "json": ("corrected_payload.json", "application/json"),
         "report": ("validation_report.json", "application/json"),
         "csv": ("correction_audit_report.csv", "text/csv; charset=utf-8"),
         "summary": ("audit_summary.txt", "text/plain; charset=utf-8")
@@ -356,6 +357,10 @@ async def download_converted_file(file_type: str):
 
     filename, media_type = file_map[file_type]
     file_path = TEMPLATE_CONVERTERS_DIR / filename
+    if not file_path.exists():
+        cand = BASE_DIR / "data" / "processed_payload" / filename
+        if cand.exists():
+            file_path = cand
 
     if not file_path.exists():
         raise HTTPException(status_code=404, detail=f"File {filename} has not been generated yet. Run a conversion first.")

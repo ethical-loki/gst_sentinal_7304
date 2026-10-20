@@ -346,7 +346,7 @@ def generate_comprehensive_dirty_payload() -> Dict[str, Any]:
 def get_customer_error_payload() -> Dict[str, Any]:
     """
     Returns the specific customer test payload containing:
-    1. Product 'Industrial Servo Motor' (HSN 84 requiring 8412 lookup).
+    1. Product 'Industrial Servo Motor' (HSN 84 requiring Heading 8501 / 85011013 statutory lookup).
     2. Document date older than 2 days triggering NIC Rule 2164 ('change the date').
     3. Calculation mismatch (assval 50000 vs totinvval 99999).
     """

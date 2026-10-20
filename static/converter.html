@@ -2752,12 +2752,12 @@
 
                     <!-- VIEW 2: AI COMPLIANCE COPILOT (TOGGLEABLE) -->
                     <div class="copilot-chat-view" id="copilotChatView" style="display:none; flex-direction:column; flex:1; min-height:0;">
-                        <!-- Quick Context Prompt Pills -->
                         <div class="copilot-pills-bar" id="copilotPillsBar">
                             <button class="copilot-pill" onclick="sendCopilotQuickMessage('Show active module URLs &amp; API endpoints')">🔗 Active Module URLs</button>
                             <button class="copilot-pill" onclick="sendCopilotQuickMessage('Why did my invoice fail?')">💡 Explain Errors</button>
                             <button class="copilot-pill" onclick="sendCopilotQuickMessage('How do I fix supplier GSTIN?')">🏢 Fix Supplier GSTIN</button>
                             <button class="copilot-pill" onclick="sendCopilotQuickMessage('Fix state and pin code mismatch')">📍 Fix State / PIN</button>
+                            <button class="copilot-pill" onclick="sendCopilotQuickMessage('Fix HSN from product description')">📦 Fix Product HSN</button>
                             <button class="copilot-pill" onclick="sendCopilotQuickMessage('Add vehicle number for E-Way Bill')">🚚 Fix Vehicle Number</button>
                             <button class="copilot-pill" onclick="sendCopilotQuickMessage('Rebalance tax math and invoice value')">🧮 Rebalance Tax Math</button>
                         </div>
@@ -3125,6 +3125,21 @@
             switchWorkbenchSheet(savedSheet);
             // Fetch live API module endpoint configurations
             await loadConfiguredEndpoints();
+
+            if (rawJsonEditor) {
+                rawJsonEditor.addEventListener('input', () => {
+                    currentLivePayload = null;
+                    currentValidationReport = null;
+                    validateJsonInput();
+                });
+                rawJsonEditor.addEventListener('paste', () => {
+                    setTimeout(() => {
+                        currentLivePayload = null;
+                        currentValidationReport = null;
+                        validateJsonInput();
+                    }, 50);
+                });
+            }
         });
 
 
@@ -4148,41 +4163,12 @@
                 let noticePrefix = customNotice ? `<div style="font-size:0.85rem; color:#94a3b8; margin-bottom:8px;">${escapeHtml(customNotice)}</div>` : '';
                 let replyHtml = `<div class="msg-bubble">${noticePrefix}${formatMarkdownReply(data.reply)}</div>`;
 
-                // Check for Date Input prompt or actions
-                const hasDateAction = (data.interactive_actions && data.interactive_actions.some(a => a.toLowerCase().includes('date') || a.toLowerCase().includes('today') || a.toLowerCase().includes('yesterday'))) ||
-                                      (data.reply && (data.reply.toLowerCase().includes('document date') || data.reply.toLowerCase().includes('rule 2164') || data.reply.toLowerCase().includes('docdt') || data.reply.toLowerCase().includes('docat')));
-                if (hasDateAction) {
-                    const todayIso = new Date().toISOString().split('T')[0];
-                    replyHtml += `
-                        <div class="copilot-date-picker-bar" style="margin-top: 10px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">📅 Change Date:</span>
-                            <input type="date" class="copilot-inline-date-input" value="${todayIso}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace;">
-                            <button type="button" class="copilot-action-btn" onclick="submitCopilotDatePicker(this)" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">📅 Apply Date</button>
-                            <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Change date to Today (${todayIso})')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer;">⚡ Set Today</button>
-                        </div>
-                    `;
-                }
+                // Compliance status check
+                const isCompliant = (data.validation_report && (data.validation_report.failed_invoices === 0 || (data.validation_report.results && data.validation_report.results[0] && data.validation_report.results[0].error_count === 0))) ||
+                                    (data.reply && (data.reply.includes('0 unresolved errors remaining') || data.reply.includes('100% compliant') || data.reply.includes('IRN Generated Successfully')));
 
-                // Check for Vehicle Input prompt or actions
-                const hasVehicleAction = (data.interactive_actions && data.interactive_actions.some(a => a.toLowerCase().includes('veh') || a.toLowerCase().includes('plate') || a.toLowerCase().includes('ka01') || a.toLowerCase().includes('mh12'))) ||
-                                         (data.reply && (data.reply.toLowerCase().includes('vehicle registration') || data.reply.toLowerCase().includes('vehicle number') || data.reply.toLowerCase().includes('vehicle plate') || data.reply.toLowerCase().includes('vahan') || data.reply.toLowerCase().includes('vehno') || data.reply.toLowerCase().includes('road transit')));
-                if (hasVehicleAction) {
-                    replyHtml += `
-                        <div class="copilot-vehicle-picker-bar" style="margin-top: 10px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">🚚 Vehicle Number:</span>
-                            <input type="text" class="copilot-inline-vehicle-input" placeholder="e.g. KA01AB1234" value="KA01AB1234" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotVehicleInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; width: 140px;">
-                            <button type="button" class="copilot-action-btn" onclick="submitCopilotVehicleInput(this)" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">🚚 Apply Vehicle</button>
-                            <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Vehicle is KA01AB1234')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer;">⚡ Use KA01AB1234</button>
-                        </div>
-                    `;
-                }
-
-                if (data.interactive_actions && data.interactive_actions.length > 0) {
-                    const actionBtns = data.interactive_actions.map(act => 
-                        `<button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('${escapeHtml(act)}')">${escapeHtml(act)}</button>`
-                    ).join(' ');
-                    replyHtml += `<div class="msg-action-bar">${actionBtns}</div>`;
-                }
+                // Render Editable Suggestion Boxes for Every Suggestion
+                replyHtml += renderCopilotSuggestionsHtml(data, isCompliant, currentLivePayload || currentPayload);
 
                 botMsgDiv.innerHTML = replyHtml;
                 feed.innerHTML = '';
@@ -4216,6 +4202,7 @@
             <button class="copilot-pill" onclick="sendCopilotQuickMessage('Why did my invoice fail?')">💡 Explain Errors</button>
             <button class="copilot-pill" onclick="sendCopilotQuickMessage('How do I fix supplier GSTIN?')">🏢 Fix Supplier GSTIN</button>
             <button class="copilot-pill" onclick="sendCopilotQuickMessage('Fix state and pin code mismatch')">📍 Fix State / PIN</button>
+            <button class="copilot-pill" onclick="sendCopilotQuickMessage('Fix HSN from product description')">📦 Fix Product HSN</button>
             <button class="copilot-pill" onclick="sendCopilotQuickMessage('Add vehicle number for E-Way Bill')">🚚 Fix Vehicle Number</button>
             <button class="copilot-pill" onclick="sendCopilotQuickMessage('Rebalance tax math and invoice value')">🧮 Rebalance Tax Math</button>
         `;
@@ -4239,16 +4226,31 @@
 
         // Quick Message Pill Click
         function sendCopilotQuickMessage(text) {
+            if (text && text.toLowerCase().includes('download')) {
+                const a = document.createElement('a');
+                a.href = '/api/converter/download/corrected';
+                a.download = 'corrected_payload.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                showToast('📥 Downloading 100% compliant JSON payload...', 'success');
+            }
             const input = document.getElementById('copilotInputBox');
             input.value = text;
             handleCopilotSubmit(new Event('submit'));
         }
 
-        // Update Quick Prompt Pills - Always preserve the 6 primary compliance tools
+        // Update Quick Prompt Pills
         function updateCopilotPills(prompts) {
             const container = document.getElementById('copilotPillsBar');
             if (!container) return;
-            // Always retain the 6 core compliance tools from Image 1
+            if (prompts && prompts.length > 0 && prompts.some(p => p.includes('IRN') || p.includes('Download'))) {
+                container.innerHTML = prompts.map(p => {
+                    const icon = p.includes('IRN') ? '🚀 ' : (p.includes('Download') ? '📥 ' : '⚡ ');
+                    return `<button class="copilot-pill" onclick="sendCopilotQuickMessage('${escapeHtml(p)}')">${icon}${escapeHtml(p)}</button>`;
+                }).join(' ');
+                return;
+            }
             container.innerHTML = DEFAULT_COPILOT_PILLS_HTML;
         }
 
@@ -4430,15 +4432,25 @@
         }
 
 
-        // Inline Date Picker Submission for Copilot
-        function submitCopilotDatePicker(btn) {
-            const parentBar = btn.closest('.copilot-date-picker-bar') || btn.parentElement;
-            const input = parentBar ? parentBar.querySelector('input[type="date"]') : null;
-            let pickedDate = input ? input.value : '';
-            if (!pickedDate) {
-                pickedDate = new Date().toISOString().split('T')[0];
+        // Universal Inline Input Submission for Any Copilot Suggestion Box
+        function submitCopilotInlineInput(btnOrInput, prefix, suffix) {
+            prefix = prefix || '';
+            suffix = suffix || '';
+            const parentBar = btnOrInput.closest('.copilot-inline-suggestion-bar') || btnOrInput.closest('.copilot-vehicle-picker-bar') || btnOrInput.closest('.copilot-date-picker-bar') || btnOrInput.parentElement;
+            const input = parentBar ? parentBar.querySelector('input.copilot-inline-custom-input, input.copilot-inline-vehicle-input, input.copilot-inline-date-input, input') : null;
+            let val = input ? input.value.trim() : '';
+            if (!val && input && input.placeholder) {
+                val = input.placeholder.replace(/^e\.g\.\s*/i, '');
             }
-            sendCopilotQuickMessage(`Change date to ${pickedDate}`);
+            const finalMsg = `${prefix}${val}${suffix}`.trim();
+            if (finalMsg) {
+                sendCopilotQuickMessage(finalMsg);
+            }
+        }
+
+        // Inline Date Picker Submission for Copilot (Maintains Backwards Compatibility)
+        function submitCopilotDatePicker(btn) {
+            submitCopilotInlineInput(btn, 'Change date to ');
         }
 
         // Apply Direct Date Change from Error Card
@@ -4449,13 +4461,9 @@
             sendCopilotQuickMessage(`Change date to ${dateVal}`);
         }
 
-        // Inline Vehicle Number Submission for Copilot
+        // Inline Vehicle Number Submission for Copilot (Maintains Backwards Compatibility)
         function submitCopilotVehicleInput(btnOrInput) {
-            const parentBar = btnOrInput.closest('.copilot-vehicle-picker-bar') || btnOrInput.parentElement;
-            const input = parentBar ? parentBar.querySelector('input.copilot-inline-vehicle-input') : null;
-            let vehNum = input ? input.value.trim().toUpperCase() : '';
-            if (!vehNum) vehNum = 'KA01AB1234';
-            sendCopilotQuickMessage(`Vehicle is ${vehNum}`);
+            submitCopilotInlineInput(btnOrInput, 'Vehicle is ');
         }
 
         // Apply Direct Vehicle Change from Error Card
@@ -4465,6 +4473,389 @@
             if (!vehNum) vehNum = 'KA01AB1234';
             switchRightPanelView('copilot');
             sendCopilotQuickMessage(`Vehicle is ${vehNum}`);
+        }
+
+        function updateCopilotHsnCalc(el) {
+            const bar = el.closest('.copilot-hsn-pricing-bar');
+            if (!bar) return;
+            const rateInp = bar.querySelector('input[data-field="rate"]');
+            const qtyInp = bar.querySelector('input[data-field="qty"]');
+            const taxInp = bar.querySelector('input[data-field="taxval"]');
+            const badge = bar.querySelector('.copilot-calc-summary-badge');
+            
+            let rate = parseFloat(rateInp ? rateInp.value : 0) || 0;
+            let qty = parseFloat(qtyInp ? qtyInp.value : 0) || 0;
+            
+            if (el === taxInp) {
+                const taxVal = parseFloat(taxInp.value) || 0;
+                if (qty > 0) {
+                    rate = Math.round((taxVal / qty) * 100) / 100;
+                    if (rateInp) rateInp.value = rate.toFixed(2);
+                }
+            } else {
+                const totalTaxable = Math.round(rate * qty * 100) / 100;
+                if (taxInp) taxInp.value = totalTaxable.toFixed(2);
+            }
+            const curTaxable = parseFloat(taxInp ? taxInp.value : (rate * qty)) || 0;
+            const gstAmt = Math.round(curTaxable * 0.18 * 100) / 100;
+            const totLine = Math.round((curTaxable + gstAmt) * 100) / 100;
+            if (badge) {
+                badge.innerHTML = `GST 18% (₹${gstAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}) ➔ Total: ₹${totLine.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+            }
+        }
+
+        // Inline HSN, Rate, Quantity & Taxable Value Submission for Copilot
+        function submitCopilotHsnInput(btnOrInput) {
+            const parentBar = btnOrInput.closest('.copilot-inline-suggestion-bar') || btnOrInput.parentElement;
+            if (!parentBar) return;
+            const hsnInp = parentBar.querySelector('input[data-field="hsn"]') || parentBar.querySelector('input.copilot-inline-hsn-input');
+            const rateInp = parentBar.querySelector('input[data-field="rate"]') || parentBar.querySelector('input.copilot-inline-rate-input');
+            const qtyInp = parentBar.querySelector('input[data-field="qty"]') || parentBar.querySelector('input.copilot-inline-qty-input');
+            const taxInp = parentBar.querySelector('input[data-field="taxval"]') || parentBar.querySelector('input.copilot-inline-tax-input');
+            
+            const hsnVal = (hsnInp ? hsnInp.value.trim() : '') || '85011013';
+            const rateVal = (rateInp ? rateInp.value.trim() : '') || '10000.00';
+            const qtyVal = (qtyInp ? qtyInp.value.trim() : '') || '5.0';
+            const taxVal = (taxInp ? taxInp.value.trim() : '') || (parseFloat(rateVal) * parseFloat(qtyVal)).toFixed(2);
+            
+            sendCopilotQuickMessage(`Set HSN: ${hsnVal}, Rate: ${rateVal}, Qty: ${qtyVal}, Taxable Value: ${taxVal}`);
+        }
+
+        // Helper to dynamically render editable input boxes for every suggestion
+        function renderCopilotSuggestionsHtml(data, isCompliant, payload) {
+            if (isCompliant) {
+                return `
+                    <div class="msg-action-bar" style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('🚀 Generate IRN')" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 700; border: none; padding: 7px 16px; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);">🚀 Generate IRN</button>
+                        <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('📥 Download Corrected JSON')" style="background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; color: #38bdf8; font-weight: 600; padding: 7px 14px; border-radius: 8px; cursor: pointer;">📥 Download Corrected JSON</button>
+                    </div>
+                `;
+            }
+
+            const actions = (data.interactive_actions || []).slice();
+            const replyLower = (data.reply || '').toLowerCase();
+            const targetInv = (payload && payload.einvoices && payload.einvoices[0]) ? payload.einvoices[0] : (payload || {});
+            let barsHtml = '';
+            const standaloneButtons = [];
+            const handledTypes = new Set();
+
+            const findAction = (predicate) => actions.find(predicate);
+
+            let renderedBoxCount = 0;
+
+            // 1. Document Date (Editable Date Picker)
+            const dateAct = findAction(a => /date|today|yesterday/i.test(a));
+            const hasDatePrompt = Boolean(dateAct || replyLower.includes('please change the document date') || replyLower.includes('what is the correct document date'));
+            if (renderedBoxCount === 0 && hasDatePrompt && !handledTypes.has('date')) {
+                handledTypes.add('date');
+                renderedBoxCount++;
+                const todayIso = new Date().toISOString().split('T')[0];
+                let defDate = todayIso;
+                if (dateAct) {
+                    const m = dateAct.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+                    if (m) defDate = m[1];
+                }
+                barsHtml += `
+                    <div class="copilot-inline-suggestion-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">📅 Document Date:</span>
+                        <input type="date" class="copilot-inline-custom-input" value="${defDate}" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotInlineInput(this, 'Change date to ');}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace;">
+                        <button type="button" class="copilot-action-btn" onclick="submitCopilotInlineInput(this, 'Change date to ')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">📅 Apply Date</button>
+                        <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Change date to Today (${todayIso})')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer;">⚡ Set Today</button>
+                    </div>
+                `;
+            }
+
+            // 2. Supplier GSTIN (Editable GSTIN Box)
+            const supGstinAct = findAction(a => /my gstin is|supplier gstin/i.test(a));
+            const hasSupGstinPrompt = Boolean(supGstinAct || replyLower.includes('proper 15-digit supplier gstin'));
+            if (renderedBoxCount === 0 && hasSupGstinPrompt && !handledTypes.has('sup_gstin')) {
+                handledTypes.add('sup_gstin');
+                renderedBoxCount++;
+                let defGst = '29ABCDE1234F1ZW';
+                if (supGstinAct) {
+                    const m = supGstinAct.match(/\b([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z0-9]{1,3})\b/i);
+                    if (m) defGst = m[1].toUpperCase();
+                } else {
+                    const mRep = replyLower.match(/government calculated correction:\s*`?([0-9]{2}[a-z]{5}[0-9]{4}[a-z0-9]{1,3})`?/i);
+                    if (mRep) {
+                        defGst = mRep[1].toUpperCase();
+                    } else if (targetInv.supplier_gstin || targetInv.self_gstin) {
+                        const rawG = (targetInv.supplier_gstin || targetInv.self_gstin).trim();
+                        defGst = rawG.length === 14 ? rawG + 'W' : (rawG.length >= 15 ? rawG : '29ABCDE1234F1ZW');
+                    }
+                }
+                barsHtml += `
+                    <div class="copilot-inline-suggestion-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">🏢 Supplier GSTIN:</span>
+                        <input type="text" class="copilot-inline-custom-input" placeholder="15-digit GSTIN" value="${defGst}" maxlength="15" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotInlineInput(this, 'My GSTIN is ');}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; width: 175px;">
+                        <button type="button" class="copilot-action-btn" onclick="submitCopilotInlineInput(this, 'My GSTIN is ')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">🏢 Apply GSTIN</button>
+                    </div>
+                `;
+            }
+
+            // 3. Buyer GSTIN (Editable Buyer GSTIN Box)
+            const buyerGstinAct = findAction(a => /buyer gstin is|buyer is urp|set buyer gstin/i.test(a));
+            const hasBuyerGstinPrompt = Boolean(buyerGstinAct || replyLower.includes('proper 15-digit buyer gstin'));
+            if (renderedBoxCount === 0 && hasBuyerGstinPrompt && !handledTypes.has('buyer_gstin')) {
+                handledTypes.add('buyer_gstin');
+                renderedBoxCount++;
+                let defBuyerGst = '29XYZAB5678C1Z2';
+                if (buyerGstinAct) {
+                    const m = buyerGstinAct.match(/\b([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z0-9]{1,3})\b/i);
+                    if (m) defBuyerGst = m[1].toUpperCase();
+                    else if (buyerGstinAct.includes('URP')) defBuyerGst = 'URP';
+                }
+                barsHtml += `
+                    <div class="copilot-inline-suggestion-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">👤 Buyer GSTIN:</span>
+                        <input type="text" class="copilot-inline-custom-input" placeholder="Buyer GSTIN or URP" value="${defBuyerGst}" maxlength="15" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotInlineInput(this, 'Buyer GSTIN is ');}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; width: 175px;">
+                        <button type="button" class="copilot-action-btn" onclick="submitCopilotInlineInput(this, 'Buyer GSTIN is ')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">👤 Apply Buyer GSTIN</button>
+                        <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Buyer is URP (Unregistered)')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer;">⚡ URP</button>
+                    </div>
+                `;
+            }
+
+            // 4. Transaction Mode
+            const modeAct = findAction(a => /set mode:/i.test(a));
+            const hasModePrompt = Boolean(modeAct || replyLower.includes('delivery mode applies') || replyLower.includes('transaction mode'));
+            if (renderedBoxCount === 0 && hasModePrompt && !handledTypes.has('mode')) {
+                handledTypes.add('mode');
+                renderedBoxCount++;
+                let defMode = 'REG';
+                if (modeAct) {
+                    const m = modeAct.match(/\b(REG|DIS|SHP|CMB)\b/i);
+                    if (m) defMode = m[1].toUpperCase();
+                }
+                barsHtml += `
+                    <div class="copilot-inline-suggestion-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">🔄 Delivery Mode:</span>
+                        <input type="text" class="copilot-inline-custom-input" placeholder="REG / DIS / SHP / CMB" value="${defMode}" maxlength="4" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotInlineInput(this, 'Set Mode: ');}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; width: 85px;">
+                        <button type="button" class="copilot-action-btn" onclick="submitCopilotInlineInput(this, 'Set Mode: ')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">🔄 Apply Mode</button>
+                    </div>
+                `;
+            }
+
+            // 5. Product HSN Code, Taxable Value & Quantity (Interactive Customer Decision & Inputs)
+            const hsnAct = findAction(a => /set hsn:|fix hsn/i.test(a));
+            const hasHsnPrompt = Boolean(hsnAct || replyLower.includes('quick question on product hsn') || replyLower.includes('wrong / incomplete hsn code') || replyLower.includes('hsn intelligence') || replyLower.includes('tariff'));
+            if (renderedBoxCount === 0 && hasHsnPrompt && !handledTypes.has('hsn')) {
+                handledTypes.add('hsn');
+                renderedBoxCount++;
+                let defHsn = '85011013';
+                if (hsnAct) {
+                    const m = hsnAct.match(/\b([0-9]{2,8})\b/);
+                    if (m) defHsn = m[1];
+                }
+                let firstItm = null;
+                if (targetInv.itemdtls && targetInv.itemdtls.length > 0) {
+                    firstItm = targetInv.itemdtls[0];
+                } else if (targetInv.items && targetInv.items.length > 0) {
+                    firstItm = targetInv.items[0];
+                }
+                const prdName = (firstItm && (firstItm.prdnm || firstItm.prddesc)) ? (firstItm.prdnm || firstItm.prddesc) : 'Industrial Servo Motor';
+                const defQty = (firstItm && firstItm.qty !== undefined) ? firstItm.qty : '5.0';
+                let defUnitRate = (firstItm && (firstItm.unitprice || firstItm.unitrate || firstItm.unit_price)) ? (firstItm.unitprice || firstItm.unitrate || firstItm.unit_price) : '10000.00';
+                let defTaxVal = (firstItm && (firstItm.assval !== undefined || firstItm.assamt !== undefined)) ? (firstItm.assval || firstItm.assamt) : (parseFloat(defQty) * parseFloat(defUnitRate)).toFixed(2);
+
+                barsHtml += `
+                    <div class="copilot-inline-suggestion-bar copilot-hsn-pricing-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 12px 14px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">📦 Product: <span style="color: #f1f5f9; font-weight: 600;">${prdName}</span></span>
+                            <span class="copilot-calc-summary-badge" style="font-size: 0.72rem; color: #34d399; font-family: 'JetBrains Mono', monospace; background: rgba(52, 211, 153, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(52, 211, 153, 0.3);">GST 18% (₹9,000.00) ➔ Total: ₹59,000.00</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">HSN CODE</label>
+                                <input type="text" data-field="hsn" class="copilot-inline-hsn-input" placeholder="e.g. 85011013" value="${defHsn}" maxlength="8" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotHsnInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 95px;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">RATE / PRICE (₹)</label>
+                                <input type="number" step="any" data-field="rate" class="copilot-inline-rate-input" placeholder="e.g. 10000" value="${defUnitRate}" oninput="updateCopilotHsnCalc(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotHsnInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 110px;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">QTY</label>
+                                <input type="number" step="any" data-field="qty" class="copilot-inline-qty-input" placeholder="e.g. 5" value="${defQty}" oninput="updateCopilotHsnCalc(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotHsnInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 75px;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">TAXABLE VALUE (₹)</label>
+                                <input type="number" step="any" data-field="taxval" class="copilot-inline-tax-input" placeholder="e.g. 50000" value="${defTaxVal}" oninput="updateCopilotHsnCalc(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotHsnInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 125px;">
+                            </div>
+                            <div style="display: flex; align-items: flex-end; padding-top: 14px; gap: 6px;">
+                                <button type="button" class="copilot-action-btn" onclick="submitCopilotHsnInput(this)" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; white-space: nowrap;">✨ Apply & Recalculate Tax</button>
+                                <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Fix HSN from product description')" style="background: rgba(192, 132, 252, 0.2); border: 1px solid #c084fc; color: #e879f9; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap;">⚡ ML Lookup</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 6. PIN Code (Supplier or Buyer)
+            const pinAct = findAction(a => /set (supplier|buyer)?\s*pin:/i.test(a));
+            const hasPinPrompt = Boolean(pinAct || (replyLower.includes('pincode on invoice') && replyLower.includes('conflict')));
+            if (renderedBoxCount === 0 && hasPinPrompt && !handledTypes.has('pin')) {
+                handledTypes.add('pin');
+                renderedBoxCount++;
+                let defPin = '560001';
+                let role = 'Supplier';
+                if (pinAct) {
+                    const mRole = pinAct.match(/buyer/i);
+                    if (mRole) role = 'Buyer';
+                    const m = pinAct.match(/\b([0-9]{6})\b/);
+                    if (m) defPin = m[1];
+                } else if (replyLower.includes('buyer pin')) {
+                    role = 'Buyer';
+                }
+                barsHtml += `
+                    <div class="copilot-inline-suggestion-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">📍 ${role} PIN Code:</span>
+                        <input type="text" class="copilot-inline-custom-input" placeholder="6-digit PIN" value="${defPin}" maxlength="6" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotInlineInput(this, 'Set ${role} PIN: ');}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 100px;">
+                        <button type="button" class="copilot-action-btn" onclick="submitCopilotInlineInput(this, 'Set ${role} PIN: ')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">📍 Apply PIN</button>
+                    </div>
+                `;
+            }
+
+            // 7. State Code
+            const stAct = findAction(a => /set (supplier|buyer)?\s*state:/i.test(a));
+            const hasStPrompt = Boolean(stAct || (replyLower.includes('government registered state') && replyLower.includes('conflict')));
+            if (renderedBoxCount === 0 && hasStPrompt && !handledTypes.has('state')) {
+                handledTypes.add('state');
+                renderedBoxCount++;
+                let defSt = '29';
+                let role = 'Supplier';
+                if (stAct) {
+                    const mRole = stAct.match(/buyer/i);
+                    if (mRole) role = 'Buyer';
+                    const m = stAct.match(/\b([0-9]{2})\b/);
+                    if (m) defSt = m[1];
+                }
+                barsHtml += `
+                    <div class="copilot-inline-suggestion-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">🗺️ ${role} State Code:</span>
+                        <input type="text" class="copilot-inline-custom-input" placeholder="2-digit State" value="${defSt}" maxlength="2" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotInlineInput(this, 'Set ${role} State: ');}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 80px;">
+                        <button type="button" class="copilot-action-btn" onclick="submitCopilotInlineInput(this, 'Set ${role} State: ')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">🗺️ Apply State</button>
+                    </div>
+                `;
+            }
+
+            // 8. Vehicle Number (Editable Vehicle Box)
+            const vehAct = findAction(a => /vehicle|veh|plate|ka01|mh12/i.test(a));
+            const hasVehPrompt = Boolean(vehAct || replyLower.includes('what is your vehicle registration') || replyLower.includes('vehicle plate'));
+            if (renderedBoxCount === 0 && hasVehPrompt && !handledTypes.has('vehicle')) {
+                handledTypes.add('vehicle');
+                renderedBoxCount++;
+                let defVeh = 'KA01AB1234';
+                if (vehAct) {
+                    const m = vehAct.match(/([A-Z]{2}[0-9]{1,2}[A-Z0-9]{1,4}[0-9]{4})/i);
+                    if (m) defVeh = m[1].toUpperCase();
+                } else if (targetInv.ewbdt1 && targetInv.ewbdt1.veh_number) {
+                    defVeh = targetInv.ewbdt1.veh_number;
+                }
+                barsHtml += `
+                    <div class="copilot-inline-suggestion-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">🚚 Vehicle Number:</span>
+                        <input type="text" class="copilot-inline-custom-input" placeholder="e.g. KA01AB1234" value="${defVeh}" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotInlineInput(this, 'Vehicle is ');}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; width: 140px;">
+                        <button type="button" class="copilot-action-btn" onclick="submitCopilotInlineInput(this, 'Vehicle is ')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">🚚 Apply Vehicle</button>
+                        <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Vehicle is KA01AB1234')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer;">⚡ Use KA01AB1234</button>
+                    </div>
+                `;
+            }
+
+            // 9. Transporter ID
+            const transAct = findAction(a => /set transporter:/i.test(a));
+            const hasTransPrompt = Boolean(transAct || replyLower.includes('transporter gstin / id'));
+            if (renderedBoxCount === 0 && hasTransPrompt && !handledTypes.has('transporter')) {
+                handledTypes.add('transporter');
+                renderedBoxCount++;
+                let defTrans = '29ABCDE1234F1Z5';
+                if (transAct) {
+                    const m = transAct.match(/\b([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z0-9]{1,3})\b/i);
+                    if (m) defTrans = m[1].toUpperCase();
+                }
+                barsHtml += `
+                    <div class="copilot-inline-suggestion-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">🚛 Transporter ID:</span>
+                        <input type="text" class="copilot-inline-custom-input" placeholder="Transporter GSTIN" value="${defTrans}" maxlength="15" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotInlineInput(this, 'Set Transporter: ');}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; width: 175px;">
+                        <button type="button" class="copilot-action-btn" onclick="submitCopilotInlineInput(this, 'Set Transporter: ')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">🚛 Apply Transporter</button>
+                    </div>
+                `;
+            }
+
+            // 10. Tax Math Rebalance (Editable Total)
+            const taxMathAct = findAction(a => /rebalance tax math|tax math/i.test(a));
+            const hasTaxMathPrompt = Boolean(taxMathAct || replyLower.includes('tax valuation recalculation') || replyLower.includes('tax math imbalance'));
+            if (renderedBoxCount === 0 && hasTaxMathPrompt && !handledTypes.has('tax_math')) {
+                handledTypes.add('tax_math');
+                renderedBoxCount++;
+                let defTot = '59000.00';
+                if (targetInv && targetInv.valdtls && targetInv.valdtls.assval) {
+                    const assval = parseFloat(targetInv.valdtls.assval) || 50000;
+                    const cgst = parseFloat(targetInv.valdtls.cgstval) || 0;
+                    const sgst = parseFloat(targetInv.valdtls.sgstval) || 0;
+                    const igst = parseFloat(targetInv.valdtls.igstval) || 0;
+                    defTot = (assval + cgst + sgst + igst).toFixed(2);
+                }
+                barsHtml += `
+                    <div class="copilot-inline-suggestion-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">💰 Invoice Total (₹):</span>
+                        <input type="number" step="0.01" class="copilot-inline-custom-input" placeholder="e.g. 59000.00" value="${defTot}" onkeydown="if(event.key==='Enter'){event.preventDefault();sendCopilotQuickMessage('Rebalance tax math and invoice value');}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 130px;">
+                        <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Rebalance tax math and invoice value')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">💰 Rebalance Tax Math</button>
+                    </div>
+                `;
+            }
+
+            // Standalone action buttons (Auto-Fix All, Disable E-Way, Download, etc.)
+            for (const act of actions) {
+                const actL = act.toLowerCase();
+                if (
+                    (handledTypes.has('date') && (actL.includes('apply date') || actL.includes('set today') || actL.includes('change date to today') || actL.includes('change date to yesterday'))) ||
+                    (handledTypes.has('vehicle') && (actL.includes('vehicle is') || actL.includes('add vehicle') || actL.includes('use ka01'))) ||
+                    (handledTypes.has('sup_gstin') && (actL.includes('my gstin is') || actL.includes('supplier gstin'))) ||
+                    (handledTypes.has('buyer_gstin') && (actL.includes('buyer gstin is') || actL.includes('buyer is urp'))) ||
+                    (handledTypes.has('hsn') && (actL.includes('set hsn:') || actL.includes('fix hsn from'))) ||
+                    (handledTypes.has('pin') && (actL.includes('set supplier pin:') || actL.includes('set buyer pin:'))) ||
+                    (handledTypes.has('state') && (actL.includes('set supplier state:') || actL.includes('set buyer state:'))) ||
+                    (handledTypes.has('mode') && actL.includes('set mode:')) ||
+                    (handledTypes.has('transporter') && actL.includes('set transporter:')) ||
+                    (handledTypes.has('tax_math') && actL.includes('rebalance tax math'))
+                ) {
+                    continue;
+                }
+
+                // Check for any other uncovered "Set Key: Value" suggestion
+                const kvMatch = act.match(/^Set\s+([A-Za-z0-9_\s]+):\s*(.+)$/i);
+                if (kvMatch && renderedBoxCount === 0) {
+                    renderedBoxCount++;
+                    const keyName = kvMatch[1].trim();
+                    const valVal = kvMatch[2].trim();
+                    barsHtml += `
+                        <div class="copilot-inline-suggestion-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">⚙️ ${escapeHtml(keyName)}:</span>
+                            <input type="text" class="copilot-inline-custom-input" value="${escapeHtml(valVal)}" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotInlineInput(this, 'Set ${escapeHtml(keyName)}: ');}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 140px;">
+                            <button type="button" class="copilot-action-btn" onclick="submitCopilotInlineInput(this, 'Set ${escapeHtml(keyName)}: ')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">Apply</button>
+                        </div>
+                    `;
+                    continue;
+                }
+
+                standaloneButtons.push(act);
+            }
+
+            if (!standaloneButtons.some(b => b.includes('Auto-Fix All'))) {
+                standaloneButtons.unshift('⚡ Auto-Fix All Compliance Errors');
+            }
+
+            if (standaloneButtons.length > 0) {
+                const btnsHtml = standaloneButtons.map(act => {
+                    const isHighlight = act.includes('Auto-Fix') || act.includes('Generate IRN');
+                    const style = isHighlight 
+                        ? 'background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #fff; font-weight: 700; border: none; padding: 7px 15px; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 14px rgba(236, 72, 153, 0.35);'
+                        : 'background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-weight: 600; padding: 6px 13px; border-radius: 8px; cursor: pointer;';
+                    return `<button type="button" class="copilot-action-btn" style="${style}" onclick="sendCopilotQuickMessage('${escapeHtml(act)}')">${escapeHtml(act)}</button>`;
+                }).join(' ');
+                barsHtml += `<div class="msg-action-bar" style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">${btnsHtml}</div>`;
+            }
+
+            return barsHtml;
         }
 
         // Submit message to Copilot
@@ -4503,13 +4894,11 @@
 
             // 2. Prepare payload from active state or raw editor
             let currentPayload = currentLivePayload;
-            if (!currentPayload) {
+            const rawEditorText = rawJsonEditor ? rawJsonEditor.value.trim() : '';
+            if (!currentPayload && rawEditorText) {
                 try {
-                    const rawEditorText = rawJsonEditor.value.trim();
-                    if (rawEditorText) {
-                        currentPayload = JSON.parse(rawEditorText);
-                        initialDirtyPayloadStr = rawEditorText;
-                    }
+                    currentPayload = JSON.parse(rawEditorText);
+                    if (!initialDirtyPayloadStr) initialDirtyPayloadStr = rawEditorText;
                 } catch (err) {
                     currentPayload = null;
                 }
@@ -4543,42 +4932,12 @@
 
                 let replyHtml = `<div class="msg-bubble">${formatMarkdownReply(data.reply)}</div>`;
 
-                // Check for Date Input prompt or actions
-                const hasDateAction = (data.interactive_actions && data.interactive_actions.some(a => a.toLowerCase().includes('date') || a.toLowerCase().includes('today') || a.toLowerCase().includes('yesterday'))) ||
-                                      (data.reply && (data.reply.toLowerCase().includes('document date') || data.reply.toLowerCase().includes('rule 2164') || data.reply.toLowerCase().includes('docdt') || data.reply.toLowerCase().includes('docat')));
-                if (hasDateAction) {
-                    const todayIso = new Date().toISOString().split('T')[0];
-                    replyHtml += `
-                        <div class="copilot-date-picker-bar" style="margin-top: 10px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">📅 Change Date:</span>
-                            <input type="date" class="copilot-inline-date-input" value="${todayIso}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace;">
-                            <button type="button" class="copilot-action-btn" onclick="submitCopilotDatePicker(this)" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">📅 Apply Date</button>
-                            <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Change date to Today (${todayIso})')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer;">⚡ Set Today</button>
-                        </div>
-                    `;
-                }
+                // Compliance status check
+                const isCompliant = (data.validation_report && (data.validation_report.failed_invoices === 0 || (data.validation_report.results && data.validation_report.results[0] && data.validation_report.results[0].error_count === 0))) ||
+                                    (data.reply && (data.reply.includes('0 unresolved errors remaining') || data.reply.includes('100% compliant') || data.reply.includes('IRN Generated Successfully')));
 
-                // Check for Vehicle Input prompt or actions
-                const hasVehicleAction = (data.interactive_actions && data.interactive_actions.some(a => a.toLowerCase().includes('veh') || a.toLowerCase().includes('plate') || a.toLowerCase().includes('ka01') || a.toLowerCase().includes('mh12'))) ||
-                                         (data.reply && (data.reply.toLowerCase().includes('vehicle registration') || data.reply.toLowerCase().includes('vehicle number') || data.reply.toLowerCase().includes('vehicle plate') || data.reply.toLowerCase().includes('vahan') || data.reply.toLowerCase().includes('vehno') || data.reply.toLowerCase().includes('road transit')));
-                if (hasVehicleAction) {
-                    replyHtml += `
-                        <div class="copilot-vehicle-picker-bar" style="margin-top: 10px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">🚚 Vehicle Number:</span>
-                            <input type="text" class="copilot-inline-vehicle-input" placeholder="e.g. KA01AB1234" value="KA01AB1234" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotVehicleInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; width: 140px;">
-                            <button type="button" class="copilot-action-btn" onclick="submitCopilotVehicleInput(this)" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">🚚 Apply Vehicle</button>
-                            <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Vehicle is KA01AB1234')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer;">⚡ Use KA01AB1234</button>
-                        </div>
-                    `;
-                }
-
-                // Interactive Action Buttons inside Chat Bubble
-                if (data.interactive_actions && data.interactive_actions.length > 0) {
-                    const actionBtns = data.interactive_actions.map(act => 
-                        `<button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('${escapeHtml(act)}')">${escapeHtml(act)}</button>`
-                    ).join(' ');
-                    replyHtml += `<div class="msg-action-bar">${actionBtns}</div>`;
-                }
+                // Render Editable Suggestion Boxes for Every Suggestion
+                replyHtml += renderCopilotSuggestionsHtml(data, isCompliant, currentLivePayload || currentPayload);
 
                 if (data.patch_applied && data.patch_summary && data.patch_summary.length > 0) {
                     const patchTags = data.patch_summary.map(s => `<div>⚡ ${escapeHtml(s)}</div>`).join('');
@@ -4602,23 +4961,73 @@
                     updateCopilotPills(data.quick_prompts);
                 }
 
-                // 6. If Patch was Applied: Automatically update the Live UI Screens!
+                // 6. Synchronize Validation Cards, Tabs, & KPIs on EVERY turn!
+                if (data.validation_report) {
+                    currentValidationReport = data.validation_report;
+                    if (data.corrected_payload || data.updated_payload) {
+                        currentCorrectedPayload = data.corrected_payload || data.updated_payload;
+                    }
+
+                    // Render Cards (Tab 3)
+                    if (typeof renderValidationCards === 'function') {
+                        renderValidationCards(currentValidationReport);
+                    }
+
+                    // Update Status Badge on Copilot Header
+                    if (typeof updateCopilotHeaderStatus === 'function') {
+                        updateCopilotHeaderStatus(currentValidationReport);
+                    }
+
+                    // Update Tab Counter Pills (Tab 1 Corrections & Tab 3 Errors)
+                    const firstRes = (currentValidationReport.results || [])[0] || {};
+                    const errCount = firstRes.error_count ?? (firstRes.errors || []).length;
+                    const corrCount = firstRes.corrections_applied_count ?? (firstRes.corrections_applied || []).length;
+                    const tabErrEl = document.getElementById('tabCountErrors');
+                    if (tabErrEl) tabErrEl.textContent = errCount;
+                    const tabCorrEl = document.getElementById('tabCountCorrections');
+                    if (tabCorrEl) tabCorrEl.textContent = corrCount;
+
+                    // Update Executive KPIs
+                    if (data.metrics && typeof renderExecutiveKPIs === 'function') {
+                        renderExecutiveKPIs(data.metrics);
+                    } else {
+                        const totInv = currentValidationReport.total_invoices || 1;
+                        const failedInv = currentValidationReport.failed_invoices ?? (errCount > 0 ? 1 : 0);
+                        const validInv = currentValidationReport.valid_invoices ?? (errCount === 0 ? 1 : 0);
+                        const elTot = document.getElementById('kpiTotalInvoices');
+                        if (elTot) elTot.textContent = totInv;
+                        const elVal = document.getElementById('kpiValidInvoices');
+                        if (elVal) elVal.textContent = validInv;
+                        const elFail = document.getElementById('kpiFailedInvoices');
+                        if (elFail) elFail.textContent = failedInv;
+                        const elCorr = document.getElementById('kpiTotalCorrections');
+                        if (elCorr) elCorr.textContent = corrCount;
+                        const elRate = document.getElementById('kpiValidRateBadge');
+                        if (elRate) elRate.textContent = `${validInv === totInv && errCount === 0 ? 100 : 0}% Compliant`;
+                        const elErrBadge = document.getElementById('kpiFailedRateBadge');
+                        if (elErrBadge) elErrBadge.textContent = `${errCount} Error${errCount === 1 ? '' : 's'}`;
+                    }
+
+                    const kpiSec = document.getElementById('kpiDashboardSection');
+                    if (kpiSec) kpiSec.style.display = 'block';
+                    const outSec = document.getElementById('outputDashboardSection');
+                    if (outSec) outSec.style.display = 'block';
+                }
+
+                // 6B. If Patch was Applied: Automatically update the Live UI Screens!
                 if (data.patch_applied && data.updated_payload) {
                     currentLivePayload = data.updated_payload;
-                    if (!initialDirtyPayloadStr && rawJsonEditor.value.trim()) {
+                    if (!initialDirtyPayloadStr && rawJsonEditor && rawJsonEditor.value.trim()) {
                         initialDirtyPayloadStr = rawJsonEditor.value.trim();
                     }
 
-                    // Keep Customer Raw Dirty Input showing the DIRTY payload only!
-                    // Do NOT overwrite rawJsonEditor or diffDirtyPane with clean/patched payload.
-                    if (!rawJsonEditor.value.trim() && initialDirtyPayloadStr) {
-                        rawJsonEditor.value = initialDirtyPayloadStr;
+                    // Update Customer Raw Input Editor so user sees updated values immediately!
+                    if (rawJsonEditor) {
+                        rawJsonEditor.value = JSON.stringify(data.updated_payload, null, 2);
                     }
                     validateJsonInput();
 
-                    // 6A. Synchronize Side-by-Side Diff Panes (Tab 2)
-                    // Left Pane: Customer Raw Dirty Input ONLY!
-                    // Right Pane: Clean Normalized Patched NIC Payload!
+                    // Synchronize Side-by-Side Diff Panes (Tab 2)
                     lastRawJsonStr = initialDirtyPayloadStr || rawJsonEditor.value;
                     lastCleanJsonStr = data.corrected_payload 
                         ? JSON.stringify(data.corrected_payload, null, 2) 
@@ -4628,28 +5037,7 @@
                         renderDiffPanes(lastRawJsonStr, lastCleanJsonStr);
                     }
 
-                    // 6B. Synchronize Validation Cards & Tab Error Counts (Tab 3)
-                    if (data.validation_report) {
-                        currentValidationReport = data.validation_report;
-                        currentCorrectedPayload = data.corrected_payload || data.updated_payload;
-
-                        // Render Cards
-                        renderValidationCards(currentValidationReport);
-
-                        // Update Status Badge on Copilot Header
-                        updateCopilotHeaderStatus(currentValidationReport);
-
-                        // Update Tab Counter Pills (Tab 1 Corrections & Tab 3 Errors)
-                        const firstRes = (currentValidationReport.results || [])[0] || {};
-                        const errCount = firstRes.error_count ?? (firstRes.errors || []).length;
-                        const corrCount = firstRes.corrections_applied_count ?? (firstRes.corrections_applied || []).length;
-                        const tabErrEl = document.getElementById('tabCountErrors');
-                        if (tabErrEl) tabErrEl.textContent = errCount;
-                        const tabCorrEl = document.getElementById('tabCountCorrections');
-                        if (tabCorrEl) tabCorrEl.textContent = corrCount;
-                    }
-
-                    // 6C. Synchronize Terminal Summary Report (Tab 4)
+                    // Synchronize Terminal Summary Report (Tab 4)
                     if (data.summary_text) {
                         lastSummaryText = data.summary_text;
                         if (typeof renderTerminalSummary === 'function') {
@@ -4657,24 +5045,13 @@
                         }
                     }
 
-                    // 6D. Synchronize Audit Records Table (Tab 1)
+                    // Synchronize Audit Records Table (Tab 1)
                     if (data.audit_records && Array.isArray(data.audit_records)) {
                         fullAuditRecords = data.audit_records;
                         if (typeof renderAuditTable === 'function') {
                             renderAuditTable(fullAuditRecords);
                         }
                     }
-
-                    // 6E. Synchronize Executive KPIs & Financials
-                    if (data.metrics && typeof renderExecutiveKPIs === 'function') {
-                        renderExecutiveKPIs(data.metrics);
-                    }
-
-                    // 6F. Ensure Output Dashboard & KPI Sections are visible
-                    const kpiSec = document.getElementById('kpiDashboardSection');
-                    if (kpiSec) kpiSec.style.display = 'block';
-                    const outSec = document.getElementById('outputDashboardSection');
-                    if (outSec) outSec.style.display = 'block';
 
                     showToast('⚡ All screens & output tabs synchronized in real-time!', 'success');
                 }

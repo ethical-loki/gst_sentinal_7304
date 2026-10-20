@@ -301,3 +301,32 @@ def test_fastapi_ingestion_endpoints():
     # 9. GET /api/ingestion/download/parquet
     r_dl_p = client.get("/api/ingestion/download/parquet")
     assert r_dl_p.status_code == 200
+
+
+def test_ingestion_chat_exact_tax_calculation():
+    """
+    Verifies that Lakehouse Ingestion Copilot calculates exact tax math:
+    Quantity × Rate per piece = Gross / Taxable Value (AssAmt)
+    Intra-State: CGST 9% + SGST 9%
+    Recalculated line total and total invoice value update accordingly.
+    """
+    sample = load_default_sample_dirty()
+    msg = "Set HSN: 85011013, Rate: 10000.00, Qty: 10.000, Taxable Value: 100000.00"
+    res = process_ingestion_chat(msg, sample, None, [])
+
+    assert res["status"] == "success"
+    assert res["patch_applied"] is True
+    assert res["lakehouse_updated"] is True
+
+    updated_inv = res["updated_payload"]["einvoices"][0]
+    item0 = updated_inv["itemdtls"][0]
+    valdt1 = updated_inv.get("valdt1", updated_inv.get("valdtls", {}))
+
+    assert float(item0["qty"]) == 10.0
+    assert float(item0.get("unitprice", item0.get("unitrate", 0))) == 10000.0
+    assert float(item0["assamt"]) == 100000.0
+    assert float(item0["igstamt"]) == 18000.0
+    assert float(item0["cgstamt"]) == 0.0
+    assert float(item0["sgstamt"]) == 0.0
+    assert float(item0["totitemval"]) == 118000.0
+    assert float(valdt1["totinvval"]) == 118000.0

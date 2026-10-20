@@ -1495,8 +1495,8 @@ class InvoicePayload(BaseModel):
     def auto_correct_and_build(cls, raw_invoice: Dict[str, Any], taxable_value_input: Optional[Union[float, Decimal, Dict[str, Any]]] = None) -> Tuple["InvoicePayload", List[Dict[str, Any]]]:
         """
         Cleanses dirty keys (OCR typos), aligns business rules, normalizes formats,
-        matches official HSN codes from Final_hsn_sac_copy.xlsx, reconciles statutory tax rates,
-        supports user taxable value overrides, and records an exhaustive transformation audit trail.
+        matches official HSN codes from Statutory Tariff Master & ML HSN Intelligence (128-D Contrastive Hybrid),
+        reconciles statutory tax rates, supports user taxable value overrides, and records an exhaustive audit trail.
         """
         audit_log: List[Dict[str, Any]] = []
 
@@ -1649,18 +1649,31 @@ class InvoicePayload(BaseModel):
                                 "field": f"itemdtls[{idx}].hsncd",
                                 "original": orig_hsn_input or "(blank)",
                                 "corrected": matched_hsn,
-                                "description": f"⚠️ Wrong HSN Code Detected: Customer entered '{orig_hsn_input or '(blank)'}', which is not the correct statutory code for '{p_name}' ('{p_desc}'). Based on Final_hsn_sac_copy.xlsx, the correct official HSN is '{matched_hsn}' ({best.get('description', '')[:50]}...) with statutory {hsn_stat_rate}% GST. Auto-corrected to ensure NIC IRN compliance."
+                                "description": f"⚠️ Wrong HSN Code Detected: Customer entered '{orig_hsn_input or '(blank)'}', which is not the correct statutory code for '{p_name}' ('{p_desc}'). Based on Statutory Tariff Master & ML HSN Intelligence (128-D Contrastive Hybrid), the correct official HSN is '{matched_hsn}' ({best.get('description', '')[:50]}...) with statutory {hsn_stat_rate}% GST. Flagged for customer HSN & taxation input."
                             })
                             audit_log.append({
                                 "category": "WRONG_HSN_CODE_DETECTED",
                                 "field": f"itemdtls[{idx}].hsncd",
                                 "original": orig_hsn_input or "(blank)",
                                 "corrected": matched_hsn,
-                                "description": f"⚠️ Wrong HSN Code Detected: Customer entered '{orig_hsn_input or '(blank)'}', which is not the correct statutory code for '{p_name}' ('{p_desc}'). Based on Final_hsn_sac_copy.xlsx, the correct official HSN is '{matched_hsn}' ({best.get('description', '')[:50]}...) with statutory {hsn_stat_rate}% GST. Auto-corrected to ensure NIC IRN compliance."
+                                "description": f"⚠️ Wrong HSN Code Detected: Customer entered '{orig_hsn_input or '(blank)'}', which is not the correct statutory code for '{p_name}' ('{p_desc}'). Based on Statutory Tariff Master & ML HSN Intelligence (128-D Contrastive Hybrid), the correct official HSN is '{matched_hsn}' ({best.get('description', '')[:50]}...) with statutory {hsn_stat_rate}% GST. Flagged for customer HSN & taxation input."
                             })
-                            itm["hsncd"] = matched_hsn
-                            itm["hsn"] = matched_hsn
-                            curr_hsn = matched_hsn
+                            if best.get("is_blocked_17_5") == 1:
+                                audit_log.append({
+                                    "category": "ITC_BLOCKED_SECTION_17_5",
+                                    "field": f"itemdtls[{idx}].hsncd",
+                                    "original": orig_hsn_input or "(blank)",
+                                    "corrected": matched_hsn,
+                                    "description": f"🚫 Section 17(5) Ineligible ITC Alert: Statutory HSN '{matched_hsn}' ({best.get('description', '')[:50]}...) has blocked Input Tax Credit. Reason: {best.get('blocked_17_5_reason', 'Section 17(5) Blocked ITC')}"
+                                })
+                            # Auto-correct HSN only when customer provides taxable value input or confirms HSN decision
+                            if taxable_value_input is not None or itm.get("apply_hsn_correction") is True:
+                                itm["hsncd"] = matched_hsn
+                                itm["hsn"] = matched_hsn
+                                curr_hsn = matched_hsn
+                            else:
+                                itm["hsncd"] = orig_hsn_input
+                                itm["hsn"] = orig_hsn_input
                         elif hsn_stat_rate is None:
                             hsn_stat_rate = Decimal(str(best.get("gst_rate", 18.0)))
 
@@ -1729,6 +1742,10 @@ class InvoicePayload(BaseModel):
                             "description": f"Applied user-provided taxable value input option Rs {override_assamt} and recalculated statutory taxes."
                         })
                     itm["assval"] = str(override_assamt)
+                    exp_gross_ovr = (override_assamt + Decimal(itm["discount"])).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    itm["totamt"] = str(exp_gross_ovr)
+                    if q_d > Decimal("0.00"):
+                        itm["unitprice"] = str((exp_gross_ovr / q_d).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
                 # Supply context: Intra vs Inter state
                 sup_state = str(cleaned_data.get("supplierdt1", {}).get("supplier_state", "") or (cleaned_data.get("self_gstin", "")[:2] if len(cleaned_data.get("self_gstin", "")) >= 2 else "")).strip()

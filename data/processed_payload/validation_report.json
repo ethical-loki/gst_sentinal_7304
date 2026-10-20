@@ -9,39 +9,39 @@
       "error_count": 0,
       "errors": [],
       "price_anomaly_report": {
-        "status": "CLEAN",
-        "has_anomalies": false,
-        "anomaly_count": 0,
-        "over_invoicing_count": 0,
+        "status": "CRITICAL_RISK",
+        "has_anomalies": true,
+        "anomaly_count": 1,
+        "over_invoicing_count": 1,
         "under_invoicing_count": 0,
         "typo_count": 0,
-        "max_risk_score": 0,
+        "max_risk_score": 96,
         "items_scanned": 1,
         "findings": [
           {
             "item_index": 1,
             "prdnm": "COTTON-SHIRTS",
-            "hsncd": "4202",
+            "hsncd": "85011013",
             "uqc": "NOS",
-            "unitrate": 800.0,
-            "qty": 200.0,
-            "assamt": 160000.0,
-            "is_anomaly": false,
-            "anomaly_type": "NORMAL",
-            "severity": "NONE",
-            "risk_score": 0,
+            "unitrate": 10000.0,
+            "qty": 10.0,
+            "assamt": 100000.0,
+            "is_anomaly": true,
+            "anomaly_type": "OVER_INVOICING",
+            "severity": "CRITICAL",
+            "risk_score": 96,
             "benchmark_min": 180.0,
             "benchmark_max": 420.0,
             "benchmark_median": 280.0,
-            "ratio_to_median": 2.86,
+            "ratio_to_median": 35.71,
             "suggested_rate": null,
-            "reason": "Unit rate is within normal statutory benchmark range.",
-            "statutory_risk": "",
+            "reason": "Severe Over-Invoicing detected: Unit rate \u20b910,000.00/NOS is 23.8x higher than market maximum \u20b9420.00/NOS.",
+            "statutory_risk": "\u26a0\ufe0f Potential Circular Trading / Fraudulent Input Tax Credit (ITC) claim prohibited under CGST Act Section 132(1)(b) & Rule 86A.",
             "benchmark_source": "Keyword:cotton"
           }
         ]
       },
-      "corrections_applied_count": 23,
+      "corrections_applied_count": 35,
       "corrections_applied": [
         {
           "category": "KEY_NAME_NORMALIZATION",
@@ -129,6 +129,76 @@
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].hsn",
+          "original": "hsn",
+          "corrected": "hsncd",
+          "description": "Standardized non-compliant key 'hsn' to schema key 'hsncd'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].hsn_code",
+          "original": "hsn_code",
+          "corrected": "hsncd",
+          "description": "Standardized non-compliant key 'hsn_code' to schema key 'hsncd'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].unitprice",
+          "original": "unitprice",
+          "corrected": "unitrate",
+          "description": "Standardized non-compliant key 'unitprice' to schema key 'unitrate'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].unit_price",
+          "original": "unit_price",
+          "corrected": "unitrate",
+          "description": "Standardized non-compliant key 'unit_price' to schema key 'unitrate'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].totamt",
+          "original": "totamt",
+          "corrected": "grossamt",
+          "description": "Standardized non-compliant key 'totamt' to schema key 'grossamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].assval",
+          "original": "assval",
+          "corrected": "assamt",
+          "description": "Standardized non-compliant key 'assval' to schema key 'assamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].gstrate",
+          "original": "gstrate",
+          "corrected": "igstrt",
+          "description": "Standardized non-compliant key 'gstrate' to schema key 'igstrt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].igstval",
+          "original": "igstval",
+          "corrected": "igstamt",
+          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].cgstval",
+          "original": "cgstval",
+          "corrected": "cgstamt",
+          "description": "Standardized non-compliant key 'cgstval' to schema key 'cgstamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].sgstval",
+          "original": "sgstval",
+          "corrected": "sgstamt",
+          "description": "Standardized non-compliant key 'sgstval' to schema key 'sgstamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
           "field": "valdt1.cgstval",
           "original": "cgstval",
           "corrected": "cgstamt",
@@ -156,53 +226,70 @@
           "description": "Standardized non-compliant key 'cesval' to schema key 'cessamt'"
         },
         {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "valdt1.assval",
+          "original": "assval",
+          "corrected": "assamt",
+          "description": "Standardized non-compliant key 'assval' to schema key 'assamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "cgstval",
+          "original": "cgstval",
+          "corrected": "cgstamt",
+          "description": "Standardized non-compliant key 'cgstval' to schema key 'cgstamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "sgstval",
+          "original": "sgstval",
+          "corrected": "sgstamt",
+          "description": "Standardized non-compliant key 'sgstval' to schema key 'sgstamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "igstval",
+          "original": "igstval",
+          "corrected": "igstamt",
+          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "cesval",
+          "original": "cesval",
+          "corrected": "cessamt",
+          "description": "Standardized non-compliant key 'cesval' to schema key 'cessamt'"
+        },
+        {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-18",
-          "corrected": "18-10-2026",
-          "description": "Standardized date format from '2026-10-18' to '18-10-2026'"
+          "original": "2026-10-19",
+          "corrected": "19-10-2026",
+          "description": "Standardized date format from '2026-10-19' to '19-10-2026'"
         },
         {
-          "category": "HSN_TARIFF_SCHEDULE_LOOKUP",
-          "field": "itemdtls[1].hsncd",
-          "original": "610510",
-          "corrected": "4202",
-          "description": "\u26a0\ufe0f Wrong HSN Code Detected: Customer entered '610510', which is not the correct statutory code for 'COTTON-SHIRTS' ('Men Casual 100% Cotton Shirt'). Based on Final_hsn_sac_copy.xlsx, the correct official HSN is '4202' (Trunks, suit-cases, vanity-cases, executive-cases,...) with statutory 18.0% GST. Auto-corrected to ensure NIC IRN compliance."
-        },
-        {
-          "category": "WRONG_HSN_CODE_DETECTED",
-          "field": "itemdtls[1].hsncd",
-          "original": "610510",
-          "corrected": "4202",
-          "description": "\u26a0\ufe0f Wrong HSN Code Detected: Customer entered '610510', which is not the correct statutory code for 'COTTON-SHIRTS' ('Men Casual 100% Cotton Shirt'). Based on Final_hsn_sac_copy.xlsx, the correct official HSN is '4202' (Trunks, suit-cases, vanity-cases, executive-cases,...) with statutory 18.0% GST. Auto-corrected to ensure NIC IRN compliance."
-        },
-        {
-          "category": "FORMAT_NORMALIZATION",
-          "field": "itemdtls[1].grossamt",
-          "original": "160000,00",
-          "corrected": "160000.00",
-          "description": "Replaced comma decimal separator '160000,00' with standard point notation '160000.00'"
-        },
-        {
-          "category": "FORMAT_NORMALIZATION",
-          "field": "itemdtls[1].assamt",
-          "original": "160000,00",
-          "corrected": "160000.00",
-          "description": "Replaced comma decimal separator '160000,00' with standard point notation '160000.00'"
-        },
-        {
-          "category": "FORMAT_NORMALIZATION",
+          "category": "TAX_MATH_RECALCULATION",
           "field": "itemdtls[1].totitemval",
-          "original": "188800,00",
-          "corrected": "188800.00",
-          "description": "Replaced comma decimal separator '188800,00' with standard point notation '188800.00'"
+          "original": "118000.00",
+          "corrected": "105000.00",
+          "description": "Recalculated Total Item Value to match sum of assessable value and all taxes (Rule 2194)"
         },
         {
-          "category": "FORMAT_NORMALIZATION",
+          "category": "PRICE_UNIT_RATE_ANOMALY",
+          "field": "itemdtls[1].unitrate",
+          "original": "10000.0",
+          "corrected": "10000.0",
+          "severity": "CRITICAL",
+          "anomaly_type": "OVER_INVOICING",
+          "risk_score": 96,
+          "description": "Severe Over-Invoicing detected: Unit rate \u20b910,000.00/NOS is 23.8x higher than market maximum \u20b9420.00/NOS."
+        },
+        {
+          "category": "INVOICE_TOTALS_RECONCILIATION",
           "field": "valdt1.totinvval",
-          "original": "188800,00",
-          "corrected": "188800.00",
-          "description": "Replaced comma decimal separator '188800,00' with standard point notation '188800.00'"
+          "original": "118000.00",
+          "corrected": "105000.00",
+          "description": "Reconciled Total Invoice Value with sum of items, taxes, other charges minus discounts (Rule 2189)"
         }
       ]
     },
@@ -232,7 +319,7 @@
           {
             "item_index": 1,
             "prdnm": "COTTON-YARN",
-            "hsncd": "5911",
+            "hsncd": "520522",
             "uqc": "KGS",
             "unitrate": 280.0,
             "qty": 100.0,
@@ -241,19 +328,19 @@
             "anomaly_type": "NORMAL",
             "severity": "NONE",
             "risk_score": 0,
-            "benchmark_min": 180.0,
-            "benchmark_max": 420.0,
-            "benchmark_median": 280.0,
-            "ratio_to_median": 1.0,
+            "benchmark_min": 220.0,
+            "benchmark_max": 380.0,
+            "benchmark_median": 300.0,
+            "ratio_to_median": 0.93,
             "suggested_rate": null,
             "reason": "Unit rate is within normal statutory benchmark range.",
             "statutory_risk": "",
-            "benchmark_source": "Keyword:cotton"
+            "benchmark_source": "HSN:520522"
           },
           {
             "item_index": 2,
             "prdnm": "LED-DRIVER",
-            "hsncd": "8430",
+            "hsncd": "850440",
             "uqc": "NOS",
             "unitrate": 260.0,
             "qty": 50.0,
@@ -269,11 +356,11 @@
             "suggested_rate": null,
             "reason": "Unit rate is within normal statutory benchmark range.",
             "statutory_risk": "",
-            "benchmark_source": "Keyword:driver"
+            "benchmark_source": "HSN:850440"
           }
         ]
       },
-      "corrections_applied_count": 11,
+      "corrections_applied_count": 8,
       "corrections_applied": [
         {
           "category": "KEY_NAME_NORMALIZATION",
@@ -306,23 +393,9 @@
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-18",
-          "corrected": "18-10-2026",
-          "description": "Standardized date format from '2026-10-18' to '18-10-2026'"
-        },
-        {
-          "category": "HSN_TARIFF_SCHEDULE_LOOKUP",
-          "field": "itemdtls[1].hsncd",
-          "original": "520522",
-          "corrected": "5911",
-          "description": "\u26a0\ufe0f Wrong HSN Code Detected: Customer entered '520522', which is not the correct statutory code for 'COTTON-YARN' ('Carded Weaving Yarn 30s'). Based on Final_hsn_sac_copy.xlsx, the correct official HSN is '5911' (Textile products and articles, for technical uses,...) with statutory 5.0% GST. Auto-corrected to ensure NIC IRN compliance."
-        },
-        {
-          "category": "WRONG_HSN_CODE_DETECTED",
-          "field": "itemdtls[1].hsncd",
-          "original": "520522",
-          "corrected": "5911",
-          "description": "\u26a0\ufe0f Wrong HSN Code Detected: Customer entered '520522', which is not the correct statutory code for 'COTTON-YARN' ('Carded Weaving Yarn 30s'). Based on Final_hsn_sac_copy.xlsx, the correct official HSN is '5911' (Textile products and articles, for technical uses,...) with statutory 5.0% GST. Auto-corrected to ensure NIC IRN compliance."
+          "original": "2026-10-19",
+          "corrected": "19-10-2026",
+          "description": "Standardized date format from '2026-10-19' to '19-10-2026'"
         },
         {
           "category": "FORMAT_NORMALIZATION",
@@ -332,24 +405,17 @@
           "description": "Replaced comma decimal separator '28000,00' with standard point notation '28000.00'"
         },
         {
-          "category": "HSN_TARIFF_SCHEDULE_LOOKUP",
-          "field": "itemdtls[2].hsncd",
-          "original": "850440",
-          "corrected": "8430",
-          "description": "\u26a0\ufe0f Wrong HSN Code Detected: Customer entered '850440', which is not the correct statutory code for 'LED-DRIVER' ('Constant Current Electronic Driver 40W'). Based on Final_hsn_sac_copy.xlsx, the correct official HSN is '8430' (Other moving, grading, levelling, scraping, excava...) with statutory 18.0% GST. Auto-corrected to ensure NIC IRN compliance."
-        },
-        {
-          "category": "WRONG_HSN_CODE_DETECTED",
-          "field": "itemdtls[2].hsncd",
-          "original": "850440",
-          "corrected": "8430",
-          "description": "\u26a0\ufe0f Wrong HSN Code Detected: Customer entered '850440', which is not the correct statutory code for 'LED-DRIVER' ('Constant Current Electronic Driver 40W'). Based on Final_hsn_sac_copy.xlsx, the correct official HSN is '8430' (Other moving, grading, levelling, scraping, excava...) with statutory 18.0% GST. Auto-corrected to ensure NIC IRN compliance."
+          "category": "TAX_MATH_RECALCULATION",
+          "field": "itemdtls[2].totitemval",
+          "original": "15340.00",
+          "corrected": "16640.00",
+          "description": "Recalculated Total Item Value to match sum of assessable value and all taxes (Rule 2194)"
         },
         {
           "category": "INVOICE_TOTALS_RECONCILIATION",
           "field": "valdt1.totinvval",
           "original": "44741.20",
-          "corrected": "44740.00",
+          "corrected": "46040.00",
           "description": "Reconciled Total Invoice Value with sum of items, taxes, other charges minus discounts (Rule 2189)"
         }
       ]
@@ -432,9 +498,9 @@
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-18",
-          "corrected": "18-10-2026",
-          "description": "Standardized date format from '2026-10-18' to '18-10-2026'"
+          "original": "2026-10-19",
+          "corrected": "19-10-2026",
+          "description": "Standardized date format from '2026-10-19' to '19-10-2026'"
         },
         {
           "category": "FORMAT_NORMALIZATION",
@@ -523,9 +589,9 @@
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-18",
-          "corrected": "18-10-2026",
-          "description": "Standardized date format from '2026-10-18' to '18-10-2026'"
+          "original": "2026-10-19",
+          "corrected": "19-10-2026",
+          "description": "Standardized date format from '2026-10-19' to '19-10-2026'"
         },
         {
           "category": "FORMAT_NORMALIZATION",
@@ -568,7 +634,7 @@
           {
             "item_index": 1,
             "prdnm": "ALUM-INGOT",
-            "hsncd": "7206",
+            "hsncd": "760110",
             "uqc": "KGS",
             "unitrate": 210.0,
             "qty": 500.0,
@@ -577,18 +643,18 @@
             "anomaly_type": "NORMAL",
             "severity": "NONE",
             "risk_score": 0,
-            "benchmark_min": 15.0,
-            "benchmark_max": 8000.0,
-            "benchmark_median": 250.0,
-            "ratio_to_median": 0.84,
+            "benchmark_min": 180.0,
+            "benchmark_max": 260.0,
+            "benchmark_median": 215.0,
+            "ratio_to_median": 0.98,
             "suggested_rate": null,
             "reason": "Unit rate is within normal statutory benchmark range.",
             "statutory_risk": "",
-            "benchmark_source": "UQC:KGS"
+            "benchmark_source": "HSN:760110"
           }
         ]
       },
-      "corrections_applied_count": 9,
+      "corrections_applied_count": 7,
       "corrections_applied": [
         {
           "category": "KEY_NAME_NORMALIZATION",
@@ -621,23 +687,9 @@
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-18",
-          "corrected": "18-10-2026",
-          "description": "Standardized date format from '2026-10-18' to '18-10-2026'"
-        },
-        {
-          "category": "HSN_TARIFF_SCHEDULE_LOOKUP",
-          "field": "itemdtls[1].hsncd",
-          "original": "760110",
-          "corrected": "7206",
-          "description": "\u26a0\ufe0f Wrong HSN Code Detected: Customer entered '760110', which is not the correct statutory code for 'ALUM-INGOT' ('Primary Aluminum Ingot 99.7%'). Based on Final_hsn_sac_copy.xlsx, the correct official HSN is '7206' (Iron and non-alloy steel in ingots or other primar...) with statutory 18.0% GST. Auto-corrected to ensure NIC IRN compliance."
-        },
-        {
-          "category": "WRONG_HSN_CODE_DETECTED",
-          "field": "itemdtls[1].hsncd",
-          "original": "760110",
-          "corrected": "7206",
-          "description": "\u26a0\ufe0f Wrong HSN Code Detected: Customer entered '760110', which is not the correct statutory code for 'ALUM-INGOT' ('Primary Aluminum Ingot 99.7%'). Based on Final_hsn_sac_copy.xlsx, the correct official HSN is '7206' (Iron and non-alloy steel in ingots or other primar...) with statutory 18.0% GST. Auto-corrected to ensure NIC IRN compliance."
+          "original": "2026-10-19",
+          "corrected": "19-10-2026",
+          "description": "Standardized date format from '2026-10-19' to '19-10-2026'"
         },
         {
           "category": "FORMAT_NORMALIZATION",
@@ -656,5 +708,5 @@
       ]
     }
   ],
-  "total_price_anomalies": 0
+  "total_price_anomalies": 1
 }

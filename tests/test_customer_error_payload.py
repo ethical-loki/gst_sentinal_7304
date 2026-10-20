@@ -19,12 +19,12 @@ def raw_customer_payload() -> Dict[str, Any]:
 
 
 def test_hsn_resolution_from_master_file():
-    """Verify that 'Industrial Servo Motor' resolves to HSN 8412 with 18% GST."""
+    """Verify that 'Industrial Servo Motor' resolves to Heading 8501 (85011013 / 8501) with 18% GST."""
     res = lookup_hsn_code("Industrial Servo Motor", "High torque servo motor for automation assembly line", "84")
     assert len(res) > 0
-    assert res[0]["hsn_code"] == "8412"
+    assert res[0]["hsn_code"] in ("8501", "85011013", "85011012") or res[0]["hsn_code"].startswith("8501")
     assert res[0]["gst_rate"] == 18.0
-    assert "engines" in res[0]["description"].lower() or "motors" in res[0]["description"].lower()
+    assert "motors" in res[0]["description"].lower()
 
 
 def test_nic_2day_rule_date_validation():
@@ -47,7 +47,7 @@ def test_nic_2day_rule_date_validation():
 def test_template_converters_pipeline_with_customer_payload(raw_customer_payload):
     """
     Test Template_Converters module with customer payload:
-    1. HSN resolves to 8412.
+    1. HSN resolves to statutory Heading 8501 (e.g. 85011013).
     2. Taxable value option is applied.
     3. Validation fails with Rule 2164 and prompt 'change the date'.
     """
@@ -58,7 +58,7 @@ def test_template_converters_pipeline_with_customer_payload(raw_customer_payload
 
     # 1. Check HSN resolution
     item = clean_inv["itemdtls"][0]
-    assert item["hsncd"] == "8412"
+    assert item["hsncd"] in ("8501", "85011013", "85011012") or item["hsncd"].startswith("8501")
     assert float(item["cgstrt"]) == 9.0
     assert float(item["sgstrt"]) == 9.0
 
@@ -82,7 +82,7 @@ def test_template_converters_pipeline_with_customer_payload(raw_customer_payload
 def test_src_ingestion_converter_with_customer_payload(raw_customer_payload):
     """
     Test src.ingestion converter with customer payload:
-    1. HSN resolves to 8412.
+    1. HSN resolves to statutory Heading 8501 (85011013).
     2. Taxable value input is supported and recalculates tax math.
     3. Date older than 2 days marks status as FAILED with error 2164 and prompt 'change the date'.
     """
@@ -107,7 +107,7 @@ def test_src_ingestion_converter_with_customer_payload(raw_customer_payload):
     corrections = inv_res["corrections_applied"]
     hsn_cor = [c for c in corrections if c.get("category") in ("HSN_CODE_LOOKUP", "HSN_TARIFF_SCHEDULE_LOOKUP")]
     assert len(hsn_cor) > 0
-    assert hsn_cor[0]["corrected"] == "8412"
+    assert hsn_cor[0]["corrected"] in ("8501", "85011013", "85011012") or hsn_cor[0]["corrected"].startswith("8501")
 
 
 def test_compliant_when_date_is_current(raw_customer_payload):

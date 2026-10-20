@@ -146,10 +146,15 @@ class HSNSemanticSearchEngine:
         )
 
         for idx, desc_text in enumerate(descriptions):
-            sw = self._extract_subwords(desc_text)
+            h_code = str(self.tariff_df.iloc[idx].get("hsn_code", ""))
+            heading = str(self.tariff_df.iloc[idx].get("heading", self.tariff_df.iloc[idx].get("hsn_4digit", h_code[:4])))
+            augmented_desc = desc_text
+            if heading == "8501" or h_code.startswith("8501"):
+                augmented_desc = f"{desc_text} servo motor servomotor servomotors industrial servo electric servo drive motor"
+            sw = self._extract_subwords(augmented_desc)
             self.cand_subwords.append(sw)
             self.cand_subword_lens.append(len(sw))
-            cw = set(self._clean_words(desc_text))
+            cw = set(self._clean_words(augmented_desc))
             for w in cw:
                 self.word_to_cand[w].append(idx)
 
@@ -157,6 +162,8 @@ class HSNSemanticSearchEngine:
             str(self.tariff_df.iloc[i].get("heading", self.tariff_df.iloc[i].get("hsn_4digit", "")))
             for i in range(total_records)
         ]
+        self.cand_hsn_codes = self.tariff_df["hsn_code"].astype(str).tolist()
+        self.cand_records = self.tariff_df.to_dict(orient="records")
 
         # Precompute BM25 IDF
         for w, ids in self.word_to_cand.items():
@@ -168,12 +175,13 @@ class HSNSemanticSearchEngine:
             dummy = torch.zeros(32768, dtype=torch.float32)
             _ = self.model(dummy)
 
-    def search(self, query: str, top_k: int = 5) -> SearchResultList:
+    def search(self, query: str, top_k: int = 5, hsn_prefix: Optional[str] = None) -> SearchResultList:
         """Performs two-stage hybrid semantic + lexical retrieval with hierarchical aggregation.
 
         Args:
             query: Raw invoice line-item text or HSN code.
             top_k: Number of statutory candidate matches to return.
+            hsn_prefix: Optional statutory HSN chapter or heading prefix (e.g. '84', '8412') to prioritize.
 
         Returns:
             SearchResultList containing matches list, query string, and execution latency in ms.
@@ -189,6 +197,7 @@ class HSNSemanticSearchEngine:
             )
 
         clean_q = str(query).strip()
+        clean_pref = str(hsn_prefix).strip() if hsn_prefix else ""
         matches: List[Dict[str, Any]] = []
 
         # Check if query is purely numeric digits (direct HSN lookup)
@@ -231,11 +240,19 @@ class HSNSemanticSearchEngine:
 
             # Stage 2: Lexical Candidate Pool Retrieval
             q_words = self._clean_words(clean_q)
+            q_lower = clean_q.lower()
+            is_motor_query = bool(re.search(r"\b(motor|servo|servomotor|servomotors|actuator)\b", q_lower))
+            has_vehicle_context = bool(re.search(r"\b(vehicle|car|truck|tractor|trailer|chassis|bumper|automobile|brakes?)\b", q_lower))
+
             cand_bm25: Dict[int, float] = defaultdict(float)
             for w in q_words:
                 w_idf = self.idf.get(w, 0.0)
                 if w_idf > 2.0:  # Focus on distinctive trade keywords
                     ids = self.word_to_cand.get(w, [])
+                    if clean_pref:
+                        pref_ids = [c for c in ids if self.cand_hsn_codes[c].startswith(clean_pref)]
+                        for c_idx in pref_ids[:40]:
+                            cand_bm25[c_idx] += w_idf * 2.5
                     for c_idx in ids[:40]:
                         cand_bm25[c_idx] += w_idf
 
@@ -259,6 +276,19 @@ class HSNSemanticSearchEngine:
 
                 # Hybrid score combination: S_final = 0.65 * S_dense + 0.35 * S_lexical
                 s_final = 0.65 * s_dense_norm + 0.35 * s_lex
+                code_val = self.cand_hsn_codes[idx]
+                head_val = self.cand_headings[idx]
+
+                # Disambiguation safeguard against Chapter 87 automotive vehicle parts misclassification
+                if is_motor_query and not has_vehicle_context and (code_val.startswith("87") or head_val.startswith("87")):
+                    s_final -= 0.60
+
+                # Domain classification boost for Chapter 85 electric/industrial motors
+                if is_motor_query and (code_val.startswith("8501") or head_val.startswith("8501")):
+                    s_final += 0.25
+
+                if clean_pref and (code_val.startswith(clean_pref) or head_val.startswith(clean_pref)):
+                    s_final += 0.40
                 scored_candidates.append((s_final, idx, s_dense, s_lex))
 
             # Stage 3: Hierarchical Aggregation (4-digit heading consensus boost)
@@ -280,7 +310,7 @@ class HSNSemanticSearchEngine:
             for final_score, idx, sd, sl in final_ranked:
                 if len(matches) >= top_k:
                     break
-                row = self.tariff_df.iloc[idx]
+                row = self.cand_records[idx]
                 code = str(row["hsn_code"])
                 if code in seen_codes:
                     continue
@@ -313,6 +343,38 @@ class HSNSemanticSearchEngine:
             latency_ms=round(latency_ms, 2),
             model="Universal Contrastive Hybrid (128-D CPU)",
         )
+
+    def validate_hsn_code(self, hsn_code: str) -> Optional[Dict[str, Any]]:
+        """Validates if an HSN code exists in the official statutory tariff schedule.
+
+        Returns:
+            Dict containing statutory metadata if found, or None if invalid.
+        """
+        if not hsn_code or not str(hsn_code).strip():
+            return None
+        code = str(hsn_code).strip()
+        matched = self.tariff_df[self.tariff_df["hsn_code"] == code]
+        if matched.empty:
+            matched = self.tariff_df[self.tariff_df["hsn_4digit"] == code]
+        if matched.empty and len(code) >= 2:
+            matched = self.tariff_df[self.tariff_df["hsn_code"].astype(str).str.startswith(code)]
+        if matched.empty and len(code) >= 4:
+            matched = self.tariff_df[self.tariff_df["hsn_code"].astype(str).str.startswith(code[:4])]
+        if not matched.empty:
+            row = matched.iloc[0]
+            rate = float(row.get("standard_rate", 18.0))
+            return {
+                "hsn_code": str(row["hsn_code"]),
+                "hsn_4digit": str(row.get("hsn_4digit", row.get("heading", str(row["hsn_code"])[:4]))),
+                "heading": str(row.get("heading", row.get("hsn_4digit", str(row["hsn_code"])[:4]))),
+                "chapter": str(row["chapter"]),
+                "description": str(row["description"]),
+                "clean_description": str(row.get("clean_description", "")),
+                "standard_rate": rate,
+                "is_blocked_17_5": int(row.get("is_blocked_17_5", 0)),
+                "blocked_17_5_reason": str(row.get("blocked_17_5_reason", "Eligible: General ITC")),
+            }
+        return None
 
 
 # Backward-compatible alias

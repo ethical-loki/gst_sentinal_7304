@@ -15,7 +15,7 @@
       "docdt1": {
         "document_type": "INV",
         "docno": "INV-2026-001",
-        "docdt": "18-10-2026"
+        "docdt": "19-10-2026"
       },
       "supplierdt1": {
         "supplier_gstin": "29AAACR4849R1ZH",
@@ -51,39 +51,39 @@
           "prdnm": "COTTON-SHIRTS",
           "prddesc": "Men Casual 100% Cotton Shirt",
           "isservc": "N",
-          "hsncd": "4202",
-          "qty": "200.000",
+          "hsncd": "85011013",
+          "qty": "10.000",
           "uqc": "NOS",
-          "unitrate": "800.00",
-          "grossamt": "160000.00",
+          "unitrate": "10000.00",
+          "grossamt": "100000.00",
           "discount": "",
           "othchrg": "",
-          "assamt": "160000.00",
+          "assamt": "100000.00",
           "taxability": "TAX",
           "cgstrt": "0.00",
           "cgstamt": "0.00",
           "sgstrt": "0.00",
           "sgstamt": "0.00",
-          "igstrt": "18.0",
-          "igstamt": "28800.00",
+          "igstrt": "5.0",
+          "igstamt": "5000.00",
           "cessrt": "0.00",
           "cessamt": "0.00",
           "cessnonadval": "",
           "statecessrt": "0.00",
           "statecessamt": "0.00",
-          "totitemval": "188800.00"
+          "totitemval": "105000.00"
         }
       ],
       "valdt1": {
-        "ttlassval": "160000.00",
+        "ttlassval": "100000.00",
         "cgstval": "0.00",
         "sgstval": "0.00",
-        "igstval": "28800.00",
+        "igstval": "5000.00",
         "cesval": "0.00",
         "stcesval": "0.00",
         "cesnonadval": "0.00",
         "discval": "",
-        "totinvval": "188800.00",
+        "totinvval": "105000.00",
         "othchrg": "0.00"
       },
       "ewbdt1": {
@@ -114,7 +114,7 @@
       "docdt1": {
         "document_type": "INV",
         "docno": "INV-2026-002",
-        "docdt": "18-10-2026"
+        "docdt": "19-10-2026"
       },
       "supplierdt1": {
         "supplier_gstin": "27TUHCN2957U5ZN",
@@ -150,7 +150,7 @@
           "prdnm": "COTTON-YARN",
           "prddesc": "Carded Weaving Yarn 30s",
           "isservc": "N",
-          "hsncd": "5911",
+          "hsncd": "520522",
           "qty": "100.000",
           "uqc": "KGS",
           "unitrate": "280.00",
@@ -176,7 +176,7 @@
           "prdnm": "LED-DRIVER",
           "prddesc": "Constant Current Electronic Driver 40W",
           "isservc": "N",
-          "hsncd": "8430",
+          "hsncd": "850440",
           "qty": "50.000",
           "uqc": "NOS",
           "unitrate": "260.00",
@@ -185,10 +185,10 @@
           "othchrg": "",
           "assamt": "13000.00",
           "taxability": "TAX",
-          "cgstrt": "9.00",
-          "cgstamt": "1170.00",
-          "sgstrt": "9.00",
-          "sgstamt": "1170.00",
+          "cgstrt": "14.00",
+          "cgstamt": "1820.00",
+          "sgstrt": "14.00",
+          "sgstamt": "1820.00",
           "igstrt": "0.00",
           "igstamt": "0.00",
           "cessrt": "0.00",
@@ -196,19 +196,19 @@
           "cessnonadval": "",
           "statecessrt": "0.00",
           "statecessamt": "0.00",
-          "totitemval": "15340.00"
+          "totitemval": "16640.00"
         }
       ],
       "valdt1": {
         "ttlassval": "41000.00",
-        "cgstval": "1870.00",
-        "sgstval": "1870.00",
+        "cgstval": "2520.00",
+        "sgstval": "2520.00",
         "igstval": "0.00",
         "cesval": "0.00",
         "stcesval": "0.00",
         "cesnonadval": "0.00",
         "discval": "",
-        "totinvval": "44740.00",
+        "totinvval": "46040.00",
         "othchrg": "0.00"
       },
       "ewbdt1": {
@@ -248,7 +248,7 @@
       "docdt1": {
         "document_type": "INV",
         "docno": "EXP-2026-003",
-        "docdt": "18-10-2026"
+        "docdt": "19-10-2026"
       },
       "supplierdt1": {
         "supplier_gstin": "33AAACR4849R1ZS",
@@ -361,7 +361,7 @@
       "docdt1": {
         "document_type": "INV",
         "docno": "SEZ-2026-004",
-        "docdt": "18-10-2026"
+        "docdt": "19-10-2026"
       },
       "supplierdt1": {
         "supplier_gstin": "24AAACR4849R1ZR",
@@ -460,7 +460,7 @@
       "docdt1": {
         "document_type": "INV",
         "docno": "INV-2026-005",
-        "docdt": "18-10-2026"
+        "docdt": "19-10-2026"
       },
       "supplierdt1": {
         "supplier_gstin": "19AAACR4849R1ZI",
@@ -496,7 +496,7 @@
           "prdnm": "ALUM-INGOT",
           "prddesc": "Primary Aluminum Ingot 99.7%",
           "isservc": "N",
-          "hsncd": "7206",
+          "hsncd": "760110",
           "qty": "500.000",
           "uqc": "KGS",
           "unitrate": "210.00",

@@ -2227,8 +2227,9 @@ class PayloadBuilder:
     def auto_correct_and_build(cls, raw_invoice: Dict[str, Any], taxable_value_input: Optional[Union[float, Decimal, Dict[str, Any]]] = None) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
         """
         Takes raw/dirty invoice data, applies key aliasing, value normalization,
-        HSN lookups against Final_hsn_sac_copy.xlsx, statutory tax rates reconciliation,
-        and tax calculations (with optional user taxable value override), returning (corrected_invoice, audit_log).
+        HSN lookups against Statutory Tariff Master & ML HSN Intelligence (128-D Contrastive Hybrid),
+        statutory tax rates reconciliation, and tax calculations (with optional user taxable value override),
+        returning (corrected_invoice, audit_log).
         """
         audit_log: List[Dict[str, Any]] = []
 
@@ -2586,24 +2587,39 @@ class PayloadBuilder:
                 if matches:
                     best_m = matches[0]
                     official_hsn = best_m["hsn_code"]
-                    # If HSN is incomplete or completely mismatching official tariff for this product
-                    if needs_lookup or (hsncd and not official_hsn.startswith(hsncd[:2]) and not hsncd.startswith(official_hsn[:2])):
-                        hsncd = official_hsn
-                        hsn_statutory_rate = Decimal(str(best_m.get("gst_rate", 18.0)))
+                    conf_val = float(best_m.get("confidence_pct", 100.0))
+                    # If HSN is incomplete or completely mismatching official tariff with high ML confidence (>= 75%)
+                    if needs_lookup or (conf_val >= 75.0 and hsncd and not official_hsn.startswith(hsncd[:2]) and not hsncd.startswith(official_hsn[:2])):
+                        # Auto-correct HSN only when customer provides taxable value input or confirms HSN decision
+                        if taxable_value_input is not None or item.get("apply_hsn_correction") is True:
+                            hsncd = official_hsn
+                            hsn_statutory_rate = Decimal(str(best_m.get("gst_rate", 18.0)))
+                        else:
+                            # Do not silently auto-correct HSN; keep customer's original HSN code
+                            hsncd = orig_hsn
+                            hsn_statutory_rate = Decimal(str(best_m.get("gst_rate", 18.0)))
                         audit_log.append({
                             "category": "HSN_TARIFF_SCHEDULE_LOOKUP",
                             "field": f"itemdtls[{idx}].hsncd",
                             "original": orig_hsn or "(blank)",
                             "corrected": hsncd,
-                            "description": f"⚠️ Wrong HSN Code Detected: Customer entered '{orig_hsn or '(blank)'}', which is not the correct statutory code for '{prdnm}' ('{prddesc}'). Based on Final_hsn_sac_copy.xlsx, the correct official HSN is '{hsncd}' ({best_m.get('description', '')[:50]}...) with statutory {hsn_statutory_rate}% GST. Auto-corrected to ensure NIC IRN compliance."
+                            "description": f"⚠️ Wrong HSN Code Detected: Customer entered '{orig_hsn or '(blank)'}', which is not the correct statutory code for '{prdnm}' ('{prddesc}'). Based on Statutory Tariff Master & ML HSN Intelligence (128-D Contrastive Hybrid), the correct official HSN is '{hsncd}' ({best_m.get('description', '')[:50]}...) with statutory {hsn_statutory_rate}% GST. Auto-corrected to ensure NIC IRN compliance."
                         })
                         audit_log.append({
                             "category": "WRONG_HSN_CODE_DETECTED",
                             "field": f"itemdtls[{idx}].hsncd",
                             "original": orig_hsn or "(blank)",
                             "corrected": hsncd,
-                            "description": f"⚠️ Wrong HSN Code Detected: Customer entered '{orig_hsn or '(blank)'}', which is not the correct statutory code for '{prdnm}' ('{prddesc}'). Based on Final_hsn_sac_copy.xlsx, the correct official HSN is '{hsncd}' ({best_m.get('description', '')[:50]}...) with statutory {hsn_statutory_rate}% GST. Auto-corrected to ensure NIC IRN compliance."
+                            "description": f"⚠️ Wrong HSN Code Detected: Customer entered '{orig_hsn or '(blank)'}', which is not the correct statutory code for '{prdnm}' ('{prddesc}'). Based on Statutory Tariff Master & ML HSN Intelligence (128-D Contrastive Hybrid), the correct official HSN is '{hsncd}' ({best_m.get('description', '')[:50]}...) with statutory {hsn_statutory_rate}% GST. Auto-corrected to ensure NIC IRN compliance."
                         })
+                        if best_m.get("is_blocked_17_5") == 1:
+                            audit_log.append({
+                                "category": "ITC_BLOCKED_SECTION_17_5",
+                                "field": f"itemdtls[{idx}].hsncd",
+                                "original": orig_hsn or "(blank)",
+                                "corrected": hsncd,
+                                "description": f"🚫 Section 17(5) Ineligible ITC Alert: Statutory HSN '{hsncd}' ({best_m.get('description', '')[:50]}...) has blocked Input Tax Credit. Reason: {best_m.get('blocked_17_5_reason', 'Section 17(5) Blocked ITC')}"
+                            })
                     elif hsn_statutory_rate is None:
                         hsn_statutory_rate = Decimal(str(best_m.get("gst_rate", 18.0)))
 
@@ -2669,6 +2685,9 @@ class PayloadBuilder:
                         "description": f"Applied user-provided taxable value input option Rs {override_assamt} and recalculated statutory taxes."
                     })
                 assamt_d = override_assamt
+                grossamt_d = (assamt_d + discount_d).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                if qty_d > Decimal("0.00"):
+                    unitrate_d = (grossamt_d / qty_d).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
             taxability = clean_str(item.get("taxability", "TAX")).upper() or "TAX"
 

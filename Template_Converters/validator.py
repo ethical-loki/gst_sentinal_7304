@@ -51,6 +51,15 @@ except ImportError:
     except ImportError:
         PriceAnomalyDetector = None
 
+try:
+    from .hsn_resolver import validate_hsn_statutory, lookup_hsn_code
+except ImportError:
+    try:
+        from hsn_resolver import validate_hsn_statutory, lookup_hsn_code
+    except ImportError:
+        validate_hsn_statutory = None
+        lookup_hsn_code = None
+
 GSTIN_REGEX = r"^[0-9]{2}[0-9A-Z]{13}$"
 DATE_REGEX_DASH = r"^[0-3][0-9]-[0-1][0-9]-[2][0][1-2][0-9]$"
 DATE_REGEX_ANY = r"^[0-3][0-9][/-][0-1][0-9][/-]20[1-2][0-9]$"
