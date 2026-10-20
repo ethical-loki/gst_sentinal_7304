@@ -68,6 +68,7 @@ async def preload_hsn_cache():
 
 
 _hsn_search_engine = None
+_hsn_misclass_scorer = None
 
 
 def get_hsn_search_engine():
@@ -78,37 +79,54 @@ def get_hsn_search_engine():
             _hsn_search_engine = HSNSearchEngine()
             print("[OK] HSNSearchEngine initialized with Contrastive MLP (128-D CPU)")
         except Exception as e:
-            # Not yet ready or weights still training
             _hsn_search_engine = None
     return _hsn_search_engine
+
+
+def get_hsn_misclass_scorer():
+    global _hsn_misclass_scorer
+    if _hsn_misclass_scorer is None:
+        try:
+            from src.ml.misclassification_scorer import HSNMisclassificationScorer
+            _hsn_misclass_scorer = HSNMisclassificationScorer()
+            print("[OK] HSNMisclassificationScorer initialized with Platt Calibrator")
+        except Exception as e:
+            print(f"[WARN] Failed to load HSNMisclassificationScorer in backend/main.py: {e}")
+            _hsn_misclass_scorer = None
+    return _hsn_misclass_scorer
 
 
 @app.get("/api/hsn-search")
 async def search_hsn(
     query: str = Query("", min_length=0),
-    q: Optional[str] = Query(None)
+    q: Optional[str] = Query(None),
+    unit_price: Optional[float] = Query(None),
+    chapter: Optional[str] = Query(None),
+    supplier_gstin: Optional[str] = Query(None),
 ):
     """
     Search HSN codes and descriptions via In-House Contrastive Semantic HSN Encoder.
-    Accepts either ?query= or ?q= parameter.
-    Returns top candidate statutory items with confidence percentage, Section 17(5) flag,
-    statutory tax rates, and exact CPU execution latency in milliseconds.
+    Accepts either ?query= or ?q= parameter, along with optional unit_price, chapter, and supplier_gstin.
+    Returns top candidate statutory items, confidence percentage, Section 17(5) flag,
+    statutory tax rates, and Day 06 Calibrated Misclassification Gatekeeper predictions.
     """
     t_start = time.perf_counter()
     raw_query = q if q is not None else query
     q_trimmed = raw_query.strip()
     if not q_trimmed:
-        return {"query": raw_query, "matches": [], "latency_ms": 0.0, "model": "None"}
+        return {"query": raw_query, "matches": [], "gatekeeper": None, "latency_ms": 0.0, "model": "None"}
 
     # 1. Attempt High-Performance Contrastive Semantic Search
     engine = get_hsn_search_engine()
+    scorer = get_hsn_misclass_scorer()
+
     if engine is not None:
         try:
             res = engine.search(q_trimmed, top_k=20)
             formatted = []
             for m in res["matches"]:
                 gst_val = float(m.get("standard_rate", 18.0))
-                formatted.append({
+                item_dict = {
                     "hsn_code": m["hsn_code"],
                     "hsn_4digit": m.get("hsn_4digit", m["hsn_code"][:4]),
                     "description": m["description"],
@@ -121,12 +139,41 @@ async def search_hsn(
                     "match_type": m.get("match_type", "Semantic Match"),
                     "is_blocked_17_5": m.get("is_blocked_17_5", 0),
                     "blocked_17_5_reason": m.get("blocked_17_5_reason", "Eligible")
-                })
+                }
+                formatted.append(item_dict)
+
+            # Day 06 Gatekeeper Evaluation on Top-1 Candidate and Retrieval Result
+            gatekeeper_data = None
+            if scorer is not None and formatted:
+                top1_code = formatted[0]["hsn_code"]
+                simulated_line = {
+                    "product_description": q_trimmed,
+                    "unit_price": float(unit_price) if unit_price is not None else 1000.0,
+                    "declared_hsn_chapter": str(chapter).strip() if chapter else top1_code[:2],
+                    "supplier_gstin": str(supplier_gstin).strip() if supplier_gstin else "27DEFAULTVENDOR",
+                }
+                try:
+                    risk_res = scorer.predict_risk(simulated_line, res)
+                    gatekeeper_data = {
+                        "predicted_hsn": risk_res["predicted_hsn"],
+                        "error_probability": risk_res["error_probability"],
+                        "error_probability_pct": round(risk_res["error_probability"] * 100.0, 1),
+                        "is_safe_to_autofile": risk_res["is_safe_to_autofile"],
+                        "risk_level": risk_res["risk_level"],
+                        "risk_factors": risk_res["risk_factors"],
+                        "features": {k: float(v) for k, v in risk_res.get("features", {}).items()},
+                    }
+                    # Attach gatekeeper result to top-1 item
+                    formatted[0]["gatekeeper"] = gatekeeper_data
+                except Exception as sc_err:
+                    print(f"[WARN] Error running HSNMisclassificationScorer: {sc_err}")
+
             return {
                 "query": raw_query,
                 "matches": formatted,
+                "gatekeeper": gatekeeper_data,
                 "latency_ms": res.get("latency_ms", round((time.perf_counter() - t_start) * 1000.0, 2)),
-                "model": res.get("model", "Contrastive MLP (128-D CPU)")
+                "model": res.get("model", "Contrastive MLP (128-D CPU) + Day 06 LightGBM Gatekeeper")
             }
         except Exception as e:
             print(f"[WARN] HSNSearchEngine execution error: {e}, falling back to literal index")

@@ -101,6 +101,13 @@
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].igstval",
+          "original": "igstval",
+          "corrected": "igstamt",
+          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
           "field": "itemdtls[1].cgstval",
           "original": "cgstval",
           "corrected": "cgstamt",
@@ -112,13 +119,6 @@
           "original": "sgstval",
           "corrected": "sgstamt",
           "description": "Standardized non-compliant key 'sgstval' to schema key 'sgstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].igstval",
-          "original": "igstval",
-          "corrected": "igstamt",
-          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
@@ -193,9 +193,9 @@
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-20",
-          "corrected": "20-10-2026",
-          "description": "Standardized date format from '2026-10-20' to '20-10-2026'"
+          "original": "2026-10-21",
+          "corrected": "21-10-2026",
+          "description": "Standardized date format from '2026-10-21' to '21-10-2026'"
         }
       ]
     }

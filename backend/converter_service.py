@@ -405,6 +405,24 @@ def find_state_by_name(text: str) -> Optional[Tuple[str, str]]:
 
 _hsn_df_cache = None
 _converter_hsn_engine = None
+_converter_misclass_scorer = None
+
+
+def get_converter_misclass_scorer():
+    """Initializes and returns cached Day 06 HSNMisclassificationScorer."""
+    global _converter_misclass_scorer
+    if _converter_misclass_scorer is None:
+        try:
+            from src.ml.misclassification_scorer import HSNMisclassificationScorer
+            _converter_misclass_scorer = HSNMisclassificationScorer()
+        except Exception:
+            try:
+                from Template_Converters.hsn_resolver import get_hsn_misclassification_scorer
+                _converter_misclass_scorer = get_hsn_misclassification_scorer()
+            except Exception as e:
+                print(f"[WARN] Failed to load HSNMisclassificationScorer in converter_service: {e}")
+                _converter_misclass_scorer = None
+    return _converter_misclass_scorer
 
 
 def get_converter_hsn_search_engine():
@@ -1775,25 +1793,63 @@ def process_converter_chat(
             p_desc = str(it.get("prddesc", p_nm)).strip()
             h_cd = re.sub(r"[^0-9]", "", str(it.get("hsncd", it.get("hsn", "")) or ""))
             if p_nm or p_desc:
-                m_list = lookup_hsn_by_description(p_nm, p_desc, top_k=1)
+                m_list = lookup_hsn_by_description(p_nm, p_desc, top_k=2)
                 if m_list:
                     best_h = m_list[0]["hsn_code"]
                     conf_pct = float(m_list[0].get("confidence_pct", 98.0))
                     # Only flag as wrong HSN if code is invalid/short or ML has high confidence (>= 75%)
                     if not h_cd or len(h_cd) < 4 or (conf_pct >= 75.0 and not best_h.startswith(h_cd[:2]) and not h_cd.startswith(best_h[:2])):
-                        wrong_hsn_info = (p_nm, p_desc, h_cd, best_h, m_list[0].get("description", ""), m_list[0].get("igst_rate", 18.0), conf_pct)
+                        gk_scorer = get_converter_misclass_scorer()
+                        gk_eval = None
+                        if gk_scorer:
+                            try:
+                                inv_line_item = {
+                                    "product_description": p_desc or p_nm,
+                                    "unit_price": float(it.get("unitprice", it.get("unitrate", it.get("unit_price", it.get("rate", 1000.0)))) or 1000.0),
+                                    "supplier_gstin": target_invoice.get("supplierdt1", {}).get("supplier_gstin", "27DEFAULTVENDOR"),
+                                    "declared_hsn_chapter": h_cd[:2] if len(h_cd) >= 2 else "",
+                                    "declared_hsn": h_cd,
+                                }
+                                gk_eval = gk_scorer.predict_risk(inv_line_item, m_list)
+                            except Exception as gke:
+                                print(f"[WARN] Error scoring in converter: {gke}")
+                        wrong_hsn_info = (p_nm, p_desc, h_cd, best_h, m_list[0].get("description", ""), m_list[0].get("igst_rate", 18.0), conf_pct, gk_eval)
                         break
 
         if has_hsn_err or wrong_hsn_info:
             if wrong_hsn_info:
-                p_nm, p_desc, curr_h, correct_h, correct_desc, correct_rate, conf_val = wrong_hsn_info
+                p_nm, p_desc, curr_h, correct_h, correct_desc, correct_rate, conf_val, gk_eval = wrong_hsn_info
                 blocked_note = ""
                 if m_list and m_list[0].get("is_blocked_17_5") == 1:
                     blocked_note = f"\n⚠️ *Section 17(5) Notice:* {m_list[0].get('blocked_17_5_reason', 'Ineligible ITC')}"
+                
+                # DAY 06 SAFETY GATEKEEPER BADGE & REASONING
+                gk_block = ""
+                if gk_eval:
+                    prob_pct = f"{gk_eval['error_probability'] * 100.0:.1f}%"
+                    if gk_eval["risk_level"] == "HIGH" or not gk_eval["is_safe_to_autofile"]:
+                        pill = "🔴 Blocked / High Risk"
+                    elif gk_eval["risk_level"] == "MEDIUM":
+                        pill = "🟡 Review Recommended"
+                    else:
+                        pill = "🟢 Safe to Auto-File"
+                    
+                    risk_factors_str = ""
+                    if gk_eval.get("risk_factors"):
+                        risk_factors_str = "\n" + "\n".join([f"• 🛡️ *{rf}*" for rf in gk_eval["risk_factors"][:2]])
+                    
+                    gk_block = (
+                        f"\n\n🛡️ **Day 06 Safety Gatekeeper (LightGBM & Platt Calibration):**\n"
+                        f"• Gatekeeper Status: **{pill}** ({prob_pct} Empirical Misclassification Risk)\n"
+                        f"• Chapter Analysis: Vendor declared Ch. `{curr_h[:2] if len(curr_h)>=2 else '(none)'}` vs Official Tariff Ch. `{correct_h[:2]}`"
+                        f"{risk_factors_str}"
+                    )
+
                 prompt_text = (
                     f"👉 **Quick Question on Product HSN:**\n\n"
                     f"⚠️ **Wrong HSN Code Detected:** You entered `{curr_h or '(blank)'}` for **'{p_nm}'**.\n"
-                    f"Based on product description *'{p_desc}'*, the official tariff via Statutory ML HSN Intelligence ({conf_val}% confidence) is **`{correct_h}`** (*{correct_desc[:50]}*) at **{correct_rate}% GST**.{blocked_note}\n\n"
+                    f"Based on product description *'{p_desc}'*, the official tariff via Statutory ML HSN Intelligence ({conf_val}% confidence) is **`{correct_h}`** (*{correct_desc[:50]}*) at **{correct_rate}% GST**.{blocked_note}"
+                    f"{gk_block}\n\n"
                     "Would you like to auto-correct this HSN code?"
                 )
                 return prompt_text, [f"Set HSN: {correct_h}", "Fix HSN from product description"]
@@ -2443,7 +2499,8 @@ def process_converter_chat(
         else:
             items = target_inv.get("itemdtls", target_inv.get("items", target_inv.get("itemlist", target_inv.get("ItemList", target_inv.get("ItemDtls", [])))))
             if items:
-                reply_lines.append("📦 **Statutory ML HSN Intelligence Verification (128-D CPU):**\n")
+                reply_lines.append("📦 **Statutory ML HSN Intelligence & Day 06 Gatekeeper Verification:**\n")
+                gk_scorer = get_converter_misclass_scorer()
                 for itm in items:
                     p_nm = itm.get("prdnm", "Item")
                     p_dsc = itm.get("prddesc", p_nm)
@@ -2453,10 +2510,32 @@ def process_converter_chat(
                         top_m = m_list[0]
                         conf = top_m.get("confidence_pct", 98.0)
                         rate = top_m.get("igst_rate", 18.0)
+
+                        gk_pill_str = ""
+                        if gk_scorer:
+                            try:
+                                inv_line_item = {
+                                    "product_description": p_dsc or p_nm,
+                                    "unit_price": float(itm.get("unitprice", itm.get("unitrate", itm.get("unit_price", itm.get("rate", 1000.0)))) or 1000.0),
+                                    "supplier_gstin": target_inv.get("supplierdt1", {}).get("supplier_gstin", "27DEFAULTVENDOR"),
+                                    "declared_hsn_chapter": curr_h[:2] if len(curr_h) >= 2 else "",
+                                    "declared_hsn": curr_h,
+                                }
+                                g_res = gk_scorer.predict_risk(inv_line_item, m_list)
+                                prob_str = f"{g_res['error_probability']*100:.1f}%"
+                                if g_res["risk_level"] == "HIGH" or not g_res["is_safe_to_autofile"]:
+                                    gk_pill_str = f" | 🛡️ Gatekeeper: **🔴 Blocked ({prob_str} Risk)**"
+                                elif g_res["risk_level"] == "MEDIUM":
+                                    gk_pill_str = f" | 🛡️ Gatekeeper: **🟡 Review ({prob_str} Risk)**"
+                                else:
+                                    gk_pill_str = f" | 🛡️ Gatekeeper: **🟢 Safe ({prob_str} Risk)**"
+                            except Exception:
+                                pass
+
                         reply_lines.append(
                             f"• **{p_nm}** (Current HSN: `{curr_h or '(blank)'}`):\n"
                             f"  - Official Statutory Tariff: **`{top_m['hsn_code']}`** (*{top_m['description'][:50]}...*)\n"
-                            f"  - Model Confidence: **{conf}%** | Statutory Tax Rate: **{rate}% GST**\n"
+                            f"  - Model Confidence: **{conf}%** | Statutory Tax Rate: **{rate}% GST**{gk_pill_str}\n"
                         )
                         interactive_actions.append(f"Set HSN: {top_m['hsn_code']}")
                         for alt in m_list[1:3]:

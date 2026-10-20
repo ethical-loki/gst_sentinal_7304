@@ -8575,7 +8575,162 @@ async function fetchRawFiles() {
             sendCopilotQuickMessage(`Change date to ${dateVal}`);
         }
 
-        // Inline Vehicle Number Submission for Copilot (Maintains Backwards Compatibility)
+        // -------------------------------------------------------------
+        // Indian States Master List & Official Outward Sub-Supply Master Codes
+        // -------------------------------------------------------------
+        const INDIAN_STATES_LIST = [
+            { code: "01", name: "Jammu and Kashmir" },
+            { code: "02", name: "Himachal Pradesh" },
+            { code: "03", name: "Punjab" },
+            { code: "04", name: "Chandigarh" },
+            { code: "05", name: "Uttarakhand" },
+            { code: "06", name: "Haryana" },
+            { code: "07", name: "Delhi" },
+            { code: "08", name: "Rajasthan" },
+            { code: "09", name: "Uttar Pradesh" },
+            { code: "10", name: "Bihar" },
+            { code: "11", name: "Sikkim" },
+            { code: "12", name: "Arunachal Pradesh" },
+            { code: "13", name: "Nagaland" },
+            { code: "14", name: "Manipur" },
+            { code: "15", name: "Mizoram" },
+            { code: "16", name: "Tripura" },
+            { code: "17", name: "Meghalaya" },
+            { code: "18", name: "Assam" },
+            { code: "19", name: "West Bengal" },
+            { code: "20", name: "Jharkhand" },
+            { code: "21", name: "Odisha" },
+            { code: "22", name: "Chhattisgarh" },
+            { code: "23", name: "Madhya Pradesh" },
+            { code: "24", name: "Gujarat" },
+            { code: "25", name: "Daman and Diu" },
+            { code: "26", name: "Dadra and Nagar Haveli" },
+            { code: "27", name: "Maharashtra" },
+            { code: "28", name: "Andhra Pradesh (Old)" },
+            { code: "29", name: "Karnataka" },
+            { code: "30", name: "Goa" },
+            { code: "31", name: "Lakshadweep" },
+            { code: "32", name: "Kerala" },
+            { code: "33", name: "Tamil Nadu" },
+            { code: "34", name: "Puducherry" },
+            { code: "35", name: "Andaman and Nicobar Islands" },
+            { code: "36", name: "Telangana" },
+            { code: "37", name: "Andhra Pradesh (New)" },
+            { code: "38", name: "Ladakh" },
+            { code: "96", name: "Other Country (Export)" },
+            { code: "97", name: "Other Territory" }
+        ];
+
+        const OUTWARD_SUBSUPPLY_OPTIONS = [
+            { code: "1", label: "1 - Supply: Regular sales or outward supply of goods" },
+            { code: "3", label: "3 - Export: Goods sent outside India" },
+            { code: "4", label: "4 - Job Work: Goods sent to a job worker for processing" },
+            { code: "5", label: "5 - For Own Use: Stock transfer or movement for internal company use" }
+        ];
+
+        function buildStateOptionsHtml(selectedCode) {
+            const cur = String(selectedCode || '').padStart(2, '0');
+            return INDIAN_STATES_LIST.map(st => {
+                const isSel = (st.code === cur);
+                return `<option value="${st.code}" ${isSel ? 'selected' : ''}>${st.code} - ${st.name}</option>`;
+            }).join('');
+        }
+
+        function buildSubsupplyOptionsHtml(selectedCode) {
+            const cur = String(selectedCode || '1');
+            return OUTWARD_SUBSUPPLY_OPTIONS.map(opt => {
+                const isSel = (opt.code === cur);
+                return `<option value="${opt.code}" ${isSel ? 'selected' : ''}>${escapeHtml(opt.label)}</option>`;
+            }).join('');
+        }
+
+        function autoDetectStateFromPin(pinInput) {
+            const pinVal = (pinInput ? pinInput.value : '').trim();
+            if (pinVal.length < 2) return;
+            const pfx2 = pinVal.substring(0, 2);
+            const pfx3 = pinVal.substring(0, 3);
+            let targetSt = '';
+            if (pfx3 === '403') targetSt = '30'; // Goa
+            else if (['11'].includes(pfx2)) targetSt = '07'; // Delhi
+            else if (['12', '13'].includes(pfx2)) targetSt = '06'; // Haryana
+            else if (['14', '15', '16'].includes(pfx2)) targetSt = '03'; // Punjab
+            else if (['17'].includes(pfx2)) targetSt = '02'; // HP
+            else if (['18', '19'].includes(pfx2)) targetSt = '01'; // J&K
+            else if (['20', '21', '22', '23', '24', '25', '26', '27', '28'].includes(pfx2)) targetSt = '09'; // UP
+            else if (['30', '31', '32', '33', '34'].includes(pfx2)) targetSt = '08'; // Rajasthan
+            else if (['36', '37', '38', '39'].includes(pfx2)) targetSt = '24'; // Gujarat
+            else if (['40', '41', '42', '43', '44'].includes(pfx2)) targetSt = '27'; // Maharashtra
+            else if (['45', '46', '47', '48', '49'].includes(pfx2)) targetSt = '23'; // MP
+            else if (['50', '51', '52', '53'].includes(pfx2)) targetSt = '36'; // Telangana
+            else if (['56', '57', '58', '59'].includes(pfx2)) targetSt = '29'; // Karnataka
+            else if (['60', '61', '62', '63', '64'].includes(pfx2)) targetSt = '33'; // Tamil Nadu
+            else if (['67', '68', '69'].includes(pfx2)) targetSt = '32'; // Kerala
+            else if (['70', '71', '72', '73', '74'].includes(pfx2)) targetSt = '19'; // West Bengal
+            else if (['75', '76', '77'].includes(pfx2)) targetSt = '21'; // Odisha
+            else if (['78', '79'].includes(pfx2)) targetSt = '18'; // Assam
+            else if (['80', '81', '82', '83', '84', '85'].includes(pfx2)) targetSt = '10'; // Bihar
+            else if (pinVal === '999999') targetSt = '96';
+
+            if (targetSt) {
+                const parent = pinInput.closest('.copilot-inline-suggestion-bar') || pinInput.closest('.rule-quick-pinstate-fix') || pinInput.parentElement;
+                if (parent) {
+                    const sel = parent.querySelector('select[data-field="state"]');
+                    if (sel && sel.value !== targetSt) {
+                        sel.value = targetSt;
+                    }
+                }
+            }
+        }
+
+        // Submit Unified PIN and State Input
+        function submitCopilotPinStateInput(btnOrInput, role) {
+            role = role || 'Buyer';
+            const parent = btnOrInput.closest('.copilot-inline-suggestion-bar') || btnOrInput.parentElement;
+            if (!parent) return;
+            const pinInp = parent.querySelector('input[data-field="pin"]') || parent.querySelector('input');
+            const stateSel = parent.querySelector('select[data-field="state"]') || parent.querySelector('select');
+            const pinVal = (pinInp ? pinInp.value.trim() : '') || '400001';
+            const stateVal = stateSel ? stateSel.value : '27';
+            sendCopilotQuickMessage(`Set ${role} PIN: ${pinVal}, State: ${stateVal}`);
+        }
+
+        // Submit Subsupply Input
+        function submitCopilotSubsupplyInput(btnOrInput) {
+            const parent = btnOrInput.closest('.copilot-inline-suggestion-bar') || btnOrInput.parentElement;
+            if (!parent) return;
+            const subSel = parent.querySelector('select[data-field="subsupply"]') || parent.querySelector('select');
+            const subVal = subSel ? subSel.value : '1';
+            sendCopilotQuickMessage(`Set Subsupply: ${subVal}`);
+        }
+
+        // Apply Direct Changes from Tab 3 Error Cards
+        function applyDirectPinStateChange(pinId, stateId, role) {
+            role = role || 'Buyer';
+            const pinEl = document.getElementById(pinId);
+            const stateEl = document.getElementById(stateId);
+            const pinVal = (pinEl ? pinEl.value.trim() : '') || '400001';
+            const stateVal = stateEl ? stateEl.value : '27';
+            switchRightPanelView('copilot');
+            sendCopilotQuickMessage(`Set ${role} PIN: ${pinVal}, State: ${stateVal}`);
+        }
+
+        function applyDirectSubsupplyChange(selectId) {
+            const selectEl = document.getElementById(selectId);
+            const subVal = selectEl ? selectEl.value : '1';
+            switchRightPanelView('copilot');
+            sendCopilotQuickMessage(`Set Subsupply: ${subVal}`);
+        }
+
+        function applyDirectGenericChange(inputId, fieldName) {
+            const inputEl = document.getElementById(inputId);
+            const val = inputEl ? inputEl.value.trim() : '';
+            switchRightPanelView('copilot');
+            if (val) {
+                sendCopilotQuickMessage(`Set ${fieldName}: ${val}`);
+            }
+        }
+
+        // Inline Vehicle Number Submission for Copilot (Includes Type & Sub-Supply)
         function submitCopilotVehicleInput(btnOrInput) {
             const parentBar = btnOrInput.closest('.copilot-inline-suggestion-bar') || btnOrInput.closest('.copilot-vehicle-picker-bar') || btnOrInput.parentElement;
             if (!parentBar) {
@@ -8584,10 +8739,12 @@ async function fetchRawFiles() {
             }
             const vehInp = parentBar.querySelector('input[data-field="vehicle"]') || parentBar.querySelector('input.copilot-inline-vehicle-input') || parentBar.querySelector('input.copilot-inline-custom-input') || parentBar.querySelector('input');
             const typeSel = parentBar.querySelector('select[data-field="vehtype"]') || parentBar.querySelector('select');
+            const subSel = parentBar.querySelector('select[data-field="subsupply"]');
             let vehVal = (vehInp ? vehInp.value.trim().toUpperCase() : '') || 'KA01AB1234';
             vehVal = vehVal.replace(/[^A-Z0-9]/g, '');
             const typeVal = typeSel ? typeSel.value : 'R';
-            sendCopilotQuickMessage(`Vehicle is ${vehVal}, Type: ${typeVal}`);
+            const subVal = subSel ? subSel.value : '1';
+            sendCopilotQuickMessage(`Vehicle is ${vehVal}, Type: ${typeVal}, Subsupply: ${subVal}`);
         }
 
         // Apply Direct Vehicle Change from Error Card

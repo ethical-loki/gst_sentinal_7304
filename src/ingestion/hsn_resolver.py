@@ -10,6 +10,8 @@ from Template_Converters.hsn_resolver import (
     lookup_hsn_code,
     validate_hsn_statutory,
     validate_nic_2day_rule,
+    get_hsn_misclassification_scorer,
+    score_hsn_prediction_risk,
 )
 
 __all__ = [
@@ -18,4 +20,6 @@ __all__ = [
     "lookup_hsn_code",
     "validate_hsn_statutory",
     "validate_nic_2day_rule",
+    "get_hsn_misclassification_scorer",
+    "score_hsn_prediction_risk",
 ]

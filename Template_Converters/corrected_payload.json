@@ -15,7 +15,7 @@
       "docdt1": {
         "document_type": "INV",
         "docno": "INV-2026-B2B01",
-        "docdt": "20-10-2026"
+        "docdt": "21-10-2026"
       },
       "supplierdt1": {
         "supplier_gstin": "27ABCDE1234F1Z0",
@@ -32,7 +32,7 @@
         "supplier_email": "accounts@bharattech.in"
       },
       "buyerdt1": {
-        "buyer_gstin": "27XYZAB5678C1Z6",
+        "buyer_gstin": "29XYZAB5678C1Z2",
         "buyer_trdnm": "APEX COMMERCE",
         "buyer_lglnm": "APEX COMMERCE ENTERPRISES",
         "buyer_bno": "55",
@@ -40,9 +40,9 @@
         "buyer_flno": "NAA",
         "buyer_loc": "Bengaluru",
         "buyer_dst": "Bengaluru",
-        "buyer_pin": "400001",
-        "buyer_state": "27",
-        "pos": "27",
+        "buyer_pin": "560001",
+        "buyer_state": "29",
+        "pos": "29",
         "buyer_phone": "",
         "buyer_email": ""
       },
@@ -60,12 +60,12 @@
           "othchrg": "",
           "assamt": "50000.00",
           "taxability": "TAX",
-          "cgstrt": "9.00",
-          "cgstamt": "4500.00",
-          "sgstrt": "9.00",
-          "sgstamt": "4500.00",
-          "igstrt": "0.00",
-          "igstamt": "0.00",
+          "cgstrt": "0.00",
+          "cgstamt": "0.00",
+          "sgstrt": "0.00",
+          "sgstamt": "0.00",
+          "igstrt": "18.0",
+          "igstamt": "9000.00",
           "cessrt": "0.00",
           "cessamt": "0.00",
           "cessnonadval": "",
@@ -76,9 +76,9 @@
       ],
       "valdt1": {
         "ttlassval": "50000.00",
-        "cgstval": "4500.00",
-        "sgstval": "4500.00",
-        "igstval": "0.00",
+        "cgstval": "0.00",
+        "sgstval": "0.00",
+        "igstval": "9000.00",
         "cesval": "0.00",
         "stcesval": "0.00",
         "cesnonadval": "0.00",

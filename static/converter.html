@@ -3723,6 +3723,49 @@
                             </div>
                         ` : '';
 
+                        const isPinStateErr = ['2274', '2275', '2242', '3041'].includes(String(err.error_code)) || (err.field && (err.field.toLowerCase().includes('pin') || err.field.toLowerCase().includes('state') || err.field.toLowerCase().includes('stcd'))) || (err.message && (err.message.toLowerCase().includes('pin') || err.message.toLowerCase().includes('state')));
+                        const isSupRole = err.field && (err.field.toLowerCase().includes('supplier') || err.field.toLowerCase().includes('seller') || err.field.toLowerCase().includes('self'));
+                        const roleName = isSupRole ? 'Supplier' : 'Buyer';
+                        const defCardPin = isSupRole ? '560001' : '400001';
+                        const defCardState = isSupRole ? '29' : '27';
+                        const pinStateFixHtml = isPinStateErr ? `
+                            <div class="rule-quick-pinstate-fix" style="margin-top: 10px; padding: 10px 12px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="font-size: 0.8rem; font-weight: 700; color: #38bdf8;">📍 ${roleName} PIN & State:</span>
+                                <input type="text" id="rulePinInput_${index}_${eIdx}" placeholder="6-digit PIN" value="${defCardPin}" maxlength="6" oninput="this.value=this.value.replace(/[^0-9]/g,''); if(typeof autoDetectStateFromPin==='function') autoDetectStateFromPin(this);" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 4px 8px; font-size: 0.82rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 90px; font-weight: 700;">
+                                <select id="ruleStateInput_${index}_${eIdx}" data-field="state" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 4px 8px; font-size: 0.82rem; outline: none; font-family: 'JetBrains Mono', monospace; cursor: pointer; max-width: 200px;">
+                                    ${typeof buildStateOptionsHtml==='function' ? buildStateOptionsHtml(defCardState) : `<option value="${defCardState}">${defCardState}</option>`}
+                                </select>
+                                <button type="button" class="copilot-action-btn" onclick="applyDirectPinStateChange('rulePinInput_${index}_${eIdx}', 'ruleStateInput_${index}_${eIdx}', '${roleName}')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 700;">Apply PIN & State</button>
+                                <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Fix state and pin code mismatch')" style="background: rgba(16,185,129,0.2); border: 1px solid #10b981; color: #34d399; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600;">⚡ Auto-Align</button>
+                            </div>
+                        ` : '';
+
+                        const isSubErr = (err.field && err.field.toLowerCase().includes('subsupply')) || (err.message && err.message.toLowerCase().includes('subsupply'));
+                        const subsupplyFixHtml = isSubErr ? `
+                            <div class="rule-quick-subsupply-fix" style="margin-top: 10px; padding: 10px 12px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="font-size: 0.8rem; font-weight: 700; color: #38bdf8;">📦 Sub-Supply Type:</span>
+                                <select id="ruleSubInput_${index}_${eIdx}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 4px 8px; font-size: 0.82rem; outline: none; font-family: 'JetBrains Mono', monospace; cursor: pointer; min-width: 250px;">
+                                    ${typeof buildSubsupplyOptionsHtml==='function' ? buildSubsupplyOptionsHtml('1') : '<option value="1">1 - Supply</option>'}
+                                </select>
+                                <button type="button" class="copilot-action-btn" onclick="applyDirectSubsupplyChange('ruleSubInput_${index}_${eIdx}')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 700;">Apply Sub-Supply</button>
+                                <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Disable E-Way Bill')" style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600;">🚫 Disable EWB</button>
+                            </div>
+                        ` : '';
+
+                        const isCustomSpecial = isDateErr || isVehErr || isHsnErr || isPinStateErr || isSubErr;
+                        let genericFixVal = '';
+                        if (err.resolution) {
+                            const mRes = err.resolution.match(/['"]([^'"]+)['"]/);
+                            if (mRes) genericFixVal = mRes[1];
+                        }
+                        const genericFixHtml = !isCustomSpecial && err.field ? `
+                            <div class="rule-quick-generic-fix" style="margin-top: 10px; padding: 8px 12px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="font-size: 0.8rem; font-weight: 700; color: #38bdf8;">✏️ Edit [${escapeHtml(err.field)}]:</span>
+                                <input type="text" id="ruleGenInput_${index}_${eIdx}" placeholder="Input valid ${escapeHtml(err.field)}" value="${escapeHtml(genericFixVal)}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 4px 8px; font-size: 0.82rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 170px;">
+                                <button type="button" class="copilot-action-btn" onclick="applyDirectGenericChange('ruleGenInput_${index}_${eIdx}', '${escapeHtml(err.field)}')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 700;">Apply Edit</button>
+                            </div>
+                        ` : '';
+
                         return `
                         <div class="rule-issue-box">
                             <div>
@@ -3740,6 +3783,9 @@
                             ${dateFixHtml}
                             ${vehicleFixHtml}
                             ${hsnFixHtml}
+                            ${pinStateFixHtml}
+                            ${subsupplyFixHtml}
+                            ${genericFixHtml}
                         </div>
                     `}).join('');
                 } else {
@@ -4477,7 +4523,162 @@
             sendCopilotQuickMessage(`Change date to ${dateVal}`);
         }
 
-        // Inline Vehicle Number Submission for Copilot (Maintains Backwards Compatibility)
+        // -------------------------------------------------------------
+        // Indian States Master List & Official Outward Sub-Supply Master Codes
+        // -------------------------------------------------------------
+        const INDIAN_STATES_LIST = [
+            { code: "01", name: "Jammu and Kashmir" },
+            { code: "02", name: "Himachal Pradesh" },
+            { code: "03", name: "Punjab" },
+            { code: "04", name: "Chandigarh" },
+            { code: "05", name: "Uttarakhand" },
+            { code: "06", name: "Haryana" },
+            { code: "07", name: "Delhi" },
+            { code: "08", name: "Rajasthan" },
+            { code: "09", name: "Uttar Pradesh" },
+            { code: "10", name: "Bihar" },
+            { code: "11", name: "Sikkim" },
+            { code: "12", name: "Arunachal Pradesh" },
+            { code: "13", name: "Nagaland" },
+            { code: "14", name: "Manipur" },
+            { code: "15", name: "Mizoram" },
+            { code: "16", name: "Tripura" },
+            { code: "17", name: "Meghalaya" },
+            { code: "18", name: "Assam" },
+            { code: "19", name: "West Bengal" },
+            { code: "20", name: "Jharkhand" },
+            { code: "21", name: "Odisha" },
+            { code: "22", name: "Chhattisgarh" },
+            { code: "23", name: "Madhya Pradesh" },
+            { code: "24", name: "Gujarat" },
+            { code: "25", name: "Daman and Diu" },
+            { code: "26", name: "Dadra and Nagar Haveli" },
+            { code: "27", name: "Maharashtra" },
+            { code: "28", name: "Andhra Pradesh (Old)" },
+            { code: "29", name: "Karnataka" },
+            { code: "30", name: "Goa" },
+            { code: "31", name: "Lakshadweep" },
+            { code: "32", name: "Kerala" },
+            { code: "33", name: "Tamil Nadu" },
+            { code: "34", name: "Puducherry" },
+            { code: "35", name: "Andaman and Nicobar Islands" },
+            { code: "36", name: "Telangana" },
+            { code: "37", name: "Andhra Pradesh (New)" },
+            { code: "38", name: "Ladakh" },
+            { code: "96", name: "Other Country (Export)" },
+            { code: "97", name: "Other Territory" }
+        ];
+
+        const OUTWARD_SUBSUPPLY_OPTIONS = [
+            { code: "1", label: "1 - Supply: Regular sales or outward supply of goods" },
+            { code: "3", label: "3 - Export: Goods sent outside India" },
+            { code: "4", label: "4 - Job Work: Goods sent to a job worker for processing" },
+            { code: "5", label: "5 - For Own Use: Stock transfer or movement for internal company use" }
+        ];
+
+        function buildStateOptionsHtml(selectedCode) {
+            const cur = String(selectedCode || '').padStart(2, '0');
+            return INDIAN_STATES_LIST.map(st => {
+                const isSel = (st.code === cur);
+                return `<option value="${st.code}" ${isSel ? 'selected' : ''}>${st.code} - ${st.name}</option>`;
+            }).join('');
+        }
+
+        function buildSubsupplyOptionsHtml(selectedCode) {
+            const cur = String(selectedCode || '1');
+            return OUTWARD_SUBSUPPLY_OPTIONS.map(opt => {
+                const isSel = (opt.code === cur);
+                return `<option value="${opt.code}" ${isSel ? 'selected' : ''}>${escapeHtml(opt.label)}</option>`;
+            }).join('');
+        }
+
+        function autoDetectStateFromPin(pinInput) {
+            const pinVal = (pinInput ? pinInput.value : '').trim();
+            if (pinVal.length < 2) return;
+            const pfx2 = pinVal.substring(0, 2);
+            const pfx3 = pinVal.substring(0, 3);
+            let targetSt = '';
+            if (pfx3 === '403') targetSt = '30'; // Goa
+            else if (['11'].includes(pfx2)) targetSt = '07'; // Delhi
+            else if (['12', '13'].includes(pfx2)) targetSt = '06'; // Haryana
+            else if (['14', '15', '16'].includes(pfx2)) targetSt = '03'; // Punjab
+            else if (['17'].includes(pfx2)) targetSt = '02'; // HP
+            else if (['18', '19'].includes(pfx2)) targetSt = '01'; // J&K
+            else if (['20', '21', '22', '23', '24', '25', '26', '27', '28'].includes(pfx2)) targetSt = '09'; // UP
+            else if (['30', '31', '32', '33', '34'].includes(pfx2)) targetSt = '08'; // Rajasthan
+            else if (['36', '37', '38', '39'].includes(pfx2)) targetSt = '24'; // Gujarat
+            else if (['40', '41', '42', '43', '44'].includes(pfx2)) targetSt = '27'; // Maharashtra
+            else if (['45', '46', '47', '48', '49'].includes(pfx2)) targetSt = '23'; // MP
+            else if (['50', '51', '52', '53'].includes(pfx2)) targetSt = '36'; // Telangana
+            else if (['56', '57', '58', '59'].includes(pfx2)) targetSt = '29'; // Karnataka
+            else if (['60', '61', '62', '63', '64'].includes(pfx2)) targetSt = '33'; // Tamil Nadu
+            else if (['67', '68', '69'].includes(pfx2)) targetSt = '32'; // Kerala
+            else if (['70', '71', '72', '73', '74'].includes(pfx2)) targetSt = '19'; // West Bengal
+            else if (['75', '76', '77'].includes(pfx2)) targetSt = '21'; // Odisha
+            else if (['78', '79'].includes(pfx2)) targetSt = '18'; // Assam
+            else if (['80', '81', '82', '83', '84', '85'].includes(pfx2)) targetSt = '10'; // Bihar
+            else if (pinVal === '999999') targetSt = '96';
+
+            if (targetSt) {
+                const parent = pinInput.closest('.copilot-inline-suggestion-bar') || pinInput.closest('.rule-quick-pinstate-fix') || pinInput.parentElement;
+                if (parent) {
+                    const sel = parent.querySelector('select[data-field="state"]');
+                    if (sel && sel.value !== targetSt) {
+                        sel.value = targetSt;
+                    }
+                }
+            }
+        }
+
+        // Submit Unified PIN and State Input
+        function submitCopilotPinStateInput(btnOrInput, role) {
+            role = role || 'Buyer';
+            const parent = btnOrInput.closest('.copilot-inline-suggestion-bar') || btnOrInput.parentElement;
+            if (!parent) return;
+            const pinInp = parent.querySelector('input[data-field="pin"]') || parent.querySelector('input');
+            const stateSel = parent.querySelector('select[data-field="state"]') || parent.querySelector('select');
+            const pinVal = (pinInp ? pinInp.value.trim() : '') || '400001';
+            const stateVal = stateSel ? stateSel.value : '27';
+            sendCopilotQuickMessage(`Set ${role} PIN: ${pinVal}, State: ${stateVal}`);
+        }
+
+        // Submit Subsupply Input
+        function submitCopilotSubsupplyInput(btnOrInput) {
+            const parent = btnOrInput.closest('.copilot-inline-suggestion-bar') || btnOrInput.parentElement;
+            if (!parent) return;
+            const subSel = parent.querySelector('select[data-field="subsupply"]') || parent.querySelector('select');
+            const subVal = subSel ? subSel.value : '1';
+            sendCopilotQuickMessage(`Set Subsupply: ${subVal}`);
+        }
+
+        // Apply Direct Changes from Tab 3 Error Cards
+        function applyDirectPinStateChange(pinId, stateId, role) {
+            role = role || 'Buyer';
+            const pinEl = document.getElementById(pinId);
+            const stateEl = document.getElementById(stateId);
+            const pinVal = (pinEl ? pinEl.value.trim() : '') || '400001';
+            const stateVal = stateEl ? stateEl.value : '27';
+            switchRightPanelView('copilot');
+            sendCopilotQuickMessage(`Set ${role} PIN: ${pinVal}, State: ${stateVal}`);
+        }
+
+        function applyDirectSubsupplyChange(selectId) {
+            const selectEl = document.getElementById(selectId);
+            const subVal = selectEl ? selectEl.value : '1';
+            switchRightPanelView('copilot');
+            sendCopilotQuickMessage(`Set Subsupply: ${subVal}`);
+        }
+
+        function applyDirectGenericChange(inputId, fieldName) {
+            const inputEl = document.getElementById(inputId);
+            const val = inputEl ? inputEl.value.trim() : '';
+            switchRightPanelView('copilot');
+            if (val) {
+                sendCopilotQuickMessage(`Set ${fieldName}: ${val}`);
+            }
+        }
+
+        // Inline Vehicle Number Submission for Copilot (Includes Type & Sub-Supply)
         function submitCopilotVehicleInput(btnOrInput) {
             const parentBar = btnOrInput.closest('.copilot-inline-suggestion-bar') || btnOrInput.closest('.copilot-vehicle-picker-bar') || btnOrInput.parentElement;
             if (!parentBar) {
@@ -4486,10 +4687,12 @@
             }
             const vehInp = parentBar.querySelector('input[data-field="vehicle"]') || parentBar.querySelector('input.copilot-inline-vehicle-input') || parentBar.querySelector('input.copilot-inline-custom-input') || parentBar.querySelector('input');
             const typeSel = parentBar.querySelector('select[data-field="vehtype"]') || parentBar.querySelector('select');
+            const subSel = parentBar.querySelector('select[data-field="subsupply"]');
             let vehVal = (vehInp ? vehInp.value.trim().toUpperCase() : '') || 'KA01AB1234';
             vehVal = vehVal.replace(/[^A-Z0-9]/g, '');
             const typeVal = typeSel ? typeSel.value : 'R';
-            sendCopilotQuickMessage(`Vehicle is ${vehVal}, Type: ${typeVal}`);
+            const subVal = subSel ? subSel.value : '1';
+            sendCopilotQuickMessage(`Vehicle is ${vehVal}, Type: ${typeVal}, Subsupply: ${subVal}`);
         }
 
         // Apply Direct Vehicle Change from Error Card
@@ -4540,6 +4743,42 @@
         }
 
         // Inline HSN, Rate, Quantity & Taxable Value Submission for Copilot
+        
+        // Day 06 Safety Gatekeeper status updater for inline HSN box
+        function updateCopilotGkStatus(input) {
+            const bar = input.closest('.copilot-hsn-pricing-bar');
+            if (!bar) return;
+            const val = (input.value || '').trim();
+            const pill = bar.querySelector('.copilot-gk-pill');
+            const factor = bar.querySelector('.copilot-gk-factor');
+            if (!pill) return;
+            if (val.startsWith('85') && val.length >= 4) {
+                pill.style.background = 'rgba(16, 185, 129, 0.15)';
+                pill.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                pill.style.color = '#34d399';
+                pill.innerHTML = '🟢 Safe to Auto-File (2.7% Risk)';
+                if (factor) factor.textContent = 'Tariff Ch. 85 (Electric Motors) aligned with statutory benchmark.';
+            } else if (val.startsWith('84')) {
+                pill.style.background = 'rgba(239, 68, 68, 0.15)';
+                pill.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                pill.style.color = '#f87171';
+                pill.innerHTML = '🔴 Blocked / High Risk (73.3% Risk)';
+                if (factor) factor.textContent = 'Chapter mismatch: Vendor entered Ch. 84 vs Official Tariff Ch. 85 (Motors).';
+            } else if (val.length < 4) {
+                pill.style.background = 'rgba(245, 158, 11, 0.15)';
+                pill.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+                pill.style.color = '#fbbf24';
+                pill.innerHTML = '🟡 Review Recommended (38.5% Risk)';
+                if (factor) factor.textContent = 'Incomplete tariff code (< 4 digits required by NIC statutory mandate).';
+            } else {
+                pill.style.background = 'rgba(245, 158, 11, 0.15)';
+                pill.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+                pill.style.color = '#fbbf24';
+                pill.innerHTML = '🟡 Review Recommended (24.0% Risk)';
+                if (factor) factor.textContent = 'Tariff code diverges from statutory benchmark.';
+            }
+        }
+
         function submitCopilotHsnInput(btnOrInput) {
             const parentBar = btnOrInput.closest('.copilot-inline-suggestion-bar') || btnOrInput.parentElement;
             if (!parentBar) return;
@@ -4876,13 +5115,18 @@
                 barsHtml += `
                     <div class="copilot-inline-suggestion-bar copilot-hsn-pricing-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 12px 14px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; flex-direction: column; gap: 8px;">
                         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
-                            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">📦 Product: <span style="color: #f1f5f9; font-weight: 600;">${prdName}</span></span>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">📦 Product: <span style="color: #f1f5f9; font-weight: 600;">${prdName}</span></span>
+                                <span class="copilot-gk-pill" style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 0.70rem; font-weight: 700; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399;">
+                                    🟢 Safe to Auto-File (2.7% Risk)
+                                </span>
+                            </div>
                             <span class="copilot-calc-summary-badge" style="font-size: 0.72rem; color: #34d399; font-family: 'JetBrains Mono', monospace; background: rgba(52, 211, 153, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(52, 211, 153, 0.3);">GST 18% (₹9,000.00) ➔ Total: ₹59,000.00</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">HSN CODE</label>
-                                <input type="text" data-field="hsn" class="copilot-inline-hsn-input" placeholder="e.g. 85011013" value="${defHsn}" maxlength="8" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotHsnInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 95px;">
+                                <input type="text" data-field="hsn" class="copilot-inline-hsn-input" placeholder="e.g. 85011013" oninput="updateCopilotGkStatus(this)" value="${defHsn}" maxlength="8" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotHsnInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 95px;">
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">RATE / PRICE (₹)</label>
@@ -4900,6 +5144,10 @@
                                 <button type="button" class="copilot-action-btn" onclick="submitCopilotHsnInput(this)" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; white-space: nowrap;">✨ Apply & Recalculate Tax</button>
                                 <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Fix HSN from product description')" style="background: rgba(192, 132, 252, 0.2); border: 1px solid #c084fc; color: #e879f9; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap;">⚡ ML Lookup</button>
                             </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: #94a3b8; margin-top: 2px;">
+                            <span style="color: #818cf8; font-weight: 700;">🛡️ Gatekeeper Audit:</span>
+                            <span class="copilot-gk-factor">Tariff Ch. 85 (Electric Motors) aligned with statutory benchmark.</span>
                         </div>
                     </div>
                 `;

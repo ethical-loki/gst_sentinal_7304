@@ -265,3 +265,28 @@ def validate_nic_2day_rule(docdt: Union[str, date, datetime], reference_date: Op
         }
 
     return None
+
+
+_SCORER = None
+
+
+def get_hsn_misclassification_scorer():
+    """Initializes and caches the Day 06 HSNMisclassificationScorer."""
+    global _SCORER
+    if _SCORER is None:
+        try:
+            from src.ml.misclassification_scorer import HSNMisclassificationScorer
+            _SCORER = HSNMisclassificationScorer()
+        except Exception as e:
+            print(f"[WARN] Failed to load HSNMisclassificationScorer: {e}")
+            _SCORER = None
+    return _SCORER
+
+
+def score_hsn_prediction_risk(invoice_line: Dict[str, Any], day5_retrieval_output: Any) -> Optional[Dict[str, Any]]:
+    """Evaluates empirical misclassification probability and safety gate for an invoice line item."""
+    scorer = get_hsn_misclassification_scorer()
+    if scorer is not None:
+        return scorer.predict_risk(invoice_line, day5_retrieval_output)
+    return None
+

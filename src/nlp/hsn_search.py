@@ -145,9 +145,16 @@ class HSNSemanticSearchEngine:
             else self.tariff_df["description"].tolist()
         )
 
+        self.cand_records = self.tariff_df.to_dict(orient="records")
+        self.cand_hsn_codes = [str(r.get("hsn_code", "")) for r in self.cand_records]
+        self.cand_headings = [
+            str(r.get("heading", r.get("hsn_4digit", str(r.get("hsn_code", ""))[:4])))
+            for r in self.cand_records
+        ]
+
         for idx, desc_text in enumerate(descriptions):
-            h_code = str(self.tariff_df.iloc[idx].get("hsn_code", ""))
-            heading = str(self.tariff_df.iloc[idx].get("heading", self.tariff_df.iloc[idx].get("hsn_4digit", h_code[:4])))
+            h_code = self.cand_hsn_codes[idx]
+            heading = self.cand_headings[idx]
             augmented_desc = desc_text
             if heading == "8501" or h_code.startswith("8501"):
                 augmented_desc = f"{desc_text} servo motor servomotor servomotors industrial servo electric servo drive motor"
@@ -157,13 +164,6 @@ class HSNSemanticSearchEngine:
             cw = set(self._clean_words(augmented_desc))
             for w in cw:
                 self.word_to_cand[w].append(idx)
-
-        self.cand_headings = [
-            str(self.tariff_df.iloc[i].get("heading", self.tariff_df.iloc[i].get("hsn_4digit", "")))
-            for i in range(total_records)
-        ]
-        self.cand_hsn_codes = self.tariff_df["hsn_code"].astype(str).tolist()
-        self.cand_records = self.tariff_df.to_dict(orient="records")
 
         # Precompute BM25 IDF
         for w, ids in self.word_to_cand.items():
