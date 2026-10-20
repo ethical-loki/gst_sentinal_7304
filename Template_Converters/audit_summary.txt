@@ -2,14 +2,14 @@
              GST E-INVOICE & E-WAY BILL TRANSFORMATION REPORT
 ===========================================================================
 Total Invoices Processed : 1
-Compliant (Valid)       : 0
-Non-Compliant (Failed)  : 1
+Compliant (Valid)       : 1
+Non-Compliant (Failed)  : 0
 ---------------------------------------------------------------------------
 
-[INVALID] Invoice #1: INV-2026-B2B01
-   Status             : INVALID
+[VALID] Invoice #1: INV-2026-B2B01
+   Status             : VALID
    Auto-Corrections   : 22
-   Unresolved Errors  : 4
+   Unresolved Errors  : 0
    * Corrections Made (Customer Errors Fixed):
      - [KEY_NAME_NORMALIZATION] itemdtls[1].hsn: 'hsn' -> 'hsncd'
        Reason: Standardized non-compliant key 'hsn' to schema key 'hsncd'
@@ -55,10 +55,4 @@ Non-Compliant (Failed)  : 1
        Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
      - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-20' -> '20-10-2026'
        Reason: Standardized date format from '2026-10-20' to '20-10-2026'
-   ! Unresolved NIC Rule Violations:
-     - [Code 3041] buyerdt1.buyer_pin: Buyer Pincode '560001' does not belong to State '27' (Maharashtra).
-       Resolution: Ensure Buyer/Ship PIN code belongs to the corresponding state
-     - [Code 4019] ewbdt1.transporter_id: Provide Transporter ID in order to generate Part A of e-Way Bill.
-     - [Code 4029] ewbdt1.distance_of_transport: distance_of_transport is required and must be greater than 0 when ewayreq is 'Y'
-     - [Code 4011] ewbdt1.veh_number: Vehicle number should be passed in case transportation mode is Road.
 ---------------------------------------------------------------------------

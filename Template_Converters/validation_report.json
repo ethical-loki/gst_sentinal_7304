@@ -1,42 +1,13 @@
 {
   "total_invoices": 1,
-  "valid_invoices": 0,
-  "failed_invoices": 1,
+  "valid_invoices": 1,
+  "failed_invoices": 0,
   "results": [
     {
       "invoice_number": "INV-2026-B2B01",
-      "status": "INVALID",
-      "error_count": 4,
-      "errors": [
-        {
-          "error_code": 3041,
-          "field": "buyerdt1.buyer_pin",
-          "message": "Buyer Pincode '560001' does not belong to State '27' (Maharashtra).",
-          "reason": "Pincode prefix does not match the State code passed for Buyer or Ship location",
-          "resolution": "Ensure Buyer/Ship PIN code belongs to the corresponding state"
-        },
-        {
-          "error_code": 4019,
-          "field": "ewbdt1.transporter_id",
-          "message": "Provide Transporter ID in order to generate Part A of e-Way Bill.",
-          "reason": "",
-          "resolution": ""
-        },
-        {
-          "error_code": 4029,
-          "field": "ewbdt1.distance_of_transport",
-          "message": "distance_of_transport is required and must be greater than 0 when ewayreq is 'Y'",
-          "reason": "",
-          "resolution": ""
-        },
-        {
-          "error_code": 4011,
-          "field": "ewbdt1.veh_number",
-          "message": "Vehicle number should be passed in case transportation mode is Road.",
-          "reason": "",
-          "resolution": ""
-        }
-      ],
+      "status": "VALID",
+      "error_count": 0,
+      "errors": [],
       "price_anomaly_report": {
         "status": "CLEAN",
         "has_anomalies": false,

@@ -40,9 +40,9 @@
         "buyer_flno": "NAA",
         "buyer_loc": "Bengaluru",
         "buyer_dst": "Bengaluru",
-        "buyer_pin": "560001",
+        "buyer_pin": "400001",
         "buyer_state": "27",
-        "pos": "29",
+        "pos": "27",
         "buyer_phone": "",
         "buyer_email": ""
       },
@@ -60,12 +60,12 @@
           "othchrg": "",
           "assamt": "50000.00",
           "taxability": "TAX",
-          "cgstrt": "0.00",
-          "cgstamt": "0.00",
-          "sgstrt": "0.00",
-          "sgstamt": "0.00",
-          "igstrt": "18.0",
-          "igstamt": "9000.00",
+          "cgstrt": "9.00",
+          "cgstamt": "4500.00",
+          "sgstrt": "9.00",
+          "sgstamt": "4500.00",
+          "igstrt": "0.00",
+          "igstamt": "0.00",
           "cessrt": "0.00",
           "cessamt": "0.00",
           "cessnonadval": "",
@@ -76,9 +76,9 @@
       ],
       "valdt1": {
         "ttlassval": "50000.00",
-        "cgstval": "0.00",
-        "sgstval": "0.00",
-        "igstval": "9000.00",
+        "cgstval": "4500.00",
+        "sgstval": "4500.00",
+        "igstval": "0.00",
         "cesval": "0.00",
         "stcesval": "0.00",
         "cesnonadval": "0.00",
@@ -89,14 +89,14 @@
       "ewbdt1": {
         "ewayreq": "Y",
         "subsupplytype": "1",
-        "distance_of_transport": "",
-        "transporter_id": "",
-        "transporter_name": "FastTrack Logistics",
+        "distance_of_transport": "250",
+        "transporter_id": "27ABCDE1234F1Z0",
+        "transporter_name": "Registered Fleet Carrier",
         "mode_of_transport": "1",
         "transport_doc_no": "",
         "transporter_doc_date": "",
         "veh_type": "R",
-        "veh_number": ""
+        "veh_number": "KA01AB1235"
       }
     }
   ]

@@ -7800,13 +7800,23 @@ async function fetchRawFiles() {
                             </div>
                         ` : '';
 
-                        const isVehErr = err.error_code === 4011 || (err.field && err.field.toLowerCase().includes('veh')) || (err.message && (err.message.toLowerCase().includes('vehicle') || err.message.toLowerCase().includes('plate')));
+                        const isVehErr = err.error_code === 4011 || err.error_code === 4014 || err.error_code === 4020 || err.error_code === 4022 || (err.field && err.field.toLowerCase().includes('veh')) || (err.message && (err.message.toLowerCase().includes('vehicle') || err.message.toLowerCase().includes('plate')));
                         const vehicleFixHtml = isVehErr ? `
                             <div class="rule-quick-vehicle-fix" style="margin-top: 10px; padding: 8px 12px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                 <span style="font-size: 0.8rem; font-weight: 700; color: #38bdf8;">🚚 Input Vehicle Plate:</span>
                                 <input type="text" id="ruleVehInput_${index}_${eIdx}" placeholder="e.g. KA01AB1234" value="KA01AB1234" onkeydown="if(event.key==='Enter'){event.preventDefault();applyDirectVehicleChange('ruleVehInput_${index}_${eIdx}');}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 4px 8px; font-size: 0.82rem; outline: none; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; width: 140px;">
                                 <button type="button" class="copilot-action-btn" onclick="applyDirectVehicleChange('ruleVehInput_${index}_${eIdx}')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 700;">🚚 Set Vehicle</button>
                                 <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Vehicle is KA01AB1234')" style="background: rgba(16,185,129,0.2); border: 1px solid #10b981; color: #34d399; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600;">⚡ Use KA01AB1234</button>
+                            </div>
+                        ` : '';
+
+                        const isHsnErr = err.error_code === 2176 || err.error_code === 2285 || (err.field && err.field.toLowerCase().includes('hsn')) || (err.message && err.message.toLowerCase().includes('hsn'));
+                        const hsnFixHtml = isHsnErr ? `
+                            <div class="rule-quick-hsn-fix" style="margin-top: 10px; padding: 8px 12px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="font-size: 0.8rem; font-weight: 700; color: #38bdf8;">📦 Input HSN Code:</span>
+                                <input type="text" id="ruleHsnInput_${index}_${eIdx}" placeholder="e.g. 85011013" value="85011013" maxlength="8" onkeydown="if(event.key==='Enter'){event.preventDefault();applyDirectHsnChange('ruleHsnInput_${index}_${eIdx}');}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 4px 8px; font-size: 0.82rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 100px;">
+                                <button type="button" class="copilot-action-btn" onclick="applyDirectHsnChange('ruleHsnInput_${index}_${eIdx}')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 700;">✨ Apply & Recalculate Tax</button>
+                                <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Fix HSN from product description')" style="background: rgba(192, 132, 252, 0.2); border: 1px solid #c084fc; color: #e879f9; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600;">⚡ ML Lookup</button>
                             </div>
                         ` : '';
 
@@ -7826,6 +7836,7 @@ async function fetchRawFiles() {
                             ` : ''}
                             ${dateFixHtml}
                             ${vehicleFixHtml}
+                            ${hsnFixHtml}
                         </div>
                     `}).join('');
                 } else {
@@ -8561,16 +8572,35 @@ async function fetchRawFiles() {
 
         // Inline Vehicle Number Submission for Copilot (Maintains Backwards Compatibility)
         function submitCopilotVehicleInput(btnOrInput) {
-            submitCopilotInlineInput(btnOrInput, 'Vehicle is ');
+            const parentBar = btnOrInput.closest('.copilot-inline-suggestion-bar') || btnOrInput.closest('.copilot-vehicle-picker-bar') || btnOrInput.parentElement;
+            if (!parentBar) {
+                submitCopilotInlineInput(btnOrInput, 'Vehicle is ');
+                return;
+            }
+            const vehInp = parentBar.querySelector('input[data-field="vehicle"]') || parentBar.querySelector('input.copilot-inline-vehicle-input') || parentBar.querySelector('input.copilot-inline-custom-input') || parentBar.querySelector('input');
+            const typeSel = parentBar.querySelector('select[data-field="vehtype"]') || parentBar.querySelector('select');
+            let vehVal = (vehInp ? vehInp.value.trim().toUpperCase() : '') || 'KA01AB1234';
+            vehVal = vehVal.replace(/[^A-Z0-9]/g, '');
+            const typeVal = typeSel ? typeSel.value : 'R';
+            sendCopilotQuickMessage(`Vehicle is ${vehVal}, Type: ${typeVal}`);
         }
 
         // Apply Direct Vehicle Change from Error Card
         function applyDirectVehicleChange(inputId) {
             const input = document.getElementById(inputId);
             let vehNum = input ? input.value.trim().toUpperCase() : 'KA01AB1234';
+            vehNum = vehNum.replace(/[^A-Z0-9]/g, '');
             if (!vehNum) vehNum = 'KA01AB1234';
             switchRightPanelView('copilot');
             sendCopilotQuickMessage(`Vehicle is ${vehNum}`);
+        }
+
+        // Apply Direct HSN Change from Error Card
+        function applyDirectHsnChange(inputId) {
+            const input = document.getElementById(inputId);
+            const hsnVal = input ? input.value.trim() : '85011013';
+            switchRightPanelView('copilot');
+            sendCopilotQuickMessage(`Set HSN: ${hsnVal}`);
         }
 
         function updateCopilotHsnCalc(el) {
@@ -8640,6 +8670,23 @@ async function fetchRawFiles() {
             const findAction = (predicate) => actions.find(predicate);
 
             let renderedBoxCount = 0;
+
+            // Extract active validation report and errors to check if issue is still unresolved
+            const activeReport = data.validation_report || (typeof currentValidationReport !== 'undefined' ? currentValidationReport : null);
+            const activeRes = (activeReport && activeReport.results && activeReport.results[0]) ? activeReport.results[0] : {};
+            const activeErrors = activeRes.errors || [];
+            
+            const hasActiveHsnError = activeErrors.some(e => ['2176', '2285'].includes(String(e.error_code)) || (e.field && e.field.toLowerCase().includes('hsn')) || (e.message && e.message.toLowerCase().includes('hsn')));
+            const isHsnJustPatched = Boolean(data.patch_applied && (data.patch_summary || []).some(s => s.toLowerCase().includes('hsn')));
+            if (isHsnJustPatched || (!hasActiveHsnError && !actions.some(a => /set hsn:|fix hsn/i.test(a)))) {
+                handledTypes.add('hsn');
+            }
+
+            const hasActiveVehError = activeErrors.some(e => ['4011', '4014', '4020', '4022'].includes(String(e.error_code)) || (e.field && e.field.toLowerCase().includes('veh')) || (e.message && (e.message.toLowerCase().includes('vehicle') || e.message.toLowerCase().includes('plate'))));
+            const isVehJustPatched = Boolean(data.patch_applied && (data.patch_summary || []).some(s => s.toLowerCase().includes('vehicle') || s.toLowerCase().includes('veh_number')));
+            if (isVehJustPatched && !hasActiveVehError) {
+                handledTypes.add('vehicle');
+            }
 
             // 1. Document Date (Editable Date Picker)
             const dateAct = findAction(a => /date|today|yesterday/i.test(a));
@@ -8735,7 +8782,8 @@ async function fetchRawFiles() {
 
             // 5. Product HSN Code, Taxable Value & Quantity (Interactive Customer Decision & Inputs)
             const hsnAct = findAction(a => /set hsn:|fix hsn/i.test(a));
-            const hasHsnPrompt = Boolean(hsnAct || replyLower.includes('quick question on product hsn') || replyLower.includes('wrong / incomplete hsn code') || replyLower.includes('hsn intelligence') || replyLower.includes('tariff'));
+            const hasHsnExplicitPrompt = Boolean(replyLower.includes('quick question on product hsn') || replyLower.includes('wrong / incomplete hsn code') || replyLower.includes('wrong hsn code detected'));
+            const hasHsnPrompt = !isHsnJustPatched && !handledTypes.has('hsn') && Boolean(hsnAct || (hasActiveHsnError && hasHsnExplicitPrompt));
             if (renderedBoxCount === 0 && hasHsnPrompt && !handledTypes.has('hsn')) {
                 handledTypes.add('hsn');
                 renderedBoxCount++;
@@ -8836,8 +8884,9 @@ async function fetchRawFiles() {
             }
 
             // 8. Vehicle Number (Editable Vehicle Box)
-            const vehAct = findAction(a => /vehicle|veh|plate|ka01|mh12/i.test(a));
-            const hasVehPrompt = Boolean(vehAct || replyLower.includes('what is your vehicle registration') || replyLower.includes('vehicle plate'));
+            const vehAct = findAction(a => /vehicle|veh|plate|ka01|mh12|vahan/i.test(a));
+            const hasVehExplicitPrompt = Boolean(replyLower.includes('what is your vehicle registration') || replyLower.includes('vehicle plate') || replyLower.includes('vehicle registration number') || replyLower.includes('vahan portal') || replyLower.includes('vahan check failed') || replyLower.includes('vehicle number'));
+            const hasVehPrompt = !isVehJustPatched && !handledTypes.has('vehicle') && Boolean(vehAct || hasActiveVehError || hasVehExplicitPrompt);
             if (renderedBoxCount === 0 && hasVehPrompt && !handledTypes.has('vehicle')) {
                 handledTypes.add('vehicle');
                 renderedBoxCount++;
@@ -8847,13 +8896,34 @@ async function fetchRawFiles() {
                     if (m) defVeh = m[1].toUpperCase();
                 } else if (targetInv.ewbdt1 && targetInv.ewbdt1.veh_number) {
                     defVeh = targetInv.ewbdt1.veh_number;
+                } else if (targetInv.veh_number) {
+                    defVeh = targetInv.veh_number;
                 }
+                const defVehType = (targetInv.ewbdt1 && targetInv.ewbdt1.veh_type) || targetInv.veh_type || 'R';
                 barsHtml += `
-                    <div class="copilot-inline-suggestion-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 10px 14px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">🚚 Vehicle Number:</span>
-                        <input type="text" class="copilot-inline-custom-input" placeholder="e.g. KA01AB1234" value="${defVeh}" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotInlineInput(this, 'Vehicle is ');}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; width: 140px;">
-                        <button type="button" class="copilot-action-btn" onclick="submitCopilotInlineInput(this, 'Vehicle is ')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">🚚 Apply Vehicle</button>
-                        <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Vehicle is KA01AB1234')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer;">⚡ Use KA01AB1234</button>
+                    <div class="copilot-inline-suggestion-bar copilot-vehicle-picker-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 12px 14px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">🚚 Vehicle Updation (Part-B Road Transit & E-Way Bill):</span>
+                            <span style="font-size: 0.72rem; color: #38bdf8; font-family: 'JetBrains Mono', monospace; background: rgba(56, 189, 248, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3);">MoRTH Vahan / RTO Validated</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">VEHICLE NUMBER</label>
+                                <input type="text" data-field="vehicle" class="copilot-inline-custom-input copilot-inline-vehicle-input" placeholder="e.g. KA01AB1234" value="${escapeHtml(defVeh)}" maxlength="15" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '')" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotVehicleInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; width: 140px; font-weight: 700; letter-spacing: 0.5px;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">VEHICLE TYPE</label>
+                                <select data-field="vehtype" class="copilot-inline-vehtype-select" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 8px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; cursor: pointer;">
+                                    <option value="R" ${defVehType==='R'?'selected':''}>R - Regular Road</option>
+                                    <option value="O" ${defVehType==='O'?'selected':''}>O - Over Dimensional Cargo</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; align-items: flex-end; padding-top: 14px; gap: 6px;">
+                                <button type="button" class="copilot-action-btn" onclick="submitCopilotVehicleInput(this)" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; white-space: nowrap;">✨ Apply & Verify Vehicle</button>
+                                <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Vehicle is KA01AB1234')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap;">⚡ Use KA01AB1234</button>
+                                <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Disable E-Way Bill')" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.5); color: #f87171; font-weight: 600; padding: 6px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap;">🚫 Disable E-Way Bill</button>
+                            </div>
+                        </div>
                     </div>
                 `;
             }

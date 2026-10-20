@@ -1788,13 +1788,22 @@ def process_converter_chat(
         curr_veh = target_invoice.get("veh_number", target_invoice.get("ewbdt1", {}).get("veh_number", ""))
         ewayreq = target_invoice.get("ewayreq", target_invoice.get("ewbdt1", {}).get("ewayreq", ""))
         mode_t = target_invoice.get("mode_of_transport", target_invoice.get("ewbdt1", {}).get("mode_of_transport", ""))
-        if (ewayreq == "Y" and mode_t == "1" and not curr_veh) or any("veh" in f for f in flds):
-            prompt_text = (
-                "👉 **Quick Question: What is your vehicle registration number?**\n\n"
-                "For the E-Way Bill road transit, tell me your vehicle plate number (e.g. `KA01AB1234`).\n"
-                "I will check its format and RTO jurisdiction and update your payload!"
-            )
-            return prompt_text, ["Vehicle is KA01AB1234", "Verify vehicle number"]
+        has_veh_err = any("veh" in f for f in flds) or any(str(e.get("error_code")) in ["4011", "4014", "4020", "4022"] for e in err_list)
+        if (ewayreq == "Y" and mode_t == "1" and not curr_veh) or has_veh_err:
+            if curr_veh:
+                prompt_text = (
+                    f"👉 **Vehicle Registration Number Format Error:**\n\n"
+                    f"The vehicle plate `'{curr_veh}'` in your payload does not conform to MoRTH Vahan / E-Way Bill statutory format.\n"
+                    f"Expected format: `[State 2-letters][RTO 2-digits][Series 1-2 letters][Number 4-digits]` (e.g. `KA01AB1234`).\n\n"
+                    f"Please update your vehicle registration number:"
+                )
+            else:
+                prompt_text = (
+                    "👉 **Quick Question: What is your vehicle registration number?**\n\n"
+                    "For the E-Way Bill road transit, tell me your vehicle plate number (e.g. `KA01AB1234`).\n"
+                    "I will check its format and RTO jurisdiction and update your payload!"
+                )
+            return prompt_text, ["Vehicle is KA01AB1234", "Verify vehicle number", "Disable E-Way Bill"]
 
         # 6. Pincode / State Mismatch Diagnostics (Enriched with Taxpayer Name & Government Portal Data)
         pin_errs = [e for e in err_list if "pin" in str(e.get("field", "")).lower() or "state" in str(e.get("field", "")).lower() or str(e.get("error_code")) in ["2274", "2275", "2242", "3041"]]
@@ -2566,17 +2575,25 @@ def process_converter_chat(
     # -------------------------------------------------------------
     elif not patch_applied and (extract_vehicle_number(user_message) or any(k in msg_lower for k in ["vehicle", "vahan", "carinfo", "truck", "lorry", "plate"])):
         veh = extract_vehicle_number(user_message)
+        if not veh:
+            cand_m = re.search(r"(?:vehicle\s*is|vehicle\s*number|vehicle|plate|veh)\s*[:=]?\s*([A-Za-z0-9\-\s]{2,20})", user_message, re.IGNORECASE)
+            if cand_m:
+                cand_raw = cand_m.group(1).split(",")[0].strip().upper().replace(" ", "").replace("-", "")
+                if cand_raw and not any(w in cand_raw for w in ["NUMBER", "CURRENT", "VAHAN", "PORTAL", "CHECK", "VERIFY"]):
+                    veh = cand_raw
         if not veh and "ewbdt1" in target_inv and target_inv["ewbdt1"].get("veh_number"):
             veh = target_inv["ewbdt1"]["veh_number"]
         if not veh and target_inv.get("veh_number"):
             veh = target_inv.get("veh_number")
+
+        req_veh_type = "O" if any(w in msg_lower for w in ["type: o", "type:o", "odc", "over dimensional"]) else "R"
 
         if veh:
             portal_res = verify_vehicle_government_portal(veh)
             if portal_res["is_valid"]:
                 clean_v = portal_res["vehicle_number"]
                 target_inv["veh_number"] = clean_v
-                target_inv["veh_type"] = "R"
+                target_inv["veh_type"] = req_veh_type
                 target_inv["mode_of_transport"] = "1"
                 target_inv["ewayreq"] = "Y"
                 # Auto-align companion E-Way Bill fields to maintain full compliance
@@ -2592,7 +2609,7 @@ def process_converter_chat(
 
                 if "ewbdt1" in target_inv and isinstance(target_inv["ewbdt1"], dict):
                     target_inv["ewbdt1"]["veh_number"] = clean_v
-                    target_inv["ewbdt1"]["veh_type"] = "R"
+                    target_inv["ewbdt1"]["veh_type"] = req_veh_type
                     target_inv["ewbdt1"]["mode_of_transport"] = "1"
                     target_inv["ewbdt1"]["ewayreq"] = "Y"
                     target_inv["ewbdt1"]["subsupplytype"] = sub_type
@@ -2603,7 +2620,7 @@ def process_converter_chat(
                 else:
                     target_inv["ewbdt1"] = {
                         "veh_number": clean_v,
-                        "veh_type": "R",
+                        "veh_type": req_veh_type,
                         "mode_of_transport": "1",
                         "ewayreq": "Y",
                         "subsupplytype": sub_type,
@@ -2694,14 +2711,14 @@ def process_converter_chat(
                         f"{portal_res['error']}\n\n"
                         f"👉 Please provide your valid commercial vehicle number (e.g. `KA01AB1234` or `MH12DE4567`)."
                     )
-                    interactive_actions = ["Add vehicle KA01AB1234", "Add vehicle MH12DE4567"]
+                    interactive_actions = ["Vehicle is KA01AB1234", "Verify vehicle number", "Disable E-Way Bill"]
         else:
             reply_lines.append(
                 "🚚 **Government Vehicle Portal Verification:**\n\n"
                 "To verify your vehicle against the MoRTH Vahan 4.0 portal and generate an E-Way Bill, "
                 "please tell me your vehicle registration number (e.g., `KA01AB1234`)."
             )
-            interactive_actions = ["Add vehicle KA01AB1234", "Add vehicle MH12DE4567"]
+            interactive_actions = ["Vehicle is KA01AB1234", "Verify vehicle number", "Disable E-Way Bill"]
 
     # -------------------------------------------------------------
     # INTENT 4B: Disable E-Way Bill OR Set Subsupply / Distance
