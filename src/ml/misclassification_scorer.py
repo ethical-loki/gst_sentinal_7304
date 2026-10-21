@@ -151,44 +151,64 @@ class HSNMisclassificationScorer:
         price_dev = float(feats_dict["unit_price_deviation"])
         sup_prior = float(feats_dict["supplier_prior_error_freq"])
 
-        risk_factors: List[str] = []
+        audit_factors: List[str] = []
+        # Vendor-history check is disabled when no supplier GSTIN was supplied
+        vendor_disabled = bool(invoice_line.get("vendor_check_disabled"))
 
-        if top1_sim < 0.70:
-            risk_factors.append(
-                f"Low retrieval confidence: Top-1 similarity score is {top1_sim:.3f} (< 0.700)"
-            )
-        if margin < 0.10:
-            risk_factors.append(
-                f"Ambiguous prediction: Narrow top-1/top-2 candidate score margin ({margin:.3f} < 0.100)"
-            )
-        if chap_match == 0.0:
+        if is_safe:
+            # Positive statutory compliance evidence
             pred_chap = pred_hsn[:2] if len(pred_hsn) >= 2 else "UNKNOWN"
-            risk_factors.append(
-                f"Chapter mismatch: Predicted chapter {pred_chap} diverges from vendor's expected/registered chapter"
-            )
-        if entropy > 4.0:
-            risk_factors.append(
-                f"High text entropy ({entropy:.2f} bits): Description contains noisy, unstructured, or random serial text"
-            )
-        if price_dev > 2.0:
-            risk_factors.append(
-                f"Economic price deviation: Unit price deviates by {price_dev:.1f}x against statutory median benchmark"
-            )
-        if sup_prior > 0.10:
-            risk_factors.append(
-                f"Elevated vendor risk: Historical supplier misclassification frequency is {sup_prior:.1%}"
-            )
-
-        if not risk_factors and error_prob >= threshold:
-            risk_factors.append(
-                f"Statistical gate: Calibrated error probability ({error_prob:.1%}) exceeds safety threshold ({threshold:.1%})"
-            )
+            if chap_match == 1.0:
+                audit_factors.append(
+                    f"✓ Chapter alignment verified: Declared HSN aligns with vendor's registered Chapter {pred_chap}."
+                )
+            if price_dev <= 1.5:
+                audit_factors.append(
+                    f"✓ Economic price verification: Unit price is consistent with statutory benchmark median."
+                )
+            if top1_sim >= 0.70:
+                audit_factors.append(
+                    f"✓ Strong statutory correlation: Semantic text matches official tariff master ({top1_sim * 100:.1f}% confidence)."
+                )
+            if sup_prior <= 0.08 and not vendor_disabled:
+                audit_factors.append(
+                    f"✓ Vendor compliance history: Supplier exhibits clean historical compliance record ({sup_prior * 100:.1f}% prior error)."
+                )
+            if not audit_factors:
+                audit_factors.append("✓ Item classification complies with statutory benchmarks. Safe to auto-file.")
+        else:
+            # Risk factors when flagged
+            if chap_match == 0.0:
+                pred_chap = pred_hsn[:2] if len(pred_hsn) >= 2 else "UNKNOWN"
+                audit_factors.append(
+                    f"⚠️ Chapter mismatch: Predicted Chapter {pred_chap} diverges from vendor's declared/registered chapter."
+                )
+            if price_dev > 1.5:
+                audit_factors.append(
+                    f"⚠️ Economic price deviation: Unit price deviates by {price_dev:.1f}x from statutory median benchmark."
+                )
+            if top1_sim < 0.65:
+                audit_factors.append(
+                    f"⚠️ Low retrieval confidence: Semantic similarity score is {top1_sim:.3f} (< 0.650)."
+                )
+            if sup_prior > 0.10 and not vendor_disabled:
+                audit_factors.append(
+                    f"⚠️ Vendor historical risk: Supplier has a {sup_prior:.1%} historical misclassification frequency."
+                )
+            if entropy > 5.5:
+                audit_factors.append(
+                    f"⚠️ High text entropy ({entropy:.2f} bits): Description contains noisy, unstructured, or random serial text."
+                )
+            if not audit_factors:
+                audit_factors.append(
+                    f"⚠️ Statistical gate: Calibrated error probability ({error_prob:.1%}) exceeds safety threshold ({threshold:.1%})."
+                )
 
         return {
             "predicted_hsn": pred_hsn,
             "error_probability": float(round(error_prob, 4)),
             "is_safe_to_autofile": is_safe,
             "risk_level": risk_level,
-            "risk_factors": risk_factors,
+            "risk_factors": audit_factors,
             "features": feats_dict,
         }

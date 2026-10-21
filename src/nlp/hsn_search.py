@@ -158,6 +158,10 @@ class HSNSemanticSearchEngine:
             augmented_desc = desc_text
             if heading == "8501" or h_code.startswith("8501"):
                 augmented_desc = f"{desc_text} servo motor servomotor servomotors industrial servo electric servo drive motor"
+            elif heading == "7307" or h_code.startswith("7307"):
+                augmented_desc = f"{desc_text} pipe fittings tube fittings hydraulic fittings pipe connector coupling elbow flange sleeve nipple adapter"
+            elif heading == "7318" or h_code.startswith("7318"):
+                augmented_desc = f"{desc_text} fasteners bolts nuts screws washers rivets studs threaded rod"
             sw = self._extract_subwords(augmented_desc)
             self.cand_subwords.append(sw)
             self.cand_subword_lens.append(len(sw))
@@ -243,6 +247,8 @@ class HSNSemanticSearchEngine:
             q_lower = clean_q.lower()
             is_motor_query = bool(re.search(r"\b(motor|servo|servomotor|servomotors|actuator)\b", q_lower))
             has_vehicle_context = bool(re.search(r"\b(vehicle|car|truck|tractor|trailer|chassis|bumper|automobile|brakes?)\b", q_lower))
+            is_fittings_query = bool(re.search(r"\b(fittings?|couplings?|elbows?|flanges?|nipples?|unions?|adapters?|bushings?)\b", q_lower))
+            is_fasteners_query = bool(re.search(r"\b(bolts?|screws?|nuts?|washers?|rivets?|fasteners?|studs?)\b", q_lower))
 
             cand_bm25: Dict[int, float] = defaultdict(float)
             for w in q_words:
@@ -286,6 +292,20 @@ class HSNSemanticSearchEngine:
                 # Domain classification boost for Chapter 85 electric/industrial motors
                 if is_motor_query and (code_val.startswith("8501") or head_val.startswith("8501")):
                     s_final += 0.25
+
+                # Disambiguation boost for pipe/tube fittings (Heading 7307) over raw tubes/pipes (7304/7305/7306)
+                if is_fittings_query:
+                    if code_val.startswith("7307") or head_val.startswith("7307") or code_val.startswith("391740") or code_val.startswith("7412") or code_val.startswith("7609"):
+                        s_final += 0.35
+                    elif code_val.startswith("7304") or head_val.startswith("7304") or code_val.startswith("7305") or code_val.startswith("7306"):
+                        s_final -= 0.35
+
+                # Disambiguation boost for fasteners (Heading 7318) over general raw steel wire/bars
+                if is_fasteners_query:
+                    if code_val.startswith("7318") or head_val.startswith("7318"):
+                        s_final += 0.35
+                    elif code_val.startswith("7223") or code_val.startswith("7214") or code_val.startswith("7215"):
+                        s_final -= 0.30
 
                 if clean_pref and (code_val.startswith(clean_pref) or head_val.startswith(clean_pref)):
                     s_final += 0.40

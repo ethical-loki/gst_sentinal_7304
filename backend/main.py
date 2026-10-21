@@ -69,6 +69,7 @@ async def preload_hsn_cache():
 
 _hsn_search_engine = None
 _hsn_misclass_scorer = None
+_hsn_audit_advisor = None
 
 
 def get_hsn_search_engine():
@@ -96,6 +97,159 @@ def get_hsn_misclass_scorer():
     return _hsn_misclass_scorer
 
 
+_hsn_intelligence_engine = None
+_hsn_audit_sentinel = None
+
+
+def get_hsn_intelligence_engine():
+    global _hsn_intelligence_engine
+    if _hsn_intelligence_engine is None:
+        try:
+            from src.nlp.hsn_intelligence import HSNIntelligenceEngine
+            _hsn_intelligence_engine = HSNIntelligenceEngine()
+            print("[OK] HSNIntelligenceEngine (Module 1: Pure Day 05 Semantic Intelligence) initialized")
+        except Exception as e:
+            print(f"[WARN] Failed to load HSNIntelligenceEngine: {e}")
+            _hsn_intelligence_engine = None
+    return _hsn_intelligence_engine
+
+
+def get_hsn_audit_sentinel():
+    global _hsn_audit_sentinel
+    if _hsn_audit_sentinel is None:
+        try:
+            from src.ml.hsn_audit_sentinel import HSNAuditSentinel
+            _hsn_audit_sentinel = HSNAuditSentinel()
+            print("[OK] HSNAuditSentinel (Module 2: Day 05 + Day 06 + Day 07 Compliance Sentinel) initialized")
+        except Exception as e:
+            print(f"[WARN] Failed to load HSNAuditSentinel: {e}")
+            _hsn_audit_sentinel = None
+    return _hsn_audit_sentinel
+
+
+def get_hsn_audit_advisor():
+    global _hsn_audit_advisor
+    if _hsn_audit_advisor is None:
+        try:
+            from src.ml.audit_advisor import HSNAuditAdvisor
+            _hsn_audit_advisor = HSNAuditAdvisor()
+            print("[OK] HSNAuditAdvisor initialized with Tree SHAP and Counterfactual Generator")
+        except Exception as e:
+            print(f"[WARN] Failed to load HSNAuditAdvisor in backend/main.py: {e}")
+            _hsn_audit_advisor = None
+    return _hsn_audit_advisor
+
+
+@app.get("/api/v1/hsn-intelligence/search")
+async def search_hsn_intelligence(
+    query: str = Query("", min_length=0),
+    q: Optional[str] = Query(None),
+    top_k: int = Query(20, ge=1, le=50),
+    hsn_prefix: Optional[str] = Query(None),
+):
+    """
+    Module 1: Pure HSN Intelligence Semantic Search Engine (Up to Day 05).
+    Zero dependency on historical pricing, zero vendor bias, pure trade text to statutory tariff classification.
+    """
+    t_start = time.perf_counter()
+    raw_query = q if q is not None else query
+    q_trimmed = raw_query.strip()
+    if not q_trimmed:
+        return {"query": raw_query, "matches": [], "latency_ms": 0.0, "module": "HSNIntelligenceEngine (Pure Day 05)"}
+
+    engine = get_hsn_intelligence_engine() or get_hsn_search_engine()
+    if engine is not None:
+        res = engine.search(q_trimmed, top_k=top_k, hsn_prefix=hsn_prefix)
+        formatted = []
+        for m in res["matches"]:
+            gst_val = float(m.get("standard_rate", 18.0))
+            formatted.append({
+                "hsn_code": m["hsn_code"],
+                "hsn_4digit": m.get("hsn_4digit", m["hsn_code"][:4]),
+                "chapter": m.get("chapter", m["hsn_code"][:2]),
+                "description": m["description"],
+                "gst_rate": gst_val,
+                "igst_rate": gst_val,
+                "cgst_rate": round(gst_val / 2.0, 2),
+                "sgst_rate": round(gst_val / 2.0, 2),
+                "score": m.get("score", 1.0),
+                "confidence_pct": m.get("confidence_pct", 100.0),
+                "match_type": m.get("match_type", "Pure Semantic Match"),
+                "is_blocked_17_5": m.get("is_blocked_17_5", 0),
+                "blocked_17_5_reason": m.get("blocked_17_5_reason", "Eligible")
+            })
+        return {
+            "query": raw_query,
+            "matches": formatted,
+            "latency_ms": res.get("latency_ms", round((time.perf_counter() - t_start) * 1000.0, 2)),
+            "module": "HSNIntelligenceEngine (Pure Day 05 - Zero Historical Data Dependency)",
+        }
+    raise HTTPException(status_code=500, detail="HSNIntelligenceEngine could not be initialized.")
+
+
+def _pin_locked_hsn(res: Any, formatted: List[Dict[str, Any]], locked_code: str):
+    """
+    Re-orders retrieval candidates so the user-locked HSN is the top-1 candidate.
+    The gatekeeper and counterfactual engine then evaluate that exact HSN, instead of
+    whichever candidate happens to fit the simulated unit price / chapter best.
+    If the locked HSN is not in the retrieved set, it is fetched from the tariff master
+    and given the lowest retrieved similarity score (conservative).
+
+    Returns:
+        (eval_res, formatted) - candidate payload for scoring and re-ordered UI matches.
+    """
+    raw_matches = list(res.get("matches", []) or [])
+    raw_idx = next((i for i, m in enumerate(raw_matches) if str(m.get("hsn_code", "")).strip() == locked_code), None)
+    fmt_idx = next((i for i, m in enumerate(formatted) if str(m.get("hsn_code", "")).strip() == locked_code), None)
+
+    if raw_idx is not None and fmt_idx is not None:
+        raw_matches.insert(0, raw_matches.pop(raw_idx))
+        formatted = list(formatted)
+        formatted.insert(0, formatted.pop(fmt_idx))
+    else:
+        desc = f"HSN {locked_code}"
+        gst_val = 18.0
+        hsn_data = get_hsn_df()
+        if hsn_data is not None:
+            df, hsn_col, desc_col = hsn_data
+            hit = df[df[hsn_col].astype(str).str.strip() == locked_code]
+            if not hit.empty:
+                row = hit.iloc[0]
+                desc = str(row[desc_col])
+                try:
+                    gst_val = float(row.get("igst_rate", row.get("gst_rate", 18.0)))
+                except (TypeError, ValueError):
+                    gst_val = 18.0
+        scores = [float(m.get("score", 0.0)) for m in raw_matches] or [0.5]
+        low_score = min(scores)
+        raw_matches.insert(0, {
+            "hsn_code": locked_code,
+            "hsn_4digit": locked_code[:4],
+            "chapter": locked_code[:2],
+            "description": desc,
+            "score": low_score,
+            "standard_rate": gst_val,
+        })
+        formatted = [{
+            "hsn_code": locked_code,
+            "hsn_4digit": locked_code[:4],
+            "description": desc,
+            "gst_rate": gst_val,
+            "igst_rate": gst_val,
+            "cgst_rate": round(gst_val / 2.0, 2),
+            "sgst_rate": round(gst_val / 2.0, 2),
+            "score": low_score,
+            "confidence_pct": round(low_score * 100.0, 1),
+            "match_type": "User-Locked HSN",
+            "is_blocked_17_5": 0,
+            "blocked_17_5_reason": "Eligible",
+        }] + [m for m in formatted if str(m.get("hsn_code", "")).strip() != locked_code]
+
+    formatted[0]["is_locked"] = True
+    eval_res = {"matches": raw_matches, "latency_ms": res.get("latency_ms", 0.0)}
+    return eval_res, formatted
+
+
 @app.get("/api/hsn-search")
 async def search_hsn(
     query: str = Query("", min_length=0),
@@ -103,12 +257,13 @@ async def search_hsn(
     unit_price: Optional[float] = Query(None),
     chapter: Optional[str] = Query(None),
     supplier_gstin: Optional[str] = Query(None),
+    mode: str = Query("sentinel", description="Operation mode: 'intelligence' (pure Day 05) or 'sentinel' (Day 05+06+07 audit)"),
+    locked_hsn: Optional[str] = Query(None, description="HSN pinned by the user; always evaluated as the top-1 candidate"),
 ):
     """
-    Search HSN codes and descriptions via In-House Contrastive Semantic HSN Encoder.
-    Accepts either ?query= or ?q= parameter, along with optional unit_price, chapter, and supplier_gstin.
-    Returns top candidate statutory items, confidence percentage, Section 17(5) flag,
-    statutory tax rates, and Day 06 Calibrated Misclassification Gatekeeper predictions.
+    Unified HSN Search & Compliance Gateway.
+    - If mode == 'intelligence': Pure Day 05 semantic search with zero historical data dependency.
+    - If mode == 'sentinel': Full Day 05 + 06 + 07 Audit Sentinel with Gatekeeper & Counterfactual Recommendations.
     """
     t_start = time.perf_counter()
     raw_query = q if q is not None else query
@@ -142,38 +297,102 @@ async def search_hsn(
                 }
                 formatted.append(item_dict)
 
-            # Day 06 Gatekeeper Evaluation on Top-1 Candidate and Retrieval Result
+            # Locked HSN anchoring: the HSN the user highlighted stays the evaluated
+            # candidate, so changing unit price / chapter can never swap it out.
+            eval_res = res
+            locked_code = str(locked_hsn).strip() if locked_hsn else ""
+            if locked_code and mode != "intelligence" and formatted:
+                eval_res, formatted = _pin_locked_hsn(res, formatted, locked_code)
+
+            # Day 06 & 07 Gatekeeper Evaluation on Top-1 Candidate (only in 'sentinel' mode)
             gatekeeper_data = None
-            if scorer is not None and formatted:
+            if mode != "intelligence" and scorer is not None and formatted:
                 top1_code = formatted[0]["hsn_code"]
+                sup_clean = str(supplier_gstin).strip().upper() if supplier_gstin else ""
+                vendor_check_enabled = bool(sup_clean)
                 simulated_line = {
                     "product_description": q_trimmed,
                     "unit_price": float(unit_price) if unit_price is not None else 1000.0,
                     "declared_hsn_chapter": str(chapter).strip() if chapter else top1_code[:2],
-                    "supplier_gstin": str(supplier_gstin).strip() if supplier_gstin else "27DEFAULTVENDOR",
+                    # No GSTIN -> vendor-history signal disabled (model receives neutral prior)
+                    "supplier_gstin": sup_clean or None,
+                    "vendor_check_disabled": not vendor_check_enabled,
                 }
+                if locked_code:
+                    simulated_line["locked_hsn"] = top1_code
                 try:
-                    risk_res = scorer.predict_risk(simulated_line, res)
+                    risk_res = scorer.predict_risk(simulated_line, eval_res)
+                    is_safe = risk_res["is_safe_to_autofile"]
                     gatekeeper_data = {
                         "predicted_hsn": risk_res["predicted_hsn"],
                         "error_probability": risk_res["error_probability"],
                         "error_probability_pct": round(risk_res["error_probability"] * 100.0, 1),
-                        "is_safe_to_autofile": risk_res["is_safe_to_autofile"],
+                        "is_safe_to_autofile": is_safe,
                         "risk_level": risk_res["risk_level"],
+                        "status_badge": "AUTO_APPROVED" if is_safe else "FLAGGED",
                         "risk_factors": risk_res["risk_factors"],
                         "features": {k: float(v) for k, v in risk_res.get("features", {}).items()},
+                        "locked_hsn": top1_code if locked_code else None,
+                        "vendor_check_enabled": vendor_check_enabled,
                     }
+
+                    # Extract benchmark dataset records considered
+                    top1_code_str = str(top1_code)
+                    chap_str = top1_code_str[:2]
+                    med_p = scorer.hsn_medians.get(top1_code_str, scorer.chapter_medians.get(chap_str, scorer.global_median_price))
+                    sup_prior_val = scorer.supplier_priors.get(sup_clean, scorer.default_prior) if vendor_check_enabled else scorer.default_prior
+                    gatekeeper_data["records_considered"] = {
+                        "matched_tariff": {
+                            "hsn_code": top1_code_str,
+                            "chapter": chap_str,
+                            "source": "data/tariff_master.parquet",
+                            "standard_rate": formatted[0].get("gst_rate", 18.0),
+                            "description": formatted[0].get("description", "")
+                        },
+                        "historical_price": {
+                            "median_price": round(float(med_p), 2),
+                            "invoice_unit_price": float(simulated_line["unit_price"]),
+                            "source": "artifacts/historical_median_prices.parquet"
+                        },
+                        "supplier_prior": {
+                            "enabled": vendor_check_enabled,
+                            "supplier_gstin": sup_clean or None,
+                            "prior_error_pct": round(float(sup_prior_val) * 100.0, 2),
+                            "source": "artifacts/supplier_priors.parquet",
+                            "is_known_in_dataset": vendor_check_enabled and sup_clean in scorer.supplier_priors
+                        }
+                    }
+
+                    # Day 07 Explainability & Counterfactual enrichment
+                    sentinel = get_hsn_audit_sentinel()
+                    if sentinel is not None:
+                        audit_res = sentinel.audit_item(simulated_line, candidates=eval_res)
+                        audit_dict = audit_res.model_dump() if hasattr(audit_res, "model_dump") else audit_res.dict()
+                        gatekeeper_data["explanations"] = audit_dict.get("explanations", [])
+                        gatekeeper_data["human_readable_reasons"] = audit_dict.get("human_readable_reasons", [])
+                        gatekeeper_data["counterfactual_recommendation"] = audit_dict.get("counterfactual_recommendation")
+                        gatekeeper_data["suggested_action"] = audit_dict.get("suggested_action")
+                        # Sync human_readable_reasons into risk_factors for backward compatibility
+                        if gatekeeper_data["human_readable_reasons"]:
+                            gatekeeper_data["risk_factors"] = gatekeeper_data["human_readable_reasons"]
+
                     # Attach gatekeeper result to top-1 item
                     formatted[0]["gatekeeper"] = gatekeeper_data
                 except Exception as sc_err:
                     print(f"[WARN] Error running HSNMisclassificationScorer: {sc_err}")
 
+            model_name = (
+                "HSNIntelligenceEngine (Pure Day 05 Semantic Search)"
+                if mode == "intelligence"
+                else "HSNAuditSentinel (Day 05 Search + Day 06 Gatekeeper + Day 07 SHAP & Counterfactuals)"
+            )
             return {
                 "query": raw_query,
                 "matches": formatted,
                 "gatekeeper": gatekeeper_data,
                 "latency_ms": res.get("latency_ms", round((time.perf_counter() - t_start) * 1000.0, 2)),
-                "model": res.get("model", "Contrastive MLP (128-D CPU) + Day 06 LightGBM Gatekeeper")
+                "model": model_name,
+                "mode": mode,
             }
         except Exception as e:
             print(f"[WARN] HSNSearchEngine execution error: {e}, falling back to literal index")
@@ -218,6 +437,73 @@ async def search_hsn(
     except Exception as e:
         print(f"[ERROR] EXCEPTION: {str(e)}")
         return {"error": str(e), "matches": [], "latency_ms": 0.0}
+
+
+@app.post("/api/v1/audit/hsn-explain")
+async def audit_hsn_explain(payload: Dict[str, Any]):
+    """
+    Day 07 Explainability & Counterfactual Recommendation endpoint for an invoice line item.
+    Returns status badge (FLAGGED / AUTO_APPROVED), deconstructed Tree SHAP evidence,
+    and minimal corrective counterfactual recommendation.
+    """
+    advisor = get_hsn_audit_advisor()
+    if advisor is None:
+        raise HTTPException(status_code=500, detail="HSNAuditAdvisor not available.")
+    try:
+        res = advisor.review_line_item(payload)
+        return res.model_dump() if hasattr(res, "model_dump") else res.dict()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Audit evaluation error: {str(e)}")
+
+
+@app.post("/api/v1/audit/invoice")
+async def audit_invoice(payload: Dict[str, Any]):
+    """
+    Day 07 Invoice-level audit endpoint evaluating all draft line items.
+    """
+    advisor = get_hsn_audit_advisor()
+    if advisor is None:
+        raise HTTPException(status_code=500, detail="HSNAuditAdvisor not available.")
+    try:
+        report = advisor.review_invoice(payload)
+        return report.model_dump() if hasattr(report, "model_dump") else report.dict()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Invoice audit error: {str(e)}")
+
+
+# =========================================================================
+# MODULE 2: HSN AUDIT SENTINEL DEDICATED ENDPOINTS
+# =========================================================================
+
+@app.post("/api/v1/audit-sentinel/audit-item")
+async def audit_sentinel_item(payload: Dict[str, Any]):
+    """
+    Module 2: HSN Audit Sentinel item-level compliance & risk gatekeeper.
+    Orchestrates Day 05 retrieval + Day 06 scoring + Day 07 Tree SHAP + Day 07 Counterfactuals.
+    """
+    sentinel = get_hsn_audit_sentinel()
+    if sentinel is None:
+        raise HTTPException(status_code=500, detail="HSNAuditSentinel not available.")
+    try:
+        res = sentinel.audit_item(payload)
+        return res.model_dump() if hasattr(res, "model_dump") else res.dict()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"HSNAuditSentinel error: {str(e)}")
+
+
+@app.post("/api/v1/audit-sentinel/audit-invoice")
+async def audit_sentinel_invoice(payload: Dict[str, Any]):
+    """
+    Module 2: HSN Audit Sentinel invoice-level compliance review across all items.
+    """
+    sentinel = get_hsn_audit_sentinel()
+    if sentinel is None:
+        raise HTTPException(status_code=500, detail="HSNAuditSentinel not available.")
+    try:
+        report = sentinel.audit_invoice(payload)
+        return report.model_dump() if hasattr(report, "model_dump") else report.dict()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"HSNAuditSentinel invoice error: {str(e)}")
 
 
 @app.get("/", response_class=HTMLResponse)

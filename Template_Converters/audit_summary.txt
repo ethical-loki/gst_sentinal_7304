@@ -1,38 +1,40 @@
 ===========================================================================
              GST E-INVOICE & E-WAY BILL TRANSFORMATION REPORT
 ===========================================================================
-Total Invoices Processed : 1
-Compliant (Valid)       : 1
-Non-Compliant (Failed)  : 0
+Total Invoices Processed : 5
+Compliant (Valid)       : 4
+Non-Compliant (Failed)  : 1
 ---------------------------------------------------------------------------
 
-[VALID] Invoice #1: INV-2026-B2B01
+[VALID] Invoice #1: INV-2026-001
    Status             : VALID
-   Auto-Corrections   : 22
+   Auto-Corrections   : 23
    Unresolved Errors  : 0
    * Corrections Made (Customer Errors Fixed):
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].hsn: 'hsn' -> 'hsncd'
-       Reason: Standardized non-compliant key 'hsn' to schema key 'hsncd'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].hsn_code: 'hsn_code' -> 'hsncd'
-       Reason: Standardized non-compliant key 'hsn_code' to schema key 'hsncd'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].unitprice: 'unitprice' -> 'unitrate'
-       Reason: Standardized non-compliant key 'unitprice' to schema key 'unitrate'
+     - [KEY_NAME_NORMALIZATION] system cd: 'system cd' -> 'system_cd'
+       Reason: Standardized non-compliant key 'system cd' to schema key 'system_cd'
+     - [KEY_NAME_NORMALIZATION] branch cd: 'branch cd' -> 'branch_cd'
+       Reason: Standardized non-compliant key 'branch cd' to schema key 'branch_cd'
+     - [KEY_NAME_NORMALIZATION] vertical cd: 'vertical cd' -> 'vertical_cd'
+       Reason: Standardized non-compliant key 'vertical cd' to schema key 'vertical_cd'
+     - [KEY_NAME_NORMALIZATION] trandt1.igst_on_intra: 'igst_on_intra' -> 'igstonintra'
+       Reason: Standardized non-compliant key 'igst_on_intra' to schema key 'igstonintra'
+     - [KEY_NAME_NORMALIZATION] supplierdt1.supplier_lginm: 'supplier_lginm' -> 'supplier_lglnm'
+       Reason: Standardized non-compliant key 'supplier_lginm' to schema key 'supplier_lglnm'
+     - [KEY_NAME_NORMALIZATION] supplierdt1.supplier flno: 'supplier flno' -> 'supplier_flno'
+       Reason: Standardized non-compliant key 'supplier flno' to schema key 'supplier_flno'
+     - [KEY_NAME_NORMALIZATION] supplierdt1.supplier state: 'supplier state' -> 'supplier_state'
+       Reason: Standardized non-compliant key 'supplier state' to schema key 'supplier_state'
+     - [KEY_NAME_NORMALIZATION] buyerdt1.buyer loc: 'buyer loc' -> 'buyer_loc'
+       Reason: Standardized non-compliant key 'buyer loc' to schema key 'buyer_loc'
+     - [KEY_NAME_NORMALIZATION] buyerdt1.buyer pin: 'buyer pin' -> 'buyer_pin'
+       Reason: Standardized non-compliant key 'buyer pin' to schema key 'buyer_pin'
+     - [KEY_NAME_NORMALIZATION] buyerdt1.buyer state: 'buyer state' -> 'buyer_state'
+       Reason: Standardized non-compliant key 'buyer state' to schema key 'buyer_state'
+     - [KEY_NAME_NORMALIZATION] itemdtls[1].ugc: 'ugc' -> 'uqc'
+       Reason: Standardized non-compliant key 'ugc' to schema key 'uqc'
      - [KEY_NAME_NORMALIZATION] itemdtls[1].unit_rate: 'unit_rate' -> 'unitrate'
        Reason: Standardized non-compliant key 'unit_rate' to schema key 'unitrate'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].unit_price: 'unit_price' -> 'unitrate'
-       Reason: Standardized non-compliant key 'unit_price' to schema key 'unitrate'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].totamt: 'totamt' -> 'grossamt'
-       Reason: Standardized non-compliant key 'totamt' to schema key 'grossamt'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].assval: 'assval' -> 'assamt'
-       Reason: Standardized non-compliant key 'assval' to schema key 'assamt'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].gstrate: 'gstrate' -> 'igstrt'
-       Reason: Standardized non-compliant key 'gstrate' to schema key 'igstrt'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].igstval: 'igstval' -> 'igstamt'
-       Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].cgstval: 'cgstval' -> 'cgstamt'
-       Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].sgstval: 'sgstval' -> 'sgstamt'
-       Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
      - [KEY_NAME_NORMALIZATION] valdt1.cgstval: 'cgstval' -> 'cgstamt'
        Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
      - [KEY_NAME_NORMALIZATION] valdt1.sgstval: 'sgstval' -> 'sgstamt'
@@ -41,18 +43,106 @@ Non-Compliant (Failed)  : 0
        Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
      - [KEY_NAME_NORMALIZATION] valdt1.cesval: 'cesval' -> 'cessamt'
        Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
-     - [KEY_NAME_NORMALIZATION] valdt1.assval: 'assval' -> 'assamt'
-       Reason: Standardized non-compliant key 'assval' to schema key 'assamt'
-     - [KEY_NAME_NORMALIZATION] document_date: 'document_date' -> 'docdt'
-       Reason: Standardized non-compliant key 'document_date' to schema key 'docdt'
-     - [KEY_NAME_NORMALIZATION] cgstval: 'cgstval' -> 'cgstamt'
+     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-21' -> '21-10-2026'
+       Reason: Standardized date format from '2026-10-21' to '21-10-2026'
+     - [FORMAT_NORMALIZATION] itemdtls[1].grossamt: '160000,00' -> '160000.00'
+       Reason: Replaced comma decimal separator '160000,00' with standard point notation '160000.00'
+     - [FORMAT_NORMALIZATION] itemdtls[1].assamt: '160000,00' -> '160000.00'
+       Reason: Replaced comma decimal separator '160000,00' with standard point notation '160000.00'
+     - [FORMAT_NORMALIZATION] itemdtls[1].totitemval: '188800,00' -> '188800.00'
+       Reason: Replaced comma decimal separator '188800,00' with standard point notation '188800.00'
+     - [TAX_MATH_RECALCULATION] itemdtls[1].totitemval: '188800,00' -> '168000.00'
+       Reason: Recalculated Total Item Value to match sum of assessable value and all taxes (Rule 2194)
+     - [FORMAT_NORMALIZATION] valdt1.totinvval: '188800,00' -> '188800.00'
+       Reason: Replaced comma decimal separator '188800,00' with standard point notation '188800.00'
+     - [INVOICE_TOTALS_RECONCILIATION] valdt1.totinvval: '188800,00' -> '168000.00'
+       Reason: Reconciled Total Invoice Value with sum of items, taxes, other charges minus discounts (Rule 2189)
+---------------------------------------------------------------------------
+[INVALID] Invoice #2: INV-2026-002
+   Status             : INVALID
+   Auto-Corrections   : 8
+   Unresolved Errors  : 1
+   * Corrections Made (Customer Errors Fixed):
+     - [KEY_NAME_NORMALIZATION] valdt1.cgstval: 'cgstval' -> 'cgstamt'
        Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
-     - [KEY_NAME_NORMALIZATION] sgstval: 'sgstval' -> 'sgstamt'
+     - [KEY_NAME_NORMALIZATION] valdt1.sgstval: 'sgstval' -> 'sgstamt'
        Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
-     - [KEY_NAME_NORMALIZATION] igstval: 'igstval' -> 'igstamt'
+     - [KEY_NAME_NORMALIZATION] valdt1.igstval: 'igstval' -> 'igstamt'
        Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
-     - [KEY_NAME_NORMALIZATION] cesval: 'cesval' -> 'cessamt'
+     - [KEY_NAME_NORMALIZATION] valdt1.cesval: 'cesval' -> 'cessamt'
        Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
      - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-21' -> '21-10-2026'
        Reason: Standardized date format from '2026-10-21' to '21-10-2026'
+     - [FORMAT_NORMALIZATION] itemdtls[1].grossamt: '28000,00' -> '28000.00'
+       Reason: Replaced comma decimal separator '28000,00' with standard point notation '28000.00'
+     - [TAX_MATH_RECALCULATION] itemdtls[2].totitemval: '15340.00' -> '16640.00'
+       Reason: Recalculated Total Item Value to match sum of assessable value and all taxes (Rule 2194)
+     - [INVOICE_TOTALS_RECONCILIATION] valdt1.totinvval: '44741.20' -> '46040.00'
+       Reason: Reconciled Total Invoice Value with sum of items, taxes, other charges minus discounts (Rule 2189)
+   ! Unresolved NIC Rule Violations:
+     - [Code 4021] ewbdt1.transporter_doc_date: Transporter document date cannot be earlier than invoice date.
+---------------------------------------------------------------------------
+[VALID] Invoice #3: EXP-2026-003
+   Status             : VALID
+   Auto-Corrections   : 8
+   Unresolved Errors  : 0
+   * Corrections Made (Customer Errors Fixed):
+     - [KEY_NAME_NORMALIZATION] valdt1.cgstval: 'cgstval' -> 'cgstamt'
+       Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
+     - [KEY_NAME_NORMALIZATION] valdt1.sgstval: 'sgstval' -> 'sgstamt'
+       Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
+     - [KEY_NAME_NORMALIZATION] valdt1.igstval: 'igstval' -> 'igstamt'
+       Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
+     - [KEY_NAME_NORMALIZATION] valdt1.cesval: 'cesval' -> 'cessamt'
+       Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
+     - [DATE_FORMAT_NORMALIZATION] expdt1.shipbdt: '25/08/2026' -> '25-08-2026'
+       Reason: Standardized date format from '25/08/2026' to '25-08-2026'
+     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-21' -> '21-10-2026'
+       Reason: Standardized date format from '2026-10-21' to '21-10-2026'
+     - [FORMAT_NORMALIZATION] itemdtls[1].grossamt: '1040000,00' -> '1040000.00'
+       Reason: Replaced comma decimal separator '1040000,00' with standard point notation '1040000.00'
+     - [FORMAT_NORMALIZATION] itemdtls[1].totitemval: '1227200,00' -> '1227200.00'
+       Reason: Replaced comma decimal separator '1227200,00' with standard point notation '1227200.00'
+---------------------------------------------------------------------------
+[VALID] Invoice #4: SEZ-2026-004
+   Status             : VALID
+   Auto-Corrections   : 8
+   Unresolved Errors  : 0
+   * Corrections Made (Customer Errors Fixed):
+     - [KEY_NAME_NORMALIZATION] valdt1.cgstval: 'cgstval' -> 'cgstamt'
+       Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
+     - [KEY_NAME_NORMALIZATION] valdt1.sgstval: 'sgstval' -> 'sgstamt'
+       Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
+     - [KEY_NAME_NORMALIZATION] valdt1.igstval: 'igstval' -> 'igstamt'
+       Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
+     - [KEY_NAME_NORMALIZATION] valdt1.cesval: 'cesval' -> 'cessamt'
+       Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
+     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-21' -> '21-10-2026'
+       Reason: Standardized date format from '2026-10-21' to '21-10-2026'
+     - [FORMAT_NORMALIZATION] itemdtls[1].grossamt: '10000,00' -> '10000.00'
+       Reason: Replaced comma decimal separator '10000,00' with standard point notation '10000.00'
+     - [FORMAT_NORMALIZATION] itemdtls[1].assamt: '10000,00' -> '10000.00'
+       Reason: Replaced comma decimal separator '10000,00' with standard point notation '10000.00'
+     - [FORMAT_NORMALIZATION] itemdtls[1].totitemval: '11800,00' -> '11800.00'
+       Reason: Replaced comma decimal separator '11800,00' with standard point notation '11800.00'
+---------------------------------------------------------------------------
+[VALID] Invoice #5: INV-2026-005
+   Status             : VALID
+   Auto-Corrections   : 7
+   Unresolved Errors  : 0
+   * Corrections Made (Customer Errors Fixed):
+     - [KEY_NAME_NORMALIZATION] valdt1.cgstval: 'cgstval' -> 'cgstamt'
+       Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
+     - [KEY_NAME_NORMALIZATION] valdt1.sgstval: 'sgstval' -> 'sgstamt'
+       Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
+     - [KEY_NAME_NORMALIZATION] valdt1.igstval: 'igstval' -> 'igstamt'
+       Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
+     - [KEY_NAME_NORMALIZATION] valdt1.cesval: 'cesval' -> 'cessamt'
+       Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
+     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-21' -> '21-10-2026'
+       Reason: Standardized date format from '2026-10-21' to '21-10-2026'
+     - [FORMAT_NORMALIZATION] itemdtls[1].grossamt: '105000,00' -> '105000.00'
+       Reason: Replaced comma decimal separator '105000,00' with standard point notation '105000.00'
+     - [FORMAT_NORMALIZATION] itemdtls[1].totitemval: '123900,00' -> '123900.00'
+       Reason: Replaced comma decimal separator '123900,00' with standard point notation '123900.00'
 ---------------------------------------------------------------------------

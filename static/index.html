@@ -1376,6 +1376,55 @@
             opacity: 1;
         }
 
+        /* ============ MODULE ARCHITECTURE MODE SWITCHER ============ */
+        .module-switcher-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 14px 0 18px 0;
+            flex-wrap: wrap;
+        }
+        .module-switch-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            border-radius: 9999px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(15, 23, 42, 0.65);
+            color: var(--text-muted);
+            transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .module-switch-pill:hover {
+            color: #f8fafc;
+            border-color: rgba(99, 102, 241, 0.45);
+            background: rgba(30, 41, 59, 0.85);
+            transform: translateY(-1px);
+        }
+        .module-switch-pill.active {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(14, 165, 233, 0.25));
+            border-color: #6366f1;
+            color: #ffffff;
+            box-shadow: 0 0 16px rgba(99, 102, 241, 0.35);
+        }
+        .module-switch-tag {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: 800;
+            background: rgba(255, 255, 255, 0.08);
+            letter-spacing: 0.4px;
+        }
+        .module-switch-pill.active .module-switch-tag {
+            background: #6366f1;
+            color: #ffffff;
+        }
+
         /* ============ DAY 06 SAFETY GATEKEEPER CARD & PILLS ============ */
         .gatekeeper-card {
             margin-top: 14px;
@@ -1498,6 +1547,113 @@
             content: "✓";
             color: #34d399;
         }
+        /* Day 07 Counterfactual Recommendation Box */
+        .gk-counterfactual-box {
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.1);
+        }
+        .gk-cf-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .gk-cf-title {
+            font-size: 0.74rem;
+            font-weight: 800;
+            color: #34d399;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .gk-cf-status-badge {
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            background: rgba(16, 185, 129, 0.2);
+            color: #6ee7b7;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            letter-spacing: 0.3px;
+        }
+        .gk-cf-status-badge.unresolved {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fcd34d;
+            border-color: rgba(245, 158, 11, 0.4);
+        }
+        .gk-cf-card {
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .gk-cf-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .gk-cf-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #a7f3d0;
+        }
+        .gk-cf-desc {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            max-width: 420px;
+            line-height: 1.3;
+        }
+        .gk-cf-metrics {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .gk-cf-drop-pill {
+            padding: 3px 8px;
+            border-radius: 9999px;
+            font-size: 0.70rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .gk-cf-btn-apply {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: #ffffff;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .gk-cf-btn-apply:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
+        }
         .gk-simulator-bar {
             margin-top: 10px;
             padding: 10px 12px;
@@ -1530,6 +1686,116 @@
             outline: none;
             border-color: #818cf8;
         }
+        .gk-lock-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 4px 3px 10px;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #fde68a;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(234, 88, 12, 0.18));
+            border: 1px solid rgba(251, 191, 36, 0.45);
+            box-shadow: 0 0 12px rgba(251, 191, 36, 0.15);
+            animation: gkLockIn 0.25s ease-out;
+        }
+        .gk-lock-pill strong {
+            font-family: 'JetBrains Mono', monospace;
+            color: #fffbeb;
+        }
+        .gk-lock-pill button {
+            border: none;
+            background: rgba(0, 0, 0, 0.25);
+            color: #fde68a;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.65rem;
+            line-height: 1;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+        .gk-lock-pill button:hover {
+            background: rgba(251, 191, 36, 0.35);
+            transform: rotate(90deg);
+        }
+        @keyframes gkLockIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Interactive Vendor Check Toggle Button */
+        .gk-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px;
+            border-radius: 9999px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            color: #94a3b8;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+        }
+        .gk-toggle-btn:hover {
+            border-color: rgba(148, 163, 184, 0.65);
+            background: rgba(30, 41, 59, 0.85);
+            transform: translateY(-1px);
+        }
+        .gk-toggle-label {
+            font-size: 0.66rem;
+            color: #94a3b8;
+        }
+        .gk-toggle-switch {
+            position: relative;
+            width: 26px;
+            height: 14px;
+            background: rgba(100, 116, 139, 0.35);
+            border-radius: 9999px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-block;
+        }
+        .gk-toggle-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #94a3b8;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+        .gk-toggle-status {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 0.64rem;
+            letter-spacing: 0.04em;
+        }
+
+        /* ON State */
+        .gk-toggle-btn.on {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(5, 150, 105, 0.16));
+            border-color: rgba(16, 185, 129, 0.6);
+            color: #6ee7b7;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.22);
+        }
+        .gk-toggle-btn.on .gk-toggle-label {
+            color: #a7f3d0;
+        }
+        .gk-toggle-btn.on .gk-toggle-switch {
+            background: rgba(16, 185, 129, 0.55);
+        }
+        .gk-toggle-btn.on .gk-toggle-knob {
+            left: 14px;
+            background: #34d399;
+            box-shadow: 0 0 8px #34d399;
+        }
         .gk-dropdown-pill {
             padding: 2px 7px;
             border-radius: 9999px;
@@ -1538,6 +1804,248 @@
             display: inline-flex;
             align-items: center;
             gap: 4px;
+        }
+
+        /* ============ DATASET RECORDS CONSIDERED BOX ============ */
+        .gk-records-box {
+            margin-top: 10px;
+            padding: 10px 12px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: var(--radius-sm);
+        }
+        .gk-records-title {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #c7d2fe;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .gk-records-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 8px;
+        }
+        .gk-record-card {
+            background: rgba(30, 41, 59, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+        .gk-record-tag {
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            font-weight: 800;
+            color: #818cf8;
+            letter-spacing: 0.4px;
+            margin-bottom: 3px;
+        }
+        .gk-record-val {
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: #f8fafc;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .gk-record-sub {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ============ SIDE SCREEN DRAWER & FLOATING TAB ============ */
+        .floating-side-tab {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            color: #ffffff;
+            padding: 10px 14px;
+            border-radius: 10px 0 0 10px;
+            cursor: pointer;
+            z-index: 998;
+            box-shadow: -4px 0 20px rgba(14, 165, 233, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            transition: all 0.25s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-right: none;
+        }
+        .floating-side-tab:hover {
+            transform: translateY(-50%) translateX(-4px);
+            box-shadow: -6px 0 25px rgba(14, 165, 233, 0.6);
+        }
+        .records-side-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 480px;
+            max-width: 92vw;
+            height: 100vh;
+            background: rgba(10, 15, 30, 0.96);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-left: 1px solid rgba(56, 189, 248, 0.35);
+            box-shadow: -12px 0 40px rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .records-side-drawer.open {
+            transform: translateX(0);
+        }
+        .side-drawer-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(15, 23, 42, 0.8);
+        }
+        .side-drawer-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .side-drawer-close {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #cbd5e1;
+            font-size: 1.2rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .side-drawer-close:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+        .side-drawer-body {
+            padding: 18px 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            flex: 1;
+        }
+        .side-record-card {
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 12px 14px;
+            position: relative;
+        }
+        .side-card-badge {
+            font-size: 0.62rem;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            display: inline-block;
+            margin-bottom: 6px;
+        }
+        .side-card-label {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #f1f5f9;
+            margin-bottom: 8px;
+        }
+        .side-metric-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.74rem;
+        }
+        .side-metric-label {
+            color: #94a3b8;
+        }
+        .side-metric-val {
+            font-weight: 700;
+            color: #f8fafc;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .side-metric-val.hl-code {
+            color: #38bdf8;
+            font-size: 0.85rem;
+        }
+        .side-metric-val.hl-price {
+            color: #34d399;
+        }
+        .side-metric-val.hl-alert {
+            color: #f59e0b;
+        }
+        .side-metric-val.hl-risk {
+            color: #f87171;
+        }
+        .side-desc-text {
+            font-size: 0.72rem;
+            color: #cbd5e1;
+            line-height: 1.35;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 6px 8px;
+            border-radius: 4px;
+            margin-top: 4px;
+        }
+        .side-vector-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.72rem;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 6px;
+        }
+        .side-vector-table th {
+            text-align: left;
+            padding: 4px 6px;
+            color: #94a3b8;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+        }
+        .side-vector-table td {
+            padding: 4px 6px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #e2e8f0;
+        }
+        .side-shap-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .side-shap-pill.pos {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+        .side-shap-pill.neg {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
         }
     </style>
 </head>
@@ -1771,8 +2279,22 @@
                     <div class="brand-badge">
                         <span class="pulse-dot"></span> HSN / SAC TARIFF ENGINE
                     </div>
-                    <h2>HSN Code Intelligence</h2>
-                    <p class="subtitle">Lightning-fast auto-suggestions &amp; tax breakdown for goods &amp; services</p>
+                    <h2>HSN Code Intelligence &amp; Audit Sentinel</h2>
+                    <p class="subtitle" id="hsnHeaderSubtitle">Module 2 Active: Calibrated LightGBM Gatekeeper + Tree SHAP Explanations + Counterfactual Recommendation</p>
+                </div>
+
+                <!-- MODULE SELECTOR BAR (MODULE 1: HSN INTELLIGENCE vs MODULE 2: HSN AUDIT SENTINEL) -->
+                <div class="module-switcher-container" id="moduleSwitcher">
+                    <button type="button" class="module-switch-pill" id="btnModeIntelligence" onclick="setEngineMode('intelligence')">
+                        <span class="module-switch-tag">Module 1</span>
+                        <span>🔍 HSN Intelligence Engine</span>
+                        <span style="font-size: 0.72rem; opacity: 0.75; font-weight: normal;">(Pure Semantic • Zero Historical Data)</span>
+                    </button>
+                    <button type="button" class="module-switch-pill active" id="btnModeSentinel" onclick="setEngineMode('sentinel')">
+                        <span class="module-switch-tag">Module 2</span>
+                        <span>🛡️ HSN Audit Sentinel</span>
+                        <span style="font-size: 0.72rem; opacity: 0.75; font-weight: normal;">(Day 05+06+07 • Tree SHAP &amp; Counterfactuals)</span>
+                    </button>
                 </div>
 
                 <div class="search-card" id="searchCard">
@@ -1884,21 +2406,86 @@
                                 </div>
                                 <div class="gk-sim-input-group">
                                     <label for="gkSimSupplier">Supplier GSTIN:</label>
-                                    <input type="text" id="gkSimSupplier" class="gk-sim-input" style="width:130px;" placeholder="27CLEAN1234F1Z1">
+                                    <input type="text" id="gkSimSupplier" class="gk-sim-input" style="width:130px;" placeholder="Optional" maxlength="15">
+                                    <button type="button" id="btnToggleVendorCheck" class="gk-toggle-btn off" role="switch" aria-checked="false" title="Click to toggle vendor historical prior compliance check ON or OFF">
+                                        <span class="gk-toggle-label">Vendor Check</span>
+                                        <span class="gk-toggle-switch">
+                                            <span class="gk-toggle-knob"></span>
+                                        </span>
+                                        <span id="gkVendorToggleText" class="gk-toggle-status">OFF</span>
+                                    </button>
+                                </div>
+                                <div id="gkLockPill" class="gk-lock-pill" style="display:none;" title="This HSN stays fixed when you change unit price, chapter or GSTIN">
+                                    <span>🔒 Locked HSN <strong id="gkLockCode"></strong></span>
+                                    <button type="button" id="btnUnlockHsn" title="Unlock and re-pick the top semantic match">✕</button>
                                 </div>
                                 <button type="button" id="btnReevaluateGk" class="score-pill" style="cursor:pointer; background:rgba(99,102,241,0.25); border:1px solid rgba(99,102,241,0.4); color:#c7d2fe; padding:4px 10px;">
                                     ⚡ Re-Evaluate Gate
+                                </button>
+                                <button type="button" id="btnOpenSideScreen" onclick="toggleRecordsSidePanel()" class="score-pill" style="cursor:pointer; background:linear-gradient(135deg, rgba(14,165,233,0.35), rgba(99,102,241,0.35)); border:1px solid #38bdf8; color:#ffffff; padding:4px 12px; font-weight:800; display:inline-flex; align-items:center; gap:6px;" title="View exact dataset records from parquet files in side panel">
+                                    📁 View Records (Side Screen)
                                 </button>
                             </div>
 
                             <!-- Audit Explanations Box -->
                             <div id="gatekeeperFactorsBox" class="gk-factors-box">
                                 <div class="gk-factors-title">
-                                    <span>🛡️ Audit Risk Analysis &amp; Decision Factors</span>
+                                    <span id="gkFactorsTitleText">🛡️ Audit Risk Analysis &amp; Decision Factors</span>
                                 </div>
                                 <ul id="gatekeeperFactorsList" class="gk-factors-list">
                                     <!-- Dynamically populated -->
                                 </ul>
+                            </div>
+
+                            <!-- Day 07 Minimal Corrective Counterfactual Box -->
+                            <div id="gatekeeperCounterfactualBox" class="gk-counterfactual-box" style="display:none;">
+                                <div class="gk-cf-header">
+                                    <div class="gk-cf-title">
+                                        <svg style="width:14px;height:14px;fill:#34d399;" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                        <span>💡 Minimal Corrective Counterfactual [P(Error) &lt; 0.05]</span>
+                                    </div>
+                                    <span id="gatekeeperCfStatusBadge" class="gk-cf-status-badge">SAFE_REPLACEMENT_FOUND</span>
+                                </div>
+                                <div class="gk-cf-card">
+                                    <div class="gk-cf-info">
+                                        <div id="gatekeeperCfCode" class="gk-cf-code">HSN 84818030</div>
+                                        <div id="gatekeeperCfDesc" class="gk-cf-desc">Industrial flow control valves</div>
+                                    </div>
+                                    <div class="gk-cf-metrics">
+                                        <span id="gatekeeperCfDropPill" class="gk-cf-drop-pill">▼ 81.6% Risk Drop</span>
+                                        <button type="button" id="btnApplyCounterfactual" class="gk-cf-btn-apply" title="Adopt recommended HSN to satisfy statutory compliance">
+                                            ⚡ Apply HSN
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Underlying Dataset Records Considered (Live Audit Trace - Always Visible) -->
+                            <div id="gatekeeperRecordsBox" class="gk-records-box" style="margin-top: 10px;">
+                                <div class="gk-records-title">
+                                    <span style="display:flex; align-items:center; gap:6px;">
+                                        <svg style="width:13px;height:13px;fill:#818cf8;" viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+                                        Underlying Dataset Records Considered
+                                    </span>
+                                    <span style="font-size:0.65rem; color:#818cf8; font-family:'JetBrains Mono', monospace;">Parquet Telemetry</span>
+                                </div>
+                                <div class="gk-records-grid">
+                                    <div class="gk-record-card">
+                                        <div class="gk-record-tag">Statutory Tariff Master</div>
+                                        <div id="gkRecTariffCode" class="gk-record-val">HSN 84812000</div>
+                                        <div id="gkRecTariffChapter" class="gk-record-sub">Chapter 84 • data/tariff_master.parquet</div>
+                                    </div>
+                                    <div class="gk-record-card">
+                                        <div class="gk-record-tag">Historical Pricing Baseline</div>
+                                        <div id="gkRecPriceVal" class="gk-record-val">Median ₹1,874.14</div>
+                                        <div id="gkRecPriceSub" class="gk-record-sub">artifacts/historical_median_prices.parquet</div>
+                                    </div>
+                                    <div class="gk-record-card">
+                                        <div class="gk-record-tag">Supplier Prior Risk Record</div>
+                                        <div id="gkRecVendorVal" class="gk-record-val">Prior Risk: 16.13%</div>
+                                        <div id="gkRecVendorSub" class="gk-record-sub">artifacts/supplier_priors.parquet</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2645,6 +3232,104 @@
         let lastSearchLatency = 0.0;
         let lastSearchModel = 'Contrastive MLP (128-D CPU)';
         let lastSearchGatekeeper = null;
+        let currentEngineMode = 'sentinel'; // 'intelligence' (Module 1) or 'sentinel' (Module 2)
+
+        // ---- Locked HSN state ----
+        // The HSN highlighted in the detail card is locked so that changing unit price,
+        // vendor chapter or GSTIN re-evaluates THAT HSN instead of swapping in another one.
+        let lockedHsnItem = null;
+
+        function setLockedHsn(item) {
+            lockedHsnItem = (item && item.hsn_code)
+                ? { hsn_code: String(item.hsn_code), description: item.description || '' }
+                : null;
+            const pill = document.getElementById('gkLockPill');
+            const code = document.getElementById('gkLockCode');
+            if (pill) pill.style.display = lockedHsnItem ? 'inline-flex' : 'none';
+            if (code) code.innerText = lockedHsnItem ? lockedHsnItem.hsn_code : '';
+        }
+
+        function getCleanQuery() {
+            const rawVal = input.value.trim();
+            return rawVal.includes(' (HSN:') ? rawVal.split(' (HSN:')[0].trim() : rawVal;
+        }
+
+        // ---- Vendor check ON/OFF state ----
+        let isVendorCheckActive = false;
+
+        function setVendorCheck(enabled, triggerReeval = true) {
+            isVendorCheckActive = !!enabled;
+            const btn = document.getElementById('btnToggleVendorCheck');
+            const txt = document.getElementById('gkVendorToggleText');
+            const sup = document.getElementById('gkSimSupplier');
+
+            if (btn) {
+                btn.className = isVendorCheckActive ? 'gk-toggle-btn on' : 'gk-toggle-btn off';
+                btn.setAttribute('aria-checked', isVendorCheckActive ? 'true' : 'false');
+            }
+            if (txt) {
+                txt.innerText = isVendorCheckActive ? 'ON' : 'OFF';
+            }
+            if (sup) {
+                if (isVendorCheckActive) {
+                    sup.style.opacity = '1';
+                    if (!sup.value.trim()) {
+                        sup.value = '27CLEAN1234F1Z1'; // pre-fill clean supplier sample
+                    }
+                } else {
+                    sup.style.opacity = '0.65';
+                }
+            }
+            if (triggerReeval) {
+                const queryClean = getCleanQuery();
+                if (queryClean) {
+                    triggerSearch(queryClean, { silent: true });
+                    showToast(isVendorCheckActive ? '⚡ Vendor filing check ENABLED' : 'Vendor filing check DISABLED');
+                }
+            }
+        }
+
+        function refreshVendorStatus() {
+            const sup = document.getElementById('gkSimSupplier');
+            if (!sup) return;
+            const hasGstin = sup.value.trim().length > 0;
+            if (hasGstin && !isVendorCheckActive) {
+                setVendorCheck(true, false);
+            } else if (!hasGstin && isVendorCheckActive) {
+                setVendorCheck(false, false);
+            }
+        }
+
+        function setEngineMode(mode) {
+            currentEngineMode = mode;
+            const btnIntel = document.getElementById('btnModeIntelligence');
+            const btnSent = document.getElementById('btnModeSentinel');
+            const gkCard = document.getElementById('gatekeeperCard');
+            const subtitle = document.getElementById('hsnHeaderSubtitle');
+
+            if (mode === 'intelligence') {
+                if (btnIntel) btnIntel.classList.add('active');
+                if (btnSent) btnSent.classList.remove('active');
+                if (gkCard) gkCard.style.display = 'none';
+                if (subtitle) {
+                    subtitle.innerHTML = 'Module 1 Active: Objective Text-to-Tariff Classification • <strong>Zero Historical Vendor/Pricing Priors</strong>';
+                }
+                showToast('🔍 Switched to Module 1: HSN Intelligence Engine (Pure Semantic Search)');
+            } else {
+                if (btnIntel) btnIntel.classList.remove('active');
+                if (btnSent) btnSent.classList.add('active');
+                if (subtitle) {
+                    subtitle.innerHTML = 'Module 2 Active: Calibrated LightGBM Gatekeeper + Tree SHAP Explanations + Counterfactual Recommendation';
+                }
+                showToast('🛡️ Switched to Module 2: HSN Audit Sentinel (Full Compliance Gatekeeper)');
+            }
+
+            const rawVal = input.value.trim();
+            const queryClean = rawVal.includes(' (HSN:') ? rawVal.split(' (HSN:')[0].trim() : rawVal;
+            if (queryClean) {
+                triggerSearch(queryClean);
+            }
+        }
 
         function getGatekeeperPillHTML(gk) {
             if (!gk) return '';
@@ -2662,7 +3347,7 @@
             const gkCard = document.getElementById('gatekeeperCard');
             if (!gkCard) return;
 
-            if (!gk) {
+            if (!gk || currentEngineMode === 'intelligence') {
                 gkCard.style.display = 'none';
                 return;
             }
@@ -2678,8 +3363,10 @@
                 probBadge.innerText = `${probPct}% Misclassification Risk`;
             }
 
+            const isSafe = (gk.is_safe_to_autofile !== undefined) ? !!gk.is_safe_to_autofile : ((gk.is_safe !== undefined) ? !!gk.is_safe : (gk.error_probability < 0.15));
+
             if (safetyPill) {
-                if (gk.error_probability < 0.15) {
+                if (isSafe) {
                     safetyPill.className = 'gk-pill gk-pill-low';
                     safetyPill.innerHTML = '🟢 Safe to Auto-File';
                 } else if (gk.error_probability < 0.50) {
@@ -2691,22 +3378,223 @@
                 }
             }
 
+            const factorsTitleText = document.getElementById('gkFactorsTitleText');
+            if (factorsTitleText) {
+                factorsTitleText.innerHTML = isSafe 
+                    ? '🛡️ Statutory Compliance &amp; Verification Factors' 
+                    : '🛡️ Audit Risk Analysis &amp; Decision Factors';
+            }
+
             if (factorsList) {
                 factorsList.innerHTML = '';
-                const factors = gk.risk_factors || [];
-                if (factors.length === 0) {
+                // Prefer Day 07 Tree SHAP explanations / human_readable_reasons if present
+                const reasons = (gk.human_readable_reasons && gk.human_readable_reasons.length > 0)
+                    ? gk.human_readable_reasons
+                    : ((gk.explanations && gk.explanations.length > 0) ? gk.explanations : (gk.risk_factors || []));
+
+                if (reasons.length === 0) {
                     factorsList.innerHTML = `
-                        <li class="gk-factor-item clean">✓ High similarity match with statutory tariff master</li>
-                        <li class="gk-factor-item clean">✓ Registered vendor chapter alignment confirmed</li>
-                        <li class="gk-factor-item clean">✓ Unit price verified within historical economic bounds</li>
+                        <li class="gk-factor-item clean">High similarity match with statutory tariff master</li>
+                        <li class="gk-factor-item clean">Registered vendor chapter alignment confirmed</li>
+                        <li class="gk-factor-item clean">Unit price verified within historical economic bounds</li>
                     `;
                 } else {
-                    factors.forEach(f => {
+                    reasons.forEach(f => {
                         const li = document.createElement('li');
-                        li.className = 'gk-factor-item';
-                        li.innerText = f;
+                        const isCleanFactor = isSafe || f.startsWith('✓') || f.toLowerCase().includes('align') || f.toLowerCase().includes('complies');
+                        li.className = isCleanFactor ? 'gk-factor-item clean' : 'gk-factor-item';
+                        let cleanText = f.replace(/^[✓•⚠️\s]+/, '').trim();
+                        li.innerText = cleanText;
                         factorsList.appendChild(li);
                     });
+                }
+            }
+
+            // Day 07 Minimal Corrective Counterfactual Recommendation UI
+            const cfBox = document.getElementById('gatekeeperCounterfactualBox');
+            const cfCode = document.getElementById('gatekeeperCfCode');
+            const cfDesc = document.getElementById('gatekeeperCfDesc');
+            const cfDropPill = document.getElementById('gatekeeperCfDropPill');
+            const cfStatusBadge = document.getElementById('gatekeeperCfStatusBadge');
+            const btnApplyCf = document.getElementById('btnApplyCounterfactual');
+
+            const cfRec = gk.counterfactual_recommendation;
+            if (cfRec && cfBox) {
+                cfBox.style.display = 'block';
+                if (cfCode) cfCode.innerText = `HSN ${cfRec.recommended_hsn}`;
+                if (cfDesc) cfDesc.innerText = cfRec.description || `Statutory Tariff Item ${cfRec.recommended_hsn}`;
+                const dropPct = (cfRec.risk_drop * 100).toFixed(1);
+                const postProbPct = (cfRec.calibrated_error_probability * 100).toFixed(1);
+                if (cfDropPill) {
+                    cfDropPill.innerText = `▼ ${dropPct}% Risk Drop (Post-Risk: ${postProbPct}%)`;
+                }
+                if (cfStatusBadge) {
+                    cfStatusBadge.innerText = cfRec.status;
+                    cfStatusBadge.className = cfRec.status === 'SAFE_REPLACEMENT_FOUND' ? 'gk-cf-status-badge' : 'gk-cf-status-badge unresolved';
+                }
+                if (btnApplyCf) {
+                    const isSafe = cfRec.status === 'SAFE_REPLACEMENT_FOUND';
+                    btnApplyCf.innerHTML = isSafe 
+                        ? `⚡ Apply HSN ${cfRec.recommended_hsn}`
+                        : `⚡ Apply HSN & Align Benchmark`;
+
+                    btnApplyCf.onclick = function(e) {
+                        e.stopPropagation();
+
+                        // 1. Preserve the clean product description without old HSN code
+                        let cleanText = input.value.trim();
+                        if (cleanText.includes(' (HSN:')) {
+                            cleanText = cleanText.split(' (HSN:')[0].trim();
+                        } else if (/^\d{4,8}$/.test(cleanText) && item && item.description) {
+                            cleanText = item.description;
+                        }
+
+                        // 2. Update Vendor Chapter in simulator to the new HSN's chapter to resolve conflict
+                        const recChap = cfRec.recommended_hsn.slice(0, 2);
+                        const simChapInput = document.getElementById('gkSimChapter');
+                        if (simChapInput) {
+                            simChapInput.value = recChap;
+                        }
+
+                        // 3. If price was causing unresolved manual review, align simulator price to benchmark
+                        if (!isSafe && gk.records_considered && gk.records_considered.historical_price) {
+                            const simPriceInput = document.getElementById('gkSimPrice');
+                            if (simPriceInput && gk.records_considered.historical_price.median_price) {
+                                simPriceInput.value = Math.round(gk.records_considered.historical_price.median_price);
+                            }
+                        }
+
+                        // 4. Update search input with clean description + new HSN
+                        if (cleanText) {
+                            input.value = `${cleanText} (HSN: ${cfRec.recommended_hsn})`;
+                        } else {
+                            input.value = cfRec.recommended_hsn;
+                        }
+
+                        // 5. Lock the applied HSN so later price/chapter edits keep evaluating it
+                        setLockedHsn({ hsn_code: cfRec.recommended_hsn, description: cfRec.description });
+
+                        // 6. Trigger search with clean description so NLP model retains full semantic context
+                        triggerSearch(cleanText || cfRec.recommended_hsn, { silent: true });
+                        showToast(`⚡ Applied HSN ${cfRec.recommended_hsn} (Vendor Chapter aligned to ${recChap})`);
+                    };
+                }
+            } else if (cfBox) {
+                cfBox.style.display = 'none';
+            }
+
+            // Update Underlying Dataset Records Box
+            const recBox = document.getElementById('gatekeeperRecordsBox');
+            if (recBox && gk && gk.records_considered) {
+                const recs = gk.records_considered;
+                const recTariffCode = document.getElementById('gkRecTariffCode');
+                const recTariffChap = document.getElementById('gkRecTariffChapter');
+                const recPriceVal = document.getElementById('gkRecPriceVal');
+                const recPriceSub = document.getElementById('gkRecPriceSub');
+                const recVendorVal = document.getElementById('gkRecVendorVal');
+                const recVendorSub = document.getElementById('gkRecVendorSub');
+
+                if (recs.matched_tariff) {
+                    if (recTariffCode) recTariffCode.innerText = `HSN ${recs.matched_tariff.hsn_code}`;
+                    if (recTariffChap) recTariffChap.innerText = `Chapter ${recs.matched_tariff.chapter} • ${recs.matched_tariff.source}`;
+                }
+                if (recs.historical_price) {
+                    if (recPriceVal) recPriceVal.innerText = `Median ₹${Number(recs.historical_price.median_price).toLocaleString('en-IN')}`;
+                    if (recPriceSub) recPriceSub.innerText = `Inv Price: ₹${Number(recs.historical_price.invoice_unit_price).toLocaleString('en-IN')} • ${recs.historical_price.source}`;
+                }
+                if (recs.supplier_prior) {
+                    if (recs.supplier_prior.enabled === false) {
+                        if (recVendorVal) recVendorVal.innerText = 'Vendor Check Disabled';
+                        if (recVendorSub) recVendorSub.innerText = 'No supplier GSTIN provided • history not used';
+                    } else {
+                        const isKnown = recs.supplier_prior.is_known_in_dataset;
+                        const errRate = recs.supplier_prior.prior_error_pct;
+                        if (recVendorVal) recVendorVal.innerText = isKnown ? `Vendor Risk: ${errRate}%` : `Neutral Prior: 5.0% (New Vendor)`;
+                        if (recVendorSub) recVendorSub.innerText = `${recs.supplier_prior.supplier_gstin} • ${recs.supplier_prior.source}`;
+                    }
+                }
+                recBox.style.display = 'block';
+            }
+
+            // Update Side Screen Drawer with Full Records & Feature Vectors
+            if (gk) {
+                const sideHsn = document.getElementById('sideRecTariffHsn');
+                const sideChap = document.getElementById('sideRecTariffChap');
+                const sideRate = document.getElementById('sideRecTariffRate');
+                const sideDesc = document.getElementById('sideRecTariffDesc');
+                const sideMedPrice = document.getElementById('sideRecPriceMedian');
+                const sideInvPrice = document.getElementById('sideRecPriceInvoice');
+                const sidePriceRatio = document.getElementById('sideRecPriceRatio');
+                const sideVendorGstin = document.getElementById('sideRecVendorGstin');
+                const sideVendorRate = document.getElementById('sideRecVendorRate');
+                const sideVendorStatus = document.getElementById('sideRecVendorStatus');
+                const vectorBody = document.getElementById('sideVectorTableBody');
+                const shapList = document.getElementById('sideShapDriversList');
+
+                if (gk.records_considered) {
+                    const recs = gk.records_considered;
+                    if (recs.matched_tariff) {
+                        if (sideHsn) sideHsn.innerText = recs.matched_tariff.hsn_code;
+                        if (sideChap) sideChap.innerText = `Chapter ${recs.matched_tariff.chapter} • Heading ${recs.matched_tariff.hsn_code.slice(0, 4)}`;
+                        if (sideRate) sideRate.innerText = `${recs.matched_tariff.standard_rate}% (Statutory)`;
+                        if (sideDesc) sideDesc.innerText = recs.matched_tariff.description || (item ? item.description : '');
+                    }
+                    if (recs.historical_price) {
+                        if (sideMedPrice) sideMedPrice.innerText = `₹${Number(recs.historical_price.median_price).toLocaleString('en-IN')}`;
+                        if (sideInvPrice) sideInvPrice.innerText = `₹${Number(recs.historical_price.invoice_unit_price).toLocaleString('en-IN')}`;
+                        const devRatio = (recs.historical_price.invoice_unit_price / (recs.historical_price.median_price || 1)).toFixed(2);
+                        if (sidePriceRatio) sidePriceRatio.innerText = `${devRatio}x deviation vs median`;
+                    }
+                    if (recs.supplier_prior) {
+                        if (recs.supplier_prior.enabled === false) {
+                            if (sideVendorGstin) sideVendorGstin.innerText = '— (not provided)';
+                            if (sideVendorRate) sideVendorRate.innerText = 'Disabled';
+                            if (sideVendorStatus) sideVendorStatus.innerText = 'Vendor check off — enter a GSTIN to enable';
+                        } else {
+                            if (sideVendorGstin) sideVendorGstin.innerText = recs.supplier_prior.supplier_gstin;
+                            if (sideVendorRate) sideVendorRate.innerText = `${recs.supplier_prior.prior_error_pct}% Historical Errors`;
+                            if (sideVendorStatus) sideVendorStatus.innerText = recs.supplier_prior.is_known_in_dataset ? 'Found in Historical Filings' : 'New Vendor (Baseline Prior 5.0%)';
+                        }
+                    }
+                }
+
+                // Populate 6-Feature Tabular Vector
+                if (vectorBody && gk.features) {
+                    vectorBody.innerHTML = '';
+                    const featureRoles = {
+                        'top1_similarity_score': 'NLP Semantic Confidence [0-1]',
+                        'margin_top1_top2': 'Top1 vs Top2 Ambiguity Margin',
+                        'chapter_match_flag': 'Statutory Chapter Match Flag [1/0]',
+                        'token_entropy': 'Product Text Shannon Entropy',
+                        'unit_price_deviation': 'Relative Price Deviation Ratio',
+                        'supplier_prior_error_freq': 'Historical Vendor Prior Error Rate'
+                    };
+                    for (const [featKey, featVal] of Object.entries(gk.features)) {
+                        const tr = document.createElement('tr');
+                        let role = featureRoles[featKey] || 'Model Feature';
+                        if (featKey === 'supplier_prior_error_freq' && gk.vendor_check_enabled === false) {
+                            role += ' (disabled — neutral prior, no GSTIN)';
+                        }
+                        tr.innerHTML = `
+                            <td style="color:#93c5fd;">${featKey}</td>
+                            <td style="color:#ffffff; font-weight:700;">${typeof featVal === 'number' ? featVal.toFixed(4) : featVal}</td>
+                            <td style="color:#94a3b8; font-size:0.65rem;">${role}</td>
+                        `;
+                        vectorBody.appendChild(tr);
+                    }
+                }
+
+                // Populate Tree SHAP Decision Drivers
+                if (shapList && gk.shap_attributions) {
+                    shapList.innerHTML = '';
+                    for (const [feat, val] of Object.entries(gk.shap_attributions)) {
+                        const div = document.createElement('div');
+                        const isPos = val > 0;
+                        div.className = isPos ? 'side-shap-pill pos' : 'side-shap-pill neg';
+                        const sign = isPos ? '+' : '';
+                        div.innerHTML = `<span>${feat}</span><span>${sign}${val.toFixed(4)} log-odds</span>`;
+                        shapList.appendChild(div);
+                    }
                 }
             }
 
@@ -2717,9 +3605,11 @@
             }
         }
 
-        function selectItem(item) {
-            input.value = `${item.description} (HSN: ${item.hsn_code})`;
-            dropdown.style.display = 'none';
+        function displayItemDetails(item, shouldToast = false) {
+            if (!item) return;
+
+            // Make detail card visible immediately
+            detailCard.style.display = 'block';
 
             document.getElementById('detailCode').innerText = `HSN: ${item.hsn_code}`;
             document.getElementById('detailDesc').innerText = item.description;
@@ -2754,16 +3644,35 @@
                 confBadge.className = conf >= 85 ? 'score-pill score-high' : 'score-pill';
             }
 
-            // Update Day 06 Safety Gatekeeper Card
-            updateGatekeeperUI(item.gatekeeper || lastSearchGatekeeper, item);
+            // Update Day 06 Safety Gatekeeper Card only in sentinel mode
+            if (currentEngineMode === 'sentinel') {
+                updateGatekeeperUI(item.gatekeeper || lastSearchGatekeeper, item);
+            } else {
+                const gkCard = document.getElementById('gatekeeperCard');
+                if (gkCard) gkCard.style.display = 'none';
+            }
 
-            detailCard.style.display = 'block';
-
-            // Show prompt toast highlighting found latency
-            showToast(`⚡ HSN [${item.hsn_code}] identified in ${lat} ms (${item.confidence_pct || 98.5}% match)`);
+            if (shouldToast) {
+                showToast(`⚡ HSN [${item.hsn_code}] identified in ${lat} ms (${item.confidence_pct || 98.5}% match)`);
+            }
         }
 
-        function renderDropdown(matches, query, latencyMs, modelName) {
+        function selectItem(item) {
+            input.value = `${item.description} (HSN: ${item.hsn_code})`;
+            dropdown.style.display = 'none';
+            setLockedHsn(item);
+            displayItemDetails(item, true);
+            // Gatekeeper result is only computed for the evaluated top-1 candidate, so re-evaluate
+            // with this HSN locked to get a risk verdict for the item the user actually picked.
+            if (currentEngineMode === 'sentinel' && !item.gatekeeper) {
+                triggerSearch(getCleanQuery(), { silent: true });
+            }
+            setTimeout(() => {
+                detailCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 60);
+        }
+
+        function renderDropdown(matches, query, latencyMs, modelName, silent = false) {
             matchesData = matches;
             selectedIndex = -1;
             dropdown.innerHTML = '';
@@ -2772,7 +3681,7 @@
 
             if (!matches || matches.length === 0) {
                 dropdown.innerHTML = '<div class="no-result">🔍 No matching HSN code or description found</div>';
-                dropdown.style.display = 'block';
+                dropdown.style.display = silent ? 'none' : 'block';
                 if (promptBanner) promptBanner.style.display = 'none';
                 return;
             }
@@ -2809,7 +3718,7 @@
                 const confClass = conf >= 85 ? 'score-pill score-high' : 'score-pill';
                 const scoreBadge = `<span class="${confClass}">${conf}% match</span>`;
                 const blockedBadge = item.is_blocked_17_5 === 1 ? '<span class="blocked-badge">⚠️ Sec 17(5) Blocked</span>' : '';
-                const gkPill = (item.gatekeeper || (index === 0 && lastSearchGatekeeper)) ? getGatekeeperPillHTML(item.gatekeeper || lastSearchGatekeeper) : '';
+                const gkPill = (currentEngineMode === 'sentinel' && (item.gatekeeper || (index === 0 && lastSearchGatekeeper))) ? getGatekeeperPillHTML(item.gatekeeper || lastSearchGatekeeper) : '';
 
                 div.innerHTML = `
                     <div class="item-left">
@@ -2833,10 +3742,11 @@
                 dropdown.appendChild(div);
             });
 
-            dropdown.style.display = 'block';
+            dropdown.style.display = silent ? 'none' : 'block';
         }
 
-        function triggerSearch(currentQuery) {
+        function triggerSearch(currentQuery, opts = {}) {
+            const silent = !!opts.silent;
             clearBtn.style.display = currentQuery.length > 0 ? 'flex' : 'none';
 
             if (debounceTimer) clearTimeout(debounceTimer);
@@ -2859,12 +3769,17 @@
                 // Read optional live scenario simulator parameters
                 const simPrice = document.getElementById('gkSimPrice') ? document.getElementById('gkSimPrice').value : '';
                 const simChap = document.getElementById('gkSimChapter') ? document.getElementById('gkSimChapter').value : '';
-                const simSup = document.getElementById('gkSimSupplier') ? document.getElementById('gkSimSupplier').value : '';
+                const simSup = (isVendorCheckActive && document.getElementById('gkSimSupplier'))
+                    ? document.getElementById('gkSimSupplier').value.trim()
+                    : '';
 
-                let queryUrl = `/api/hsn-search?query=${encodeURIComponent(currentQuery)}`;
-                if (simPrice) queryUrl += `&unit_price=${encodeURIComponent(simPrice)}`;
-                if (simChap) queryUrl += `&chapter=${encodeURIComponent(simChap)}`;
-                if (simSup) queryUrl += `&supplier_gstin=${encodeURIComponent(simSup)}`;
+                let queryUrl = `/api/hsn-search?query=${encodeURIComponent(currentQuery)}&mode=${encodeURIComponent(currentEngineMode)}`;
+                if (currentEngineMode === 'sentinel') {
+                    if (simPrice) queryUrl += `&unit_price=${encodeURIComponent(simPrice)}`;
+                    if (simChap) queryUrl += `&chapter=${encodeURIComponent(simChap)}`;
+                    if (simSup) queryUrl += `&supplier_gstin=${encodeURIComponent(simSup)}`;
+                    if (lockedHsnItem) queryUrl += `&locked_hsn=${encodeURIComponent(lockedHsnItem.hsn_code)}`;
+                }
 
                 try {
                     const response = await fetch(queryUrl, { signal });
@@ -2878,11 +3793,20 @@
                     lastSearchModel = modelName;
                     lastSearchGatekeeper = data.gatekeeper;
 
-                    renderDropdown(data.matches || [], currentQuery, latency, modelName);
+                    renderDropdown(data.matches || [], currentQuery, latency, modelName, silent);
 
-                    // If detail card is active, update gatekeeper card dynamically
-                    if (detailCard.style.display !== 'none' && data.gatekeeper) {
-                        updateGatekeeperUI(data.gatekeeper, data.matches && data.matches[0] ? data.matches[0] : null);
+                    // Display the evaluated item. With a lock, the backend pins the locked HSN to
+                    // matches[0]; without one, the top semantic match becomes the new lock.
+                    if (data.matches && data.matches.length > 0) {
+                        const top = data.matches[0];
+                        if (!lockedHsnItem || currentEngineMode !== 'sentinel') {
+                            setLockedHsn(top);
+                        }
+                        displayItemDetails(top, false);
+                    } else {
+                        detailCard.style.display = 'none';
+                        const gkCard = document.getElementById('gatekeeperCard');
+                        if (gkCard) gkCard.style.display = 'none';
                     }
                 } catch (err) {
                     if (err.name === 'AbortError') return;
@@ -2893,24 +3817,56 @@
         }
 
         // Simulator Re-Evaluate Button Listener
+        // Re-evaluates the LOCKED HSN against the new unit price / chapter / GSTIN.
         const btnReeval = document.getElementById('btnReevaluateGk');
         if (btnReeval) {
             btnReeval.addEventListener('click', function () {
-                const rawVal = input.value.trim();
-                const queryClean = rawVal.includes(' (HSN:') ? rawVal.split(' (HSN:')[0].trim() : rawVal;
+                const queryClean = getCleanQuery();
                 if (queryClean) {
-                    triggerSearch(queryClean);
-                    showToast('⚡ Day 06 Safety Gatekeeper re-evaluating with test parameters...');
+                    triggerSearch(queryClean, { silent: true });
+                    const lockMsg = lockedHsnItem ? ` (HSN ${lockedHsnItem.hsn_code} locked)` : '';
+                    showToast(`⚡ Re-evaluating with test parameters${lockMsg}...`);
                 }
             });
         }
 
+        // Unlock: drop the pinned HSN and re-pick the top semantic match
+        const btnUnlock = document.getElementById('btnUnlockHsn');
+        if (btnUnlock) {
+            btnUnlock.addEventListener('click', function (e) {
+                e.stopPropagation();
+                setLockedHsn(null);
+                const queryClean = getCleanQuery();
+                if (queryClean) triggerSearch(queryClean, { silent: true });
+                showToast('🔓 HSN unlocked — re-picking top semantic match');
+            });
+        }
+
+        // Vendor check interactive ON/OFF toggle switch listener
+        const btnToggleVendor = document.getElementById('btnToggleVendorCheck');
+        if (btnToggleVendor) {
+            btnToggleVendor.addEventListener('click', function (e) {
+                e.stopPropagation();
+                setVendorCheck(!isVendorCheckActive, true);
+            });
+        }
+
+        // Vendor check input listener (typing GSTIN automatically flips ON, clearing flips OFF)
+        const simSupInput = document.getElementById('gkSimSupplier');
+        if (simSupInput) {
+            simSupInput.addEventListener('input', refreshVendorStatus);
+            refreshVendorStatus();
+        }
+
         input.addEventListener('input', function () {
+            // New text typed -> new product; release the previous lock
+            setLockedHsn(null);
             triggerSearch(this.value.trim());
         });
 
         clearBtn.addEventListener('click', function () {
             input.value = '';
+            setLockedHsn(null);
             clearBtn.style.display = 'none';
             dropdown.style.display = 'none';
             detailCard.style.display = 'none';
@@ -2953,12 +3909,139 @@
             });
         }
 
+        // ==========================================
+        // SIDE SCREEN RECORDS DRAWER CONTROLLER
+        // ==========================================
+        function toggleRecordsSidePanel() {
+            const drawer = document.getElementById('recordsSideDrawer');
+            if (drawer) {
+                drawer.classList.toggle('open');
+            }
+        }
+
+        function openRecordsSidePanel() {
+            const drawer = document.getElementById('recordsSideDrawer');
+            if (drawer) {
+                drawer.classList.add('open');
+            }
+        }
+
+        function closeRecordsSidePanel() {
+            const drawer = document.getElementById('recordsSideDrawer');
+            if (drawer) {
+                drawer.classList.remove('open');
+            }
+        }
+
         document.addEventListener('click', function (e) {
             if (!e.target.closest('.search-box')) {
                 dropdown.style.display = 'none';
             }
         });
     </script>
+
+    <!-- FLOATING SIDE SCREEN TOGGLE TAB ON RIGHT EDGE -->
+    <div id="floatingSideTab" class="floating-side-tab" onclick="toggleRecordsSidePanel()" title="Click to inspect underlying Parquet dataset records in side panel">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#ffffff;"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+        <span>📁 DATASET RECORDS</span>
+    </div>
+
+    <!-- SLIDING GLASSMORPHIC SIDE SCREEN DRAWER FOR UNDERLYING RECORDS -->
+    <aside id="recordsSideDrawer" class="records-side-drawer">
+        <div class="side-drawer-header">
+            <div class="side-drawer-title">
+                <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:#38bdf8;"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+                <div>
+                    <h3 style="font-size:0.95rem; font-weight:800; color:#f8fafc; margin:0;">Underlying Dataset Records</h3>
+                    <p style="font-size:0.7rem; color:#94a3b8; margin:0;">Live Statutory &amp; ML Parquet Inspector</p>
+                </div>
+            </div>
+            <button type="button" class="side-drawer-close" onclick="closeRecordsSidePanel()" title="Close side screen">&times;</button>
+        </div>
+
+        <div class="side-drawer-body">
+            <!-- 1. Statutory Tariff Master Record -->
+            <div class="side-record-card">
+                <div class="side-card-badge">data/tariff_master.parquet</div>
+                <div class="side-card-label">Statutory Tariff Master Record</div>
+                <div class="side-metric-row">
+                    <span class="side-metric-label">Matched HSN</span>
+                    <span id="sideRecTariffHsn" class="side-metric-val hl-code">84812000</span>
+                </div>
+                <div class="side-metric-row">
+                    <span class="side-metric-label">Chapter / Heading</span>
+                    <span id="sideRecTariffChap" class="side-metric-val">Chapter 84 • Heading 8481</span>
+                </div>
+                <div class="side-metric-row">
+                    <span class="side-metric-label">Statutory GST Rate</span>
+                    <span id="sideRecTariffRate" class="side-metric-val">18.0% (Statutory)</span>
+                </div>
+                <div class="side-metric-row" style="flex-direction:column; align-items:flex-start;">
+                    <span class="side-metric-label" style="margin-bottom:4px;">Statutory Tariff Description:</span>
+                    <div id="sideRecTariffDesc" class="side-desc-text">TAPS, COCKS, VALVES AND SIMILAR APPLIANCES FOR PIPES, BOILER SHELLS, TANKS...</div>
+                </div>
+            </div>
+
+            <!-- 2. Historical Pricing Baseline Record -->
+            <div class="side-record-card">
+                <div class="side-card-badge">artifacts/historical_median_prices.parquet</div>
+                <div class="side-card-label">Historical Pricing Baseline Record</div>
+                <div class="side-metric-row">
+                    <span class="side-metric-label">Statutory Benchmark Price</span>
+                    <span id="sideRecPriceMedian" class="side-metric-val hl-price">₹1,874.14</span>
+                </div>
+                <div class="side-metric-row">
+                    <span class="side-metric-label">Declared Invoice Price</span>
+                    <span id="sideRecPriceInvoice" class="side-metric-val">₹4,500.00</span>
+                </div>
+                <div class="side-metric-row">
+                    <span class="side-metric-label">Price Deviation Ratio</span>
+                    <span id="sideRecPriceRatio" class="side-metric-val hl-alert">2.40x deviation vs median</span>
+                </div>
+            </div>
+
+            <!-- 3. Supplier Prior Risk Record -->
+            <div class="side-record-card">
+                <div class="side-card-badge">artifacts/supplier_priors.parquet</div>
+                <div class="side-card-label">Supplier Prior Compliance Record</div>
+                <div class="side-metric-row">
+                    <span class="side-metric-label">Supplier GSTIN</span>
+                    <span id="sideRecVendorGstin" class="side-metric-val">06CKUWC2983K1ZA</span>
+                </div>
+                <div class="side-metric-row">
+                    <span class="side-metric-label">Historical Error Rate</span>
+                    <span id="sideRecVendorRate" class="side-metric-val hl-risk">16.13% Historical Errors</span>
+                </div>
+                <div class="side-metric-row">
+                    <span class="side-metric-label">Dataset Status</span>
+                    <span id="sideRecVendorStatus" class="side-metric-val">Found in Historical Filings</span>
+                </div>
+            </div>
+
+            <!-- 4. Extracted 6-Feature Tabular Vector -->
+            <div class="side-record-card">
+                <div class="side-card-badge">artifacts/extracted_day06_train.parquet schema</div>
+                <div class="side-card-label">LightGBM 6-Feature Input Vector</div>
+                <table class="side-vector-table">
+                    <thead>
+                        <tr><th>Feature</th><th>Value</th><th>Statutory Role</th></tr>
+                    </thead>
+                    <tbody id="sideVectorTableBody">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 5. Tree SHAP Decision Drivers -->
+            <div class="side-record-card">
+                <div class="side-card-badge">Native Tree SHAP Decomposition</div>
+                <div class="side-card-label">Feature Log-Odds Decision Drivers</div>
+                <div id="sideShapDriversList" class="side-shap-list">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </aside>
 </body>
 
 </html>
