@@ -117,7 +117,7 @@ KEY_ALIASES = {
     "unit_rate": "unitrate", "unitprice": "unitrate", "unit_price": "unitrate",
     "gross_amt": "grossamt", "gross_amount": "grossamt", "totamt": "grossamt", "total_amt": "grossamt",
     "pretaxval": "assamt", "ass_amt": "assamt", "taxable_amt": "assamt", "assval": "assamt", "taxable_val": "assamt", "taxable_value": "assamt",
-    "gstrate": "igstrt", "gst_rate": "igstrt", "gst rate": "igstrt",
+    "gstrate": "gstrate", "gst_rate": "gstrate", "gst rate": "gstrate", "gstrt": "gstrate",
     "cgstval": "cgstamt", "sgstval": "sgstamt", "igstval": "igstamt",
     "cesrate": "cessrt", "cesval": "cessamt", "cesnonadvl": "cessnonadval",
     "statecesrate": "statecessrt", "statecesval": "statecessamt",
@@ -2646,7 +2646,8 @@ class PayloadBuilder:
 
             if sentinel_audit and sentinel_audit.get("should_rectify"):
                 cf_hsn = str(sentinel_audit.get("rectified_hsn", "")).strip()
-                if cf_hsn and cf_hsn != orig_hsn:
+                is_same_heading = bool(orig_hsn and cf_hsn and len(orig_hsn) >= 4 and len(cf_hsn) >= 4 and orig_hsn[:4] == cf_hsn[:4])
+                if cf_hsn and cf_hsn != orig_hsn and not is_same_heading:
                     cf_rate = Decimal(str(sentinel_audit.get("statutory_rate", 18.0)))
                     err_p = float(sentinel_audit.get("error_probability", 0.0))
                     post_p = float(sentinel_audit.get("post_intervention_risk", 0.0))
@@ -2732,16 +2733,28 @@ class PayloadBuilder:
 
             taxability = clean_str(item.get("taxability", "TAX")).upper() or "TAX"
 
+            # Prioritize explicit customer-declared gstrate / gst_rate first!
+            declared_gstrate = None
+            for g_k in ("gstrate", "gst_rate", "gst rate", "tax_rate", "gstrt", "gst_rt"):
+                if g_k in item and item.get(g_k) is not None and str(item.get(g_k)).strip() != "":
+                    try:
+                        declared_gstrate = Decimal(clean_decimal_str(item.get(g_k), 2))
+                        break
+                    except Exception:
+                        pass
+
             raw_igstrt = Decimal(clean_decimal_str(item.get("igstrt", "0.00"), 2))
             raw_cgstrt = Decimal(clean_decimal_str(item.get("cgstrt", "0.00"), 2))
             raw_sgstrt = Decimal(clean_decimal_str(item.get("sgstrt", "0.00"), 2))
 
-            if hsn_statutory_rate is not None:
-                gst_rate = hsn_statutory_rate
+            if declared_gstrate is not None:
+                gst_rate = declared_gstrate
             elif raw_igstrt > 0:
                 gst_rate = raw_igstrt
             elif raw_cgstrt + raw_sgstrt > 0:
                 gst_rate = raw_cgstrt + raw_sgstrt
+            elif hsn_statutory_rate is not None:
+                gst_rate = hsn_statutory_rate
             else:
                 gst_rate = Decimal("0.00")
 
@@ -2805,6 +2818,7 @@ class PayloadBuilder:
                 "othchrg": str(othchrg_d) if othchrg_d > 0 else "",
                 "assamt": str(assamt_d),
                 "taxability": taxability,
+                "gstrate": str(gst_rate),
                 "cgstrt": str(cgstrt_d),
                 "cgstamt": str(cgstamt_d),
                 "sgstrt": str(sgstrt_d),

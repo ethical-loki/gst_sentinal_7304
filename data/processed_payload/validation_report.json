@@ -1,21 +1,13 @@
 {
   "total_invoices": 1,
-  "valid_invoices": 0,
-  "failed_invoices": 1,
+  "valid_invoices": 1,
+  "failed_invoices": 0,
   "results": [
     {
       "invoice_number": "INV-2026-OUTLIER",
-      "status": "INVALID",
-      "error_count": 1,
-      "errors": [
-        {
-          "error_code": 2176,
-          "field": "itemdtls[1].hsncd",
-          "message": "HSN Misclassification Screened: Declared HSN '65061010' flagged by Module 2 Sentinel.",
-          "reason": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '65061010' flagged with P(Error) = 31.7% (MEDIUM risk). SHAP Root Causes: Unit price of \u20b985,000.00 deviates significantly (176.0x) from statutory median price (\u20b9482.89) for HSN 65061010., Low semantic match confidence: Retrieval similarity score (83.6%) is insufficient to guarantee correct classification.. Auto-rectified to Counterfactual HSN '65061090' (Post-Intervention P(Error) = 21.8%, -9.8% risk drop) with statutory 18.0% GST before transmission to NIC portal.",
-          "resolution": "Confirm and apply Recommended HSN '65061090' to unlock Stage 2 IRN generation."
-        }
-      ],
+      "status": "VALID",
+      "error_count": 0,
+      "errors": [],
       "price_anomaly_report": {
         "status": "CLEAN",
         "has_anomalies": false,
@@ -29,28 +21,84 @@
           {
             "item_index": 1,
             "prdnm": "Industrial Protective Safety Helmet",
-            "hsncd": "65061090",
+            "hsncd": "65061010",
             "uqc": "NOS",
-            "unitrate": 85000.0,
+            "unitrate": 482.89,
             "qty": 10.0,
-            "assamt": 850000.0,
+            "assamt": 4828.9,
             "is_anomaly": false,
             "anomaly_type": "NORMAL",
             "severity": "NONE",
             "risk_score": 0,
-            "benchmark_min": 1.0,
-            "benchmark_max": 50000.0,
-            "benchmark_median": 250.0,
-            "ratio_to_median": 340.0,
+            "benchmark_min": 150.0,
+            "benchmark_max": 2500.0,
+            "benchmark_median": 482.89,
+            "ratio_to_median": 1.0,
             "suggested_rate": null,
             "reason": "Unit rate is within normal statutory benchmark range.",
             "statutory_risk": "",
-            "benchmark_source": "UQC:NOS"
+            "benchmark_source": "HSN:65061010"
           }
         ]
       },
-      "corrections_applied_count": 6,
+      "corrections_applied_count": 19,
       "corrections_applied": [
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].igstval",
+          "original": "igstval",
+          "corrected": "igstamt",
+          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].cgstval",
+          "original": "cgstval",
+          "corrected": "cgstamt",
+          "description": "Standardized non-compliant key 'cgstval' to schema key 'cgstamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].sgstval",
+          "original": "sgstval",
+          "corrected": "sgstamt",
+          "description": "Standardized non-compliant key 'sgstval' to schema key 'sgstamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].unitprice",
+          "original": "unitprice",
+          "corrected": "unitrate",
+          "description": "Standardized non-compliant key 'unitprice' to schema key 'unitrate'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].unit_rate",
+          "original": "unit_rate",
+          "corrected": "unitrate",
+          "description": "Standardized non-compliant key 'unit_rate' to schema key 'unitrate'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].unit_price",
+          "original": "unit_price",
+          "corrected": "unitrate",
+          "description": "Standardized non-compliant key 'unit_price' to schema key 'unitrate'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].totamt",
+          "original": "totamt",
+          "corrected": "grossamt",
+          "description": "Standardized non-compliant key 'totamt' to schema key 'grossamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].assval",
+          "original": "assval",
+          "corrected": "assamt",
+          "description": "Standardized non-compliant key 'assval' to schema key 'assamt'"
+        },
         {
           "category": "KEY_NAME_NORMALIZATION",
           "field": "valdt1.assval",
@@ -66,6 +114,55 @@
           "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
         },
         {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "valdt1.cgstval",
+          "original": "cgstval",
+          "corrected": "cgstamt",
+          "description": "Standardized non-compliant key 'cgstval' to schema key 'cgstamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "valdt1.sgstval",
+          "original": "sgstval",
+          "corrected": "sgstamt",
+          "description": "Standardized non-compliant key 'sgstval' to schema key 'sgstamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "valdt1.cesval",
+          "original": "cesval",
+          "corrected": "cessamt",
+          "description": "Standardized non-compliant key 'cesval' to schema key 'cessamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "cgstval",
+          "original": "cgstval",
+          "corrected": "cgstamt",
+          "description": "Standardized non-compliant key 'cgstval' to schema key 'cgstamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "sgstval",
+          "original": "sgstval",
+          "corrected": "sgstamt",
+          "description": "Standardized non-compliant key 'sgstval' to schema key 'sgstamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "igstval",
+          "original": "igstval",
+          "corrected": "igstamt",
+          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "cesval",
+          "original": "cesval",
+          "corrected": "cessamt",
+          "description": "Standardized non-compliant key 'cesval' to schema key 'cessamt'"
+        },
+        {
           "category": "FORMAT_NORMALIZATION",
           "field": "docdt1.docno",
           "original": "INV-2026-OUTLIER-01",
@@ -78,20 +175,6 @@
           "original": "2026-10-22",
           "corrected": "22-10-2026",
           "description": "Standardized date format from '2026-10-22' to '22-10-2026'"
-        },
-        {
-          "category": "BUSINESS_RULE_AUTO_CORRECTION",
-          "field": "buyerdt1.pos",
-          "original": "",
-          "corrected": "29",
-          "description": "Derived missing POS '29' from Buyer GSTIN prefix"
-        },
-        {
-          "category": "MODULE_2_SENTINEL_HSN_RECTIFICATION",
-          "field": "itemdtls[1].hsncd",
-          "original": "65061010",
-          "corrected": "65061090",
-          "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '65061010' flagged with P(Error) = 31.7% (MEDIUM risk). SHAP Root Causes: Unit price of \u20b985,000.00 deviates significantly (176.0x) from statutory median price (\u20b9482.89) for HSN 65061010., Low semantic match confidence: Retrieval similarity score (83.6%) is insufficient to guarantee correct classification.. Auto-rectified to Counterfactual HSN '65061090' (Post-Intervention P(Error) = 21.8%, -9.8% risk drop) with statutory 18.0% GST before transmission to NIC portal."
         }
       ],
       "buyer_risk_profile": {
@@ -111,15 +194,9 @@
           "\u2705 Interstate supply (27 -> 29) correctly routed through Integrated GST (IGST).",
           "\u2705 Input Tax Credit (ITC) Claim: Fully eligible under CGST Act Section 16(2)."
         ]
-      },
-      "hsn_screening_alert": {
-        "status": "FLAGGED",
-        "declared_hsn": "65061010",
-        "recommended_hsn": "65061090",
-        "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '65061010' flagged with P(Error) = 31.7% (MEDIUM risk). SHAP Root Causes: Unit price of \u20b985,000.00 deviates significantly (176.0x) from statutory median price (\u20b9482.89) for HSN 65061010., Low semantic match confidence: Retrieval similarity score (83.6%) is insufficient to guarantee correct classification.. Auto-rectified to Counterfactual HSN '65061090' (Post-Intervention P(Error) = 21.8%, -9.8% risk drop) with statutory 18.0% GST before transmission to NIC portal."
       }
     }
   ],
   "total_price_anomalies": 0,
-  "compliance_rate": 0.0
+  "compliance_rate": 100.0
 }

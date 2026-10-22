@@ -4,7 +4,7 @@
   "failed_invoices": 0,
   "results": [
     {
-      "invoice_number": "INV-2026-SERVO-3",
+      "invoice_number": "INV-2026-OUTLIER",
       "status": "VALID",
       "error_count": 0,
       "errors": [],
@@ -20,56 +20,49 @@
         "findings": [
           {
             "item_index": 1,
-            "prdnm": "Industrial Servo Motor",
-            "hsncd": "85011020",
+            "prdnm": "Industrial Protective Safety Helmet",
+            "hsncd": "65061010",
             "uqc": "NOS",
-            "unitrate": 12000.0,
-            "qty": 5.0,
-            "assamt": 60000.0,
+            "unitrate": 482.89,
+            "qty": 10.0,
+            "assamt": 4828.9,
             "is_anomaly": false,
             "anomaly_type": "NORMAL",
             "severity": "NONE",
             "risk_score": 0,
-            "benchmark_min": 1.0,
-            "benchmark_max": 50000.0,
-            "benchmark_median": 250.0,
-            "ratio_to_median": 48.0,
+            "benchmark_min": 150.0,
+            "benchmark_max": 2500.0,
+            "benchmark_median": 482.89,
+            "ratio_to_median": 1.0,
             "suggested_rate": null,
             "reason": "Unit rate is within normal statutory benchmark range.",
             "statutory_risk": "",
-            "benchmark_source": "UQC:NOS"
+            "benchmark_source": "HSN:65061010"
           }
         ]
       },
-      "corrections_applied_count": 23,
+      "corrections_applied_count": 19,
       "corrections_applied": [
         {
           "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].is_service",
-          "original": "is_service",
-          "corrected": "isservc",
-          "description": "Standardized non-compliant key 'is_service' to schema key 'isservc'"
+          "field": "itemdtls[1].igstval",
+          "original": "igstval",
+          "corrected": "igstamt",
+          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].assval",
-          "original": "assval",
-          "corrected": "assamt",
-          "description": "Standardized non-compliant key 'assval' to schema key 'assamt'"
+          "field": "itemdtls[1].cgstval",
+          "original": "cgstval",
+          "corrected": "cgstamt",
+          "description": "Standardized non-compliant key 'cgstval' to schema key 'cgstamt'"
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].hsn",
-          "original": "hsn",
-          "corrected": "hsncd",
-          "description": "Standardized non-compliant key 'hsn' to schema key 'hsncd'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].hsn_code",
-          "original": "hsn_code",
-          "corrected": "hsncd",
-          "description": "Standardized non-compliant key 'hsn_code' to schema key 'hsncd'"
+          "field": "itemdtls[1].sgstval",
+          "original": "sgstval",
+          "corrected": "sgstamt",
+          "description": "Standardized non-compliant key 'sgstval' to schema key 'sgstamt'"
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
@@ -101,31 +94,10 @@
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].gstrate",
-          "original": "gstrate",
-          "corrected": "igstrt",
-          "description": "Standardized non-compliant key 'gstrate' to schema key 'igstrt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].igstval",
-          "original": "igstval",
-          "corrected": "igstamt",
-          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].cgstval",
-          "original": "cgstval",
-          "corrected": "cgstamt",
-          "description": "Standardized non-compliant key 'cgstval' to schema key 'cgstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].sgstval",
-          "original": "sgstval",
-          "corrected": "sgstamt",
-          "description": "Standardized non-compliant key 'sgstval' to schema key 'sgstamt'"
+          "field": "itemdtls[1].assval",
+          "original": "assval",
+          "corrected": "assamt",
+          "description": "Standardized non-compliant key 'assval' to schema key 'assamt'"
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
@@ -133,6 +105,13 @@
           "original": "assval",
           "corrected": "assamt",
           "description": "Standardized non-compliant key 'assval' to schema key 'assamt'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "valdt1.igstval",
+          "original": "igstval",
+          "corrected": "igstamt",
+          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
@@ -147,13 +126,6 @@
           "original": "sgstval",
           "corrected": "sgstamt",
           "description": "Standardized non-compliant key 'sgstval' to schema key 'sgstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.igstval",
-          "original": "igstval",
-          "corrected": "igstamt",
-          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
@@ -191,11 +163,11 @@
           "description": "Standardized non-compliant key 'cesval' to schema key 'cessamt'"
         },
         {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "document_date",
-          "original": "document_date",
-          "corrected": "docdt",
-          "description": "Standardized non-compliant key 'document_date' to schema key 'docdt'"
+          "category": "FORMAT_NORMALIZATION",
+          "field": "docdt1.docno",
+          "original": "INV-2026-OUTLIER-01",
+          "corrected": "INV-2026-OUTLIER",
+          "description": "Removed invalid punctuation characters from document number per NIC Rule 2281"
         },
         {
           "category": "DATE_FORMAT_NORMALIZATION",
@@ -207,7 +179,7 @@
       ],
       "buyer_risk_profile": {
         "buyer_gstin": "29XYZAB5678C1Z2",
-        "buyer_name": "Precision Robotics Corp",
+        "buyer_name": "Karnataka Infrastructure & Mining Corp",
         "buyer_state": "29",
         "pos": "29",
         "supplier_state": "27",

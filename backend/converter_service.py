@@ -17,6 +17,7 @@ import urllib.parse
 from pathlib import Path
 from typing import Dict, Any, List, Union, Tuple, Optional
 from datetime import datetime, date, timedelta
+import hashlib
 
 # Ensure Template_Converters directory is on sys.path
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -264,6 +265,181 @@ def calculate_financial_aggregates(corrected_payload: Dict[str, Any]) -> Dict[st
         "sgstval": round(sgstval, 2),
         "igstval": round(igstval, 2),
         "totinvval": round(totinvval, 2)
+    }
+
+
+def _gst_num(v: Any) -> float:
+    """Safely parse a numeric GST field (accepts str/int/float, strips commas)."""
+    if v is None or v == "":
+        return 0.0
+    try:
+        return float(str(v).replace(",", "").strip())
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def _item_total_gst_rate(it: dict) -> float:
+    """
+    Extracts the statutory GST rate for an item:
+    1. First check explicit 'gstrate', 'gst_rate', 'tax_rate', 'gstrt' in the item.
+       Whatever percentage is mentioned in gstrate is the primary source of truth!
+       (e.g., 0%, 0.1%, 0.25%, 1.5%, 3%, 5%, 6%, 7.5%, 12%, 18%, 28%, etc. - NOT assumed to be 18)
+    2. If not found in item, derive from existing igstrt or (cgstrt + sgstrt).
+    3. Return 0.0 if not found (never default blindly to 18.0).
+    """
+    for k in ("gstrate", "gst_rate", "gst rate", "tax_rate", "gstrt", "gst_rt"):
+        if k in it and it.get(k) is not None and str(it.get(k)).strip() != "":
+            try:
+                return float(str(it.get(k)).replace(",", "").replace("%", "").strip())
+            except (ValueError, TypeError):
+                pass
+
+    ig = _gst_num(it.get("igstrt"))
+    cg = _gst_num(it.get("cgstrt"))
+    sg = _gst_num(it.get("sgstrt"))
+    if ig > 0:
+        return ig
+    if cg + sg > 0:
+        return round(cg + sg, 3)
+    return 0.0
+
+
+def _fmt_like(old: Any, new: float, nd: int = 2) -> Any:
+    """Write a number back using the same type (string vs number) as the original field."""
+    return f"{new:.{nd}f}" if isinstance(old, str) or old is None else round(new, nd)
+
+
+def auto_route_tax_split(inv: dict) -> Optional[Dict[str, Any]]:
+    """
+    Automatically routes GST on every line item based on Supplier GSTIN vs Buyer GSTIN / POS:
+      - Supplier state = first 2 digits of Supplier GSTIN (fallback supplier_state).
+      - POS = declared POS, else derived from Buyer GSTIN prefix (fallback buyer_state).
+      - Interstate (supplier != POS), Export, SEZ or IGST-on-intra  -> IGST only.
+      - Intrastate (supplier == POS)                                 -> CGST + SGST (rate / 2 each).
+    Recomputes item tax amounts, totitemval and invoice-level totals (valdtls / valdt1 / top-level).
+    Returns a summary dict ({"changed": bool, ...}) or None when states cannot be resolved.
+    """
+    if not isinstance(inv, dict):
+        return None
+    supp_dt = inv.get("supplierdt1") if isinstance(inv.get("supplierdt1"), dict) else {}
+    buyer_dt = inv.get("buyerdt1") if isinstance(inv.get("buyerdt1"), dict) else {}
+    tran_dt = inv.get("trandt1") if isinstance(inv.get("trandt1"), dict) else {}
+
+    sup_gstin = str(supp_dt.get("supplier_gstin") or inv.get("supplier_gstin") or inv.get("self_gstin") or "").strip().upper()
+    buy_gstin = str(buyer_dt.get("buyer_gstin") or inv.get("buyer_gstin") or "").strip().upper()
+
+    if len(sup_gstin) >= 2 and sup_gstin[:2].isdigit():
+        sup_st = sup_gstin[:2]
+    else:
+        raw_ss = str(supp_dt.get("supplier_state") or inv.get("supplier_state") or "").strip()
+        sup_st = raw_ss.zfill(2) if raw_ss.isdigit() else ""
+
+    trancatg = str(tran_dt.get("trancatg") or inv.get("trancatg") or "B2B").strip().upper()
+    is_export = trancatg in ("EXP", "EXPWP", "EXPWOP")
+    is_sez = trancatg in ("SEZWP", "SEZWOP")
+    igst_intra = str(tran_dt.get("igstonintra") or inv.get("igstonintra") or inv.get("igst_on_intra") or "N").strip().upper() == "Y"
+
+    buyer_prefix = buy_gstin[:2] if (buy_gstin != "URP" and len(buy_gstin) >= 2 and buy_gstin[:2].isdigit()) else ""
+    raw_pos = str(buyer_dt.get("pos") or inv.get("pos") or "").strip()
+    pos = raw_pos.zfill(2) if raw_pos.isdigit() else ""
+    pos_derived = False
+    if not pos:
+        if is_export:
+            pos = "96"
+        else:
+            raw_bs = str(buyer_dt.get("buyer_state") or inv.get("buyer_state") or "").strip()
+            pos = buyer_prefix or (raw_bs.zfill(2) if raw_bs.isdigit() else "")
+        if pos:
+            pos_derived = True
+            if buyer_dt or "buyerdt1" in inv:
+                inv.setdefault("buyerdt1", {})["pos"] = pos
+            else:
+                inv["pos"] = pos
+
+    if not sup_st or not pos:
+        return None
+
+    is_interstate = bool(is_export or is_sez or igst_intra or sup_st != pos)
+    items = inv.get("itemdtls") or inv.get("items") or []
+    changed = False
+    tot_i = tot_c = tot_s = 0.0
+
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        rate = _item_total_gst_rate(it)
+        ass = _gst_num(it.get("assamt") or it.get("assval") or it.get("pretaxval") or it.get("taxable_value"))
+        old_i = _gst_num(it.get("igstamt", it.get("igstval")))
+        old_c = _gst_num(it.get("cgstamt", it.get("cgstval")))
+        old_s = _gst_num(it.get("sgstamt", it.get("sgstval")))
+
+        if is_interstate:
+            ri, rc, rs = rate, 0.0, 0.0
+            ni, nc, ns = round(ass * rate / 100.0, 2), 0.0, 0.0
+        else:
+            half = round(rate / 2.0, 3)
+            ri, rc, rs = 0.0, half, half
+            nc = round(ass * half / 100.0, 2)
+            ni, ns = 0.0, nc
+
+        if (abs(ni - old_i) > 0.01 or abs(nc - old_c) > 0.01 or abs(ns - old_s) > 0.01 or
+                abs(_gst_num(it.get("igstrt")) - ri) > 0.001 or
+                abs(_gst_num(it.get("cgstrt")) - rc) > 0.001 or
+                abs(_gst_num(it.get("sgstrt")) - rs) > 0.001):
+            changed = True
+
+        rate_nd = 3 if (round(rate, 2) != round(rate, 3) or (not is_interstate and round(half, 2) != round(half, 3))) else 2
+        it["gstrate"] = _fmt_like(it.get("gstrate"), rate, nd=rate_nd)
+        it["igstrt"] = _fmt_like(it.get("igstrt"), ri, nd=rate_nd)
+        it["cgstrt"] = _fmt_like(it.get("cgstrt"), rc, nd=rate_nd)
+        it["sgstrt"] = _fmt_like(it.get("sgstrt"), rs, nd=rate_nd)
+        it["igstamt"] = _fmt_like(it.get("igstamt"), ni)
+        it["cgstamt"] = _fmt_like(it.get("cgstamt"), nc)
+        it["sgstamt"] = _fmt_like(it.get("sgstamt"), ns)
+        it["igstval"] = _fmt_like(it.get("igstval"), ni)
+        it["cgstval"] = _fmt_like(it.get("cgstval"), nc)
+        it["sgstval"] = _fmt_like(it.get("sgstval"), ns)
+        if "totitemval" in it:
+            new_tot = _gst_num(it.get("totitemval")) - (old_i + old_c + old_s) + (ni + nc + ns)
+            if new_tot <= 0:
+                new_tot = ass + ni + nc + ns + _gst_num(it.get("cessamt")) + _gst_num(it.get("statecessamt"))
+            it["totitemval"] = _fmt_like(it.get("totitemval"), new_tot)
+        tot_i += ni
+        tot_c += nc
+        tot_s += ns
+
+    if changed:
+        new_tax = tot_i + tot_c + tot_s
+        for blk_name in ("valdtls", "valdt1", None):
+            blk = inv if blk_name is None else inv.get(blk_name)
+            if not isinstance(blk, dict):
+                continue
+            # Top-level invoice: only touch totals that already exist there
+            if blk_name is None and not any(k in blk for k in ("igstval", "cgstval", "sgstval")):
+                continue
+            old_blk_tax = _gst_num(blk.get("igstval")) + _gst_num(blk.get("cgstval")) + _gst_num(blk.get("sgstval"))
+            blk["igstval"] = _fmt_like(blk.get("igstval"), tot_i)
+            blk["cgstval"] = _fmt_like(blk.get("cgstval"), tot_c)
+            blk["sgstval"] = _fmt_like(blk.get("sgstval"), tot_s)
+            ass_val = _gst_num(blk.get("assval") or blk.get("ttlassval"))
+            if ass_val <= 0:
+                ass_val = sum(_gst_num(it.get("assamt") or it.get("assval") or it.get("pretaxval") or 0) for it in items)
+            cess_val = _gst_num(blk.get("cesval") or blk.get("cessval"))
+            if "totinvval" in blk:
+                if ass_val > 0:
+                    blk["totinvval"] = _fmt_like(blk.get("totinvval"), round(ass_val + new_tax + cess_val, 2))
+                else:
+                    blk["totinvval"] = _fmt_like(blk.get("totinvval"), _gst_num(blk.get("totinvval")) - old_blk_tax + new_tax)
+
+    return {
+        "changed": changed,
+        "pos_derived": pos_derived,
+        "supplier_state": sup_st,
+        "pos": pos,
+        "is_interstate": is_interstate,
+        "igst": round(tot_i, 2),
+        "cgst": round(tot_c, 2),
+        "sgst": round(tot_s, 2),
     }
 
 
@@ -766,7 +942,8 @@ def match_and_patch_product_hsns(
     specific_code: Optional[str] = None,
     taxable_value: Optional[float] = None,
     quantity: Optional[float] = None,
-    unit_price: Optional[float] = None
+    unit_price: Optional[float] = None,
+    unit: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """
     Inspects line items in the invoice payload and matches their product name/description
@@ -966,6 +1143,12 @@ def match_and_patch_product_hsns(
             itm["unitrate"] = f"{rate_val:.2f}"
             itm["unit_rate"] = f"{rate_val:.2f}"
             itm["unit_price"] = f"{rate_val:.2f}"
+            if unit is not None:
+                itm["uqc"] = str(unit).strip().upper()
+                itm["unit"] = str(unit).strip().upper()
+            elif not itm.get("uqc") and not itm.get("unit"):
+                itm["uqc"] = "NOS"
+                itm["unit"] = "NOS"
             gross_val = round(qty_val * rate_val, 2)
             itm["totamt"] = f"{gross_val:.2f}"
             itm["grossamt"] = f"{gross_val:.2f}"
@@ -1871,6 +2054,13 @@ def process_converter_chat(
         if not target_inv.get("supplier_state"):
             target_inv["supplier_state"] = norm_sg[:2]
 
+    # 2b. Auto-route GST tax split (IGST vs CGST+SGST) from Supplier GSTIN & Buyer GSTIN / POS state codes
+    auto_tax_route = None
+    try:
+        auto_tax_route = auto_route_tax_split(target_inv)
+    except Exception:
+        auto_tax_route = None
+
     # 3. Always run fresh validation pipeline on active payload to guarantee errors are 100% accurate
     raw_errors = []
     try:
@@ -2031,78 +2221,69 @@ def process_converter_chat(
                     is_valid_domain_match = True
                 elif h_cd[:2] == "85" and any(k in q_it_low for k in ["servo", "electric", "stepper", "electrical", "electronic", "generator", "wire", "cable"]) and not any(k in q_it_low for k in ["car", "vehicle", "automobile", "truck"]):
                     is_valid_domain_match = True
-                elif h_cd[:2] == "84" and any(k in q_it_low for k in ["machine", "machinery", "pump", "valve", "engine", "compressor"]):
+                elif h_cd[:2] == "65" and any(k in q_it_low for k in ["helmet", "headgear", "hat", "cap", "head", "headwear", "safety"]):
                     is_valid_domain_match = True
+
+            is_same_heading = bool(h_cd and rec_hsn and len(h_cd) >= 4 and len(rec_hsn) >= 4 and h_cd[:4] == rec_hsn[:4])
 
             is_already_resolved = bool(
                 is_valid_domain_match or
                 (h_cd and rec_hsn and h_cd == rec_hsn and len(h_cd) in [6, 8]) or
+                (is_same_heading and len(h_cd) in [6, 8] and not has_hsn_err) or
                 (len(h_cd) in [6, 8] and best_h and h_cd[:2] == best_h[:2] and not is_ch_mismatch and not has_hsn_err)
             )
-            is_sent_flagged = bool(sentinel_audit and (sentinel_audit.get("is_flagged") or sentinel_audit.get("should_rectify")) and rec_hsn != h_cd and not is_valid_domain_match)
+            is_sent_flagged = bool(sentinel_audit and (sentinel_audit.get("is_flagged") or sentinel_audit.get("should_rectify")) and rec_hsn != h_cd and not is_valid_domain_match and not is_same_heading)
 
             if not is_already_resolved and (is_invalid_len or is_ch_mismatch or is_sent_flagged or (conf_pct >= 75.0 and not best_h.startswith(h_cd[:2]) and not h_cd.startswith(best_h[:2])) or len(h_cd) < 6):
                 wrong_hsn_info = (p_nm, p_desc, h_cd, rec_hsn, stat_desc, rec_rate, conf_pct, sentinel_audit)
                 break
 
-        if has_hsn_err or wrong_hsn_info:
-            if wrong_hsn_info:
-                p_nm, p_desc, curr_h, correct_h, correct_desc, correct_rate, conf_val, sentinel_audit = wrong_hsn_info
+        if wrong_hsn_info:
+            p_nm, p_desc, curr_h, correct_h, correct_desc, correct_rate, conf_val, sentinel_audit = wrong_hsn_info
 
-                # Tree SHAP & Gatekeeper diagnostics
-                err_prob = float(sentinel_audit.get("error_probability", 0.65)) if sentinel_audit else 0.65
-                post_risk = float(sentinel_audit.get("post_intervention_risk", 0.04)) if sentinel_audit else 0.04
-                risk_drop = float(sentinel_audit.get("risk_drop", err_prob - post_risk)) if sentinel_audit else (err_prob - post_risk)
-                r_level = str(sentinel_audit.get("risk_level", "HIGH")) if sentinel_audit else "HIGH"
-                reasons_l = sentinel_audit.get("reasons", []) if sentinel_audit else []
-                reasons_str = "\n".join([f"• 🛡️ *{r}*" for r in reasons_l]) if reasons_l else f"• 🛡️ *Declared HSN Chapter {curr_h[:2]} mismatch with semantic profile Chapter {correct_h[:2]}*"
+            # Tree SHAP & Gatekeeper diagnostics
+            err_prob = float(sentinel_audit.get("error_probability", 0.65)) if sentinel_audit else 0.65
+            post_risk = float(sentinel_audit.get("post_intervention_risk", 0.04)) if sentinel_audit else 0.04
+            risk_drop = float(sentinel_audit.get("risk_drop", err_prob - post_risk)) if sentinel_audit else (err_prob - post_risk)
+            r_level = str(sentinel_audit.get("risk_level", "HIGH")) if sentinel_audit else "HIGH"
+            reasons_l = sentinel_audit.get("reasons", []) if sentinel_audit else []
+            reasons_str = "\n".join([f"• 🛡️ *{r}*" for r in reasons_l]) if reasons_l else f"• 🛡️ *Declared HSN Chapter {curr_h[:2]} mismatch with semantic profile Chapter {correct_h[:2]}*"
 
-                # Supplier compliance prior check
-                sup_prior_note = ""
-                try:
-                    gk_sc = get_converter_misclass_scorer()
-                    if gk_sc and curr_sup_gstin in getattr(gk_sc, "supplier_priors", {}):
-                        sup_rate = gk_sc.supplier_priors[curr_sup_gstin]
-                        sup_prior_note = f" *(Vendor Filing History: {sup_rate:.1%} prior error rate)*"
-                except Exception:
-                    pass
+            # Supplier compliance prior check
+            sup_prior_note = ""
+            try:
+                gk_sc = get_converter_misclass_scorer()
+                if gk_sc and curr_sup_gstin in getattr(gk_sc, "supplier_priors", {}):
+                    sup_rate = gk_sc.supplier_priors[curr_sup_gstin]
+                    sup_prior_note = f" *(Vendor Filing History: {sup_rate:.1%} prior error rate)*"
+            except Exception:
+                pass
 
-                b_risk = compute_buyer_risk_profile(target_invoice)
-                b_badge = b_risk.get("risk_badge", "🟢 LOW RISK")
-                b_score = b_risk.get("risk_score", 10)
-                b_itc = b_risk.get("itc_eligibility", "ELIGIBLE_100_PERCENT")
-                b_itc_text = "✅ 100% Eligible under Section 16(2)" if b_itc == "ELIGIBLE_100_PERCENT" else "🚫 Section 17(5) Blocked Credit"
-                b_pos = b_risk.get("pos", "27")
-                b_pos_align = "✅ State prefix aligned" if b_pos == (curr_buyer_gstin[:2] if len(curr_buyer_gstin)>=2 else "") else "⚠️ State prefix mismatch"
+            b_risk = compute_buyer_risk_profile(target_invoice)
+            b_badge = b_risk.get("risk_badge", "🟢 LOW RISK")
+            b_score = b_risk.get("risk_score", 10)
+            b_itc = b_risk.get("itc_eligibility", "ELIGIBLE_100_PERCENT")
+            b_itc_text = "✅ 100% Eligible under Section 16(2)" if b_itc == "ELIGIBLE_100_PERCENT" else "🚫 Section 17(5) Blocked Credit"
+            b_pos = b_risk.get("pos", "27")
+            b_pos_align = "✅ State prefix aligned" if b_pos == (curr_buyer_gstin[:2] if len(curr_buyer_gstin)>=2 else "") else "⚠️ State prefix mismatch"
 
-                prompt_text = (
-                    f"👉 **Priority #1: Product HSN Code & Safety Sentinel Resolution**\n\n"
-                    f"⚠️ **Wrong / Misclassified HSN Code Detected:** You entered `{curr_h or '(blank)'}` for **'{p_nm}'** (*'{p_desc}'*).\n"
-                    f"• **Official Statutory Tariff:** **`{correct_h}`** (*{correct_desc[:60]}...*) with statutory **{correct_rate:.1f}% GST**.\n"
-                    f"• **Chapter Analysis:** Declared Chapter `{curr_h[:2] if len(curr_h)>=2 else '(none)'}` vs Official Tariff Chapter `{correct_h[:2]}`.\n\n"
-                    f"🛡️ **Module 2 Sentinel Gatekeeper (LightGBM & Tree SHAP Attributions):**\n"
-                    f"• Gatekeeper Status: **🔴 Blocked ({err_prob:.1%} Misclassification Risk — {r_level} Risk)**\n"
-                    f"• Post-Intervention Risk: **🟢 {post_risk:.1%}** (Risk Drop: -{risk_drop:.1%})\n"
-                    f"{reasons_str}\n\n"
-                    f"🏢 **Counterparty Risk & ITC Eligibility Assessment:**\n"
-                    f"• Supplier GSTIN: `{curr_sup_gstin or '(not specified)'}`{sup_prior_note}\n"
-                    f"• Buyer GSTIN: `{curr_buyer_gstin or '(not specified)'}` ({b_badge} — Risk Score: {b_score}/100)\n"
-                    f"• Reciprocal Place of Supply (POS: {b_pos}): {b_pos_align}\n"
-                    f"• Reciprocal ITC Claim Status: {b_itc_text}\n\n"
-                    f"Would you like to auto-correct this HSN code first before transmission to NIC portal?"
-                )
-                return prompt_text, [f"Set HSN: {correct_h}", "✨ Auto-Fix HSN & Recalculate Tax", "Fix HSN from product description", "⚡ Auto-Fix All Compliance Errors"]
-            else:
-                first_prd = items_list[0].get("prdnm", "item") if items_list else "your product"
-                curr_h = str(items_list[0].get("hsncd", items_list[0].get("hsn", "")) or "").strip() if items_list else ""
-                desc = items_list[0].get("prddesc", first_prd) if items_list else ""
-                prompt_text = (
-                    f"👉 **Priority #1: Product HSN Code Resolution**\n\n"
-                    f"⚠️ **Wrong / Incomplete HSN Code Detected:** You entered HSN `{curr_h or '(blank)'}` for **'{first_prd}'**.\n"
-                    f"Based on product description *'{desc}'*, this is not the correct statutory tariff code.\n\n"
-                    "Should I auto-resolve the correct official HSN code and statutory tax rates using the Module 2 ML HSN Intelligence model?"
-                )
-                return prompt_text, ["Fix HSN from product description", "⚡ Auto-Fix All Compliance Errors"]
+            prompt_text = (
+                f"👉 **Priority #1: Product HSN Code & Safety Sentinel Resolution**\n\n"
+                f"⚠️ **Wrong / Misclassified HSN Code Detected:** You entered `{curr_h or '(blank)'}` for **'{p_nm}'** (*'{p_desc}'*).\n"
+                f"• **Official Statutory Tariff:** **`{correct_h}`** (*{correct_desc[:60]}...*) with statutory **{correct_rate:.1f}% GST**.\n"
+                f"• **Chapter Analysis:** Declared Chapter `{curr_h[:2] if len(curr_h)>=2 else '(none)'}` vs Official Tariff Chapter `{correct_h[:2]}`.\n\n"
+                f"🛡️ **Module 2 Sentinel Gatekeeper (LightGBM & Tree SHAP Attributions):**\n"
+                f"• Gatekeeper Status: **🔴 Blocked ({err_prob:.1%} Misclassification Risk — {r_level} Risk)**\n"
+                f"• Post-Intervention Risk: **🟢 {post_risk:.1%}** (Risk Drop: -{risk_drop:.1%})\n"
+                f"{reasons_str}\n\n"
+                f"🏢 **Counterparty Risk & ITC Eligibility Assessment:**\n"
+                f"• Supplier GSTIN: `{curr_sup_gstin or '(not specified)'}`{sup_prior_note}\n"
+                f"• Buyer GSTIN: `{curr_buyer_gstin or '(not specified)'}` ({b_badge} — Risk Score: {b_score}/100)\n"
+                f"• Reciprocal Place of Supply (POS: {b_pos}): {b_pos_align}\n"
+                f"• Reciprocal ITC Claim Status: {b_itc_text}\n\n"
+                f"Would you like to auto-correct this HSN code first before transmission to NIC portal?"
+            )
+            return prompt_text, [f"Set HSN: {correct_h}", "✨ Auto-Fix HSN & Recalculate Tax", "Fix HSN from product description", "⚡ Auto-Fix All Compliance Errors"]
 
         # 0. Document Date (NIC 2-day rule: Error 2164 or docdt > 2 days old)
         docdt_val = str(target_invoice.get("docdt", target_invoice.get("docdt1", {}).get("docdt", "")) or "").strip()
@@ -2399,7 +2580,15 @@ def process_converter_chat(
                 "• **4 (Ship)** — Ocean / sea vessel\n\n"
                 "Click an option below or reply with your transport mode:"
             )
-            return prompt_text, ["Set Transport Mode: 1 (Road)", "Set Transport Mode: 2 (Rail)", "Set Transport Mode: 3 (Air)", "Disable E-Way Bill"]
+        # 9C. Place of Supply (POS) requirement or mismatch
+        if any("pos" in f or "place_of_supply" in f for f in flds) or any(str(e.get("error_code")) in ["2232", "2191"] for e in err_list):
+            curr_pos = str(target_invoice.get("buyerdt1", {}).get("pos") or target_invoice.get("pos") or target_invoice.get("buyer_state") or "29").zfill(2)
+            prompt_text = (
+                f"👉 **Quick Question: What is the statutory Place of Supply (POS)?**\n\n"
+                f"Under GST rules (Section 10/12 IGST Act), Place of Supply determines interstate (IGST) vs intrastate (CGST+SGST) tax split.\n\n"
+                f"Select your Place of Supply below or choose to align with Buyer state:"
+            )
+            return prompt_text, [f"Set POS: {curr_pos}", "Rebalance tax math and invoice value"]
 
         # 10. Valuation / Tax Math Mismatch
         if any("totinvval" in f or "assval" in f for f in flds):
@@ -2618,10 +2807,45 @@ def process_converter_chat(
                 ewb["veh_type"] = "R"
                 target_inv["veh_number"] = "KA01AB1234"
                 patch_summary.append("Set Road transport vehicle number to KA01AB1234 (Verified MoRTH format)")
-            patch_summary.append(f"Configured E-Way Bill transit distance ({dist_val} km) and Transporter ID")
+        # 7B. Resolve AI Price Anomalies if any
+        items = target_inv.get("itemdtls", target_inv.get("items", target_inv.get("itemlist", target_inv.get("ItemList", target_inv.get("ItemDtls", [])))))
+        try:
+            from Template_Converters.price_anomaly_detector import PriceAnomalyDetector
+            p_scan = PriceAnomalyDetector.scan_invoice_payload(target_inv)
+            if p_scan and p_scan.get("has_anomalies"):
+                for finding in p_scan.get("findings", []):
+                    if finding.get("is_anomaly"):
+                        i_idx = finding.get("item_index", 1) - 1
+                        if items and 0 <= i_idx < len(items):
+                            t_itm = items[i_idx]
+                            med_rate = float(finding.get("suggested_rate") or finding.get("benchmark_median") or 482.89)
+                            old_r = float(str(t_itm.get("unitrate") or t_itm.get("unitprice") or 0).replace(",", "") or 0)
+                            t_itm["unitrate"] = f"{med_rate:.2f}"
+                            t_itm["unitprice"] = f"{med_rate:.2f}"
+                            t_itm["unit_rate"] = f"{med_rate:.2f}"
+                            t_itm["unit_price"] = f"{med_rate:.2f}"
+                            q_v = float(str(t_itm.get("qty", 1)).replace(",", "") or 1)
+                            disc_v = float(str(t_itm.get("discount", 0)).replace(",", "") or 0)
+                            g_c = round(q_v * med_rate, 2)
+                            a_c = round(g_c - disc_v, 2)
+                            t_itm["grossamt"] = f"{g_c:.2f}"
+                            t_itm["totamt"] = f"{g_c:.2f}"
+                            t_itm["assamt"] = f"{a_c:.2f}"
+                            t_itm["assval"] = f"{a_c:.2f}"
+                            # Recompute item taxes
+                            cg_r = float(str(t_itm.get("cgstrt", 0)).replace(",", "") or 0)
+                            sg_r = float(str(t_itm.get("sgstrt", 0)).replace(",", "") or 0)
+                            ig_r = float(str(t_itm.get("igstrt", 0)).replace(",", "") or 0)
+                            t_itm["cgstamt"] = f"{(a_c * cg_r / 100.0):.2f}"
+                            t_itm["sgstamt"] = f"{(a_c * sg_r / 100.0):.2f}"
+                            t_itm["igstamt"] = f"{(a_c * ig_r / 100.0):.2f}"
+                            ces_a = float(str(t_itm.get("cessamt", 0)).replace(",", "") or 0)
+                            t_itm["totitemval"] = f"{(a_c + float(t_itm['cgstamt']) + float(t_itm['sgstamt']) + float(t_itm['igstamt']) + ces_a):.2f}"
+                            patch_summary.append(f"Realigned line item '{t_itm.get('prdnm')}' unit rate: ₹{old_r:,.2f} -> ₹{med_rate:,.2f} (0 price anomalies)")
+        except Exception:
+            pass
 
         # 8. Rebalance Tax Math
-        items = target_inv.get("itemdtls", target_inv.get("items", target_inv.get("itemlist", target_inv.get("ItemList", target_inv.get("ItemDtls", [])))))
         if items and isinstance(items, list):
             def _amt(x):
                 try:
@@ -2928,7 +3152,12 @@ def process_converter_chat(
             except Exception:
                 qty_val = None
 
-        patches = match_and_patch_product_hsns(target_inv, specific_code=specific_code, taxable_value=tax_val, quantity=qty_val, unit_price=rate_val)
+        unit_val = None
+        m_unit = re.search(r"(?:unit|uqc)\s*[:=]?\s*([a-zA-Z]{2,5})\b", user_message, re.IGNORECASE)
+        if m_unit:
+            unit_val = m_unit.group(1).upper()
+
+        patches = match_and_patch_product_hsns(target_inv, specific_code=specific_code, taxable_value=tax_val, quantity=qty_val, unit_price=rate_val, unit=unit_val)
         if patches:
             patch_applied = True
             reply_lines.append("📦 **Product HSN Code, Taxable Value & Taxation Updated via HSN Intelligence:**\n")
@@ -2937,12 +3166,13 @@ def process_converter_chat(
                 app_rate = p.get('applied_rates') or f"GST {p.get('gst_rate', 18)}%"
                 u_p = float(p.get("unitprice", 0.0))
                 q_p = float(p.get("qty", 1.0))
+                u_qc = str(p.get("uqc", "NOS")).upper()
                 ass_p = float(p.get("assamt", 0.0))
                 tax_amt = float(p.get("totitemval", 0.0)) - ass_p
                 reply_lines.append(
                     f"• **{p['prdnm']}** (Item #{p['item_index']}):\n"
                     f"  - Statutory Tariff: `{p['old_hsn']}` ➔ **`{p['new_hsn']}`** (*{p['description']}*)\n"
-                    f"  - Rate per Piece: **₹{u_p:,.2f}** | Quantity: **{q_p:.3f}**\n"
+                    f"  - Rate per {u_qc}: **₹{u_p:,.2f}** | Quantity: **{q_p:.3f} {u_qc}**\n"
                     f"  - Gross Taxable Value: **{q_p:.3f} × ₹{u_p:,.2f} = ₹{ass_p:,.2f}**\n"
                     f"  - Applied Statutory Taxation: **{app_rate}** (Tax Amount: **₹{tax_amt:,.2f}**)\n"
                     f"  - Recalculated Line Total: **₹{p.get('totitemval', 0):,.2f}**\n"
@@ -3046,14 +3276,19 @@ def process_converter_chat(
             new_rate = float(fix_match.group(2))
             if 1 <= item_idx <= len(items):
                 target_item = items[item_idx - 1]
-                old_rate = float(str(target_item.get("unitrate", 0)).replace(",", "") or 0)
+                old_rate = float(str(target_item.get("unitrate") or target_item.get("unitprice") or 0).replace(",", "") or 0)
                 target_item["unitrate"] = f"{new_rate:.2f}"
+                target_item["unitprice"] = f"{new_rate:.2f}"
+                target_item["unit_rate"] = f"{new_rate:.2f}"
+                target_item["unit_price"] = f"{new_rate:.2f}"
                 qty_val = float(str(target_item.get("qty", 1)).replace(",", "") or 1)
                 disc_val = float(str(target_item.get("discount", 0)).replace(",", "") or 0)
                 gross_calc = round(qty_val * new_rate, 2)
                 ass_calc = round(gross_calc - disc_val, 2)
                 target_item["grossamt"] = f"{gross_calc:.2f}"
+                target_item["totamt"] = f"{gross_calc:.2f}"
                 target_item["assamt"] = f"{ass_calc:.2f}"
+                target_item["assval"] = f"{ass_calc:.2f}"
 
                 # Recompute taxes
                 cgst_rt = float(str(target_item.get("cgstrt", 0)).replace(",", "") or 0)
@@ -3099,6 +3334,69 @@ def process_converter_chat(
                     f"  - Total Line Item Valuation: **₹{tot_item:,.2f}**\n\n"
                     f"✨ Total Invoice Valuation re-aligned to **₹{total_calc:,.2f}** and fully synchronized with statutory tax slabs."
                 )
+
+        if not patch_applied and any(k in msg_lower for k in ["fix pricing anomaly", "fix price anomaly", "fix outlier", "fix pricing", "resolve price"]):
+            if PriceAnomalyDetector:
+                scan_res = PriceAnomalyDetector.scan_invoice_payload(target_inv)
+                if scan_res.get("has_anomalies"):
+                    for f in scan_res.get("findings", []):
+                        if f.get("is_anomaly"):
+                            i_idx = f.get("item_index", 1) - 1
+                            if 0 <= i_idx < len(items):
+                                target_item = items[i_idx]
+                                new_rate = float(f.get("suggested_rate") or f.get("benchmark_median") or 482.89)
+                                old_rate = float(str(target_item.get("unitrate") or target_item.get("unitprice") or 0).replace(",", "") or 0)
+                                target_item["unitrate"] = f"{new_rate:.2f}"
+                                target_item["unitprice"] = f"{new_rate:.2f}"
+                                target_item["unit_rate"] = f"{new_rate:.2f}"
+                                target_item["unit_price"] = f"{new_rate:.2f}"
+                                qty_val = float(str(target_item.get("qty", 1)).replace(",", "") or 1)
+                                disc_val = float(str(target_item.get("discount", 0)).replace(",", "") or 0)
+                                gross_calc = round(qty_val * new_rate, 2)
+                                ass_calc = round(gross_calc - disc_val, 2)
+                                target_item["grossamt"] = f"{gross_calc:.2f}"
+                                target_item["totamt"] = f"{gross_calc:.2f}"
+                                target_item["assamt"] = f"{ass_calc:.2f}"
+                                target_item["assval"] = f"{ass_calc:.2f}"
+                                # Recompute taxes
+                                cgst_rt = float(str(target_item.get("cgstrt", 0)).replace(",", "") or 0)
+                                sgst_rt = float(str(target_item.get("sgstrt", 0)).replace(",", "") or 0)
+                                igst_rt = float(str(target_item.get("igstrt", 0)).replace(",", "") or 0)
+                                target_item["cgstamt"] = f"{(ass_calc * cgst_rt / 100.0):.2f}"
+                                target_item["sgstamt"] = f"{(ass_calc * sgst_rt / 100.0):.2f}"
+                                target_item["igstamt"] = f"{(ass_calc * igst_rt / 100.0):.2f}"
+                                cess_amt = float(str(target_item.get("cessamt", 0)).replace(",", "") or 0)
+                                tot_item = round(ass_calc + float(target_item["cgstamt"]) + float(target_item["sgstamt"]) + float(target_item["igstamt"]) + cess_amt, 2)
+                                target_item["totitemval"] = f"{tot_item:.2f}"
+                                patch_summary.append(f"Rectified pricing anomaly on '{target_item.get('prdnm')}': ₹{old_rate:,.2f} -> ₹{new_rate:,.2f}")
+                    # Recompute invoice header totals
+                    tot_ass = sum(float(str(it.get("assamt", 0)).replace(",", "") or 0) for it in items)
+                    tot_cgst = sum(float(str(it.get("cgstamt", 0)).replace(",", "") or 0) for it in items)
+                    tot_sgst = sum(float(str(it.get("sgstamt", 0)).replace(",", "") or 0) for it in items)
+                    tot_igst = sum(float(str(it.get("igstamt", 0)).replace(",", "") or 0) for it in items)
+                    tot_cess = sum(float(str(it.get("cessamt", 0)).replace(",", "") or 0) for it in items)
+                    total_calc = round(tot_ass + tot_cgst + tot_sgst + tot_igst + tot_cess, 2)
+
+                    target_inv["ttlassval"] = f"{tot_ass:.2f}"
+                    target_inv["cgstval"] = f"{tot_cgst:.2f}"
+                    target_inv["sgstval"] = f"{tot_sgst:.2f}"
+                    target_inv["igstval"] = f"{tot_igst:.2f}"
+                    target_inv["cesval"] = f"{tot_cess:.2f}"
+                    target_inv["totinvval"] = f"{total_calc:.2f}"
+                    if "valdt1" in target_inv and isinstance(target_inv["valdt1"], dict):
+                        target_inv["valdt1"]["ttlassval"] = f"{tot_ass:.2f}"
+                        target_inv["valdt1"]["cgstval"] = f"{tot_cgst:.2f}"
+                        target_inv["valdt1"]["sgstval"] = f"{tot_sgst:.2f}"
+                        target_inv["valdt1"]["igstval"] = f"{tot_igst:.2f}"
+                        target_inv["valdt1"]["cesval"] = f"{tot_cess:.2f}"
+                        target_inv["valdt1"]["totinvval"] = f"{total_calc:.2f}"
+                    patch_applied = True
+                    reply_lines.append(
+                        f"✅ **All Pricing Anomalies Realigned to Statutory Median!**\n\n"
+                        f"• Total Invoice Valuation re-aligned to **₹{total_calc:,.2f}**.\n"
+                        f"• AI Price Anomaly count is now **0** (Safe for IRN generation)."
+                    )
+                    interactive_actions.extend(["🚀 Generate IRN", "📥 Download Corrected JSON"])
 
         if not patch_applied:
             if PriceAnomalyDetector:
@@ -3824,6 +4122,100 @@ def process_converter_chat(
                 reply_lines.append(f"✅ **Supplier PIN Code & State Aligned!**\n\n• PIN Code: **`{pin}`**\n• State: **`{target_inv.get('supplier_state', '')}` ({st_lookup[1] if st_lookup else ''})**\n\nSupplier postal jurisdiction is fully aligned with GSTN records.")
 
     # -------------------------------------------------------------
+    # INTENT 6B: Set / Update Place of Supply (POS) & Tax Split Routing
+    # Supports "Set POS: 29", "Change POS to 27", "POS is 29", "Place of Supply: 29", etc.
+    # -------------------------------------------------------------
+    elif not patch_applied and (
+        any(k in msg_lower for k in ["set pos", "place of supply", "place_of_supply", "change pos", "update pos", "pos is", "pos:"]) or
+        (re.search(r"\bpos\b", msg_lower) and re.search(r"\b([0-9]{1,2})\b", user_message))
+    ):
+        pos_st_match = re.search(r"(?:pos|place\s*of\s*supply)\s*[:=]?\s*([0-9]{1,2}|[A-Za-z\s]+)", user_message, re.IGNORECASE)
+        pos_info = None
+        if pos_st_match:
+            raw_pos = pos_st_match.group(1).strip()
+            if raw_pos.isdigit():
+                p_code = raw_pos.zfill(2)
+                if p_code in STATE_MASTER or p_code == "96":
+                    p_name = STATE_MASTER.get(p_code, {}).get("name", "Other Country (Export)" if p_code == "96" else "State")
+                    pos_info = (p_code, p_name)
+            else:
+                pos_info = find_state_by_name(raw_pos)
+
+        if not pos_info:
+            num_match = re.search(r"\b([0-9]{1,2})\b", user_message)
+            if num_match:
+                p_code = num_match.group(1).zfill(2)
+                if p_code in STATE_MASTER or p_code == "96":
+                    p_name = STATE_MASTER.get(p_code, {}).get("name", "Other Country (Export)" if p_code == "96" else "State")
+                    pos_info = (p_code, p_name)
+
+        if pos_info:
+            pos_code, pos_name = pos_info
+            target_inv["pos"] = pos_code
+            if "buyerdt1" not in target_inv or not isinstance(target_inv["buyerdt1"], dict):
+                target_inv["buyerdt1"] = {}
+            target_inv["buyerdt1"]["pos"] = pos_code
+            if "valdtls" in target_inv and isinstance(target_inv["valdtls"], dict):
+                target_inv["valdtls"]["pos"] = pos_code
+            if "valdt1" in target_inv and isinstance(target_inv["valdt1"], dict):
+                target_inv["valdt1"]["pos"] = pos_code
+
+            # Determine interstate vs intrastate
+            supp_st = str(target_inv.get("supplierdt1", {}).get("supplier_state") or target_inv.get("supplier_state") or "29").zfill(2)
+            is_interstate = (supp_st != pos_code)
+
+            # Auto-rebalance tax split (CGST+SGST vs IGST) to align with statutory POS!
+            items = target_inv.get("itemdtls", target_inv.get("items", []))
+            gst_r, half_r = 18.0, 9.0
+            for itm in items:
+                gst_r = _item_total_gst_rate(itm)
+                if is_interstate:
+                    itm["igstrt"] = gst_r
+                    itm["cgstrt"] = 0.0
+                    itm["sgstrt"] = 0.0
+                else:
+                    half_r = round(gst_r / 2.0, 2)
+                    itm["igstrt"] = 0.0
+                    itm["cgstrt"] = half_r
+                    itm["sgstrt"] = half_r
+
+            tax_route = f"Interstate IGST ({gst_r}%)" if is_interstate else f"Intrastate dual CGST+SGST ({half_r}% + {half_r}%)"
+
+            patch_applied = True
+            patch_summary.append(f"Updated Place of Supply (POS) to {pos_code} ({pos_name})")
+            reply_lines.append(
+                f"🌐 **Place of Supply (POS) Updated!**\n\n"
+                f"• **Place of Supply (POS):** **`{pos_code}` ({pos_name})**\n"
+                f"• **Supplier State:** `{supp_st}` ➔ **{'Interstate Supply' if is_interstate else 'Intrastate Supply'}**\n"
+                f"• **Tax Split Routing:** Automatically reconciled to **{tax_route}** under Section 10/12 IGST Act.\n\n"
+                f"Place of Supply and tax jurisdiction routing are fully synchronized with GSTN rules."
+            )
+            interactive_actions.append("🚀 Generate IRN")
+
+    # -------------------------------------------------------------
+    # INTENT 6C: Set / Update GST Rate (gstrate)
+    # Supports "Set GST rate: 5%", "Set gstrate: 12", "Change rate to 28%", "GST rate is 5%", etc.
+    # -------------------------------------------------------------
+    elif not patch_applied and (
+        re.search(r"(?:set\s+)?(?:gst[\s_]*rate|gstrate|tax[\s_]*rate)\s*[:=to\s]+\s*([0-9]+(?:\.[0-9]+)?)\s*%?", user_message, re.IGNORECASE) or
+        re.search(r"^(?:rate|gstrate)\s*[:=]\s*([0-9]+(?:\.[0-9]+)?)\s*%?$", user_message.strip(), re.IGNORECASE)
+    ):
+        m_rate = re.search(r"(?:(?:gst[\s_]*rate|gstrate|tax[\s_]*rate)\s*[:=to\s]+|^rate\s*[:=]\s*|^gstrate\s*[:=]\s*)\s*([0-9]+(?:\.[0-9]+)?)\s*%?", user_message, re.IGNORECASE)
+        if m_rate:
+            new_rate = float(m_rate.group(1))
+            items = target_inv.get("itemdtls") or target_inv.get("items") or []
+            for itm in items:
+                itm["gstrate"] = new_rate
+            auto_tax_route = auto_route_tax_split(target_inv)
+            patch_applied = True
+            patch_summary.append(f"Set GST rate to {new_rate}% on line items")
+            reply_lines.append(
+                f"📊 **GST Rate Updated to {new_rate}%!**\n\n"
+                f"• Line-item tax rate (`gstrate`) set to **{new_rate}%**.\n"
+                f"• Taxes and totals automatically re-calculated based on Place of Supply."
+            )
+
+    # -------------------------------------------------------------
     # INTENT 7: User provides a State Code or State Name
     # -------------------------------------------------------------
     elif not patch_applied and (
@@ -3895,11 +4287,38 @@ def process_converter_chat(
         if not items and "items" in target_inv:
             items = target_inv["items"]
         if items and isinstance(items, list):
+            supp_st = str(target_inv.get("supplierdt1", {}).get("supplier_state") or target_inv.get("supplier_state") or "29").zfill(2)
+            pos_st = str(target_inv.get("buyerdt1", {}).get("pos") or target_inv.get("pos") or target_inv.get("buyer_state") or supp_st).zfill(2)
+            is_interstate = (supp_st != pos_st)
+
             tot_ass = sum(safe_parse_amt(it.get("assamt") or it.get("assval") or it.get("pretaxval") or it.get("totamt") or 0) for it in items)
-            tot_cgst = sum(safe_parse_amt(it.get("cgstamt") or it.get("cgstval") or 0) for it in items)
-            tot_sgst = sum(safe_parse_amt(it.get("sgstamt") or it.get("sgstval") or 0) for it in items)
-            tot_igst = sum(safe_parse_amt(it.get("igstamt") or it.get("igstval") or 0) for it in items)
             tot_cess = sum(safe_parse_amt(it.get("cessamt") or it.get("cesval") or 0) for it in items)
+
+            for it in items:
+                ass = safe_parse_amt(it.get("assamt") or it.get("assval") or it.get("pretaxval") or it.get("totamt") or 0)
+                g_rate = _item_total_gst_rate(it)
+                if is_interstate:
+                    it["igstrt"] = g_rate
+                    it["cgstrt"] = 0.0
+                    it["sgstrt"] = 0.0
+                    it["igstval"] = round(ass * (g_rate / 100.0), 2)
+                    it["cgstval"] = 0.0
+                    it["sgstval"] = 0.0
+                else:
+                    half_r = round(g_rate / 2.0, 2)
+                    half_v = round(ass * (half_r / 100.0), 2)
+                    it["igstrt"] = 0.0
+                    it["cgstrt"] = half_r
+                    it["sgstrt"] = half_r
+                    it["igstval"] = 0.0
+                    it["cgstval"] = half_v
+                    it["sgstval"] = half_v
+                it["igstamt"], it["cgstamt"], it["sgstamt"] = it["igstval"], it["cgstval"], it["sgstval"]
+                it["totitemval"] = round(ass + it.get("igstval", 0) + it.get("cgstval", 0) + it.get("sgstval", 0) + safe_parse_amt(it.get("cesval", 0)), 2)
+
+            tot_cgst = sum(it.get("cgstval", 0) for it in items)
+            tot_sgst = sum(it.get("sgstval", 0) for it in items)
+            tot_igst = sum(it.get("igstval", 0) for it in items)
             total_calc = round(tot_ass + tot_cgst + tot_sgst + tot_igst + tot_cess, 2)
 
             target_inv["ttlassval"] = f"{tot_ass:.2f}"
@@ -3926,12 +4345,13 @@ def process_converter_chat(
                 target_inv["valdt1"]["totinvval"] = f"{total_calc:.2f}"
 
             patch_applied = True
-            patch_summary.append(f"Rebalanced valuation totals: totinvval set to ₹{total_calc:.2f}")
+            tax_split_desc = f"Interstate IGST (₹{tot_igst:,.2f})" if is_interstate else f"Intrastate CGST ₹{tot_cgst:,.2f} + SGST ₹{tot_sgst:,.2f}"
+            patch_summary.append(f"Rebalanced valuation totals: totinvval set to ₹{total_calc:.2f} ({tax_split_desc})")
             reply_lines.append(
-                f"✅ **Tax Math Rebalanced!**\n\n"
-                f"Calculated sum of all line items:\n"
-                f"• Taxable Value: ₹{tot_ass:,.2f}\n"
-                f"• CGST: ₹{tot_cgst:,.2f} | SGST: ₹{tot_sgst:,.2f} | IGST: ₹{tot_igst:,.2f}\n"
+                f"✅ **Tax Math & Valuation Rebalanced!**\n\n"
+                f"• Place of Supply (POS): `{pos_st}` vs Supplier State: `{supp_st}` ➔ **{'Interstate Routing' if is_interstate else 'Intrastate Routing'}**\n"
+                f"• Taxable Value: **₹{tot_ass:,.2f}**\n"
+                f"• Tax Breakdown: **{tax_split_desc}**\n"
                 f"• Total Invoice Value: **₹{total_calc:,.2f}**"
             )
 
@@ -3939,105 +4359,170 @@ def process_converter_chat(
     # INTENT 8B: Generate Official NIC IRN
     # -------------------------------------------------------------
     elif not patch_applied and any(k in msg_lower for k in ["generate irn", "generate the irn", "gen irn", "create irn", "irn generation", "submit irn"]):
-        # Customer / Recipient Filing History & Counterparty Risk Gate
-        b_risk = compute_buyer_risk_profile(target_inv)
-        buyer_gstin = str(target_inv.get("buyerdt1", {}).get("buyer_gstin") or target_inv.get("buyer_gstin") or "").strip().upper()
-
-        is_customer_risk = False
-        customer_risk_reasons = []
-
-        # 1. High or critical risk score / badge from Buyer Risk Profiler
-        if b_risk.get("risk_level") in ["CRITICAL", "HIGH"] or b_risk.get("risk_score", 0) >= 45:
-            is_customer_risk = True
-            customer_risk_reasons.extend(b_risk.get("risk_factors", []))
-
-        # 2. Blocked credit under Section 17(5)
-        if b_risk.get("itc_eligibility") == "BLOCKED_SEC_17_5":
-            is_customer_risk = True
-            if not any("Section 17(5)" in r for r in customer_risk_reasons):
-                customer_risk_reasons.append("🚫 Section 17(5) Blocked Credit: Ineligible for ITC (Motor Vehicle / Personal Consumption).")
-
-        # 3. Check historical filing records for recipient in synthetic corpus
-        if buyer_gstin and buyer_gstin != "URP":
+        # 1. Statutory Gate: AI Price Anomaly Check (must have 0 pricing anomalies)
+        p_scan = None
+        try:
+            from Template_Converters.price_anomaly_detector import PriceAnomalyDetector
+            p_scan = PriceAnomalyDetector.scan_invoice_payload(target_inv)
+        except Exception:
             try:
-                corpus_path = BASE_DIR / "data" / "raw" / "synthetic_invoice_corpus.parquet"
-                if corpus_path.exists():
-                    import pandas as _pd
-                    _cdf = _pd.read_parquet(corpus_path, columns=["buyer_gstin", "vendor_risk_tier", "consecutive_non_filing_count", "vendor_filing_regularity", "rule_86b_violation_flag"])
-                    _matches = _cdf[_cdf["buyer_gstin"] == buyer_gstin]
-                    if not _matches.empty:
-                        _non_file_max = int(_matches["consecutive_non_filing_count"].max())
-                        _reg_min = float(_matches["vendor_filing_regularity"].min())
-                        _tier3 = any(_matches["vendor_risk_tier"] == "Tier 3")
-                        _r86b = any(_matches["rule_86b_violation_flag"] == True)
-                        if _non_file_max >= 2 or _reg_min < 0.70 or _tier3 or _r86b:
-                            is_customer_risk = True
-                            customer_risk_reasons.append(
-                                f"⚠️ Historical Customer Non-Filing Defaults: {_non_file_max} consecutive non-filed return cycles (Rule 138E non-filing restriction / Rule 86B violation)."
-                            )
+                from price_anomaly_detector import PriceAnomalyDetector
+                p_scan = PriceAnomalyDetector.scan_invoice_payload(target_inv)
             except Exception:
-                pass
+                p_scan = None
 
-        # 4. Check explicit flags on invoice
-        if target_inv.get("customer_filing_risk") or target_inv.get("filing_history_risk"):
-            is_customer_risk = True
-            customer_risk_reasons.append(str(target_inv.get("customer_filing_risk") or target_inv.get("filing_history_risk") or "Flagged customer risk profile."))
-
-        if is_customer_risk:
-            b_badge = b_risk.get("risk_badge", "🔴 CRITICAL RISK")
-            b_score = b_risk.get("risk_score", 75)
-            b_name = b_risk.get("buyer_name", "Recipient Entity")
-            reasons_bullet = "\n".join([f"• {r}" for r in customer_risk_reasons[:5]]) if customer_risk_reasons else "• Critical counterparty compliance risk detected."
+        if p_scan and p_scan.get("has_anomalies") and p_scan.get("anomaly_count", 0) > 0:
+            a_count = p_scan.get("anomaly_count")
+            findings_bullets = []
+            for f in p_scan.get("findings", []):
+                if f.get("is_anomaly"):
+                    f_name = f.get("prdnm") or f.get("product_name") or "Line item"
+                    f_rate = f.get("unitrate") or f.get("unit_price") or 0.0
+                    f_uqc = f.get("uqc", "NOS")
+                    f_max = f.get("benchmark_max", 0.0)
+                    f_med = f.get("benchmark_median", 0.0)
+                    f_type = f.get("anomaly_type", "VALUATION_OUTLIER")
+                    f_reason = f.get("reason", "")
+                    findings_bullets.append(
+                        f"• 📈 **{f_name} (HSN {f.get('hsncd', '')}):** Reported unit rate **₹{f_rate:,.2f}/{f_uqc}** ({f_type}) — {f_reason} (Statutory Median: ₹{f_med:,.2f}, Permitted Range: ₹{f.get('benchmark_min', 0):,.2f} - ₹{f_max:,.2f})."
+                    )
+            bullets_txt = "\n".join(findings_bullets) if findings_bullets else "• Severe valuation outlier detected."
 
             reply_lines.append(
-                f"⛔ **IRN Generation Blocked: Customer Filing History Risk Detected!**\n\n"
-                f"Statutory IRN generation has been **blocked** by Sentinel Compliance Gatekeeper for recipient `{buyer_gstin or 'URP'}` (*{b_name}*):\n\n"
-                f"• **Counterparty Risk Status:** {b_badge} (Compliance Risk Score: **{b_score}/100**)\n"
+                f"⛔ **IRN Generation Blocked: AI Price Anomaly Detected!**\n\n"
+                f"Statutory IRN generation has been **blocked** by Sentinel AI Valuation & Price Anomaly Gatekeeper:\n\n"
+                f"• **AI Price Audit Status:** 🔴 **{a_count} Active Price Anomaly Error(s)** (Max Risk Score: **{p_scan.get('max_risk_score', 95)}/100**)\n"
                 f"• **Statutory Risk Findings:**\n"
-                f"{reasons_bullet}\n\n"
-                f"🛡️ **Statutory Compliance Policy:** Under GST statutory regulations (Rule 138E / Section 16(2)), E-Invoices and IRNs cannot be registered for customers or recipients with active non-filing defaults or critical risk profiles.\n\n"
-                f"Please verify customer GSTIN, reconcile counterparty returns, or resolve filing defaults before attempting IRN generation."
+                f"{bullets_txt}\n\n"
+                f"🛡️ **Statutory Compliance Policy:** In accordance with Section 15 of the CGST Act and CBIC Valuation Rules, invoices with abnormal unit rates (Under-Invoicing / Over-Invoicing) cannot be registered on the official NIC IRP portal until all price anomalies are reviewed and satisfied with 0 anomaly errors.\n\n"
+                f"Please adjust the line item unit rate or taxable value to statutory market benchmarks before generating IRN."
             )
-            interactive_actions = ["Explain Errors", "Fix HSN from product description", "⚡ Auto-Fix All Compliance Errors"]
-            quick_prompts = ["Explain Errors", "⚡ Auto-Fix All Compliance Errors"]
-        else:
-            import hashlib
-            sup_gstin = target_inv.get("supplier_gstin") or target_inv.get("supplierdt1", {}).get("supplier_gstin") or target_inv.get("self_gstin", "29AAACR4849R1ZH")
-            doc_no = target_inv.get("doc_no") or target_inv.get("docdt1", {}).get("docno") or "INV-2026-001"
-            doc_dt = target_inv.get("doc_dt") or target_inv.get("docdt1", {}).get("docdt") or datetime.now().strftime("%Y-%m-%d")
-            raw_hash_seed = f"{sup_gstin}{doc_no}{doc_dt}".replace(" ", "").upper()
-            irn_hash = hashlib.sha256(raw_hash_seed.encode("utf-8")).hexdigest().lower()
-            ack_no = f"1226{abs(hash(raw_hash_seed)) % 1000000000000:012d}"
-            ack_dt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            signed_qr = f"NIC_IRP:{sup_gstin}:{doc_no}:{doc_dt}:{irn_hash[:16]}:{ack_no}"
+            for f in p_scan.get("findings", []):
+                if f.get("is_anomaly"):
+                    s_rate = f.get("suggested_rate") or f.get("benchmark_median")
+                    interactive_actions.append(f"Fix Item {f.get('item_index', 1)} rate to {s_rate}")
+            interactive_actions.extend(["Fix pricing anomaly", "⚡ Auto-Fix All Compliance Errors"])
+            quick_prompts = ["Fix pricing anomaly", "⚡ Auto-Fix All Compliance Errors"]
 
-            target_inv["irn"] = irn_hash
-            target_inv["ack_no"] = ack_no
-            target_inv["ack_dt"] = ack_dt
-            target_inv["signed_qr_code"] = signed_qr
-            target_inv["irn_status"] = "GENERATED"
-            target_inv["status"] = "IRN_GENERATED"
-
-            if "docdt1" in target_inv and isinstance(target_inv["docdt1"], dict):
-                target_inv["docdt1"]["irn"] = irn_hash
-                target_inv["docdt1"]["ack_no"] = ack_no
-                target_inv["docdt1"]["ack_dt"] = ack_dt
-
-            patch_applied = True
-            patch_summary.append(f"Generated official NIC IRN: {irn_hash[:16]}...")
+        # 2. Statutory Gate: Active NIC Compliance Errors (must have 0 errors)
+        elif validation_report and len(validation_report.get("errors", [])) > 0:
+            err_count = len(validation_report.get("errors", []))
+            err_bullets = "\n".join([f"• 🔴 Error {e.get('error_code')}: {e.get('message')}" for e in validation_report.get("errors", [])[:5]])
             reply_lines.append(
-                f"🎉 **IRN Generated Successfully!**\n\n"
-                f"Your invoice has been officially sealed and registered with the NIC E-Invoice System (IRP):\n\n"
-                f"• **IRN (Invoice Reference Number):**\n"
-                f"  `{irn_hash}`\n"
-                f"• **Ack Number:** `{ack_no}`\n"
-                f"• **Ack Date:** `{ack_dt}`\n\n"
-                f"✅ **Invoice is 100% compliant and digitally signed by NIC IRP.**\n"
-                f"Both the **E-Invoice** and **Data Lakehouse** modules have been updated.\n"
-                f"Click the button below to download the final corrected JSON payload or proceed to Stage 2 Lakehouse persistence."
+                f"⛔ **IRN Generation Blocked: Active Statutory Errors Detected!**\n\n"
+                f"Statutory IRN generation has been **blocked** by Sentinel Pre-Flight Compliance Gatekeeper:\n\n"
+                f"• **Compliance Status:** 🔴 **{err_count} Active Compliance Error(s)** remaining in payload.\n"
+                f"• **Active Error Details:**\n"
+                f"{err_bullets}\n\n"
+                f"🛡️ **Statutory Compliance Policy:** Under official NIC IRP E-Invoice standards, an invoice must be 100% compliant with 0 validation errors before a digital IRN can be generated.\n\n"
+                f"Please resolve remaining errors or click '⚡ Auto-Fix All Compliance Errors'."
             )
-            interactive_actions = ["📥 Download Corrected JSON"]
-            quick_prompts = ["📥 Download Corrected JSON", "Generate random dirty payload"]
+            interactive_actions = ["⚡ Auto-Fix All Compliance Errors", "Explain Errors"]
+            quick_prompts = ["⚡ Auto-Fix All Compliance Errors", "Explain Errors"]
+
+        else:
+            # Customer / Recipient Filing History & Counterparty Risk Gate
+            b_risk = compute_buyer_risk_profile(target_inv)
+            buyer_gstin = str(target_inv.get("buyerdt1", {}).get("buyer_gstin") or target_inv.get("buyer_gstin") or "").strip().upper()
+
+            is_customer_risk = False
+            customer_risk_reasons = []
+
+            # 1. High or critical risk score / badge from Buyer Risk Profiler
+            if b_risk.get("risk_level") in ["CRITICAL", "HIGH"] or b_risk.get("risk_score", 0) >= 45:
+                is_customer_risk = True
+                customer_risk_reasons.extend(b_risk.get("risk_factors", []))
+
+            # 2. Blocked credit under Section 17(5)
+            if b_risk.get("itc_eligibility") == "BLOCKED_SEC_17_5":
+                is_customer_risk = True
+                if not any("Section 17(5)" in r for r in customer_risk_reasons):
+                    customer_risk_reasons.append("🚫 Section 17(5) Blocked Credit: Ineligible for ITC (Motor Vehicle / Personal Consumption).")
+
+            # 3. Check historical filing records for recipient in synthetic corpus
+            if buyer_gstin and buyer_gstin != "URP":
+                try:
+                    corpus_path = BASE_DIR / "data" / "raw" / "synthetic_invoice_corpus.parquet"
+                    if corpus_path.exists():
+                        import pandas as _pd
+                        _cdf = _pd.read_parquet(corpus_path, columns=["buyer_gstin", "vendor_risk_tier", "consecutive_non_filing_count", "vendor_filing_regularity", "rule_86b_violation_flag"])
+                        _matches = _cdf[_cdf["buyer_gstin"] == buyer_gstin]
+                        if not _matches.empty:
+                            _non_file_max = int(_matches["consecutive_non_filing_count"].max())
+                            _reg_min = float(_matches["vendor_filing_regularity"].min())
+                            _tier3 = any(_matches["vendor_risk_tier"] == "Tier 3")
+                            _r86b = any(_matches["rule_86b_violation_flag"] == True)
+                            if _non_file_max >= 2 or _reg_min < 0.70 or _tier3 or _r86b:
+                                is_customer_risk = True
+                                customer_risk_reasons.append(
+                                    f"⚠️ Historical Customer Non-Filing Defaults: {_non_file_max} consecutive non-filed return cycles (Rule 138E non-filing restriction / Rule 86B violation)."
+                                )
+                except Exception:
+                    pass
+
+            # 4. Check explicit flags on invoice
+            if target_inv.get("customer_filing_risk") or target_inv.get("filing_history_risk"):
+                is_customer_risk = True
+                customer_risk_reasons.append(str(target_inv.get("customer_filing_risk") or target_inv.get("filing_history_risk") or "Flagged customer risk profile."))
+
+            if is_customer_risk:
+                b_badge = b_risk.get("risk_badge", "🔴 CRITICAL RISK")
+                b_score = b_risk.get("risk_score", 75)
+                b_name = b_risk.get("buyer_name", "Recipient Entity")
+                reasons_bullet = "\n".join([f"• {r}" for r in customer_risk_reasons[:5]]) if customer_risk_reasons else "• Critical counterparty compliance risk detected."
+
+                reply_lines.append(
+                    f"⛔ **IRN Generation Blocked: Customer Filing History Risk Detected!**\n\n"
+                    f"Statutory IRN generation has been **blocked** by Sentinel Compliance Gatekeeper for recipient `{buyer_gstin or 'URP'}` (*{b_name}*):\n\n"
+                    f"• **Counterparty Risk Status:** {b_badge} (Compliance Risk Score: **{b_score}/100**)\n"
+                    f"• **Statutory Risk Findings:**\n"
+                    f"{reasons_bullet}\n\n"
+                    f"🛡️ **Statutory Compliance Policy:** Under GST statutory regulations (Rule 138E / Section 16(2)), E-Invoices and IRNs cannot be registered for customers or recipients with active non-filing defaults or critical risk profiles.\n\n"
+                    f"Please verify customer GSTIN, reconcile counterparty returns, or resolve filing defaults before attempting IRN generation."
+                )
+                if any("Tax Split Mismatch" in r or "POS" in r for r in customer_risk_reasons):
+                    sugg_pos = b_risk.get("pos", "29")
+                    interactive_actions = [f"Set POS: {sugg_pos}", "Rebalance tax math and invoice value", "⚡ Auto-Fix All Compliance Errors"]
+                else:
+                    interactive_actions = ["Explain Errors", "Fix HSN from product description", "⚡ Auto-Fix All Compliance Errors"]
+                quick_prompts = list(interactive_actions)
+            else:
+                sup_gstin = target_inv.get("supplier_gstin") or target_inv.get("supplierdt1", {}).get("supplier_gstin") or target_inv.get("self_gstin", "29AAACR4849R1ZH")
+                doc_no = target_inv.get("doc_no") or target_inv.get("docdt1", {}).get("docno") or "INV-2026-001"
+                doc_dt = target_inv.get("doc_dt") or target_inv.get("docdt1", {}).get("docdt") or datetime.now().strftime("%Y-%m-%d")
+                raw_hash_seed = f"{sup_gstin}{doc_no}{doc_dt}".replace(" ", "").upper()
+                irn_hash = hashlib.sha256(raw_hash_seed.encode("utf-8")).hexdigest().lower()
+                ack_no = f"1226{abs(hash(raw_hash_seed)) % 1000000000000:012d}"
+                ack_dt = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                signed_qr = f"NIC_IRP:{sup_gstin}:{doc_no}:{doc_dt}:{irn_hash[:16]}:{ack_no}"
+
+                target_inv["irn"] = irn_hash
+                target_inv["ack_no"] = ack_no
+                target_inv["ack_dt"] = ack_dt
+                target_inv["signed_qr_code"] = signed_qr
+                target_inv["irn_status"] = "GENERATED"
+                target_inv["status"] = "IRN_GENERATED"
+
+                if "docdt1" in target_inv and isinstance(target_inv["docdt1"], dict):
+                    target_inv["docdt1"]["irn"] = irn_hash
+                    target_inv["docdt1"]["ack_no"] = ack_no
+                    target_inv["docdt1"]["ack_dt"] = ack_dt
+
+                patch_applied = True
+                patch_summary.append(f"Generated official NIC IRN: {irn_hash[:16]}...")
+                reply_lines.append(
+                    f"🎉 **IRN Generated Successfully!**\n\n"
+                    f"Your invoice has been officially sealed and registered with the NIC E-Invoice System (IRP):\n\n"
+                    f"• **IRN (Invoice Reference Number):**\n"
+                    f"  `{irn_hash}`\n"
+                    f"• **Ack Number:** `{ack_no}`\n"
+                    f"• **Ack Date:** `{ack_dt}`\n\n"
+                    f"✅ **Invoice is 100% compliant and digitally signed by NIC IRP.**\n"
+                    f"Both the **E-Invoice** and **Data Lakehouse** modules have been updated.\n"
+                    f"Click the button below to download the final corrected JSON payload or proceed to Stage 2 Lakehouse persistence."
+                )
+                interactive_actions = ["📥 Download Corrected JSON"]
+                quick_prompts = ["📥 Download Corrected JSON", "Generate random dirty payload"]
 
     # -------------------------------------------------------------
     # INTENT 8C: Download Corrected JSON
@@ -4129,6 +4614,20 @@ def process_converter_chat(
                         f"NIC statutory mandate requires at least a 4, 6, or 8-digit tariff code (Heading `{matched_head}` matched via ML Intelligence)."
                     )
 
+            # 4. Check for AI Price Anomaly / Over-Invoicing
+            try:
+                from Template_Converters.price_anomaly_detector import PriceAnomalyDetector
+                panom = PriceAnomalyDetector.scan_invoice_payload(target_inv)
+                if panom and panom.get("findings"):
+                    anom_items = [f for f in panom["findings"] if f.get("is_anomaly")]
+                    for af in anom_items:
+                        reply_lines.append(
+                            f"\n• 📈 **AI Price Outlier Flagged:** Line item '{af.get('prdnm')}' (HSN `{af.get('hsncd')}`) has reported unit rate "
+                            f"**₹{af.get('unitrate', 0):,.2f}** ({af.get('anomaly_type')}) — {af.get('reason')}"
+                        )
+            except Exception:
+                pass
+
             single_prompt, single_actions = get_friendly_next_step(target_inv, current_errors)
             reply_lines.append(
                 f"\n💡 **Step-by-Step Resolution (1 issue at a time):**\n"
@@ -4168,6 +4667,28 @@ def process_converter_chat(
             interactive_actions = ["🚀 Generate IRN", "📥 Download Corrected JSON"]
             quick_prompts = ["🚀 Generate IRN", "📥 Download Corrected JSON", "Generate random dirty payload"]
 
+
+    # Re-run automatic GSTIN-based tax split routing after any intent patch (GSTIN / State / POS / HSN edits)
+    try:
+        _post_route = auto_route_tax_split(target_inv)
+        if _post_route and (_post_route.get("changed") or not auto_tax_route):
+            _was_changed = bool(auto_tax_route and auto_tax_route.get("changed"))
+            auto_tax_route = dict(_post_route, changed=bool(_post_route.get("changed") or _was_changed))
+    except Exception:
+        pass
+    if auto_tax_route and auto_tax_route.get("changed"):
+        patch_applied = True
+        _r = auto_tax_route
+        if _r["is_interstate"]:
+            _route_txt = f"Interstate {_r['supplier_state']} -> {_r['pos']}: IGST Rs {_r['igst']:,.2f}"
+        else:
+            _route_txt = f"Intrastate {_r['supplier_state']}: CGST Rs {_r['cgst']:,.2f} + SGST Rs {_r['sgst']:,.2f}"
+        patch_summary.append(f"Auto-calculated GST split: {_route_txt}")
+        reply_lines.insert(0,
+            f"🧮 **GST Split Auto-Calculated from GSTINs:** Supplier GSTIN state `{_r['supplier_state']}` vs "
+            f"Place of Supply `{_r['pos']}` ➔ **{'Interstate → IGST' if _r['is_interstate'] else 'Intrastate → CGST + SGST'}**. "
+            f"Line-item rates, tax amounts and invoice totals were recalculated automatically.\n"
+        )
 
     # -------------------------------------------------------------
     # POST-PATCH RE-VALIDATION & NEXT STEP SEEDING

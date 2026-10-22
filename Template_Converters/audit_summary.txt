@@ -6,19 +6,17 @@ Compliant (Valid)       : 1
 Non-Compliant (Failed)  : 0
 ---------------------------------------------------------------------------
 
-[VALID] Invoice #1: INV-2026-SERVO-3
+[VALID] Invoice #1: INV-2026-OUTLIER
    Status             : VALID
-   Auto-Corrections   : 23
+   Auto-Corrections   : 19
    Unresolved Errors  : 0
    * Corrections Made (Customer Errors Fixed):
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].is_service: 'is_service' -> 'isservc'
-       Reason: Standardized non-compliant key 'is_service' to schema key 'isservc'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].assval: 'assval' -> 'assamt'
-       Reason: Standardized non-compliant key 'assval' to schema key 'assamt'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].hsn: 'hsn' -> 'hsncd'
-       Reason: Standardized non-compliant key 'hsn' to schema key 'hsncd'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].hsn_code: 'hsn_code' -> 'hsncd'
-       Reason: Standardized non-compliant key 'hsn_code' to schema key 'hsncd'
+     - [KEY_NAME_NORMALIZATION] itemdtls[1].igstval: 'igstval' -> 'igstamt'
+       Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
+     - [KEY_NAME_NORMALIZATION] itemdtls[1].cgstval: 'cgstval' -> 'cgstamt'
+       Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
+     - [KEY_NAME_NORMALIZATION] itemdtls[1].sgstval: 'sgstval' -> 'sgstamt'
+       Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
      - [KEY_NAME_NORMALIZATION] itemdtls[1].unitprice: 'unitprice' -> 'unitrate'
        Reason: Standardized non-compliant key 'unitprice' to schema key 'unitrate'
      - [KEY_NAME_NORMALIZATION] itemdtls[1].unit_rate: 'unit_rate' -> 'unitrate'
@@ -27,22 +25,16 @@ Non-Compliant (Failed)  : 0
        Reason: Standardized non-compliant key 'unit_price' to schema key 'unitrate'
      - [KEY_NAME_NORMALIZATION] itemdtls[1].totamt: 'totamt' -> 'grossamt'
        Reason: Standardized non-compliant key 'totamt' to schema key 'grossamt'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].gstrate: 'gstrate' -> 'igstrt'
-       Reason: Standardized non-compliant key 'gstrate' to schema key 'igstrt'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].igstval: 'igstval' -> 'igstamt'
-       Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].cgstval: 'cgstval' -> 'cgstamt'
-       Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].sgstval: 'sgstval' -> 'sgstamt'
-       Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
+     - [KEY_NAME_NORMALIZATION] itemdtls[1].assval: 'assval' -> 'assamt'
+       Reason: Standardized non-compliant key 'assval' to schema key 'assamt'
      - [KEY_NAME_NORMALIZATION] valdt1.assval: 'assval' -> 'assamt'
        Reason: Standardized non-compliant key 'assval' to schema key 'assamt'
+     - [KEY_NAME_NORMALIZATION] valdt1.igstval: 'igstval' -> 'igstamt'
+       Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
      - [KEY_NAME_NORMALIZATION] valdt1.cgstval: 'cgstval' -> 'cgstamt'
        Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
      - [KEY_NAME_NORMALIZATION] valdt1.sgstval: 'sgstval' -> 'sgstamt'
        Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
-     - [KEY_NAME_NORMALIZATION] valdt1.igstval: 'igstval' -> 'igstamt'
-       Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
      - [KEY_NAME_NORMALIZATION] valdt1.cesval: 'cesval' -> 'cessamt'
        Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
      - [KEY_NAME_NORMALIZATION] cgstval: 'cgstval' -> 'cgstamt'
@@ -53,8 +45,8 @@ Non-Compliant (Failed)  : 0
        Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
      - [KEY_NAME_NORMALIZATION] cesval: 'cesval' -> 'cessamt'
        Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
-     - [KEY_NAME_NORMALIZATION] document_date: 'document_date' -> 'docdt'
-       Reason: Standardized non-compliant key 'document_date' to schema key 'docdt'
+     - [FORMAT_NORMALIZATION] docdt1.docno: 'INV-2026-OUTLIER-01' -> 'INV-2026-OUTLIER'
+       Reason: Removed invalid punctuation characters from document number per NIC Rule 2281
      - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-22' -> '22-10-2026'
        Reason: Standardized date format from '2026-10-22' to '22-10-2026'
 ---------------------------------------------------------------------------

@@ -340,7 +340,7 @@ KEY_ALIASES: Dict[str, str] = {
     "tot_item_val": "totitemval", "total_item_value": "totitemval", "totitemval": "totitemval",
     "hsn": "hsncd", "hsn_code": "hsncd",
     "is_service": "isservc",
-    "gstrate": "igstrt", "gst_rate": "igstrt", "gst rate": "igstrt",
+    "gstrate": "gstrate", "gst_rate": "gstrate", "gst rate": "gstrate", "gstrt": "gstrate",
     "cgstval": "cgstval", "sgstval": "sgstval", "igstval": "igstval",
     "cesrate": "cessrt", "cesval": "cesval", "cesnonadvl": "cesnonadvl",
     "statecesrate": "statecessrt", "statecesval": "statecesval",
@@ -1813,14 +1813,25 @@ class InvoicePayload(BaseModel):
                 is_intra = (sup_state == pos and igstonintra != "Y") if (sup_state and pos) else True
 
                 ass_d = Decimal(itm["assval"])
-                if hsn_stat_rate is not None:
+                decl_gstrt = None
+                for _gk in ("gstrate", "gst_rate", "tax_rate", "rate"):
+                    if _gk in itm and itm.get(_gk) is not None and str(itm.get(_gk)).strip() != "":
+                        try:
+                            decl_gstrt = Decimal(str(itm.get(_gk)).replace(",", "").replace("%", "").strip())
+                            break
+                        except Exception:
+                            pass
+
+                if decl_gstrt is not None:
+                    stat_gst = decl_gstrt
+                elif hsn_stat_rate is not None:
                     stat_gst = hsn_stat_rate
                 elif Decimal(itm.get("igstval", "0.00")) > 0:
-                    stat_gst = (Decimal(itm["igstval"]) * Decimal("100") / ass_d).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if ass_d > 0 else Decimal("18.00")
+                    stat_gst = (Decimal(itm["igstval"]) * Decimal("100") / ass_d).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if ass_d > 0 else Decimal("0.00")
                 elif Decimal(itm.get("cgstval", "0.00")) > 0:
-                    stat_gst = (Decimal(itm["cgstval"]) * Decimal("200") / ass_d).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if ass_d > 0 else Decimal("18.00")
+                    stat_gst = (Decimal(itm["cgstval"]) * Decimal("200") / ass_d).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) if ass_d > 0 else Decimal("0.00")
                 else:
-                    stat_gst = Decimal("18.00")
+                    stat_gst = Decimal("0.00")
 
                 if is_intra:
                     cgst_d = (ass_d * (stat_gst / Decimal("2")) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)

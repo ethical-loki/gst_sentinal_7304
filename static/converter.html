@@ -4793,14 +4793,24 @@
             const hsnInp = parentBar.querySelector('input[data-field="hsn"]') || parentBar.querySelector('input.copilot-inline-hsn-input');
             const rateInp = parentBar.querySelector('input[data-field="rate"]') || parentBar.querySelector('input.copilot-inline-rate-input');
             const qtyInp = parentBar.querySelector('input[data-field="qty"]') || parentBar.querySelector('input.copilot-inline-qty-input');
+            const unitInp = parentBar.querySelector('input[data-field="unit"]') || parentBar.querySelector('input.copilot-inline-unit-input');
             const taxInp = parentBar.querySelector('input[data-field="taxval"]') || parentBar.querySelector('input.copilot-inline-tax-input');
             
             const hsnVal = (hsnInp ? hsnInp.value.trim() : '') || '85011013';
             const rateVal = (rateInp ? rateInp.value.trim() : '') || '10000.00';
             const qtyVal = (qtyInp ? qtyInp.value.trim() : '') || '5.0';
+            const unitVal = (unitInp ? unitInp.value.trim().toUpperCase() : '') || 'NOS';
             const taxVal = (taxInp ? taxInp.value.trim() : '') || (parseFloat(rateVal) * parseFloat(qtyVal)).toFixed(2);
             
-            sendCopilotQuickMessage(`Set HSN: ${hsnVal}, Rate: ${rateVal}, Qty: ${qtyVal}, Taxable Value: ${taxVal}`);
+            sendCopilotQuickMessage(`Set HSN: ${hsnVal}, Rate: ${rateVal}, Qty: ${qtyVal}, Unit: ${unitVal}, Taxable Value: ${taxVal}`);
+        }
+        // Inline Place of Supply (POS) submission for Copilot
+        function submitCopilotPosInput(btnOrInput) {
+            const parent = btnOrInput.closest('.copilot-inline-suggestion-bar') || btnOrInput.parentElement;
+            if (!parent) return;
+            const posSel = parent.querySelector('select[data-field="pos"]') || parent.querySelector('select');
+            const posVal = posSel ? posSel.value : '29';
+            sendCopilotQuickMessage(`Set POS: ${posVal}`);
         }
         // Helper to dynamically render editable input boxes for every suggestion
         function renderCopilotSuggestionsHtml(data, isCompliant, payload) {
@@ -4816,11 +4826,11 @@
 
         // Detect patch summary items from current turn
         const patchSummary = (data.patch_summary || []).map(s => String(s).toLowerCase());
-        const isDateJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('date')));
+        const isDateJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('document date') || s.includes('docdt') || s.includes('doc_date') || s.includes('transporter_doc_date') || (/\bdate\b/i.test(s) && !s.includes('update'))));
         const isVehJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('veh')));
         const isHsnJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('hsn')));
-        const isSupGstJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('supplier gstin') || s.includes('self_gstin')));
-        const isBuyerGstJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('buyer gstin') || s.includes('urp')));
+        const isSupGstJustPatched = Boolean(data.patch_applied && patchSummary.some(s => !s.includes('auto-routed') && !s.includes('auto-calculated') && !s.includes('split') && (s.includes('supplier_gstin') || s.includes('self_gstin') || (s.includes('supplier gstin') && (s.includes('updated') || s.includes('corrected') || s.includes('aligned') || s.includes('set'))))));
+        const isBuyerGstJustPatched = Boolean(data.patch_applied && patchSummary.some(s => !s.includes('auto-routed') && !s.includes('auto-calculated') && !s.includes('split') && (s.includes('buyer_gstin') || (s.includes('buyer gstin') && (s.includes('updated') || s.includes('set') || s.includes('assigned'))) || (s.includes('urp') && (s.includes('buyer') || s.includes('set') || s.includes('unregistered'))))));
         const isPinJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('pin')));
         const isStateJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('state')));
         const isDocnoJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('invoice number') || s.includes('docno')));
@@ -4838,6 +4848,39 @@
         const currVeh = (targetInv.ewbdt1 && targetInv.ewbdt1.veh_number) || targetInv.veh_number || '';
         const cleanVeh = String(currVeh).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
         const isVehFormatValid = /^[A-Z]{2}[0-9]{1,2}[A-Z0-9]{1,4}[0-9]{4}$/.test(cleanVeh);
+
+        // Check if doc date in payload is ALREADY valid (within 2 days of today or compliant)
+        const rawDocDt = (targetInv.docdt1 && (targetInv.docdt1.docdt || targetInv.docdt1.doc_date)) || targetInv.docdt || targetInv.doc_date || '';
+        let isDateValid = false;
+        if (rawDocDt) {
+            try {
+                let pDate = null;
+                if (/^\d{2}[\/\-.]\d{2}[\/\-.]\d{4}$/.test(rawDocDt)) {
+                    const parts = rawDocDt.split(/[\/\-.]/);
+                    pDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                } else if (/^\d{4}[\/\-.]\d{2}[\/\-.]\d{2}$/.test(rawDocDt)) {
+                    pDate = new Date(rawDocDt);
+                }
+                if (pDate && !isNaN(pDate.getTime())) {
+                    const now = new Date();
+                    const diffDays = Math.abs((now - pDate) / (1000 * 60 * 60 * 24));
+                    if (diffDays <= 2.1) {
+                        isDateValid = true;
+                    }
+                }
+            } catch (e) {}
+        }
+        if (isDateJustPatched) {
+            handledTypes.add('date');
+        }
+
+        // Check if invoice number (docno) in payload is ALREADY valid per NIC Rule 2144
+        const rawDocNo = (targetInv.docdt1 && (targetInv.docdt1.docno || targetInv.docdt1.document_number)) || targetInv.docno || targetInv.document_number || '';
+        const cleanDocNo = String(rawDocNo).trim();
+        const isDocNoValid = cleanDocNo.length > 0 && cleanDocNo.length <= 16 && /^[A-Za-z1-9][A-Za-z0-9/-]*$/.test(cleanDocNo);
+        if (isDocnoJustPatched) {
+            handledTypes.add('docno');
+        }
 
         // Check if IRN is already generated
         const hasActiveIrn = Boolean(
@@ -4860,7 +4903,7 @@
             hasActiveIrn
         );
 
-        const hasPendingCorrections = actions.some(a => /set (?:supplier|buyer)?\s*(?:pin|state|hsn|mode|transporter):|change date to|vehicle is/i.test(a));
+        const hasPendingCorrections = actions.some(a => /set (?:supplier|buyer)?\s*(?:pin|state|hsn|mode|transporter|invoice|docno):|set pos:|change date to|vehicle is|set invoice/i.test(a));
         if (isFullyCompliant && !hasPendingCorrections) {
             if (hasActiveIrn) {
                 return `
@@ -4888,6 +4931,12 @@
             tailPrompt = replyLower.substring(lastPromptIdx);
         }
 
+
+        const isPosJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('place of supply') || /\bpos\b/i.test(s)));
+        if (isPosJustPatched) handledTypes.add('pos');
+        const hasPosMismatchText = Boolean(
+            replyLower.includes('tax split mismatch') || tailPrompt.includes('place of supply') && (tailPrompt.includes('mismatch') || tailPrompt.includes('select'))
+        );
         // Detect active focus topic strictly:
         // Priority 1: Direct action suggestions provided by the backend resolver for this turn
         let activeTopic = null;
@@ -4897,6 +4946,8 @@
             activeTopic = 'sup_gstin';
         } else if (!isBuyerGstJustPatched && actions.some(a => /buyer gstin is|buyer is urp|set buyer gstin/i.test(a))) {
             activeTopic = 'buyer_gstin';
+        } else if (!isDocnoJustPatched && actions.some(a => /set invoice no|invoice number|docno/i.test(a))) {
+            activeTopic = 'docno';
         } else if (!isDateJustPatched && actions.some(a => /change date to|set date:/i.test(a))) {
             activeTopic = 'date';
         } else if (!isHsnJustPatched && actions.some(a => /set hsn:|fix hsn/i.test(a))) {
@@ -4909,9 +4960,14 @@
             activeTopic = 'subsupply';
         } else if (actions.some(a => /transporter/i.test(a))) {
             activeTopic = 'transporter';
+        } else if (!isPosJustPatched && actions.some(a => /set pos:|place of supply/i.test(a))) {
+            activeTopic = 'pos';
         } else if (actions.some(a => /rebalance tax/i.test(a))) {
             activeTopic = 'tax_math';
         }
+
+        // POS mismatch takes precedence over passive text matches (e.g. a ✅ Buyer GSTIN line)
+        if (!activeTopic && !isPosJustPatched && hasPosMismatchText) activeTopic = 'pos';
 
         // Priority 2: Inquire tailPrompt if actions list didn't directly determine topic
         if (!activeTopic) {
@@ -4919,8 +4975,10 @@
                 activeTopic = 'pin_state';
             } else if (!isSupGstJustPatched && (tailPrompt.includes('15-digit supplier gstin') || tailPrompt.includes('supplier gstin number') || tailPrompt.includes('proper 15-digit supplier gstin'))) {
                 activeTopic = 'sup_gstin';
-            } else if (!isBuyerGstJustPatched && (tailPrompt.includes('buyer gstin') || tailPrompt.includes('recipient gstin') || tailPrompt.includes('15-digit buyer gstin'))) {
+            } else if (!isBuyerGstJustPatched && (tailPrompt.includes('buyer gstin') || tailPrompt.includes('recipient gstin') || tailPrompt.includes('15-digit buyer gstin') || tailPrompt.includes("buyer's proper 15-digit gstin") || tailPrompt.includes('tell me your buyer'))) {
                 activeTopic = 'buyer_gstin';
+            } else if (!isDocnoJustPatched && (tailPrompt.includes('invoice number') || tailPrompt.includes('valid invoice number') || tailPrompt.includes('docno') || tailPrompt.includes('document number'))) {
+                activeTopic = 'docno';
             } else if (!isDateJustPatched && (tailPrompt.includes('document date') || tailPrompt.includes('change the document date') || tailPrompt.includes('invoice date') || tailPrompt.includes('date to within') || tailPrompt.includes('docdt'))) {
                 activeTopic = 'date';
             } else if (!isHsnJustPatched && (tailPrompt.includes('product hsn') || tailPrompt.includes('wrong hsn code') || tailPrompt.includes('wrong / incomplete hsn') || tailPrompt.includes('hsn intelligence'))) {
@@ -4933,6 +4991,8 @@
                 activeTopic = 'subsupply';
             } else if (tailPrompt.includes('transporter gstin') || tailPrompt.includes('transporter id')) {
                 activeTopic = 'transporter';
+            } else if (!isPosJustPatched && (hasPosMismatchText || tailPrompt.includes('pos mismatch'))) {
+                activeTopic = 'pos';
             } else if (tailPrompt.includes('tax valuation recalculation') || tailPrompt.includes('tax math imbalance')) {
                 activeTopic = 'tax_math';
             }
@@ -4941,7 +5001,7 @@
         // If 100% compliant AND no interactive module is being discussed or requested, show Generate IRN / Download
         const hasInteractiveModule = Boolean(
             activeTopic ||
-            actions.some(a => /vehicle|veh|ka01|hsn|pin|state|date|mode|subsupply|gstin|tax\s*math|transporter/i.test(a))
+            actions.some(a => /vehicle|veh|ka01|hsn|pin|state|date|mode|subsupply|gstin|tax\s*math|transporter|docno|invoice/i.test(a))
         );
 
         if (isCompliant && !hasInteractiveModule) {
@@ -5082,14 +5142,18 @@
                 buyerGstinAct ||
                 tailPrompt.includes('buyer gstin') ||
                 tailPrompt.includes('recipient gstin') ||
-                tailPrompt.includes('15-digit buyer gstin')
+                tailPrompt.includes('15-digit buyer gstin') || tailPrompt.includes("buyer's proper 15-digit gstin") || tailPrompt.includes('tell me your buyer')
             );
             if (hasBuyerGstinPrompt) {
                 handledTypes.add('buyer_gstin');
                 renderedBoxCount++;
                 let defBuyerGst = '29XYZAB5678C1Z2';
-                if (buyerGstinAct) {
-                    const m = buyerGstinAct.match(/\b([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z0-9]{1,3})\b/i);
+                const mSugg = tailPrompt.match(/suggested format for state \d+:\s*([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z0-9]{4})/i) ||
+                              replyLower.match(/suggested format for state \d+:\s*([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z0-9]{4})/i);
+                if (mSugg) {
+                    defBuyerGst = mSugg[1].toUpperCase();
+                } else if (buyerGstinAct) {
+                    const m = buyerGstinAct.match(/\b([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z0-9]{4})\b/i);
                     if (m) defBuyerGst = m[1].toUpperCase();
                     else if (buyerGstinAct.includes('URP')) defBuyerGst = 'URP';
                 }
@@ -5156,6 +5220,7 @@
                 }
                 const prdName = (firstItm && (firstItm.prdnm || firstItm.prddesc)) ? (firstItm.prdnm || firstItm.prddesc) : 'Industrial Servo Motor';
                 const defQty = (firstItm && firstItm.qty !== undefined) ? firstItm.qty : '5.0';
+                const defUqc = (firstItm && (firstItm.uqc || firstItm.unit)) ? (firstItm.uqc || firstItm.unit) : 'NOS';
                 let defUnitRate = (firstItm && (firstItm.unitprice || firstItm.unitrate || firstItm.unit_price)) ? (firstItm.unitprice || firstItm.unitrate || firstItm.unit_price) : '10000.00';
                 let defTaxVal = (firstItm && (firstItm.assval !== undefined || firstItm.assamt !== undefined)) ? (firstItm.assval || firstItm.assamt) : (parseFloat(defQty) * parseFloat(defUnitRate)).toFixed(2);
 
@@ -5182,6 +5247,10 @@
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">QTY</label>
                                 <input type="number" step="any" data-field="qty" class="copilot-inline-qty-input" placeholder="e.g. 5" value="${defQty}" oninput="updateCopilotHsnCalc(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotHsnInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 75px;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">UNIT</label>
+                                <input type="text" data-field="unit" class="copilot-inline-unit-input" placeholder="e.g. NOS" value="${escapeHtml(defUqc)}" maxlength="5" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotHsnInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 65px; font-weight: 700; text-transform: uppercase;">
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">TAXABLE VALUE (₹)</label>
@@ -5406,7 +5475,53 @@
             }
         };
 
+        const renderPosBox = () => {
+            if (renderedBoxCount > 0 || handledTypes.has('pos') || isPosJustPatched) return;
+            const posAct = findAction(a => /set pos:|place of supply/i.test(a));
+            const hasPosPrompt = Boolean(
+                activeTopic === 'pos' || posAct || hasPosMismatchText ||
+                tailPrompt.includes('place of supply') || tailPrompt.includes('pos mismatch')
+            );
+            if (!hasPosPrompt) return;
+            handledTypes.add('pos');
+            renderedBoxCount++;
+            const buyerBlk = targetInv.buyerdt1 || {};
+            const suppBlk = targetInv.supplierdt1 || {};
+            const valBlk = targetInv.valdtls || targetInv.valdt1 || {};
+            const bPos = buyerBlk.pos || targetInv.pos || valBlk.pos || buyerBlk.buyer_state || targetInv.buyer_state || '29';
+            const sStateRaw = suppBlk.supplier_state || targetInv.supplier_state || String(suppBlk.self_gstin || targetInv.self_gstin || '27').slice(0, 2);
+            let defPos = String(bPos).replace(/\D/g, '').padStart(2, '0') || '29';
+            if (posAct) {
+                const mPos = posAct.match(/\b([0-9]{1,2})\b/);
+                if (mPos) defPos = mPos[1].padStart(2, '0');
+            }
+            const sState = String(sStateRaw).replace(/\D/g, '').padStart(2, '0');
+            const isInterstate = (sState !== defPos);
+            const taxLabel = isInterstate ? `Interstate ${sState} → ${defPos} (IGST)` : `Intrastate ${sState} (CGST+SGST)`;
+            barsHtml += `
+                <div class="copilot-inline-suggestion-bar copilot-pos-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 12px 14px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">🌐 Place of Supply (POS) &amp; Tax Split Routing:</span>
+                        <span class="copilot-pos-tax-label" data-supp-state="${sState}" style="font-size: 0.72rem; color: #34d399; font-family: 'JetBrains Mono', monospace; background: rgba(52, 211, 153, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(52, 211, 153, 0.3);">${taxLabel}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">PLACE OF SUPPLY (POS)</label>
+                            <select data-field="pos" class="copilot-inline-pos-select" onchange="(function(sel){var bar=sel.closest('.copilot-pos-bar');var lbl=bar&&bar.querySelector('.copilot-pos-tax-label');if(!lbl)return;var s=lbl.getAttribute('data-supp-state');lbl.textContent=(s!==sel.value)?('Interstate '+s+' → '+sel.value+' (IGST)'):('Intrastate '+s+' (CGST+SGST)');})(this)" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 8px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; cursor: pointer; max-width: 230px;">
+                                ${buildStateOptionsHtml(defPos)}
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: flex-end; padding-top: 14px; gap: 6px; flex-wrap: wrap;">
+                            <button type="button" class="copilot-action-btn" onclick="submitCopilotPosInput(this)" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; white-space: nowrap;">🌐 Apply POS</button>
+                            <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Rebalance tax math and invoice value')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap;">🧮 Rebalance Tax Split</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
         // 1. Render active focus topic FIRST
+        if (activeTopic === 'pos') renderPosBox();
         if (activeTopic === 'docno') renderDocnoBox();
         else if (activeTopic === 'sup_gstin') renderSupGstinBox();
         else if (activeTopic === 'buyer_gstin') renderBuyerGstinBox();
@@ -5420,6 +5535,7 @@
         else if (activeTopic === 'tax_math') renderTaxMathBox();
 
         // 2. Fallback step-by-step sequence of unresolved issues (strictly one-by-one, aligned with get_friendly_next_step priority)
+        if (renderedBoxCount === 0 && !isDocnoJustPatched && (!isDocNoValid || actions.some(a => /invoice no|docno/i.test(a)))) renderDocnoBox();
         if (renderedBoxCount === 0 && (!isDateValid || actions.some(a => /date/i.test(a)))) renderDateBox();
         if (renderedBoxCount === 0 && (actions.some(a => /pin|state/i.test(a)) || tailPrompt.includes('pincode') || tailPrompt.includes('postal pin') || tailPrompt.includes('conflict'))) renderPinStateBox();
         if (renderedBoxCount === 0 && (actions.some(a => /^(?:my gstin is|supplier gstin)/i.test(a.trim())) || tailPrompt.includes('15-digit supplier gstin'))) renderSupGstinBox();
@@ -5430,6 +5546,8 @@
         if (renderedBoxCount === 0 && (actions.some(a => /subsupply/i.test(a)) || tailPrompt.includes('subsupply'))) renderSubsupplyBox();
         if (renderedBoxCount === 0 && (actions.some(a => /transporter/i.test(a)) || tailPrompt.includes('transporter'))) renderTransporterBox();
         if (renderedBoxCount === 0 && (actions.some(a => /tax\s*math/i.test(a)) || tailPrompt.includes('tax valuation'))) renderTaxMathBox();
+
+        if (renderedBoxCount === 0 && !isPosJustPatched && (hasPosMismatchText || actions.some(a => /set pos:|place of supply/i.test(a)))) renderPosBox();
 
         // 3. Fallback for any other "Set Key: Value" or "Key is Value" suggestion (strictly one-by-one)
         for (const act of actions) {
@@ -5446,7 +5564,8 @@
                 (handledTypes.has('subsupply') && actL.includes('subsupply')) ||
                 (handledTypes.has('mode') && actL.includes('set mode:')) ||
                 (handledTypes.has('transporter') && actL.includes('set transporter:')) ||
-                (handledTypes.has('tax_math') && actL.includes('rebalance tax math'))
+                (handledTypes.has('tax_math') && actL.includes('rebalance tax math')) ||
+                (handledTypes.has('pos') && (actL.includes('set pos:') || actL.includes('apply pos') || actL.includes('place of supply') || actL.includes('rebalance tax math')))
             ) {
                 continue;
             }

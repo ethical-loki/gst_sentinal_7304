@@ -348,6 +348,8 @@ def audit_and_rectify_line_item_sentinel(
                 is_valid_domain_match = True
             elif d_ch in ["61", "62", "63"] and any(k in q_low for k in ["garment", "cloth", "apparel", "shirt", "pant", "textile"]):
                 is_valid_domain_match = True
+            elif d_ch == "65" and any(k in q_low for k in ["helmet", "headgear", "hat", "cap", "head", "headwear", "safety"]):
+                is_valid_domain_match = True
             elif d_ch == "30" and any(k in q_low for k in ["pharma", "medicine", "tablet", "drug", "syrup"]):
                 is_valid_domain_match = True
             elif d_ch in ["27", "28", "29"] and any(k in q_low for k in ["chemical", "fuel", "oil", "gas", "petroleum"]):
@@ -414,8 +416,9 @@ def audit_and_rectify_line_item_sentinel(
                     if h_matches:
                         rate = float(h_matches[0].get("gst_rate", 18.0))
 
-                # If declared HSN is already identical to recommended HSN, or in same statutory chapter with negligible risk drop:
-                if (rec_hsn == declared_hsn_str and len(declared_hsn_str) in [6, 8]) or (len(declared_hsn_str) in [6, 8] and rec_hsn[:2] == declared_hsn_str[:2] and risk_drop <= 0.05):
+                # If declared HSN is already identical to recommended HSN, or in same heading, or same chapter with low risk drop:
+                is_same_heading = bool(declared_hsn_str and rec_hsn and len(declared_hsn_str) >= 4 and len(rec_hsn) >= 4 and declared_hsn_str[:4] == rec_hsn[:4])
+                if (rec_hsn == declared_hsn_str and len(declared_hsn_str) in [6, 8]) or (is_same_heading and len(declared_hsn_str) in [6, 8]) or (len(declared_hsn_str) in [6, 8] and rec_hsn[:2] == declared_hsn_str[:2] and risk_drop <= 0.05):
                     return {
                         "is_flagged": False,
                         "should_rectify": False,

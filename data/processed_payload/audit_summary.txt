@@ -2,28 +2,51 @@
              GST E-INVOICE & E-WAY BILL TRANSFORMATION REPORT
 ===========================================================================
 Total Invoices Processed : 1
-Compliant (Valid)       : 0
-Non-Compliant (Failed)  : 1
+Compliant (Valid)       : 1
+Non-Compliant (Failed)  : 0
 ---------------------------------------------------------------------------
 
-[INVALID] Invoice #1: INV-2026-OUTLIER
-   Status             : INVALID
-   Auto-Corrections   : 6
-   Unresolved Errors  : 1
+[VALID] Invoice #1: INV-2026-OUTLIER
+   Status             : VALID
+   Auto-Corrections   : 19
+   Unresolved Errors  : 0
    * Corrections Made (Customer Errors Fixed):
+     - [KEY_NAME_NORMALIZATION] itemdtls[1].igstval: 'igstval' -> 'igstamt'
+       Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
+     - [KEY_NAME_NORMALIZATION] itemdtls[1].cgstval: 'cgstval' -> 'cgstamt'
+       Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
+     - [KEY_NAME_NORMALIZATION] itemdtls[1].sgstval: 'sgstval' -> 'sgstamt'
+       Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
+     - [KEY_NAME_NORMALIZATION] itemdtls[1].unitprice: 'unitprice' -> 'unitrate'
+       Reason: Standardized non-compliant key 'unitprice' to schema key 'unitrate'
+     - [KEY_NAME_NORMALIZATION] itemdtls[1].unit_rate: 'unit_rate' -> 'unitrate'
+       Reason: Standardized non-compliant key 'unit_rate' to schema key 'unitrate'
+     - [KEY_NAME_NORMALIZATION] itemdtls[1].unit_price: 'unit_price' -> 'unitrate'
+       Reason: Standardized non-compliant key 'unit_price' to schema key 'unitrate'
+     - [KEY_NAME_NORMALIZATION] itemdtls[1].totamt: 'totamt' -> 'grossamt'
+       Reason: Standardized non-compliant key 'totamt' to schema key 'grossamt'
+     - [KEY_NAME_NORMALIZATION] itemdtls[1].assval: 'assval' -> 'assamt'
+       Reason: Standardized non-compliant key 'assval' to schema key 'assamt'
      - [KEY_NAME_NORMALIZATION] valdt1.assval: 'assval' -> 'assamt'
        Reason: Standardized non-compliant key 'assval' to schema key 'assamt'
      - [KEY_NAME_NORMALIZATION] valdt1.igstval: 'igstval' -> 'igstamt'
        Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
+     - [KEY_NAME_NORMALIZATION] valdt1.cgstval: 'cgstval' -> 'cgstamt'
+       Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
+     - [KEY_NAME_NORMALIZATION] valdt1.sgstval: 'sgstval' -> 'sgstamt'
+       Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
+     - [KEY_NAME_NORMALIZATION] valdt1.cesval: 'cesval' -> 'cessamt'
+       Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
+     - [KEY_NAME_NORMALIZATION] cgstval: 'cgstval' -> 'cgstamt'
+       Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
+     - [KEY_NAME_NORMALIZATION] sgstval: 'sgstval' -> 'sgstamt'
+       Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
+     - [KEY_NAME_NORMALIZATION] igstval: 'igstval' -> 'igstamt'
+       Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
+     - [KEY_NAME_NORMALIZATION] cesval: 'cesval' -> 'cessamt'
+       Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
      - [FORMAT_NORMALIZATION] docdt1.docno: 'INV-2026-OUTLIER-01' -> 'INV-2026-OUTLIER'
        Reason: Removed invalid punctuation characters from document number per NIC Rule 2281
      - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-22' -> '22-10-2026'
        Reason: Standardized date format from '2026-10-22' to '22-10-2026'
-     - [BUSINESS_RULE_AUTO_CORRECTION] buyerdt1.pos: '' -> '29'
-       Reason: Derived missing POS '29' from Buyer GSTIN prefix
-     - [MODULE_2_SENTINEL_HSN_RECTIFICATION] itemdtls[1].hsncd: '65061010' -> '65061090'
-       Reason: 🛡️ Module 2 HSN Sentinel Interception: Declared HSN '65061010' flagged with P(Error) = 31.7% (MEDIUM risk). SHAP Root Causes: Unit price of ₹85,000.00 deviates significantly (176.0x) from statutory median price (₹482.89) for HSN 65061010., Low semantic match confidence: Retrieval similarity score (83.6%) is insufficient to guarantee correct classification.. Auto-rectified to Counterfactual HSN '65061090' (Post-Intervention P(Error) = 21.8%, -9.8% risk drop) with statutory 18.0% GST before transmission to NIC portal.
-   ! Unresolved NIC Rule Violations:
-     - [Code 2176] itemdtls[1].hsncd: HSN Misclassification Screened: Declared HSN '65061010' flagged by Module 2 Sentinel.
-       Resolution: Confirm and apply Recommended HSN '65061090' to unlock Stage 2 IRN generation.
 ---------------------------------------------------------------------------

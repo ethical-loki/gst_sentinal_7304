@@ -58,6 +58,12 @@ COMMODITY_PRICE_BENCHMARKS = {
     # Live Animals (Chapter 01)
     "0101": (35000.0, 350000.0, 120000.0, "NOS", "Live horses, asses, mules"),
     "01012100": (50000.0, 500000.0, 180000.0, "NOS", "Pure-bred breeding horses"),
+
+    # Safety Equipment & Headgear (Chapter 65)
+    "6506": (120.0, 1500.0, 480.0, "NOS", "Other headgear, whether or not lined or trimmed"),
+    "650610": (150.0, 2500.0, 482.89, "NOS", "Safety headgear / industrial protective safety helmets"),
+    "65061010": (150.0, 2500.0, 482.89, "NOS", "Speed glass welding helmets or other helmets meant for industrial use"),
+    "65061090": (120.0, 2000.0, 450.0, "NOS", "Other safety headgear"),
 }
 
 # Generic fallback reasonable boundaries by UQC when HSN is unlisted
@@ -120,6 +126,10 @@ class PriceAnomalyDetector:
             "soya": "120190",
             "wheat": "1001",
             "horse": "0101",
+            "helmet": "65061010",
+            "headgear": "650610",
+            "hard hat": "65061010",
+            "safety gear": "650610",
         }
         for kw, mapped_hsn in keyword_map.items():
             if kw in prdnm:
