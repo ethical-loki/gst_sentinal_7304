@@ -1,0 +1,50 @@
+{
+  "docno": "INV-SCENARIO-02",
+  "docdt": "22-10-2026",
+  "document_type": "INV",
+  "self_gstin": "27AABCT3518Q1ZS",
+  "supplierdt1": {
+    "supplier_gstin": "27AABCT3518Q1ZS",
+    "supplier_lglnm": "Apex Fasteners & Hardware Works",
+    "supplier_bno": "Building 5A",
+    "supplier_bnm": "Apex Hardware Complex",
+    "supplier_loc": "Andheri East",
+    "supplier_dst": "Mumbai",
+    "supplier_state": "27",
+    "supplier_pin": "400001"
+  },
+  "buyerdt1": {
+    "buyer_gstin": "27BBBBB1234A1Z5",
+    "buyer_lglnm": "Mahindra Infra Construction Ltd",
+    "buyer_bno": "Tower 9",
+    "buyer_bnm": "Infra Park",
+    "buyer_loc": "Bandra Kurla",
+    "buyer_dst": "Mumbai",
+    "buyer_state": "27",
+    "buyer_pos": "27",
+    "buyer_pin": "400002"
+  },
+  "itemdtls": [
+    {
+      "prdnm": "Stainless Steel Hex Screws & Threaded Bolts",
+      "prddesc": "Grade 316 Stainless Steel Hexagon Fasteners",
+      "hsncd": "28111100",
+      "qty": "500.00",
+      "uqc": "NOS",
+      "unitrate": "15.00",
+      "grossamt": "7500.00",
+      "assamt": "7500.00",
+      "cgstrt": "9.00",
+      "sgstrt": "9.00",
+      "cgstamt": "675.00",
+      "sgstamt": "675.00",
+      "totitemval": "8850.00"
+    }
+  ],
+  "valdt1": {
+    "assval": "7500.00",
+    "cgstval": "675.00",
+    "sgstval": "675.00",
+    "totinvval": "8850.00"
+  }
+}

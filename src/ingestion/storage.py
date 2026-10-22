@@ -108,7 +108,14 @@ FLATTENED_INVOICE_SCHEMA = pa.schema([
     ("payment_upi", pa.string()),
 
     # Governance & Status
-    ("compliance_status", pa.string())
+    ("compliance_status", pa.string()),
+
+    # Module 2: HSN Intelligence & Sentinel ML Telemetry
+    ("sentinel_risk_prob", pa.float64()),
+    ("sentinel_risk_level", pa.string()),
+    ("sentinel_status_badge", pa.string()),
+    ("sentinel_recommended_hsn", pa.string()),
+    ("sentinel_audit_reasons", pa.string())
 ])
 
 
@@ -183,6 +190,55 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
             pretax = _to_f(item.get("pretaxval") or (gross - disc))
             assval = _to_f(item.get("assamt") or item.get("assval") or pretax)
 
+            # Robust HSN & Sentinel Telemetry Resolution
+            item_hsn = str(item.get("hsncd") or item.get("hsn") or "").strip()
+            prod_name = str(item.get("prdnm") or "").strip()
+            prod_desc = str(item.get("prddesc") or "").strip()
+
+            sentinel_audit = item.get("sentinel_audit")
+            if not sentinel_audit or not isinstance(sentinel_audit, dict) or not sentinel_audit.get("rectified_hsn"):
+                try:
+                    from Template_Converters.hsn_resolver import audit_and_rectify_line_item_sentinel
+                    sup_gstin = str(sup.get("supplier_gstin") or sup.get("gstin") or "").strip()
+                    sentinel_audit = audit_and_rectify_line_item_sentinel(
+                        product_name=prod_name,
+                        product_desc=prod_desc,
+                        declared_hsn=item_hsn,
+                        unit_price=uprice,
+                        supplier_gstin=sup_gstin
+                    )
+                except Exception:
+                    sentinel_audit = {}
+
+            rectified_hsn = str((sentinel_audit or {}).get("rectified_hsn") or (sentinel_audit or {}).get("original_hsn") or item_hsn).strip()
+            should_rectify = bool((sentinel_audit or {}).get("should_rectify", False))
+            risk_level = str((sentinel_audit or {}).get("risk_level", "LOW"))
+            status_badge = str((sentinel_audit or {}).get("status_badge", "AUTO_APPROVED"))
+            risk_prob = _to_f((sentinel_audit or {}).get("error_probability", 0.0))
+            reasons = (sentinel_audit or {}).get("reasons", [])
+            audit_reasons_str = "; ".join(str(r) for r in reasons) if isinstance(reasons, list) else str(reasons or "")
+
+            stat_rate = _to_f((sentinel_audit or {}).get("statutory_rate", 0.0))
+            if gst_rate == 0.0 and stat_rate > 0.0:
+                gst_rate = stat_rate
+
+            final_hsn = rectified_hsn if (rectified_hsn and (should_rectify or not item_hsn or len(item_hsn) not in [6, 8])) else item_hsn
+
+            cgst_amt = _to_f(item.get("cgstamt") or item.get("cgstval") or 0.0)
+            sgst_amt = _to_f(item.get("sgstamt") or item.get("sgstval") or 0.0)
+            igst_amt = _to_f(item.get("igstamt") or item.get("igstval") or 0.0)
+            if assval > 0 and cgst_amt == 0.0 and sgst_amt == 0.0 and igst_amt == 0.0 and gst_rate > 0:
+                sup_st = str(sup.get("supplier_state") or sup.get("state") or "").strip()
+                buy_pos = str(buy.get("pos") or buy.get("buyer_pos") or buy.get("buyer_state") or buy.get("state") or "").strip()
+                if sup_st and buy_pos and sup_st != buy_pos:
+                    igst_amt = round(assval * (gst_rate / 100.0), 2)
+                else:
+                    cgst_amt = round(assval * (gst_rate / 200.0), 2)
+                    sgst_amt = round(assval * (gst_rate / 200.0), 2)
+            tot_line_val = _to_f(item.get("totitemval") or 0.0)
+            if tot_line_val == 0.0 or abs(tot_line_val - assval) < 0.01:
+                tot_line_val = round(assval + cgst_amt + sgst_amt + igst_amt + _to_f(item.get("cesval") or item.get("cessamt") or 0.0), 2)
+
             rows.append({
                 # Document & Transaction Details
                 "invoice_id": docno,
@@ -231,10 +287,10 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
                 # Line Item Details
                 "line_item_id": f"{docno}-L{slno.zfill(2)}",
                 "item_slno": slno,
-                "product_name": str(item.get("prdnm") or "").strip(),
-                "product_description": str(item.get("prddesc") or "").strip(),
+                "product_name": prod_name,
+                "product_description": prod_desc,
                 "is_service": str(item.get("isservc") or item.get("is_service") or "N").strip(),
-                "hsn": str(item.get("hsncd") or item.get("hsn") or "").strip(),
+                "hsn": final_hsn,
                 "quantity": qty,
                 "unit": str(item.get("uqc") or item.get("unit") or "NOS").strip(),
                 "unit_price": uprice,
@@ -243,15 +299,15 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
                 "pretax_value": pretax,
                 "taxable_value": assval,
                 "gst_rate": gst_rate,
-                "cgst_amount": _to_f(item.get("cgstamt") or item.get("cgstval") or 0.0),
-                "sgst_amount": _to_f(item.get("sgstamt") or item.get("sgstval") or 0.0),
-                "igst_amount": _to_f(item.get("igstamt") or item.get("igstval") or 0.0),
+                "cgst_amount": cgst_amt,
+                "sgst_amount": sgst_amt,
+                "igst_amount": igst_amt,
                 "cess_rate": _to_f(item.get("cesrt") or item.get("cessrt") or item.get("cesrate") or 0.0),
                 "cess_amount": _to_f(item.get("cesval") or item.get("cessamt") or 0.0),
                 "state_cess_rate": _to_f(item.get("statecesrt") or item.get("statecessrt") or item.get("statecesrate") or 0.0),
                 "state_cess_amount": _to_f(item.get("statecesval") or item.get("statecessamt") or 0.0),
                 "other_charges": _to_f(item.get("othchrg") or 0.0),
-                "total_item_value": _to_f(item.get("totitemval") or 0.0),
+                "total_item_value": tot_line_val,
 
                 # Invoice-Level Valuation Breakdown
                 "inv_taxable_value": inv_assval,
@@ -281,7 +337,14 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
                 "payment_upi": str(pay.get("upiid") or payload.get("upiid") or "").strip(),
 
                 # Compliance & Status
-                "compliance_status": "VALID"
+                "compliance_status": "VALID",
+
+                # Module 2 Sentinel ML Telemetry
+                "sentinel_risk_prob": risk_prob,
+                "sentinel_risk_level": risk_level,
+                "sentinel_status_badge": status_badge,
+                "sentinel_recommended_hsn": rectified_hsn or final_hsn,
+                "sentinel_audit_reasons": audit_reasons_str
             })
         return rows
 
@@ -325,6 +388,56 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
         disc = float(item.discount) if hasattr(item, "discount") and item.discount else 0.0
         pretax = float(item.pretaxval) if hasattr(item, "pretaxval") and item.pretaxval else (gross - disc)
         assval = float(item.assval)
+        gst_rate = float(item.gstrate)
+
+        # Robust HSN & Sentinel Telemetry Resolution
+        item_hsn = str(item.hsn).strip()
+        prod_name = str(item.prdnm).strip()
+        prod_desc = str(item.prddesc or "").strip()
+
+        sentinel_audit = getattr(item, "sentinel_audit", None)
+        if not sentinel_audit or not isinstance(sentinel_audit, dict) or not sentinel_audit.get("rectified_hsn"):
+            try:
+                from Template_Converters.hsn_resolver import audit_and_rectify_line_item_sentinel
+                sup_gstin = str(getattr(sup, "gstin", "") or "").strip()
+                sentinel_audit = audit_and_rectify_line_item_sentinel(
+                    product_name=prod_name,
+                    product_desc=prod_desc,
+                    declared_hsn=item_hsn,
+                    unit_price=uprice,
+                    supplier_gstin=sup_gstin
+                )
+            except Exception:
+                sentinel_audit = {}
+
+        rectified_hsn = str((sentinel_audit or {}).get("rectified_hsn") or (sentinel_audit or {}).get("original_hsn") or item_hsn).strip()
+        should_rectify = bool((sentinel_audit or {}).get("should_rectify", False))
+        risk_level = str((sentinel_audit or {}).get("risk_level", "LOW"))
+        status_badge = str((sentinel_audit or {}).get("status_badge", "AUTO_APPROVED"))
+        risk_prob = _to_f((sentinel_audit or {}).get("error_probability", 0.0))
+        reasons = (sentinel_audit or {}).get("reasons", [])
+        audit_reasons_str = "; ".join(str(r) for r in reasons) if isinstance(reasons, list) else str(reasons or "")
+
+        stat_rate = _to_f((sentinel_audit or {}).get("statutory_rate", 0.0))
+        if gst_rate == 0.0 and stat_rate > 0.0:
+            gst_rate = stat_rate
+
+        final_hsn = rectified_hsn if (rectified_hsn and (should_rectify or not item_hsn or len(item_hsn) not in [6, 8])) else item_hsn
+
+        cgst_amt_m = float(item.cgstval or 0.0)
+        sgst_amt_m = float(item.sgstval or 0.0)
+        igst_amt_m = float(item.igstval or 0.0)
+        if assval > 0 and cgst_amt_m == 0.0 and sgst_amt_m == 0.0 and igst_amt_m == 0.0 and gst_rate > 0:
+            sup_st = str(sup.state or "").strip()
+            buy_pos = str(buy.pos or buy.state or "").strip()
+            if sup_st and buy_pos and sup_st != buy_pos:
+                igst_amt_m = round(assval * (gst_rate / 100.0), 2)
+            else:
+                cgst_amt_m = round(assval * (gst_rate / 200.0), 2)
+                sgst_amt_m = round(assval * (gst_rate / 200.0), 2)
+        tot_item_val_m = float(item.totitemval or 0.0)
+        if tot_item_val_m == 0.0 or abs(tot_item_val_m - assval) < 0.01:
+            tot_item_val_m = round(assval + cgst_amt_m + sgst_amt_m + igst_amt_m, 2)
 
         rows.append({
             # Document & Transaction Details
@@ -374,10 +487,10 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
             # Line Item Details
             "line_item_id": f"{inv_id}-L{slno.zfill(2)}",
             "item_slno": slno,
-            "product_name": str(item.prdnm).strip(),
-            "product_description": str(item.prddesc or "").strip(),
+            "product_name": prod_name,
+            "product_description": prod_desc,
             "is_service": str(item.is_service).strip(),
-            "hsn": str(item.hsn).strip(),
+            "hsn": final_hsn,
             "quantity": qty,
             "unit": str(item.unit).strip(),
             "unit_price": uprice,
@@ -385,16 +498,16 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
             "item_discount": disc,
             "pretax_value": pretax,
             "taxable_value": assval,
-            "gst_rate": float(item.gstrate),
-            "cgst_amount": float(item.cgstval),
-            "sgst_amount": float(item.sgstval),
-            "igst_amount": float(item.igstval),
+            "gst_rate": gst_rate,
+            "cgst_amount": cgst_amt_m,
+            "sgst_amount": sgst_amt_m,
+            "igst_amount": igst_amt_m,
             "cess_rate": float(getattr(item, "cesrate", 0.0) or 0.0),
             "cess_amount": float(getattr(item, "cesval", 0.0) or 0.0),
             "state_cess_rate": float(getattr(item, "statecesrate", 0.0) or 0.0),
             "state_cess_amount": float(getattr(item, "statecesval", 0.0) or 0.0),
             "other_charges": float(getattr(item, "othchrg", 0.0) or 0.0),
-            "total_item_value": float(item.totitemval),
+            "total_item_value": tot_item_val_m,
 
             # Invoice-Level Valuation Breakdown
             "inv_taxable_value": inv_assval,
@@ -424,7 +537,14 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
             "payment_upi": str(getattr(payload, "upiid", "") or "").strip(),
 
             # Compliance & Status
-            "compliance_status": "VALID"
+            "compliance_status": "VALID",
+
+            # Module 2 Sentinel ML Telemetry
+            "sentinel_risk_prob": risk_prob,
+            "sentinel_risk_level": risk_level,
+            "sentinel_status_badge": status_badge,
+            "sentinel_recommended_hsn": rectified_hsn or final_hsn,
+            "sentinel_audit_reasons": audit_reasons_str
         })
     return rows
 
@@ -467,6 +587,15 @@ def append_to_parquet(
         valid_keys = [k for k in dedup_keys if k in new_data.columns]
         if valid_keys:
             new_data = new_data.drop_duplicates(subset=valid_keys, keep="last")
+        if schema is not None:
+            for field in schema:
+                fname = field.name
+                if fname not in new_data.columns:
+                    new_data[fname] = 0.0 if pa.types.is_floating(field.type) else ""
+                elif pa.types.is_floating(field.type):
+                    new_data[fname] = new_data[fname].fillna(0.0)
+                elif pa.types.is_string(field.type):
+                    new_data[fname] = new_data[fname].fillna("")
         new_table = pa.Table.from_pandas(new_data, schema=schema, preserve_index=False)
         pq.write_table(new_table, filepath, compression="snappy")
         return
@@ -478,6 +607,16 @@ def append_to_parquet(
     if valid_keys:
         # Lakehouse Upsert: keep the latest record per (invoice_id, item_slno)
         combined_df = combined_df.drop_duplicates(subset=valid_keys, keep="last")
+
+    if schema is not None:
+        for field in schema:
+            fname = field.name
+            if fname not in combined_df.columns:
+                combined_df[fname] = 0.0 if pa.types.is_floating(field.type) else ""
+            elif pa.types.is_floating(field.type):
+                combined_df[fname] = combined_df[fname].fillna(0.0)
+            elif pa.types.is_string(field.type):
+                combined_df[fname] = combined_df[fname].fillna("")
 
     combined_table = pa.Table.from_pandas(combined_df, schema=schema, preserve_index=False)
     pq.write_table(combined_table, filepath, compression="snappy")

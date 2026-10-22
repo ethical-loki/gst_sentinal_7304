@@ -1,0 +1,47 @@
+{
+  "docno": "INV-SCENARIO-03",
+  "docdt": "22-10-2026",
+  "document_type": "INV",
+  "self_gstin": "24RUQAD1011E1ZU",
+  "supplierdt1": {
+    "supplier_gstin": "24RUQAD1011E1ZU",
+    "supplier_lglnm": "Gujarat Cotton Spinners & Mills",
+    "supplier_bno": "Mill Gate 3",
+    "supplier_bnm": "Textile Mega Hub",
+    "supplier_loc": "Ahmedabad",
+    "supplier_dst": "Ahmedabad",
+    "supplier_state": "24",
+    "supplier_pin": "380001"
+  },
+  "buyerdt1": {
+    "buyer_gstin": "27BBBBB1234A1Z5",
+    "buyer_lglnm": "Surat Garments Processing Unit",
+    "buyer_bno": "Unit 22",
+    "buyer_bnm": "Garment Export Hub",
+    "buyer_loc": "Mumbai",
+    "buyer_dst": "Mumbai",
+    "buyer_state": "27",
+    "buyer_pos": "27",
+    "buyer_pin": "400001"
+  },
+  "itemdtls": [
+    {
+      "prdnm": "Raw Cotton Combed Weaving Yarn",
+      "prddesc": "Single combed cotton yarn 30s count",
+      "hsncd": "52051200",
+      "qty": "100.00",
+      "uqc": "KGS",
+      "unitrate": "15000.00",
+      "grossamt": "1500000.00",
+      "assamt": "1500000.00",
+      "igstrt": "5.00",
+      "igstamt": "75000.00",
+      "totitemval": "1575000.00"
+    }
+  ],
+  "valdt1": {
+    "assval": "1500000.00",
+    "igstval": "75000.00",
+    "totinvval": "1575000.00"
+  }
+}

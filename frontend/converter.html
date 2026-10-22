@@ -4705,6 +4705,14 @@
             sendCopilotQuickMessage(`Vehicle is ${vehNum}`);
         }
 
+        // Apply Direct Invoice Number Change from Error Card
+        function applyDirectDocnoChange(inputId) {
+            const input = document.getElementById(inputId);
+            const val = input ? input.value.trim() : 'INV-2026-001';
+            switchRightPanelView('copilot');
+            sendCopilotQuickMessage(`Set Invoice No: ${val}`);
+        }
+
         // Apply Direct HSN Change from Error Card
         function applyDirectHsnChange(inputId) {
             const input = document.getElementById(inputId);
@@ -4815,6 +4823,7 @@
         const isBuyerGstJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('buyer gstin') || s.includes('urp')));
         const isPinJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('pin')));
         const isStateJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('state')));
+        const isDocnoJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('invoice number') || s.includes('docno')));
 
         if (isDateJustPatched) handledTypes.add('date');
         if (isVehJustPatched) handledTypes.add('vehicle');
@@ -4823,6 +4832,7 @@
         if (isBuyerGstJustPatched) handledTypes.add('buyer_gstin');
         if (isPinJustPatched) handledTypes.add('pin');
         if (isStateJustPatched) handledTypes.add('state');
+        if (isDocnoJustPatched) handledTypes.add('docno');
 
         // Check if vehicle in payload is ALREADY valid
         const currVeh = (targetInv.ewbdt1 && targetInv.ewbdt1.veh_number) || targetInv.veh_number || '';
@@ -4881,9 +4891,9 @@
         // Detect active focus topic strictly:
         // Priority 1: Direct action suggestions provided by the backend resolver for this turn
         let activeTopic = null;
-        if (!isPinJustPatched && !isStateJustPatched && actions.some(a => /set (?:supplier|buyer)?\s*(?:pin|state):|pin\s*:\s*\d+/i.test(a))) {
+        if (actions.some(a => /set (?:supplier|buyer)?\s*(?:pin|state):|pin\s*:\s*\d+/i.test(a))) {
             activeTopic = 'pin_state';
-        } else if (!isSupGstJustPatched && actions.some(a => /my gstin is|supplier gstin/i.test(a))) {
+        } else if (!isSupGstJustPatched && actions.some(a => /^(?:my gstin is|set supplier gstin:)/i.test(a.trim()))) {
             activeTopic = 'sup_gstin';
         } else if (!isBuyerGstJustPatched && actions.some(a => /buyer gstin is|buyer is urp|set buyer gstin/i.test(a))) {
             activeTopic = 'buyer_gstin';
@@ -4905,13 +4915,13 @@
 
         // Priority 2: Inquire tailPrompt if actions list didn't directly determine topic
         if (!activeTopic) {
-            if (!isPinJustPatched && !isStateJustPatched && !tailPrompt.includes('aligned!') && !tailPrompt.includes('updated!') && (tailPrompt.includes('postal pin') || tailPrompt.includes('pincode conflict') || tailPrompt.includes('pincode mismatch') || tailPrompt.includes('taxpayer check on'))) {
+            if (tailPrompt.includes('postal pin') || tailPrompt.includes('pincode conflict') || tailPrompt.includes('pincode mismatch') || tailPrompt.includes('taxpayer check on') || tailPrompt.includes('pincode on invoice') || (tailPrompt.includes('pincode') && tailPrompt.includes('conflict'))) {
                 activeTopic = 'pin_state';
-            } else if (!isSupGstJustPatched && (tailPrompt.includes('supplier gstin') || tailPrompt.includes('my gstin is') || tailPrompt.includes('15-digit supplier gstin'))) {
+            } else if (!isSupGstJustPatched && (tailPrompt.includes('15-digit supplier gstin') || tailPrompt.includes('supplier gstin number') || tailPrompt.includes('proper 15-digit supplier gstin'))) {
                 activeTopic = 'sup_gstin';
             } else if (!isBuyerGstJustPatched && (tailPrompt.includes('buyer gstin') || tailPrompt.includes('recipient gstin') || tailPrompt.includes('15-digit buyer gstin'))) {
                 activeTopic = 'buyer_gstin';
-            } else if (!isDateJustPatched && (tailPrompt.includes('document date') || tailPrompt.includes('change the document date') || tailPrompt.includes('invoice date') || tailPrompt.includes('date to within'))) {
+            } else if (!isDateJustPatched && (tailPrompt.includes('document date') || tailPrompt.includes('change the document date') || tailPrompt.includes('invoice date') || tailPrompt.includes('date to within') || tailPrompt.includes('docdt'))) {
                 activeTopic = 'date';
             } else if (!isHsnJustPatched && (tailPrompt.includes('product hsn') || tailPrompt.includes('wrong hsn code') || tailPrompt.includes('wrong / incomplete hsn') || tailPrompt.includes('hsn intelligence'))) {
                 activeTopic = 'hsn';
@@ -4951,10 +4961,40 @@
         }
 
         // Box Renderers
+        const renderDocnoBox = () => {
+            if (isDocnoJustPatched || renderedBoxCount > 0 || handledTypes.has('docno')) return;
+            const docnoAct = findAction(a => /set invoice no|invoice number|docno/i.test(a));
+            const hasDocnoPrompt = Boolean(activeTopic === 'docno' || docnoAct || tailPrompt.includes('invoice number') || tailPrompt.includes('valid invoice number') || tailPrompt.includes('docno') || tailPrompt.includes('document number'));
+            if (hasDocnoPrompt) {
+                handledTypes.add('docno');
+                renderedBoxCount++;
+                let defDocno = 'INV-2026-001';
+                if (docnoAct) {
+                    const m = docnoAct.match(/(?:Set Invoice No:\s*|invoice number\s*[:=]?\s*)([A-Za-z0-9/-]+)/i);
+                    if (m) defDocno = m[1];
+                } else if (cleanDocNo) {
+                    defDocno = cleanDocNo.replace(/^[^A-Za-z1-9]+/, '').replace(/[^0-9A-Za-z/-]/g, '').slice(0, 16) || 'INV-2026-001';
+                }
+                barsHtml += `
+                    <div class="copilot-inline-suggestion-bar copilot-docno-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 12px 14px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">📄 Invoice Number (NIC Statutory Rule 2144):</span>
+                            <span style="font-size: 0.72rem; color: #38bdf8; font-family: 'JetBrains Mono', monospace; background: rgba(56, 189, 248, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3);">Max 16 Chars (No Leading 0/-/)</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <input type="text" class="copilot-inline-custom-input copilot-inline-docno-input" placeholder="e.g. INV-2026-001" value="${escapeHtml(defDocno)}" maxlength="16" oninput="this.value = this.value.toUpperCase().replace(/[^0-9A-Z/-]/g, '')" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotInlineInput(this, 'Set Invoice No: ');}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; width: 160px; font-weight: 700;">
+                            <button type="button" class="copilot-action-btn" onclick="submitCopilotInlineInput(this, 'Set Invoice No: ')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">✨ Apply Invoice No</button>
+                            <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Set Invoice No: ${escapeHtml(defDocno)}')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer;">⚡ Use ${escapeHtml(defDocno)}</button>
+                        </div>
+                    </div>
+                `;
+            }
+        };
+
         const renderDateBox = () => {
             if (renderedBoxCount > 0 || handledTypes.has('date') || isDateJustPatched) return;
             const dateAct = findAction(a => /change date to|set date:|today|yesterday/i.test(a));
-            const hasDatePrompt = Boolean(activeTopic === 'date' || dateAct || tailPrompt.includes('document date') || tailPrompt.includes('date to within') || tailPrompt.includes('change the document date'));
+            const hasDatePrompt = Boolean(activeTopic === 'date' || dateAct || tailPrompt.includes('document date') || tailPrompt.includes('date to within') || tailPrompt.includes('change the document date') || tailPrompt.includes('docdt') || tailPrompt.includes('set date:'));
             if (hasDatePrompt) {
                 handledTypes.add('date');
                 renderedBoxCount++;
@@ -4982,14 +5022,21 @@
 
         const renderSupGstinBox = () => {
             if (renderedBoxCount > 0 || handledTypes.has('sup_gstin') || isSupGstJustPatched) return;
-            const supGstinAct = findAction(a => /my gstin is|supplier gstin/i.test(a));
+            if (activeTopic && activeTopic !== 'sup_gstin') return;
+
+            const supGstinAct = findAction(a => /^(?:my gstin is|set supplier gstin:)/i.test(a.trim()));
             const hasSupGstinPrompt = Boolean(
                 activeTopic === 'sup_gstin' ||
                 supGstinAct ||
-                tailPrompt.includes('supplier gstin') ||
-                tailPrompt.includes('my gstin is') ||
-                tailPrompt.includes('15-digit supplier gstin')
+                tailPrompt.includes('15-digit supplier gstin') ||
+                tailPrompt.includes('proper 15-digit supplier gstin')
             );
+
+            // Guard: If supplier GSTIN in payload is ALREADY valid 15-digits, never render unless explicitly in sup_gstin topic
+            const rawSupG = String((targetInv.supplierdt1 && targetInv.supplierdt1.supplier_gstin) || targetInv.supplier_gstin || targetInv.self_gstin || '').trim();
+            const isSupGstAlreadyValid = rawSupG.length === 15 && /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/i.test(rawSupG);
+            if (isSupGstAlreadyValid && activeTopic !== 'sup_gstin') return;
+
             if (hasSupGstinPrompt) {
                 handledTypes.add('sup_gstin');
                 renderedBoxCount++;
@@ -5155,10 +5202,18 @@
         };
 
         const renderPinStateBox = () => {
-            if (renderedBoxCount > 0 || handledTypes.has('pin') || isPinJustPatched || isStateJustPatched) return;
+            if (renderedBoxCount > 0 || handledTypes.has('pin')) return;
             const pinAct = findAction(a => /set (?:supplier|buyer)?\s*pin:/i.test(a));
             const stAct = findAction(a => /set (?:supplier|buyer)?\s*state:/i.test(a));
-            const hasPinStatePrompt = Boolean(activeTopic === 'pin_state' || pinAct || stAct || (tailPrompt.includes('pincode') && tailPrompt.includes('conflict')) || (tailPrompt.includes('state') && tailPrompt.includes('pin') && !tailPrompt.includes('aligned!') && !tailPrompt.includes('updated!')) || tailPrompt.includes('postal pin & state'));
+            const hasPinStatePrompt = Boolean(
+                activeTopic === 'pin_state' ||
+                pinAct || stAct ||
+                (tailPrompt.includes('pincode') && tailPrompt.includes('conflict')) ||
+                tailPrompt.includes('pincode on invoice') ||
+                tailPrompt.includes('postal pin') ||
+                (tailPrompt.includes('state') && tailPrompt.includes('pin') && !tailPrompt.includes('aligned!') && !tailPrompt.includes('updated!')) ||
+                tailPrompt.includes('jurisdiction')
+            );
             if (hasPinStatePrompt) {
                 handledTypes.add('pin');
                 handledTypes.add('state');
@@ -5352,7 +5407,8 @@
         };
 
         // 1. Render active focus topic FIRST
-        if (activeTopic === 'sup_gstin') renderSupGstinBox();
+        if (activeTopic === 'docno') renderDocnoBox();
+        else if (activeTopic === 'sup_gstin') renderSupGstinBox();
         else if (activeTopic === 'buyer_gstin') renderBuyerGstinBox();
         else if (activeTopic === 'date') renderDateBox();
         else if (activeTopic === 'hsn') renderHsnBox();
@@ -5364,22 +5420,23 @@
         else if (activeTopic === 'tax_math') renderTaxMathBox();
 
         // 2. Fallback step-by-step sequence of unresolved issues (strictly one-by-one, aligned with get_friendly_next_step priority)
-        if (renderedBoxCount === 0) renderDateBox();
-        if (renderedBoxCount === 0) renderSupGstinBox();
-        if (renderedBoxCount === 0) renderBuyerGstinBox();
-        if (renderedBoxCount === 0) renderModeBox();
-        if (renderedBoxCount === 0) renderHsnBox();
-        if (renderedBoxCount === 0) renderVehicleBox();
-        if (renderedBoxCount === 0) renderPinStateBox();
-        if (renderedBoxCount === 0) renderSubsupplyBox();
-        if (renderedBoxCount === 0) renderTransporterBox();
-        if (renderedBoxCount === 0) renderTaxMathBox();
+        if (renderedBoxCount === 0 && (!isDateValid || actions.some(a => /date/i.test(a)))) renderDateBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /pin|state/i.test(a)) || tailPrompt.includes('pincode') || tailPrompt.includes('postal pin') || tailPrompt.includes('conflict'))) renderPinStateBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /^(?:my gstin is|supplier gstin)/i.test(a.trim())) || tailPrompt.includes('15-digit supplier gstin'))) renderSupGstinBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /buyer gstin|urp/i.test(a)) || tailPrompt.includes('buyer gstin'))) renderBuyerGstinBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /hsn/i.test(a)) || tailPrompt.includes('hsn'))) renderHsnBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /vehicle/i.test(a)) || tailPrompt.includes('vehicle'))) renderVehicleBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /mode/i.test(a)) || tailPrompt.includes('mode'))) renderModeBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /subsupply/i.test(a)) || tailPrompt.includes('subsupply'))) renderSubsupplyBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /transporter/i.test(a)) || tailPrompt.includes('transporter'))) renderTransporterBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /tax\s*math/i.test(a)) || tailPrompt.includes('tax valuation'))) renderTaxMathBox();
 
         // 3. Fallback for any other "Set Key: Value" or "Key is Value" suggestion (strictly one-by-one)
         for (const act of actions) {
             const actL = act.toLowerCase();
             if (
-                (handledTypes.has('date') && (actL.includes('apply date') || actL.includes('set today') || actL.includes('change date to today') || actL.includes('change date to yesterday'))) ||
+                (handledTypes.has('docno') && (actL.includes('invoice no') || actL.includes('docno') || actL.includes('set invoice') || actL.includes('apply invoice no'))) ||
+                (handledTypes.has('date') && (actL.includes('apply date') || actL.includes('set today') || actL.includes('change date to today') || actL.includes('change date to yesterday') || actL.includes('set date:'))) ||
                 (handledTypes.has('vehicle') && (actL.includes('vehicle') || actL.includes('vahan') || actL.includes('ka01') || actL.includes('plate') || actL.includes('disable e-way'))) ||
                 (handledTypes.has('sup_gstin') && (actL.includes('my gstin is') || actL.includes('supplier gstin') || actL.includes('verify current gstin'))) ||
                 (handledTypes.has('buyer_gstin') && (actL.includes('buyer gstin is') || actL.includes('buyer is urp'))) ||
@@ -5491,16 +5548,19 @@
             feed.appendChild(typingDiv);
             feed.scrollTop = feed.scrollHeight;
 
-            // 2. Prepare payload from active state or raw editor
-            let currentPayload = currentLivePayload;
+            // 2. Prepare payload prioritizing active content in the raw JSON editor
+            let currentPayload = null;
             const rawEditorText = rawJsonEditor ? rawJsonEditor.value.trim() : '';
-            if (!currentPayload && rawEditorText) {
+            if (rawEditorText) {
                 try {
                     currentPayload = JSON.parse(rawEditorText);
                     if (!initialDirtyPayloadStr) initialDirtyPayloadStr = rawEditorText;
                 } catch (err) {
                     currentPayload = null;
                 }
+            }
+            if (!currentPayload) {
+                currentPayload = currentLivePayload;
             }
 
             try {

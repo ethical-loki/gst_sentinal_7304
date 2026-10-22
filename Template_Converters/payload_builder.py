@@ -8,7 +8,7 @@ of every correction applied.
 import re
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple, Union
 from collections import OrderedDict
 
 try:
@@ -43,13 +43,14 @@ except ImportError:
         PriceAnomalyDetector = None
 
 try:
-    from .hsn_resolver import lookup_hsn_code, validate_nic_2day_rule
+    from .hsn_resolver import lookup_hsn_code, validate_nic_2day_rule, audit_and_rectify_line_item_sentinel
 except ImportError:
     try:
-        from hsn_resolver import lookup_hsn_code, validate_nic_2day_rule
+        from hsn_resolver import lookup_hsn_code, validate_nic_2day_rule, audit_and_rectify_line_item_sentinel
     except ImportError:
         lookup_hsn_code = None
         validate_nic_2day_rule = None
+        audit_and_rectify_line_item_sentinel = None
 
 KEY_ALIASES = {
     # Header
@@ -2629,6 +2630,46 @@ class PayloadBuilder:
             qty_d = Decimal(clean_decimal_str(item.get("qty", "1.000"), 3, audit_log=audit_log, field=f"itemdtls[{idx}].qty"))
             unitrate_d = Decimal(clean_decimal_str(item.get("unitrate", "0.00"), 2, audit_log=audit_log, field=f"itemdtls[{idx}].unitrate"))
 
+            # Module 2: Machine Learning HSN Gatekeeper, Tree SHAP & Counterfactual Self-Healing
+            sentinel_audit = None
+            if audit_and_rectify_line_item_sentinel:
+                try:
+                    sentinel_audit = audit_and_rectify_line_item_sentinel(
+                        product_name=prdnm,
+                        product_desc=prddesc,
+                        declared_hsn=hsncd,
+                        unit_price=float(unitrate_d),
+                        supplier_gstin=sup_gstin
+                    )
+                except Exception as ex:
+                    print(f"[WARN] Module 2 Sentinel error: {ex}")
+
+            if sentinel_audit and sentinel_audit.get("should_rectify"):
+                cf_hsn = str(sentinel_audit.get("rectified_hsn", "")).strip()
+                if cf_hsn and cf_hsn != orig_hsn:
+                    cf_rate = Decimal(str(sentinel_audit.get("statutory_rate", 18.0)))
+                    err_p = float(sentinel_audit.get("error_probability", 0.0))
+                    post_p = float(sentinel_audit.get("post_intervention_risk", 0.0))
+                    r_drop = float(sentinel_audit.get("risk_drop", 0.0))
+                    r_level = str(sentinel_audit.get("risk_level", "HIGH"))
+                    reasons_l = sentinel_audit.get("reasons", [])
+                    reasons_txt = ", ".join(reasons_l) if isinstance(reasons_l, list) else str(reasons_l)
+
+                    audit_log.append({
+                        "category": "MODULE_2_SENTINEL_HSN_RECTIFICATION",
+                        "field": f"itemdtls[{idx}].hsncd",
+                        "original": orig_hsn or "(blank)",
+                        "corrected": cf_hsn,
+                        "description": (
+                            f"🛡️ Module 2 HSN Sentinel Interception: Declared HSN '{orig_hsn}' flagged with P(Error) = {err_p:.1%} ({r_level} risk). "
+                            f"SHAP Root Causes: {reasons_txt}. "
+                            f"Auto-rectified to Counterfactual HSN '{cf_hsn}' (Post-Intervention P(Error) = {post_p:.1%}, -{r_drop:.1%} risk drop) "
+                            f"with statutory {cf_rate}% GST before transmission to NIC portal."
+                        )
+                    })
+                    hsncd = cf_hsn
+                    hsn_statutory_rate = cf_rate
+
             calculated_gross = (qty_d * unitrate_d).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
             raw_gross_str = item.get("grossamt", "")
             grossamt_str = clean_decimal_str(raw_gross_str, 2, audit_log=audit_log, field=f"itemdtls[{idx}].grossamt")
@@ -2775,7 +2816,19 @@ class PayloadBuilder:
                 "cessnonadval": str(cessnonadval_d) if cessnonadval_d > 0 else "",
                 "statecessrt": str(statecessrt_d),
                 "statecessamt": str(statecessamt_d),
-                "totitemval": str(calculated_totitemval)
+                "totitemval": str(calculated_totitemval),
+                "sentinel_audit": sentinel_audit or {
+                    "is_flagged": False,
+                    "should_rectify": False,
+                    "original_hsn": orig_hsn,
+                    "rectified_hsn": hsncd,
+                    "error_probability": 0.0,
+                    "post_intervention_risk": 0.0,
+                    "risk_drop": 0.0,
+                    "risk_level": "LOW",
+                    "status_badge": "AUTO_APPROVED",
+                    "reasons": []
+                }
             })
 
         # AI Price & Unit Rate Anomaly Detection Scan

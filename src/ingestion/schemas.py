@@ -24,13 +24,14 @@ from pydantic import (
 )
 
 try:
-    from src.ingestion.hsn_resolver import lookup_hsn_code, validate_nic_2day_rule
+    from src.ingestion.hsn_resolver import lookup_hsn_code, validate_nic_2day_rule, audit_and_rectify_line_item_sentinel
 except ImportError:
     try:
-        from Template_Converters.hsn_resolver import lookup_hsn_code, validate_nic_2day_rule
+        from Template_Converters.hsn_resolver import lookup_hsn_code, validate_nic_2day_rule, audit_and_rectify_line_item_sentinel
     except ImportError:
         lookup_hsn_code = None
         validate_nic_2day_rule = None
+        audit_and_rectify_line_item_sentinel = None
 
 # ============================================================================
 # 1. CONSTANTS, REGEX PATTERNS & STATUTORY MASTERS
@@ -1679,6 +1680,63 @@ class InvoicePayload(BaseModel):
 
                 itm["qty"] = _clean_dec(itm.get("qty", "1.00"), f"itemdtls[{idx}].qty")
                 itm["unitprice"] = _clean_dec(itm.get("unitprice", itm.get("unitrate", "0.00")), f"itemdtls[{idx}].unitprice")
+
+                sup_gstin = str(cleaned_data.get("supplierdt1", {}).get("supplier_gstin") or cleaned_data.get("self_gstin", "") or "").strip()
+
+                # Module 2: Machine Learning HSN Gatekeeper, Tree SHAP & Counterfactual Self-Healing
+                sentinel_audit = None
+                if audit_and_rectify_line_item_sentinel:
+                    try:
+                        sentinel_audit = audit_and_rectify_line_item_sentinel(
+                            product_name=p_name,
+                            product_desc=p_desc,
+                            declared_hsn=curr_hsn,
+                            unit_price=float(itm["unitprice"]),
+                            supplier_gstin=sup_gstin
+                        )
+                    except Exception as ex:
+                        print(f"[WARN] Module 2 Sentinel error: {ex}")
+
+                if sentinel_audit and sentinel_audit.get("should_rectify"):
+                    cf_hsn = str(sentinel_audit.get("rectified_hsn", "")).strip()
+                    if cf_hsn and cf_hsn != orig_hsn_input:
+                        cf_rate = Decimal(str(sentinel_audit.get("statutory_rate", 18.0)))
+                        err_p = float(sentinel_audit.get("error_probability", 0.0))
+                        post_p = float(sentinel_audit.get("post_intervention_risk", 0.0))
+                        r_drop = float(sentinel_audit.get("risk_drop", 0.0))
+                        r_level = str(sentinel_audit.get("risk_level", "HIGH"))
+                        reasons_l = sentinel_audit.get("reasons", [])
+                        reasons_txt = ", ".join(reasons_l) if isinstance(reasons_l, list) else str(reasons_l)
+
+                        audit_log.append({
+                            "category": "MODULE_2_SENTINEL_HSN_RECTIFICATION",
+                            "field": f"itemdtls[{idx}].hsncd",
+                            "original": orig_hsn_input or "(blank)",
+                            "corrected": cf_hsn,
+                            "description": (
+                                f"🛡️ Module 2 HSN Sentinel Interception: Declared HSN '{orig_hsn_input}' flagged with P(Error) = {err_p:.1%} ({r_level} risk). "
+                                f"SHAP Root Causes: {reasons_txt}. "
+                                f"Auto-rectified to Counterfactual HSN '{cf_hsn}' (Post-Intervention P(Error) = {post_p:.1%}, -{r_drop:.1%} risk drop) "
+                                f"with statutory {cf_rate}% GST before transmission to NIC portal."
+                            )
+                        })
+                        curr_hsn = cf_hsn
+                        itm["hsncd"] = cf_hsn
+                        itm["hsn"] = cf_hsn
+                        hsn_stat_rate = cf_rate
+
+                itm["sentinel_audit"] = sentinel_audit or {
+                    "is_flagged": False,
+                    "should_rectify": False,
+                    "original_hsn": orig_hsn_input,
+                    "rectified_hsn": curr_hsn,
+                    "error_probability": 0.0,
+                    "post_intervention_risk": 0.0,
+                    "risk_drop": 0.0,
+                    "risk_level": "LOW",
+                    "status_badge": "AUTO_APPROVED",
+                    "reasons": []
+                }
                 itm["totamt"] = _clean_dec(itm.get("totamt", itm.get("grossamt", "0.00")), f"itemdtls[{idx}].grossamt")
                 itm["discount"] = _clean_dec(itm.get("discount", "0.00"), f"itemdtls[{idx}].discount")
                 itm["assval"] = _clean_dec(itm.get("assval", itm.get("assamt", "0.00")), f"itemdtls[{idx}].assamt")

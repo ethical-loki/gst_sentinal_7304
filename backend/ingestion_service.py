@@ -320,6 +320,21 @@ def get_processed_lakehouse_records(page: int = 1, page_size: int = 25, search_q
         rec["docdt"] = rec.get("doc_date") or rec.get("docdt") or "—"
         rec["assval"] = rec.get("taxable_value") if rec.get("taxable_value") != "" else 0.0
         rec["totinvval"] = rec.get("inv_total_value") if rec.get("inv_total_value") != "" else (rec.get("total_item_value") or 0.0)
+
+        # Ensure HSN and Sentinel telemetry are robustly populated
+        hsn_raw = str(rec.get("hsn") or "").strip()
+        rec_hsn = str(rec.get("sentinel_recommended_hsn") or "").strip()
+        badge = str(rec.get("sentinel_status_badge") or "").strip()
+        if (not hsn_raw or hsn_raw in ["", "—", "-"]) and rec_hsn:
+            hsn_raw = rec_hsn
+            rec["hsn"] = hsn_raw
+        elif not rec_hsn and hsn_raw:
+            rec["sentinel_recommended_hsn"] = hsn_raw
+        if not badge:
+            rec["sentinel_status_badge"] = "AUTO_APPROVED"
+        if not rec.get("sentinel_risk_level"):
+            rec["sentinel_risk_level"] = "LOW"
+
         try:
             dist = float(rec.get("transit_distance_km") or 0)
         except Exception:
@@ -453,11 +468,11 @@ def process_ingestion_pipeline(
     lakehouse_rows = 0
     invoices_list = corrected_payload.get("einvoices", []) if isinstance(corrected_payload, dict) else (corrected_payload if isinstance(corrected_payload, list) else [corrected_payload])
     
-    # Filter ONLY invoices that passed statutory validation
+    # Filter invoices eligible for persistence (valid or Sentinel-rectified without other fatal errors)
     valid_ids = {
         str(res.get("invoice_number")).strip() 
         for res in validation_report.get("results", []) 
-        if res.get("status") == "VALID"
+        if res.get("status") == "VALID" or (res.get("hsn_screening_alert") and not any(e.get("error_code") != 2176 for e in res.get("errors", [])))
     }
     
     validated_invoices = []

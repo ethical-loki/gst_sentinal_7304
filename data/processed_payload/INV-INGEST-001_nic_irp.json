@@ -13,12 +13,12 @@
   "docdtl": {
     "document_type": "INV",
     "docno": "INV-INGEST-001",
-    "docdt": "19-10-2026"
+    "docdt": "21-10-2026"
   },
   "docdt1": {
     "document_type": "INV",
     "docno": "INV-INGEST-001",
-    "docdt": "19-10-2026"
+    "docdt": "21-10-2026"
   },
   "supplierdt1": {
     "supplier_gstin": "29ABCDE1234F1Z5",
@@ -54,7 +54,7 @@
       "product_name": "Industrial Motor",
       "product_desc": "",
       "is_service": "N",
-      "hsn_cd": "8481",
+      "hsn_cd": "71022110",
       "qty": "2.000",
       "unit": "NOS",
       "unit_price": "10000.00",
@@ -64,22 +64,22 @@
       "ass_val": "20000.00",
       "gst_rate": "18.00",
       "igst_amt": "0.00",
-      "cgst_amt": "1800.00",
-      "sgst_amt": "1800.00",
+      "cgst_amt": "300.00",
+      "sgst_amt": "300.00",
       "cess_amt": "0.00",
-      "tot_item_val": "23600.00"
+      "tot_item_val": "20600.00"
     }
   ],
   "valdt1": {
     "ttlassval": "20000.00",
-    "cgstval": "1800.00",
-    "sgstval": "1800.00",
+    "cgstval": "300.00",
+    "sgstval": "300.00",
     "igstval": "0.00",
     "cesval": "0.00",
     "stcesval": "0.00",
     "cesnonadval": "0.00",
     "discval": "",
-    "totinvval": "23600.00",
+    "totinvval": "20600.00",
     "othchrg": "0.00"
   }
 }

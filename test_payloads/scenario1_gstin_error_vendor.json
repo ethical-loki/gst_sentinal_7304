@@ -1,0 +1,47 @@
+{
+  "docno": "INV-SCENARIO-01",
+  "docdt": "22-10-2026",
+  "document_type": "INV",
+  "self_gstin": "07LJKKT0958C1ZC",
+  "supplierdt1": {
+    "supplier_gstin": "07LJKKT0958C1ZC",
+    "supplier_lglnm": "Delta Heavy Engineering & Machinery Ltd",
+    "supplier_bno": "Plot 42",
+    "supplier_bnm": "Delta Industrial Estate",
+    "supplier_loc": "Connaught Place",
+    "supplier_dst": "New Delhi",
+    "supplier_state": "07",
+    "supplier_pin": "110001"
+  },
+  "buyerdt1": {
+    "buyer_gstin": "27BBBBB1234A1Z5",
+    "buyer_lglnm": "Bharat Manufacturing Corp",
+    "buyer_bno": "Tower B",
+    "buyer_bnm": "Nariman Business Hub",
+    "buyer_loc": "Mumbai",
+    "buyer_dst": "Mumbai",
+    "buyer_state": "27",
+    "buyer_pos": "27",
+    "buyer_pin": "400001"
+  },
+  "itemdtls": [
+    {
+      "prdnm": "Synthetic Polyester Knitted Fabric Garments",
+      "prddesc": "Knitted polyester textile rolls",
+      "hsncd": "84818030",
+      "qty": "100.00",
+      "uqc": "MTR",
+      "unitrate": "450.00",
+      "grossamt": "45000.00",
+      "assamt": "45000.00",
+      "igstrt": "18.00",
+      "igstamt": "8100.00",
+      "totitemval": "53100.00"
+    }
+  ],
+  "valdt1": {
+    "assval": "45000.00",
+    "igstval": "8100.00",
+    "totinvval": "53100.00"
+  }
+}

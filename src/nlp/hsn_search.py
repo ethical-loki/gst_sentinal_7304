@@ -245,8 +245,8 @@ class HSNSemanticSearchEngine:
             # Stage 2: Lexical Candidate Pool Retrieval
             q_words = self._clean_words(clean_q)
             q_lower = clean_q.lower()
-            is_motor_query = bool(re.search(r"\b(motor|servo|servomotor|servomotors|actuator)\b", q_lower))
-            has_vehicle_context = bool(re.search(r"\b(vehicle|car|truck|tractor|trailer|chassis|bumper|automobile|brakes?)\b", q_lower))
+            has_vehicle_context = bool(re.search(r"\b(vehicle|vehicles|car|cars|truck|trucks|tractor|trailer|chassis|bumper|automobile|automobiles|passenger|transit|brakes?)\b", q_lower))
+            is_motor_query = bool(re.search(r"\b(servo|servomotor|servomotors|actuator)\b", q_lower)) or (bool(re.search(r"\b(motor|motors)\b", q_lower)) and not has_vehicle_context)
             is_fittings_query = bool(re.search(r"\b(fittings?|couplings?|elbows?|flanges?|nipples?|unions?|adapters?|bushings?)\b", q_lower))
             is_fasteners_query = bool(re.search(r"\b(bolts?|screws?|nuts?|washers?|rivets?|fasteners?|studs?)\b", q_lower))
 
@@ -290,8 +290,15 @@ class HSNSemanticSearchEngine:
                     s_final -= 0.60
 
                 # Domain classification boost for Chapter 85 electric/industrial motors
-                if is_motor_query and (code_val.startswith("8501") or head_val.startswith("8501")):
+                if is_motor_query and not has_vehicle_context and (code_val.startswith("8501") or head_val.startswith("8501")):
                     s_final += 0.25
+
+                # Domain classification boost for Chapter 87 vehicles & automotive
+                if has_vehicle_context:
+                    if code_val.startswith("87") or head_val.startswith("87"):
+                        s_final += 0.55
+                    if code_val.startswith("8501") or head_val.startswith("8501"):
+                        s_final -= 0.60
 
                 # Disambiguation boost for pipe/tube fittings (Heading 7307) over raw tubes/pipes (7304/7305/7306)
                 if is_fittings_query:

@@ -1,0 +1,49 @@
+{
+  "docno": "INV-2026-OUTLIER-01",
+  "docdt": "2026-10-22",
+  "document_type": "INV",
+  "trancatg": "B2B",
+  "transactionmode": "REG",
+  "self_gstin": "27ABCDE1234F1ZO",
+  "supplierdt1": {
+    "supplier_gstin": "27ABCDE1234F1ZO",
+    "supplier_lglnm": "Apex Industrial Safety Gear Ltd",
+    "supplier_bno": "Suite 401",
+    "supplier_bnm": "Sterling Commercial Complex",
+    "supplier_loc": "Mumbai",
+    "supplier_dst": "Mumbai",
+    "supplier_state": "27",
+    "supplier_pin": "400001"
+  },
+  "buyerdt1": {
+    "buyer_gstin": "29XYZAB5678C1Z2",
+    "buyer_lglnm": "Karnataka Infrastructure & Mining Corp",
+    "buyer_bno": "Plot 12",
+    "buyer_bnm": "Electronic City Tech Park",
+    "buyer_loc": "Bengaluru",
+    "buyer_dst": "Bengaluru",
+    "buyer_state": "29",
+    "buyer_pos": "29",
+    "buyer_pin": "560001"
+  },
+  "itemdtls": [
+    {
+      "prdnm": "Industrial Protective Safety Helmet",
+      "prddesc": "Standard ABS industrial hard hat headgear",
+      "hsncd": "65061010",
+      "qty": 10.0,
+      "uqc": "NOS",
+      "unitrate": 85000.0,
+      "grossamt": 850000.0,
+      "assamt": 850000.0,
+      "igstrt": 18.0,
+      "igstamt": 153000.0,
+      "totitemval": 1003000.0
+    }
+  ],
+  "valdt1": {
+    "assval": 850000.0,
+    "igstval": 153000.0,
+    "totinvval": 1003000.0
+  }
+}

@@ -5755,6 +5755,10 @@
                     <span class="fin-label">AI Price Outlier Status</span>
                     <span class="fin-value" id="finPriceAnomalyStatus" style="font-size: 0.85rem; color: #10b981;">🛡️ Clean (0 Anomaly)</span>
                 </div>
+                <div class="financial-item" id="finBuyerRiskItem" style="border-left: 2px solid rgba(16, 185, 129, 0.4);">
+                    <span class="fin-label">Buyer ITC Risk Factor</span>
+                    <span class="fin-value" id="finBuyerRiskStatus" style="font-size: 0.85rem; color: #10b981;">🟢 Low Risk (Eligible)</span>
+                </div>
             </div>
 
         </section>
@@ -6697,7 +6701,17 @@ async function fetchRawFiles() {
           const prodName = row.product_name || '—';
           const prodDesc = row.product_description || '—';
           const isService = row.is_service || 'N';
-          const hsn = row.hsn || '—';
+          const hsn = row.hsn || row.sentinel_recommended_hsn || '—';
+          const sBadge = row.sentinel_status_badge || '';
+          const riskLvl = row.sentinel_risk_level || 'LOW';
+          let hsnBadgeHtml = '';
+          if (sBadge === 'FLAGGED_AND_RECTIFIED') {
+              hsnBadgeHtml = ` <span class="pill pill-green" style="font-size:0.65rem; padding:1px 5px; margin-left:3px;" title="Sentinel Rectified: ${escapeHtml(row.sentinel_audit_reasons || 'Statutory tariff verified')}">✓ AI</span>`;
+          } else if (riskLvl === 'CRITICAL' || riskLvl === 'HIGH') {
+              hsnBadgeHtml = ` <span class="pill pill-rose" style="font-size:0.65rem; padding:1px 5px; margin-left:3px;" title="${escapeHtml(row.sentinel_audit_reasons || 'Compliance Risk')}">⚠️</span>`;
+          } else if (sBadge === 'AUTO_APPROVED' || (hsn && hsn !== '—')) {
+              hsnBadgeHtml = ` <span class="pill pill-cyan" style="font-size:0.65rem; padding:1px 5px; margin-left:3px;" title="Tariff Verified">✓</span>`;
+          }
           const qty = Number(row.quantity || 0);
           const unit = row.unit || 'NOS';
           const unitPrice = Number(row.unit_price || 0);
@@ -6755,7 +6769,7 @@ async function fetchRawFiles() {
             <td style="font-weight:600;">${prodName}</td>
             <td style="max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${prodDesc}">${prodDesc}</td>
             <td><span class="pill ${isService === 'Y' ? 'pill-purple' : 'pill-cyan'}">${isService}</span></td>
-            <td style="font-family:var(--font-mono);">${hsn}</td>
+            <td style="font-family:var(--font-mono); white-space:nowrap;">${hsn}${hsnBadgeHtml}</td>
             <td style="font-family:var(--font-mono);">${qty}</td>
             <td>${unit}</td>
             <td style="font-family:var(--font-mono);">₹${unitPrice.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
@@ -7239,13 +7253,25 @@ async function fetchRawFiles() {
             if (s2Icon) s2Icon.textContent = '🔒';
         }
 
+        let activeIrnGenerated = false;
+
         // When Stage 1 runs and compliance is 100%:
-        function unlockStage2(metrics) {
+        function unlockStage2(metrics, hasIrn = null) {
             stage1Validated = true;
             stage1FullyCompliant = true;
             stage2Persisted = false;
             lastComplianceRate = 100;
             lastTotalErrors = 0;
+
+            if (hasIrn !== null) {
+                activeIrnGenerated = Boolean(hasIrn);
+            } else {
+                const p = currentLivePayload || currentCorrectedPayload;
+                const inv = (p && p.einvoices && p.einvoices[0]) ? p.einvoices[0] : (p || {});
+                if (inv && (inv.irn || inv.irn_status === 'GENERATED' || inv.status === 'IRN_GENERATED' || (inv.docdt1 && inv.docdt1.irn))) {
+                    activeIrnGenerated = true;
+                }
+            }
 
             const s1Badge = document.getElementById('stage1StepBadge');
             const s1Text = document.getElementById('stage1StateText');
@@ -7266,6 +7292,32 @@ async function fetchRawFiles() {
             const s2Icon = document.getElementById('btnStage2Icon');
             const guidance = document.getElementById('stageGuidanceMsg');
 
+            if (!activeIrnGenerated) {
+                // Statutory Gate: IRN not generated yet -> Stage 2 remains LOCKED until user clicks Generate IRN!
+                if (s2Badge) {
+                    s2Badge.style.background = 'rgba(245, 158, 11, 0.18)';
+                    s2Badge.style.color = '#fbbf24';
+                    s2Badge.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+                }
+                if (s2Num) s2Num.style.background = '#f59e0b';
+                if (s2Text) s2Text.textContent = '(IRN Pending ⚠️)';
+                if (guidance) guidance.innerHTML = '<span style="color:#38bdf8; font-weight:600;">⚡ 100% Compliant:</span> Click <strong style="color:#10b981;">🚀 Generate IRN</strong> in AI Copilot (Sheet 2) to unlock Stage 2.';
+
+                if (s2Btn) {
+                    s2Btn.style.opacity = '0.55';
+                    s2Btn.style.cursor = 'not-allowed';
+                    s2Btn.style.transform = 'none';
+                    s2Btn.style.boxShadow = 'none';
+                    s2Btn.style.background = 'linear-gradient(135deg, #475569 0%, #334155 100%)';
+                    s2Btn.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+                    s2Btn.title = 'Stage 2 is locked: Please click "🚀 Generate IRN" in AI Copilot first before storing into Lakehouse';
+                }
+                if (s2BtnText) s2BtnText.textContent = 'Stage 2: Locked (Generate IRN First 🚀)';
+                if (s2Icon) s2Icon.textContent = '🔒';
+                return;
+            }
+
+            // IRN HAS BEEN GENERATED: Fully unlock Stage 2
             if (s2Badge) {
                 s2Badge.style.background = 'rgba(16, 185, 129, 0.25)';
                 s2Badge.style.color = '#6ee7b7';
@@ -7273,7 +7325,7 @@ async function fetchRawFiles() {
             }
             if (s2Num) s2Num.style.background = '#10b981';
             if (s2Text) s2Text.textContent = '(Ready to Store ✨)';
-            if (guidance) guidance.innerHTML = '<span style="color:#6ee7b7; font-weight:600;">✓ 100% IRN Compliant!</span> Ready to commit into permanent Lakehouse';
+            if (guidance) guidance.innerHTML = '<span style="color:#6ee7b7; font-weight:600;">✓ IRN Active & 100% Compliant!</span> Ready to commit into permanent Lakehouse';
 
             if (s2Btn) {
                 s2Btn.style.opacity = '1';
@@ -7284,8 +7336,8 @@ async function fetchRawFiles() {
                 s2Btn.style.border = 'none';
                 s2Btn.title = 'Click to permanently store in Parquet Lakehouse and Excel Master';
             }
-            if (s2BtnText) s2BtnText.textContent = 'Stage 2: Commit to Lakehouse (100% Compliant)';
-            if (s2Icon) s2Icon.textContent = '🚀';
+            if (s2BtnText) s2BtnText.textContent = 'Stage 2: Commit to Lakehouse (IRN Active 🚀)';
+            if (s2Icon) s2Icon.textContent = '🏛️';
         }
 
         // When Stage 1 runs but compliance is LESS than 100%:
@@ -7293,6 +7345,7 @@ async function fetchRawFiles() {
             stage1Validated = true;
             stage1FullyCompliant = false;
             stage2Persisted = false;
+            activeIrnGenerated = false;
             const rate = metrics ? (metrics.compliance_rate || 0) : 0;
             const errors = metrics ? (metrics.total_errors || 0) : 0;
             lastComplianceRate = rate;
@@ -7495,7 +7548,11 @@ async function fetchRawFiles() {
 
                 if (compRate === 100 && errCount === 0 && failedCount === 0) {
                     if (typeof unlockStage2 === 'function') unlockStage2(pipelineData.metrics);
-                    showToast('🎉 Stage 1 Passed: 100% IRN Compliant! Stage 2 is unlocked — click "Stage 2: Commit to Lakehouse" to persist.', 'success');
+                    if (activeIrnGenerated) {
+                        showToast('🎉 Stage 1 Passed: 100% Compliant with Active IRN! Stage 2 is unlocked — click "Stage 2: Commit to Lakehouse" to persist.', 'success');
+                    } else {
+                        showToast('🎉 Stage 1 Passed: 100% IRN Compliant! Next, click "🚀 Generate IRN" in AI Copilot (Sheet 2) to unlock Stage 2.', 'info');
+                    }
                 } else {
                     if (typeof blockStage2 === 'function') blockStage2(pipelineData.metrics);
                     showToast(`⚠️ Stage 1: Invoices are ${compRate}% Compliant (${errCount} error(s)). Stage 2 is LOCKED until 100% IRN Compliant. Resolve errors with Copilot (Sheet 2).`, 'warning');
@@ -7537,6 +7594,13 @@ async function fetchRawFiles() {
                 } else {
                     anomStatusEl.innerHTML = `<span style="color:#10b981; font-weight:700;">🛡️ Clean (0 Anomaly)</span>`;
                 }
+            }
+
+            // Buyer Counterparty & ITC Risk Status
+            const bRisk = metrics.buyer_risk || {};
+            const bRiskEl = document.getElementById('finBuyerRiskStatus');
+            if (bRiskEl) {
+                bRiskEl.innerHTML = bRisk.status_badge || '<span style="color:#10b981; font-weight:700;">🟢 Low Risk (Eligible)</span>';
             }
 
             // Financial valuations
@@ -7766,6 +7830,65 @@ async function fetchRawFiles() {
             document.getElementById('diffCleanPane').textContent = cleanStr;
         }
 
+        // Direct Action to Accept AI Sentinel Recommended HSN and unlock Stage 2
+        function applyDirectHsnRecommendation(rectHsn, taxRate) {
+            const rawText = rawJsonEditor.value.trim();
+            if (!rawText) return;
+            try {
+                let payload = JSON.parse(rawText);
+                let modified = false;
+                const rateVal = parseFloat(taxRate) || 18.0;
+
+                const patchItems = (items) => {
+                    if (!Array.isArray(items)) return;
+                    items.forEach(itm => {
+                        itm.hsn = rectHsn;
+                        itm.hsncd = rectHsn;
+                        if (itm.gstrate !== undefined) itm.gstrate = rateVal;
+                        
+                        // Recalculate taxes
+                        const qty = parseFloat(itm.qty) || 1.0;
+                        const uRate = parseFloat(itm.unitrate || itm.unit_rate || itm.unitprice || 0) || 0;
+                        const gross = qty * uRate;
+                        const disc = parseFloat(itm.discount || 0) || 0;
+                        const assval = gross - disc;
+                        const taxAmt = Math.round(assval * (rateVal / 100.0) * 100) / 100;
+                        
+                        itm.grossamt = gross.toFixed(2);
+                        itm.assval = assval.toFixed(2);
+                        if (itm.igstval !== undefined || itm.igstamt !== undefined) {
+                            itm.igstval = taxAmt.toFixed(2);
+                            itm.igstamt = taxAmt.toFixed(2);
+                        } else {
+                            const halfTax = (taxAmt / 2.0).toFixed(2);
+                            if (itm.cgstval !== undefined) itm.cgstval = halfTax;
+                            if (itm.cgstamt !== undefined) itm.cgstamt = halfTax;
+                            if (itm.sgstval !== undefined) itm.sgstval = halfTax;
+                            if (itm.sgstamt !== undefined) itm.sgstamt = halfTax;
+                        }
+                        itm.totitemval = (assval + taxAmt).toFixed(2);
+                        modified = true;
+                    });
+                };
+
+                if (payload.itemdtls) patchItems(payload.itemdtls);
+                if (payload.einvoices && Array.isArray(payload.einvoices)) {
+                    payload.einvoices.forEach(inv => {
+                        if (inv.itemdtls) patchItems(inv.itemdtls);
+                    });
+                }
+
+                if (modified) {
+                    rawJsonEditor.value = JSON.stringify(payload, null, 2);
+                    showToast(`✨ Applied Sentinel Recommended HSN '${rectHsn}' (${rateVal}% GST). Re-screening invoice...`, 'success');
+                    handleStage1Validation();
+                }
+            } catch (e) {
+                console.error("Error applying HSN recommendation:", e);
+                showToast("Failed to apply recommendation: " + e.message, "error");
+            }
+        }
+
         // Render NIC Rule Validation Cards (Tab 3)
         function renderValidationCards(report) {
             const container = document.getElementById('validationCardsContainer');
@@ -7785,6 +7908,65 @@ async function fetchRawFiles() {
                 const statusBadge = isValid 
                     ? '<span class="pill-status status-valid">APPROVED (VALID)</span>'
                     : '<span class="pill-status status-invalid">REJECTED (FAIL)</span>';
+
+                // 1. Structured Buyer Risk Factor & Reciprocal ITC Assessment Card
+                const bRisk = invRes.buyer_risk_profile || {};
+                const bRiskScore = bRisk.risk_score != null ? bRisk.risk_score : 10;
+                const bRiskLevel = bRisk.risk_level || 'LOW';
+                let bRiskBadgeClass = 'status-valid';
+                if (bRiskLevel === 'CRITICAL' || bRiskLevel === 'HIGH') bRiskBadgeClass = 'status-invalid';
+                else if (bRiskLevel === 'MODERATE') bRiskBadgeClass = 'status-warning';
+
+                const bRiskHtml = `
+                    <div class="buyer-risk-assessment-block" style="margin-bottom: 12px; padding: 12px 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 0.95rem;">🏢</span>
+                                <span style="font-weight: 700; font-size: 0.85rem; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.04em;">Buyer Risk Factor &amp; Reciprocal ITC Assessment</span>
+                            </div>
+                            <span class="pill-status ${bRiskBadgeClass}" style="font-size: 0.75rem; padding: 3px 10px;">${escapeHtml(bRisk.risk_badge || '🟢 LOW RISK')} (Score: ${bRiskScore}/100)</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; font-size: 0.8rem; margin-bottom: 8px;">
+                            <div><span style="color: var(--text-dim);">Buyer GSTIN:</span> <strong style="color: #f8fafc; font-family: 'JetBrains Mono', monospace;">${escapeHtml(bRisk.buyer_gstin || 'URP')}</strong></div>
+                            <div><span style="color: var(--text-dim);">Legal Name:</span> <strong style="color: #e2e8f0;">${escapeHtml(bRisk.buyer_name || 'Buyer Entity')}</strong></div>
+                            <div><span style="color: var(--text-dim);">Place of Supply (POS):</span> <strong style="color: #e2e8f0;">State ${escapeHtml(bRisk.pos || '-')}</strong> ${bRisk.pos === (bRisk.buyer_gstin||'').substring(0,2) ? '<span style="color:#10b981; font-weight:600;">(✅ Matches State)</span>' : '<span style="color:#f59e0b; font-weight:600;">(⚠️ POS Discrepancy)</span>'}</div>
+                            <div><span style="color: var(--text-dim);">ITC Claim Status:</span> ${bRisk.itc_eligibility === 'ELIGIBLE_100_PERCENT' ? '<strong style="color:#10b981;">✅ 100% Eligible (Sec 16(2))</strong>' : '<strong style="color:#f43f5e;">🚫 Blocked Credit (Sec 17(5))</strong>'}</div>
+                        </div>
+                        ${(bRisk.risk_factors && bRisk.risk_factors.length > 0) ? `
+                            <div style="font-size: 0.76rem; color: #94a3b8; background: rgba(0,0,0,0.3); padding: 6px 10px; border-radius: 6px; display: flex; flex-direction: column; gap: 3px;">
+                                ${bRisk.risk_factors.map(f => `<div>${escapeHtml(f)}</div>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                // 2. Module 2 Sentinel HSN Pre-Flight Screening Alert Card
+                let hsnScreeningHtml = '';
+                if (invRes.hsn_screening_alert && invRes.hsn_screening_alert.status === 'FLAGGED') {
+                    const alertData = invRes.hsn_screening_alert;
+                    hsnScreeningHtml = `
+                        <div class="hsn-sentinel-screening-card" style="margin-bottom: 14px; padding: 14px 16px; background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.5); border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 1.1rem;">🛡️</span>
+                                    <span style="font-weight: 800; font-size: 0.88rem; color: #f43f5e; text-transform: uppercase; letter-spacing: 0.05em;">Module 2 Sentinel HSN Screening Alert</span>
+                                </div>
+                                <span class="pill-status status-invalid" style="font-weight: 800; font-size: 0.75rem; padding: 3px 10px;">IRN GENERATION GATED (LOCKED)</span>
+                            </div>
+                            <div style="font-size: 0.82rem; color: #fecdd3; margin-bottom: 10px; line-height: 1.5;">
+                                ${escapeHtml(alertData.description || 'Declared HSN code flagged with high misclassification risk before transmission to NIC portal.')}
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <button type="button" class="copilot-action-btn" onclick="applyDirectHsnRecommendation('${escapeHtml(alertData.recommended_hsn)}', ${alertData.statutory_rate || 18.0})" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; padding: 7px 16px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 700; box-shadow: 0 0 14px rgba(16, 185, 129, 0.4);">
+                                    ✨ Accept &amp; Apply Recommended HSN (${escapeHtml(alertData.recommended_hsn)})
+                                </button>
+                                <button type="button" class="copilot-action-btn" onclick="switchWorkbenchSheet('copilot'); sendCopilotQuickMessage('Fix HSN from product description');" style="background: rgba(99, 102, 241, 0.25); border: 1px solid #6366f1; color: #c7d2fe; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600;">
+                                    🤖 Screen with AI Copilot
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
 
                 let errorBlocks = '';
                 if (invRes.errors && invRes.errors.length > 0) {
@@ -7860,6 +8042,8 @@ async function fetchRawFiles() {
                         </div>
                     </div>
                     <div>
+                        ${bRiskHtml}
+                        ${hsnScreeningHtml}
                         ${errorBlocks}
                     </div>
                 `;
@@ -8757,6 +8941,14 @@ async function fetchRawFiles() {
             sendCopilotQuickMessage(`Vehicle is ${vehNum}`);
         }
 
+        // Apply Direct Invoice Number Change from Error Card
+        function applyDirectDocnoChange(inputId) {
+            const input = document.getElementById(inputId);
+            const val = input ? input.value.trim() : 'INV-2026-001';
+            switchRightPanelView('copilot');
+            sendCopilotQuickMessage(`Set Invoice No: ${val}`);
+        }
+
         // Apply Direct HSN Change from Error Card
         function applyDirectHsnChange(inputId) {
             const input = document.getElementById(inputId);
@@ -8765,14 +8957,72 @@ async function fetchRawFiles() {
             sendCopilotQuickMessage(`Set HSN: ${hsnVal}`);
         }
 
+        // Statutory HSN Chapter Lookup Dictionary
+        function getHsnChapterInfo(hsn) {
+            const clean = String(hsn || '').replace(/[^0-9]/g, '');
+            const ch = clean.substring(0, 2);
+            const chapters = {
+                "01": "Live Animals",
+                "02": "Meat & Edible Meat Offal",
+                "03": "Fish & Crustaceans",
+                "04": "Dairy Produce, Natural Honey",
+                "07": "Edible Vegetables & Roots",
+                "08": "Edible Fruit & Nuts",
+                "09": "Coffee, Tea, Mate & Spices",
+                "10": "Cereals & Agro Grains",
+                "11": "Milling Industry Products, Starches",
+                "12": "Oil Seeds & Oleaginous Fruits",
+                "17": "Sugars & Sugar Confectionery",
+                "19": "Preparations of Cereals, Flour, Starch",
+                "27": "Mineral Fuels, Mineral Oils, Waxes",
+                "28": "Inorganic Chemicals, Rare-Earth Metals",
+                "29": "Organic Chemicals",
+                "30": "Pharmaceutical Products",
+                "39": "Plastics & Articles Thereof",
+                "40": "Rubber & Articles Thereof",
+                "48": "Paper & Paperboard",
+                "50": "Silk",
+                "52": "Cotton & Cotton Yarns",
+                "54": "Man-Made Filaments",
+                "55": "Man-Made Staple Fibres",
+                "61": "Apparel & Clothing, Knitted or Crocheted",
+                "62": "Apparel & Clothing, Not Knitted / Woven",
+                "64": "Footwear, Gaiters & Parts",
+                "72": "Iron & Steel Raw",
+                "73": "Articles of Iron or Steel (Fittings, Pipes)",
+                "76": "Aluminium & Articles Thereof",
+                "84": "Machinery, Mechanical Appliances & Reactor Parts",
+                "85": "Electrical Machinery, Equipment & Audio/Video Parts",
+                "87": "Vehicles & Parts (Automotive / Trailers)",
+                "90": "Optical, Photographic, Measuring, Medical Instruments",
+                "94": "Furniture, Bedding, Mattresses, Luminaires",
+                "99": "Services (SAC Schedule)"
+            };
+            return {
+                code: ch || '--',
+                name: chapters[ch] || `Tariff Chapter ${ch}`
+            };
+        }
+
         function updateCopilotHsnCalc(el) {
             const bar = el.closest('.copilot-hsn-pricing-bar');
             if (!bar) return;
-            const rateInp = bar.querySelector('input[data-field="rate"]');
-            const qtyInp = bar.querySelector('input[data-field="qty"]');
-            const taxInp = bar.querySelector('input[data-field="taxval"]');
+            const hsnInp = bar.querySelector('input[data-field="hsn"]') || bar.querySelector('input.copilot-inline-hsn-input');
+            const rateInp = bar.querySelector('input[data-field="rate"]') || bar.querySelector('input.copilot-inline-rate-input');
+            const qtyInp = bar.querySelector('input[data-field="qty"]') || bar.querySelector('input.copilot-inline-qty-input');
+            const taxInp = bar.querySelector('input[data-field="taxval"]') || bar.querySelector('input.copilot-inline-tax-input');
             const badge = bar.querySelector('.copilot-calc-summary-badge');
+            const chNum = bar.querySelector('.hsn-ch-num');
+            const chName = bar.querySelector('.hsn-ch-name');
             
+            // 1. Dynamic Chapter Update
+            if (hsnInp) {
+                const info = getHsnChapterInfo(hsnInp.value);
+                if (chNum) chNum.textContent = info.code;
+                if (chName) chName.textContent = info.name;
+            }
+
+            // 2. Dynamic Rate, Qty, Taxable Math Update
             let rate = parseFloat(rateInp ? rateInp.value : 0) || 0;
             let qty = parseFloat(qtyInp ? qtyInp.value : 0) || 0;
             
@@ -8782,7 +9032,7 @@ async function fetchRawFiles() {
                     rate = Math.round((taxVal / qty) * 100) / 100;
                     if (rateInp) rateInp.value = rate.toFixed(2);
                 }
-            } else {
+            } else if (el === rateInp || el === qtyInp) {
                 const totalTaxable = Math.round(rate * qty * 100) / 100;
                 if (taxInp) taxInp.value = totalTaxable.toFixed(2);
             }
@@ -8790,7 +9040,7 @@ async function fetchRawFiles() {
             const gstAmt = Math.round(curTaxable * 0.18 * 100) / 100;
             const totLine = Math.round((curTaxable + gstAmt) * 100) / 100;
             if (badge) {
-                badge.innerHTML = `GST 18% (₹${gstAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}) ➔ Total: ₹${totLine.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+                badge.innerHTML = `GST 18% (+₹${gstAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}) ➔ Total: ₹${totLine.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
             }
         }
 
@@ -8803,10 +9053,55 @@ async function fetchRawFiles() {
             const qtyInp = parentBar.querySelector('input[data-field="qty"]') || parentBar.querySelector('input.copilot-inline-qty-input');
             const taxInp = parentBar.querySelector('input[data-field="taxval"]') || parentBar.querySelector('input.copilot-inline-tax-input');
             
-            const hsnVal = (hsnInp ? hsnInp.value.trim() : '') || '85011013';
-            const rateVal = (rateInp ? rateInp.value.trim() : '') || '10000.00';
-            const qtyVal = (qtyInp ? qtyInp.value.trim() : '') || '5.0';
+            const hsnVal = (hsnInp ? hsnInp.value.trim() : '') || '84451910';
+            const rateVal = (rateInp ? rateInp.value.trim() : '') || '150000.00';
+            const qtyVal = (qtyInp ? qtyInp.value.trim() : '') || '1.0';
             const taxVal = (taxInp ? taxInp.value.trim() : '') || (parseFloat(rateVal) * parseFloat(qtyVal)).toFixed(2);
+
+            // Directly patch customer raw editor payload and re-screen
+            try {
+                if (rawJsonEditor && rawJsonEditor.value.trim()) {
+                    const parsed = JSON.parse(rawJsonEditor.value.trim());
+                    const target = (parsed.einvoices && parsed.einvoices[0]) ? parsed.einvoices[0] : (Array.isArray(parsed) ? parsed[0] : parsed);
+                    const itmList = target.itemdtls || target.items || [];
+                    if (itmList.length > 0) {
+                        const itm0 = itmList[0];
+                        itm0.hsncd = hsnVal;
+                        itm0.hsn = hsnVal;
+                        itm0.qty = parseFloat(qtyVal).toFixed(3);
+                        itm0.unitrate = parseFloat(rateVal).toFixed(2);
+                        const numTax = parseFloat(taxVal);
+                        itm0.assamt = numTax.toFixed(2);
+                        const isInter = (target.supplierdt1?.supplier_gstin?.substring(0,2) || '') !== (target.buyerdt1?.pos || target.buyerdt1?.buyer_gstin?.substring(0,2) || '');
+                        const gstRate = 18.0;
+                        const taxAmt = Math.round(numTax * (gstRate / 100) * 100) / 100;
+                        const totItem = Math.round((numTax + taxAmt) * 100) / 100;
+                        if (isInter) {
+                            itm0.igstrt = gstRate.toFixed(2);
+                            itm0.igstamt = taxAmt.toFixed(2);
+                            itm0.cgstrt = "0.00"; itm0.cgstamt = "0.00";
+                            itm0.sgstrt = "0.00"; itm0.sgstamt = "0.00";
+                        } else {
+                            const halfRate = gstRate / 2;
+                            const halfTax = Math.round(taxAmt / 2 * 100) / 100;
+                            itm0.cgstrt = halfRate.toFixed(2); itm0.cgstamt = halfTax.toFixed(2);
+                            itm0.sgstrt = halfRate.toFixed(2); itm0.sgstamt = halfTax.toFixed(2);
+                            itm0.igstrt = "0.00"; itm0.igstamt = "0.00";
+                        }
+                        itm0.totitemval = totItem.toFixed(2);
+                        if (target.valdt1) {
+                            target.valdt1.assval = numTax.toFixed(2);
+                            target.valdt1.totinvval = totItem.toFixed(2);
+                            if (isInter) target.valdt1.igstval = taxAmt.toFixed(2);
+                            else { target.valdt1.cgstval = (taxAmt/2).toFixed(2); target.valdt1.sgstval = (taxAmt/2).toFixed(2); }
+                        }
+                        rawJsonEditor.value = JSON.stringify(parsed, null, 2);
+                        validateJsonInput();
+                    }
+                }
+            } catch (err) {
+                console.warn('Direct editor patch err:', err);
+            }
             
             sendCopilotQuickMessage(`Set HSN: ${hsnVal}, Rate: ${rateVal}, Qty: ${qtyVal}, Taxable Value: ${taxVal}`);
         }
@@ -8831,6 +9126,7 @@ async function fetchRawFiles() {
         const isBuyerGstJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('buyer gstin') || s.includes('urp')));
         const isPinJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('pin')));
         const isStateJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('state')));
+        const isDocnoJustPatched = Boolean(data.patch_applied && patchSummary.some(s => s.includes('invoice number') || s.includes('docno')));
 
         if (isDateJustPatched) handledTypes.add('date');
         if (isVehJustPatched) handledTypes.add('vehicle');
@@ -8839,6 +9135,7 @@ async function fetchRawFiles() {
         if (isBuyerGstJustPatched) handledTypes.add('buyer_gstin');
         if (isPinJustPatched) handledTypes.add('pin');
         if (isStateJustPatched) handledTypes.add('state');
+        if (isDocnoJustPatched) handledTypes.add('docno');
 
         // Check if vehicle in payload is ALREADY valid
         const currVeh = (targetInv.ewbdt1 && targetInv.ewbdt1.veh_number) || targetInv.veh_number || '';
@@ -8854,6 +9151,43 @@ async function fetchRawFiles() {
             replyLower.includes('invoice is 100% compliant with active irn') ||
             patchSummary.some(s => s.includes('generated official nic irn') || s.includes('irn:'))
         );
+
+        if (hasActiveIrn) {
+            activeIrnGenerated = true;
+            if (typeof unlockStage2 === 'function') unlockStage2(data.metrics, true);
+        }
+
+        // Check if doc date in payload is ALREADY valid (within 2 days of today or compliant)
+        const rawDocDt = (targetInv.docdt1 && (targetInv.docdt1.docdt || targetInv.docdt1.doc_date)) || targetInv.docdt || targetInv.doc_date || '';
+        let isDateValid = false;
+        if (rawDocDt) {
+            try {
+                let pDate = null;
+                if (/^\d{2}[\/\-.]\d{2}[\/\-.]\d{4}$/.test(rawDocDt)) {
+                    const parts = rawDocDt.split(/[\/\-.]/);
+                    pDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                } else if (/^\d{4}[\/\-.]\d{2}[\/\-.]\d{2}$/.test(rawDocDt)) {
+                    pDate = new Date(rawDocDt);
+                }
+                if (pDate && !isNaN(pDate.getTime())) {
+                    const now = new Date();
+                    const diffDays = Math.abs((now - pDate) / (1000 * 60 * 60 * 24));
+                    if (diffDays <= 2.1) {
+                        isDateValid = true;
+                    }
+                }
+            } catch (e) {}
+        }
+        if (isDateJustPatched) {
+            handledTypes.add('date');
+        }
+        // Check if invoice number (docno) in payload is ALREADY valid per NIC Rule 2144
+        const rawDocNo = (targetInv.docdt1 && (targetInv.docdt1.docno || targetInv.docdt1.document_number)) || targetInv.docno || targetInv.document_number || '';
+        const cleanDocNo = String(rawDocNo).trim();
+        const isDocNoValid = cleanDocNo.length > 0 && cleanDocNo.length <= 16 && /^[A-Za-z1-9][A-Za-z0-9/-]*$/.test(cleanDocNo);
+        if (isDocnoJustPatched) {
+            handledTypes.add('docno');
+        }
 
         // Check 100% compliance
         const isFullyCompliant = Boolean(
@@ -8897,13 +9231,15 @@ async function fetchRawFiles() {
         // Detect active focus topic strictly:
         // Priority 1: Direct action suggestions provided by the backend resolver for this turn
         let activeTopic = null;
-        if (!isPinJustPatched && !isStateJustPatched && actions.some(a => /set (?:supplier|buyer)?\s*(?:pin|state):|pin\s*:\s*\d+/i.test(a))) {
+        if (actions.some(a => /set (?:supplier|buyer)?\s*(?:pin|state):|pin\s*:\s*\d+/i.test(a))) {
             activeTopic = 'pin_state';
-        } else if (!isSupGstJustPatched && actions.some(a => /my gstin is|supplier gstin/i.test(a))) {
+        } else if (!isSupGstJustPatched && actions.some(a => /^(?:my gstin is|set supplier gstin:)/i.test(a.trim()))) {
             activeTopic = 'sup_gstin';
         } else if (!isBuyerGstJustPatched && actions.some(a => /buyer gstin is|buyer is urp|set buyer gstin/i.test(a))) {
             activeTopic = 'buyer_gstin';
-        } else if (!isDateJustPatched && actions.some(a => /change date to|set date:/i.test(a))) {
+        } else if (!isDocnoJustPatched && actions.some(a => /set invoice no|invoice number|docno/i.test(a))) {
+            activeTopic = 'docno';
+        } else if (!isDateJustPatched && actions.some(a => /change date to|set date:|today|yesterday/i.test(a))) {
             activeTopic = 'date';
         } else if (!isHsnJustPatched && actions.some(a => /set hsn:|fix hsn/i.test(a))) {
             activeTopic = 'hsn';
@@ -8921,13 +9257,15 @@ async function fetchRawFiles() {
 
         // Priority 2: Inquire tailPrompt if actions list didn't directly determine topic
         if (!activeTopic) {
-            if (!isPinJustPatched && !isStateJustPatched && !tailPrompt.includes('aligned!') && !tailPrompt.includes('updated!') && (tailPrompt.includes('postal pin') || tailPrompt.includes('pincode conflict') || tailPrompt.includes('pincode mismatch') || tailPrompt.includes('taxpayer check on'))) {
+            if (tailPrompt.includes('postal pin') || tailPrompt.includes('pincode conflict') || tailPrompt.includes('pincode mismatch') || tailPrompt.includes('taxpayer check on') || tailPrompt.includes('pincode on invoice') || (tailPrompt.includes('pincode') && tailPrompt.includes('conflict'))) {
                 activeTopic = 'pin_state';
-            } else if (!isSupGstJustPatched && (tailPrompt.includes('supplier gstin') || tailPrompt.includes('my gstin is') || tailPrompt.includes('15-digit supplier gstin'))) {
+            } else if (!isSupGstJustPatched && (tailPrompt.includes('15-digit supplier gstin') || tailPrompt.includes('supplier gstin number') || tailPrompt.includes('proper 15-digit supplier gstin'))) {
                 activeTopic = 'sup_gstin';
             } else if (!isBuyerGstJustPatched && (tailPrompt.includes('buyer gstin') || tailPrompt.includes('recipient gstin') || tailPrompt.includes('15-digit buyer gstin'))) {
                 activeTopic = 'buyer_gstin';
-            } else if (!isDateJustPatched && (tailPrompt.includes('document date') || tailPrompt.includes('change the document date') || tailPrompt.includes('invoice date') || tailPrompt.includes('date to within'))) {
+            } else if (!isDocnoJustPatched && (tailPrompt.includes('invoice number') || tailPrompt.includes('valid invoice number') || tailPrompt.includes('docno') || tailPrompt.includes('document number'))) {
+                activeTopic = 'docno';
+            } else if (!isDateJustPatched && (tailPrompt.includes('document date') || tailPrompt.includes('change the document date') || tailPrompt.includes('invoice date') || tailPrompt.includes('date to within') || tailPrompt.includes('docdt'))) {
                 activeTopic = 'date';
             } else if (!isHsnJustPatched && (tailPrompt.includes('product hsn') || tailPrompt.includes('wrong hsn code') || tailPrompt.includes('wrong / incomplete hsn') || tailPrompt.includes('hsn intelligence'))) {
                 activeTopic = 'hsn';
@@ -8967,10 +9305,40 @@ async function fetchRawFiles() {
         }
 
         // Box Renderers
+        const renderDocnoBox = () => {
+            if (isDocnoJustPatched || renderedBoxCount > 0 || handledTypes.has('docno')) return;
+            const docnoAct = findAction(a => /set invoice no|invoice number|docno/i.test(a));
+            const hasDocnoPrompt = Boolean(activeTopic === 'docno' || docnoAct || tailPrompt.includes('invoice number') || tailPrompt.includes('valid invoice number') || tailPrompt.includes('docno') || tailPrompt.includes('document number'));
+            if (hasDocnoPrompt) {
+                handledTypes.add('docno');
+                renderedBoxCount++;
+                let defDocno = 'INV-2026-001';
+                if (docnoAct) {
+                    const m = docnoAct.match(/(?:Set Invoice No:\s*|invoice number\s*[:=]?\s*)([A-Za-z0-9/-]+)/i);
+                    if (m) defDocno = m[1];
+                } else if (cleanDocNo) {
+                    defDocno = cleanDocNo.replace(/^[^A-Za-z1-9]+/, '').replace(/[^0-9A-Za-z/-]/g, '').slice(0, 16) || 'INV-2026-001';
+                }
+                barsHtml += `
+                    <div class="copilot-inline-suggestion-bar copilot-docno-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 12px 14px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; flex-direction: column; gap: 8px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">📄 Invoice Number (NIC Statutory Rule 2144):</span>
+                            <span style="font-size: 0.72rem; color: #38bdf8; font-family: 'JetBrains Mono', monospace; background: rgba(56, 189, 248, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3);">Max 16 Chars (No Leading 0/-/)</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <input type="text" class="copilot-inline-custom-input copilot-inline-docno-input" placeholder="e.g. INV-2026-001" value="${escapeHtml(defDocno)}" maxlength="16" oninput="this.value = this.value.toUpperCase().replace(/[^0-9A-Z/-]/g, '')" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotInlineInput(this, 'Set Invoice No: ');}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; width: 160px; font-weight: 700;">
+                            <button type="button" class="copilot-action-btn" onclick="submitCopilotInlineInput(this, 'Set Invoice No: ')" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;">✨ Apply Invoice No</button>
+                            <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Set Invoice No: ${escapeHtml(defDocno)}')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer;">⚡ Use ${escapeHtml(defDocno)}</button>
+                        </div>
+                    </div>
+                `;
+            }
+        };
+
         const renderDateBox = () => {
-            if (renderedBoxCount > 0 || handledTypes.has('date') || isDateJustPatched) return;
+            if (isDateJustPatched || renderedBoxCount > 0 || handledTypes.has('date')) return;
             const dateAct = findAction(a => /change date to|set date:|today|yesterday/i.test(a));
-            const hasDatePrompt = Boolean(activeTopic === 'date' || dateAct || tailPrompt.includes('document date') || tailPrompt.includes('date to within') || tailPrompt.includes('change the document date'));
+            const hasDatePrompt = Boolean(activeTopic === 'date' || dateAct || tailPrompt.includes('document date') || tailPrompt.includes('date to within') || tailPrompt.includes('change the document date') || tailPrompt.includes('docdt') || tailPrompt.includes('set date:'));
             if (hasDatePrompt) {
                 handledTypes.add('date');
                 renderedBoxCount++;
@@ -8998,14 +9366,21 @@ async function fetchRawFiles() {
 
         const renderSupGstinBox = () => {
             if (renderedBoxCount > 0 || handledTypes.has('sup_gstin') || isSupGstJustPatched) return;
-            const supGstinAct = findAction(a => /my gstin is|supplier gstin/i.test(a));
+            if (activeTopic && activeTopic !== 'sup_gstin') return;
+
+            const supGstinAct = findAction(a => /^(?:my gstin is|set supplier gstin:)/i.test(a.trim()));
             const hasSupGstinPrompt = Boolean(
                 activeTopic === 'sup_gstin' ||
                 supGstinAct ||
-                tailPrompt.includes('supplier gstin') ||
-                tailPrompt.includes('my gstin is') ||
-                tailPrompt.includes('15-digit supplier gstin')
+                tailPrompt.includes('15-digit supplier gstin') ||
+                tailPrompt.includes('proper 15-digit supplier gstin')
             );
+
+            // Guard: If supplier GSTIN in payload is ALREADY valid 15-digits, never render unless explicitly in sup_gstin topic
+            const rawSupG = String((targetInv.supplierdt1 && targetInv.supplierdt1.supplier_gstin) || targetInv.supplier_gstin || targetInv.self_gstin || '').trim();
+            const isSupGstAlreadyValid = rawSupG.length === 15 && /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/i.test(rawSupG);
+            if (isSupGstAlreadyValid && activeTopic !== 'sup_gstin') return;
+
             if (hasSupGstinPrompt) {
                 handledTypes.add('sup_gstin');
                 renderedBoxCount++;
@@ -9124,35 +9499,55 @@ async function fetchRawFiles() {
                     firstItm = targetInv.items[0];
                 }
                 const prdName = (firstItm && (firstItm.prdnm || firstItm.prddesc)) ? (firstItm.prdnm || firstItm.prddesc) : 'Industrial Servo Motor';
-                const defQty = (firstItm && firstItm.qty !== undefined) ? firstItm.qty : '5.0';
-                let defUnitRate = (firstItm && (firstItm.unitprice || firstItm.unitrate || firstItm.unit_price)) ? (firstItm.unitprice || firstItm.unitrate || firstItm.unit_price) : '10000.00';
+                const defQty = (firstItm && firstItm.qty !== undefined) ? firstItm.qty : '1.0';
+                let defUnitRate = (firstItm && (firstItm.unitprice || firstItm.unitrate || firstItm.unit_price)) ? (firstItm.unitprice || firstItm.unitrate || firstItm.unit_price) : '150000.00';
                 let defTaxVal = (firstItm && (firstItm.assval !== undefined || firstItm.assamt !== undefined)) ? (firstItm.assval || firstItm.assamt) : (parseFloat(defQty) * parseFloat(defUnitRate)).toFixed(2);
+
+                const initCh = getHsnChapterInfo(defHsn);
+                const initTaxNum = parseFloat(String(defTaxVal).replace(/,/g, '')) || (parseFloat(defQty) * parseFloat(defUnitRate)) || 0;
+                let initGstRate = 18.0;
+                if (firstItm) {
+                    const rawIg = parseFloat(firstItm.igstrt || 0);
+                    const rawDual = parseFloat(firstItm.cgstrt || 0) + parseFloat(firstItm.sgstrt || 0);
+                    const rawG = parseFloat(firstItm.gstrate || 0);
+                    if (rawIg > 0.01) initGstRate = rawIg;
+                    else if (rawDual > 0.01) initGstRate = rawDual;
+                    else if (rawG > 0.01) initGstRate = rawG;
+                    else initGstRate = 18.0;
+                }
+                const initGstAmt = Math.round(initTaxNum * (initGstRate / 100) * 100) / 100;
+                const initTotLine = Math.round((initTaxNum + initGstAmt) * 100) / 100;
 
                 barsHtml += `
                     <div class="copilot-inline-suggestion-bar copilot-hsn-pricing-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 12px 14px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; flex-direction: column; gap: 8px;">
                         <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
-                            <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">📦 Product: <span style="color: #f1f5f9; font-weight: 600;">${prdName}</span></span>
-                            <span class="copilot-calc-summary-badge" style="font-size: 0.72rem; color: #34d399; font-family: 'JetBrains Mono', monospace; background: rgba(52, 211, 153, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(52, 211, 153, 0.3);">GST 18% (₹9,000.00) ➔ Total: ₹59,000.00</span>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="font-size: 0.84rem; font-weight: 700; color: #38bdf8;">📦 Product: <span style="color: #f1f5f9; font-weight: 600;">${escapeHtml(prdName)}</span></span>
+                                <span class="copilot-hsn-chapter-badge" style="font-size: 0.74rem; font-weight: 700; color: #c084fc; font-family: 'JetBrains Mono', monospace; background: rgba(192, 132, 252, 0.12); padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(192, 132, 252, 0.35); display: inline-flex; align-items: center; gap: 5px;">
+                                    🏷️ Chapter <span class="hsn-ch-num">${escapeHtml(initCh.code)}</span>: <span class="hsn-ch-name">${escapeHtml(initCh.name)}</span>
+                                </span>
+                            </div>
+                            <span class="copilot-calc-summary-badge" style="font-size: 0.74rem; color: #34d399; font-family: 'JetBrains Mono', monospace; background: rgba(52, 211, 153, 0.12); padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(52, 211, 153, 0.35); font-weight: 700;">GST ${initGstRate}% (+₹${initGstAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}) ➔ Total: ₹${initTotLine.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">HSN CODE</label>
-                                <input type="text" data-field="hsn" class="copilot-inline-hsn-input" placeholder="e.g. 85011013" value="${defHsn}" maxlength="8" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotHsnInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 95px;">
+                                <input type="text" data-field="hsn" class="copilot-inline-hsn-input" placeholder="e.g. 84451910" value="${escapeHtml(defHsn)}" maxlength="8" oninput="updateCopilotHsnCalc(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotHsnInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 95px; font-weight: 700;">
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">RATE / PRICE (₹)</label>
-                                <input type="number" step="any" data-field="rate" class="copilot-inline-rate-input" placeholder="e.g. 10000" value="${defUnitRate}" oninput="updateCopilotHsnCalc(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotHsnInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 110px;">
+                                <input type="number" step="any" data-field="rate" class="copilot-inline-rate-input" placeholder="e.g. 150000" value="${defUnitRate}" oninput="updateCopilotHsnCalc(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotHsnInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 110px;">
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">QTY</label>
-                                <input type="number" step="any" data-field="qty" class="copilot-inline-qty-input" placeholder="e.g. 5" value="${defQty}" oninput="updateCopilotHsnCalc(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotHsnInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 75px;">
+                                <input type="number" step="any" data-field="qty" class="copilot-inline-qty-input" placeholder="e.g. 1" value="${defQty}" oninput="updateCopilotHsnCalc(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotHsnInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 75px;">
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">TAXABLE VALUE (₹)</label>
-                                <input type="number" step="any" data-field="taxval" class="copilot-inline-tax-input" placeholder="e.g. 50000" value="${defTaxVal}" oninput="updateCopilotHsnCalc(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotHsnInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 125px;">
+                                <input type="number" step="any" data-field="taxval" class="copilot-inline-tax-input" placeholder="e.g. 150000" value="${defTaxVal}" oninput="updateCopilotHsnCalc(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotHsnInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 125px;">
                             </div>
                             <div style="display: flex; align-items: flex-end; padding-top: 14px; gap: 6px;">
-                                <button type="button" class="copilot-action-btn" onclick="submitCopilotHsnInput(this)" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; white-space: nowrap;">✨ Apply & Recalculate Tax</button>
+                                <button type="button" class="copilot-action-btn" onclick="submitCopilotHsnInput(this)" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; white-space: nowrap;">✨ Apply &amp; Recalculate Tax</button>
                                 <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Fix HSN from product description')" style="background: rgba(192, 132, 252, 0.2); border: 1px solid #c084fc; color: #e879f9; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap;">⚡ ML Lookup</button>
                             </div>
                         </div>
@@ -9162,10 +9557,18 @@ async function fetchRawFiles() {
         };
 
         const renderPinStateBox = () => {
-            if (renderedBoxCount > 0 || handledTypes.has('pin') || isPinJustPatched || isStateJustPatched) return;
+            if (renderedBoxCount > 0 || handledTypes.has('pin')) return;
             const pinAct = findAction(a => /set (?:supplier|buyer)?\s*pin:/i.test(a));
             const stAct = findAction(a => /set (?:supplier|buyer)?\s*state:/i.test(a));
-            const hasPinStatePrompt = Boolean(activeTopic === 'pin_state' || pinAct || stAct || (tailPrompt.includes('pincode') && tailPrompt.includes('conflict')) || (tailPrompt.includes('state') && tailPrompt.includes('pin') && !tailPrompt.includes('aligned!') && !tailPrompt.includes('updated!')) || tailPrompt.includes('postal pin & state'));
+            const hasPinStatePrompt = Boolean(
+                activeTopic === 'pin_state' ||
+                pinAct || stAct ||
+                (tailPrompt.includes('pincode') && tailPrompt.includes('conflict')) ||
+                tailPrompt.includes('pincode on invoice') ||
+                tailPrompt.includes('postal pin') ||
+                (tailPrompt.includes('state') && tailPrompt.includes('pin') && !tailPrompt.includes('aligned!') && !tailPrompt.includes('updated!')) ||
+                tailPrompt.includes('jurisdiction')
+            );
             if (hasPinStatePrompt) {
                 handledTypes.add('pin');
                 handledTypes.add('state');
@@ -9359,7 +9762,8 @@ async function fetchRawFiles() {
         };
 
         // 1. Render active focus topic FIRST
-        if (activeTopic === 'sup_gstin') renderSupGstinBox();
+        if (activeTopic === 'docno') renderDocnoBox();
+        else if (activeTopic === 'sup_gstin') renderSupGstinBox();
         else if (activeTopic === 'buyer_gstin') renderBuyerGstinBox();
         else if (activeTopic === 'date') renderDateBox();
         else if (activeTopic === 'hsn') renderHsnBox();
@@ -9371,22 +9775,24 @@ async function fetchRawFiles() {
         else if (activeTopic === 'tax_math') renderTaxMathBox();
 
         // 2. Fallback step-by-step sequence of unresolved issues (strictly one-by-one, aligned with get_friendly_next_step priority)
-        if (renderedBoxCount === 0) renderDateBox();
-        if (renderedBoxCount === 0) renderSupGstinBox();
-        if (renderedBoxCount === 0) renderBuyerGstinBox();
-        if (renderedBoxCount === 0) renderModeBox();
-        if (renderedBoxCount === 0) renderHsnBox();
-        if (renderedBoxCount === 0) renderVehicleBox();
-        if (renderedBoxCount === 0) renderPinStateBox();
-        if (renderedBoxCount === 0) renderSubsupplyBox();
-        if (renderedBoxCount === 0) renderTransporterBox();
-        if (renderedBoxCount === 0) renderTaxMathBox();
+        if (renderedBoxCount === 0 && !isDocnoJustPatched && (!isDocNoValid || actions.some(a => /invoice no|docno/i.test(a)))) renderDocnoBox();
+        if (renderedBoxCount === 0 && !isDateJustPatched && (!isDateValid || actions.some(a => /date/i.test(a)))) renderDateBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /pin|state/i.test(a)) || tailPrompt.includes('pincode') || tailPrompt.includes('postal pin') || tailPrompt.includes('conflict'))) renderPinStateBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /^(?:my gstin is|supplier gstin)/i.test(a.trim())) || tailPrompt.includes('15-digit supplier gstin'))) renderSupGstinBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /buyer gstin|urp/i.test(a)) || tailPrompt.includes('buyer gstin'))) renderBuyerGstinBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /hsn/i.test(a)) || tailPrompt.includes('hsn'))) renderHsnBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /vehicle/i.test(a)) || tailPrompt.includes('vehicle'))) renderVehicleBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /mode/i.test(a)) || tailPrompt.includes('mode'))) renderModeBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /subsupply/i.test(a)) || tailPrompt.includes('subsupply'))) renderSubsupplyBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /transporter/i.test(a)) || tailPrompt.includes('transporter'))) renderTransporterBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /tax\s*math/i.test(a)) || tailPrompt.includes('tax valuation'))) renderTaxMathBox();
 
         // 3. Fallback for any other "Set Key: Value" or "Key is Value" suggestion (strictly one-by-one)
         for (const act of actions) {
             const actL = act.toLowerCase();
             if (
-                (handledTypes.has('date') && (actL.includes('apply date') || actL.includes('set today') || actL.includes('change date to today') || actL.includes('change date to yesterday'))) ||
+                (handledTypes.has('docno') && (actL.includes('invoice no') || actL.includes('docno') || actL.includes('set invoice') || actL.includes('apply invoice no'))) ||
+                (handledTypes.has('date') && (actL.includes('apply date') || actL.includes('set today') || actL.includes('change date to today') || actL.includes('change date to yesterday') || actL.includes('set date:'))) ||
                 (handledTypes.has('vehicle') && (actL.includes('vehicle') || actL.includes('vahan') || actL.includes('ka01') || actL.includes('plate') || actL.includes('disable e-way'))) ||
                 (handledTypes.has('sup_gstin') && (actL.includes('my gstin is') || actL.includes('supplier gstin') || actL.includes('verify current gstin'))) ||
                 (handledTypes.has('buyer_gstin') && (actL.includes('buyer gstin is') || actL.includes('buyer is urp'))) ||
@@ -9498,17 +9904,19 @@ async function fetchRawFiles() {
             feed.appendChild(typingDiv);
             feed.scrollTop = feed.scrollHeight;
 
-            // 2. Prepare payload from raw editor or active state
-            // 2. Prepare payload from active state or raw editor
-            let currentPayload = currentLivePayload;
+            // 2. Prepare payload prioritizing active content in the raw JSON editor
+            let currentPayload = null;
             const rawEditorText = rawJsonEditor ? rawJsonEditor.value.trim() : '';
-            if (!currentPayload && rawEditorText) {
+            if (rawEditorText) {
                 try {
                     currentPayload = JSON.parse(rawEditorText);
                     if (!initialDirtyPayloadStr) initialDirtyPayloadStr = rawEditorText;
                 } catch (err) {
                     currentPayload = null;
                 }
+            }
+            if (!currentPayload) {
+                currentPayload = currentLivePayload;
             }
 
             try {
@@ -9671,8 +10079,20 @@ async function fetchRawFiles() {
                     const eCount = m.total_errors || 0;
                     const fCount = m.failed_invoices || 0;
                     if (cRate === 100 && eCount === 0 && fCount === 0) {
-                        if (typeof unlockStage2 === 'function') unlockStage2(m);
-                        showToast('🎉 Copilot Patch Applied: 100% IRN Compliant! Stage 2 is now UNLOCKED.', 'success');
+                        const hasIrnNow = Boolean(
+                            activeIrnGenerated ||
+                            (data.updated_payload && (data.updated_payload.irn || data.updated_payload.irn_status === 'GENERATED' || data.updated_payload.status === 'IRN_GENERATED')) ||
+                            (data.reply && (data.reply.toLowerCase().includes('irn generated successfully') || data.reply.toLowerCase().includes('active irn'))) ||
+                            (data.patch_summary && data.patch_summary.some(s => String(s).toLowerCase().includes('generated official nic irn')))
+                        );
+                        if (hasIrnNow) {
+                            activeIrnGenerated = true;
+                            if (typeof unlockStage2 === 'function') unlockStage2(m, true);
+                            showToast('🎉 Official NIC IRN Generated! Stage 2 is now UNLOCKED — Click Stage 2 to Commit to Lakehouse.', 'success');
+                        } else {
+                            if (typeof unlockStage2 === 'function') unlockStage2(m, false);
+                            showToast('⚡ 100% IRN Compliant! Click "🚀 Generate IRN" in AI Copilot to generate IRN and unlock Stage 2.', 'info');
+                        }
                     } else {
                         if (typeof blockStage2 === 'function') blockStage2(m);
                     }
@@ -9714,6 +10134,12 @@ async function fetchRawFiles() {
                 s1Btn.style.transform = 'scale(1.05)';
                 setTimeout(() => s1Btn.style.transform = 'scale(1)', 400);
             }
+            return;
+        }
+
+        if (!activeIrnGenerated) {
+            showToast('⛔ Lakehouse Commitment Blocked: An official NIC IRN has not been generated yet! Please click "🚀 Generate IRN" in AI Copilot (Sheet 2) first before committing to the permanent Lakehouse master.', 'warning');
+            if (typeof switchRightPanelView === 'function') switchRightPanelView('copilot');
             return;
         }
 

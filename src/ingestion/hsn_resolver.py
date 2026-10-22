@@ -12,6 +12,8 @@ from Template_Converters.hsn_resolver import (
     validate_nic_2day_rule,
     get_hsn_misclassification_scorer,
     score_hsn_prediction_risk,
+    get_hsn_audit_sentinel,
+    audit_and_rectify_line_item_sentinel,
 )
 
 __all__ = [
@@ -22,4 +24,6 @@ __all__ = [
     "validate_nic_2day_rule",
     "get_hsn_misclassification_scorer",
     "score_hsn_prediction_risk",
+    "get_hsn_audit_sentinel",
+    "audit_and_rectify_line_item_sentinel",
 ]
