@@ -4,45 +4,59 @@
   "failed_invoices": 0,
   "results": [
     {
-      "invoice_number": "INV-2026-OUTLIER",
+      "invoice_number": "INV-2026-RISK-01",
       "status": "VALID",
       "error_count": 0,
       "errors": [],
       "price_anomaly_report": {
-        "status": "CLEAN",
-        "has_anomalies": false,
-        "anomaly_count": 0,
-        "over_invoicing_count": 0,
+        "status": "CRITICAL_RISK",
+        "has_anomalies": true,
+        "anomaly_count": 1,
+        "over_invoicing_count": 1,
         "under_invoicing_count": 0,
         "typo_count": 0,
-        "max_risk_score": 0,
+        "max_risk_score": 96,
         "items_scanned": 1,
         "findings": [
           {
             "item_index": 1,
-            "prdnm": "Industrial Protective Safety Helmet",
-            "hsncd": "65061010",
+            "prdnm": "Luxury Passenger Motor Car",
+            "hsncd": "87032291",
             "uqc": "NOS",
-            "unitrate": 482.89,
-            "qty": 10.0,
-            "assamt": 4828.9,
-            "is_anomaly": false,
-            "anomaly_type": "NORMAL",
-            "severity": "NONE",
-            "risk_score": 0,
-            "benchmark_min": 150.0,
-            "benchmark_max": 2500.0,
-            "benchmark_median": 482.89,
-            "ratio_to_median": 1.0,
+            "unitrate": 2500000.0,
+            "qty": 1.0,
+            "assamt": 2500000.0,
+            "is_anomaly": true,
+            "anomaly_type": "OVER_INVOICING",
+            "severity": "CRITICAL",
+            "risk_score": 96,
+            "benchmark_min": 1.0,
+            "benchmark_max": 50000.0,
+            "benchmark_median": 250.0,
+            "ratio_to_median": 10000.0,
             "suggested_rate": null,
-            "reason": "Unit rate is within normal statutory benchmark range.",
-            "statutory_risk": "",
-            "benchmark_source": "HSN:65061010"
+            "reason": "Severe Over-Invoicing detected: Unit rate \u20b92,500,000.00/NOS is 50.0x higher than market maximum \u20b950,000.00/NOS.",
+            "statutory_risk": "\u26a0\ufe0f Potential Circular Trading / Fraudulent Input Tax Credit (ITC) claim prohibited under CGST Act Section 132(1)(b) & Rule 86A.",
+            "benchmark_source": "UQC:NOS"
           }
         ]
       },
-      "corrections_applied_count": 19,
+      "corrections_applied_count": 10,
       "corrections_applied": [
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].is_service",
+          "original": "is_service",
+          "corrected": "isservc",
+          "description": "Standardized non-compliant key 'is_service' to schema key 'isservc'"
+        },
+        {
+          "category": "KEY_NAME_NORMALIZATION",
+          "field": "itemdtls[1].assval",
+          "original": "assval",
+          "corrected": "assamt",
+          "description": "Standardized non-compliant key 'assval' to schema key 'assamt'"
+        },
         {
           "category": "KEY_NAME_NORMALIZATION",
           "field": "itemdtls[1].igstval",
@@ -66,52 +80,10 @@
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].unitprice",
-          "original": "unitprice",
-          "corrected": "unitrate",
-          "description": "Standardized non-compliant key 'unitprice' to schema key 'unitrate'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].unit_rate",
-          "original": "unit_rate",
-          "corrected": "unitrate",
-          "description": "Standardized non-compliant key 'unit_rate' to schema key 'unitrate'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].unit_price",
-          "original": "unit_price",
-          "corrected": "unitrate",
-          "description": "Standardized non-compliant key 'unit_price' to schema key 'unitrate'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].totamt",
-          "original": "totamt",
-          "corrected": "grossamt",
-          "description": "Standardized non-compliant key 'totamt' to schema key 'grossamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].assval",
-          "original": "assval",
-          "corrected": "assamt",
-          "description": "Standardized non-compliant key 'assval' to schema key 'assamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
           "field": "valdt1.assval",
           "original": "assval",
           "corrected": "assamt",
           "description": "Standardized non-compliant key 'assval' to schema key 'assamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.igstval",
-          "original": "igstval",
-          "corrected": "igstamt",
-          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
@@ -128,75 +100,43 @@
           "description": "Standardized non-compliant key 'sgstval' to schema key 'sgstamt'"
         },
         {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.cesval",
-          "original": "cesval",
-          "corrected": "cessamt",
-          "description": "Standardized non-compliant key 'cesval' to schema key 'cessamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "cgstval",
-          "original": "cgstval",
-          "corrected": "cgstamt",
-          "description": "Standardized non-compliant key 'cgstval' to schema key 'cgstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "sgstval",
-          "original": "sgstval",
-          "corrected": "sgstamt",
-          "description": "Standardized non-compliant key 'sgstval' to schema key 'sgstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "igstval",
-          "original": "igstval",
-          "corrected": "igstamt",
-          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "cesval",
-          "original": "cesval",
-          "corrected": "cessamt",
-          "description": "Standardized non-compliant key 'cesval' to schema key 'cessamt'"
-        },
-        {
-          "category": "FORMAT_NORMALIZATION",
-          "field": "docdt1.docno",
-          "original": "INV-2026-OUTLIER-01",
-          "corrected": "INV-2026-OUTLIER",
-          "description": "Removed invalid punctuation characters from document number per NIC Rule 2281"
-        },
-        {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
           "original": "2026-10-22",
           "corrected": "22-10-2026",
           "description": "Standardized date format from '2026-10-22' to '22-10-2026'"
+        },
+        {
+          "category": "PRICE_UNIT_RATE_ANOMALY",
+          "field": "itemdtls[1].unitrate",
+          "original": "2500000.0",
+          "corrected": "2500000.0",
+          "severity": "CRITICAL",
+          "anomaly_type": "OVER_INVOICING",
+          "risk_score": 96,
+          "description": "Severe Over-Invoicing detected: Unit rate \u20b92,500,000.00/NOS is 50.0x higher than market maximum \u20b950,000.00/NOS."
         }
       ],
       "buyer_risk_profile": {
-        "buyer_gstin": "29XYZAB5678C1Z2",
-        "buyer_name": "Karnataka Infrastructure & Mining Corp",
-        "buyer_state": "29",
-        "pos": "29",
+        "buyer_gstin": "27DEFGH5678J1ZI",
+        "buyer_name": "Defaulter Logistics Corp",
+        "buyer_state": "27",
+        "pos": "27",
         "supplier_state": "27",
         "is_urp": false,
-        "itc_eligibility": "ELIGIBLE_100_PERCENT",
-        "risk_score": 10,
-        "risk_level": "LOW",
-        "risk_badge": "\ud83d\udfe2 LOW RISK",
+        "itc_eligibility": "BLOCKED_SEC_17_5",
+        "risk_score": 50,
+        "risk_level": "HIGH",
+        "risk_badge": "\ud83d\udfe0 HIGH RISK",
         "risk_factors": [
-          "\u2705 Buyer GSTIN '29XYZAB5678C1Z2' conforms to statutory 15-character Modulo-36 standard.",
-          "\u2705 Place of Supply (POS: 29) matches Buyer GSTIN state jurisdiction (29).",
-          "\u2705 Interstate supply (27 -> 29) correctly routed through Integrated GST (IGST).",
-          "\u2705 Input Tax Credit (ITC) Claim: Fully eligible under CGST Act Section 16(2)."
+          "\u2705 Buyer GSTIN '27DEFGH5678J1ZI' conforms to statutory 15-character Modulo-36 standard.",
+          "\u2705 Place of Supply (POS: 27) matches Buyer GSTIN state jurisdiction (27).",
+          "\u2705 Intrastate supply (27) correctly routed through dual CGST + SGST.",
+          "\ud83d\udeab Section 17(5) Blocked Credit: Ineligible for ITC (Motor Vehicle / Personal Consumption restrictions)."
         ]
       }
     }
   ],
-  "total_price_anomalies": 0,
+  "total_price_anomalies": 1,
   "compliance_rate": 100.0
 }
