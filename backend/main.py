@@ -8,9 +8,10 @@ import os
 import json
 import time
 from pathlib import Path
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any, Union, Tuple
+import numpy as np
 import pandas as pd
-from fastapi import FastAPI, Query, HTTPException, Request, Response
+from fastapi import FastAPI, Query, HTTPException, Request, Response, UploadFile, File, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -187,6 +188,61 @@ async def search_hsn_intelligence(
     raise HTTPException(status_code=500, detail="HSNIntelligenceEngine could not be initialized.")
 
 
+@app.post("/api/v1/hsn-intelligence/batch-match")
+async def batch_match_hsn_intelligence(
+    request: Request,
+    chunk_size: int = Query(256, ge=32, le=1024),
+):
+    """
+    Dynamic Multi-Input HSN Semantic Matcher (REST Microservice Adaptor).
+    Processes arbitrary batches of item descriptions or structured invoice lines completely offline using vector geometry.
+    Computes parallel BLAS dot-products against the pre-computed in-memory matrix (N x 384) with sub-50ms CPU latency.
+    """
+    engine = get_hsn_intelligence_engine()
+    if engine is None:
+        raise HTTPException(status_code=500, detail="HSNIntelligenceEngine could not be initialized.")
+    try:
+        payload = await request.json()
+        resp = engine.ingest_rest_payload(payload=payload, chunk_size=chunk_size)
+        return resp
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Batch matching failed: {str(e)}")
+
+
+@app.post("/api/v1/hsn-intelligence/upload-spreadsheet")
+async def upload_spreadsheet_hsn_intelligence(
+    file: UploadFile = File(...),
+    description_col: Optional[str] = Query(None),
+    chunk_size: int = Query(256, ge=32, le=1024),
+):
+    """
+    Dynamic Spreadsheet Ingestion Adaptor (CSV / Excel).
+    Reads uploaded item descriptions, runs batch vector matching in blocks of 256-512,
+    and returns structured JSON with matched HSN codes, confidence percentages, and runners-up.
+    """
+    engine = get_hsn_intelligence_engine()
+    if engine is None:
+        raise HTTPException(status_code=500, detail="HSNIntelligenceEngine could not be initialized.")
+    try:
+        contents = await file.read()
+        is_excel = file.filename.endswith((".xlsx", ".xls"))
+        import io
+        stream = io.BytesIO(contents)
+        augmented_df = engine.spreadsheet_adaptor.process_file(
+            stream, description_col=description_col, chunk_size=chunk_size, is_excel=is_excel
+        )
+        # Convert NaN to None for JSON serialization
+        clean_records = augmented_df.replace({np.nan: None}).to_dict(orient="records")
+        return {
+            "filename": file.filename,
+            "total_rows": len(clean_records),
+            "rows": clean_records,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Spreadsheet processing failed: {str(e)}")
+
+
+
 def _pin_locked_hsn(res: Any, formatted: List[Dict[str, Any]], locked_code: str):
     """
     Re-orders retrieval candidates so the user-locked HSN is the top-1 candidate.
@@ -272,7 +328,10 @@ async def search_hsn(
         return {"query": raw_query, "matches": [], "gatekeeper": None, "latency_ms": 0.0, "model": "None"}
 
     # 1. Attempt High-Performance Contrastive Semantic Search
-    engine = get_hsn_search_engine()
+    if mode == "intelligence":
+        engine = get_hsn_intelligence_engine() or get_hsn_search_engine()
+    else:
+        engine = get_hsn_search_engine()
     scorer = get_hsn_misclass_scorer()
 
     if engine is not None:

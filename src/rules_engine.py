@@ -31,6 +31,10 @@ from src.rules.rules_engine import (
     StatutoryRulesEngine,
     calculate_gstin_checksum,
     verify_gstin_checksum,
+    OFFICIAL_UQC_MASTER,
+    COMMON_UQC_MAPPING,
+    classify_rule_2177_diagnostic,
+    normalize_uqc_statutory,
 )
 
 __all__ = [
@@ -61,5 +65,9 @@ __all__ = [
     "StatutoryRulesEngine",
     "calculate_gstin_checksum",
     "verify_gstin_checksum",
+    "OFFICIAL_UQC_MASTER",
+    "COMMON_UQC_MAPPING",
+    "classify_rule_2177_diagnostic",
+    "normalize_uqc_statutory",
 ]
 

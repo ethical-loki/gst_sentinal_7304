@@ -7,6 +7,7 @@ and Statutory Tariff Master for Lakehouse Ingestion & Validation.
 from Template_Converters.hsn_resolver import (
     get_hsn_master,
     get_hsn_search_engine,
+    get_hsn_intelligence_engine,
     lookup_hsn_code,
     validate_hsn_statutory,
     validate_nic_2day_rule,
@@ -14,11 +15,13 @@ from Template_Converters.hsn_resolver import (
     score_hsn_prediction_risk,
     get_hsn_audit_sentinel,
     audit_and_rectify_line_item_sentinel,
+    classify_rule_2176_diagnostic,
 )
 
 __all__ = [
     "get_hsn_master",
     "get_hsn_search_engine",
+    "get_hsn_intelligence_engine",
     "lookup_hsn_code",
     "validate_hsn_statutory",
     "validate_nic_2day_rule",
@@ -26,4 +29,5 @@ __all__ = [
     "score_hsn_prediction_risk",
     "get_hsn_audit_sentinel",
     "audit_and_rectify_line_item_sentinel",
+    "classify_rule_2176_diagnostic",
 ]

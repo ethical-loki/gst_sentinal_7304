@@ -7,6 +7,7 @@
   "trandt1": {
     "trancatg": "B2B",
     "reversecharge": "N",
+    "RevChrg": "N",
     "transactionmode": "REG",
     "igstonintra": "N"
   },
@@ -46,7 +47,8 @@
     "buyer_pin": "560002",
     "buyer_state": "29",
     "buyer_phone": "",
-    "buyer_email": ""
+    "buyer_email": "",
+    "pos": "29"
   },
   "itemdtls": [
     {

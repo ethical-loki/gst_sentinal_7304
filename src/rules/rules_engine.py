@@ -9,6 +9,93 @@ from datetime import datetime, date
 from decimal import Decimal
 from typing import Dict, Any, List, Optional, Set, Union
 
+try:
+    from src.ingestion.schemas import (
+        get_reverse_charge_rejection_reason,
+        get_ist_today,
+        classify_future_date_diagnostic,
+        classify_rule_2172_diagnostic,
+        classify_rule_2173_diagnostic,
+        classify_rule_2174_diagnostic,
+        validate_hsn_statutory,
+        classify_rule_2176_diagnostic,
+        classify_rule_2177_diagnostic,
+        classify_rule_2182_diagnostic,
+        classify_rule_2183_diagnostic,
+        classify_rule_2184_diagnostic,
+        classify_rule_2185_diagnostic,
+        classify_rule_2186_diagnostic,
+        classify_rule_2192_diagnostic,
+        classify_rule_2193_diagnostic,
+        classify_rule_2194_diagnostic,
+        classify_rule_2200_diagnostic,
+        classify_rule_2201_diagnostic,
+        classify_rule_2202_diagnostic,
+        classify_rule_2203_diagnostic,
+        classify_rule_2211_diagnostic,
+        classify_rule_2212_diagnostic,
+        normalize_uqc_statutory,
+        OFFICIAL_UQC_MASTER,
+        COMMON_UQC_MAPPING,
+    )
+except ImportError:
+    try:
+        from schemas import (
+            get_reverse_charge_rejection_reason,
+            get_ist_today,
+            classify_future_date_diagnostic,
+            classify_rule_2172_diagnostic,
+            classify_rule_2173_diagnostic,
+            classify_rule_2174_diagnostic,
+            validate_hsn_statutory,
+            classify_rule_2176_diagnostic,
+            classify_rule_2177_diagnostic,
+            classify_rule_2182_diagnostic,
+            classify_rule_2183_diagnostic,
+            classify_rule_2184_diagnostic,
+            classify_rule_2185_diagnostic,
+            classify_rule_2186_diagnostic,
+            classify_rule_2192_diagnostic,
+            classify_rule_2193_diagnostic,
+            classify_rule_2194_diagnostic,
+            classify_rule_2200_diagnostic,
+            classify_rule_2201_diagnostic,
+            classify_rule_2202_diagnostic,
+            classify_rule_2203_diagnostic,
+            classify_rule_2211_diagnostic,
+            classify_rule_2212_diagnostic,
+            normalize_uqc_statutory,
+            OFFICIAL_UQC_MASTER,
+            COMMON_UQC_MAPPING,
+        )
+    except ImportError:
+        get_reverse_charge_rejection_reason = None
+        get_ist_today = None
+        classify_future_date_diagnostic = None
+        classify_rule_2172_diagnostic = None
+        classify_rule_2173_diagnostic = None
+        classify_rule_2174_diagnostic = None
+        validate_hsn_statutory = None
+        classify_rule_2176_diagnostic = None
+        classify_rule_2177_diagnostic = None
+        classify_rule_2182_diagnostic = None
+        classify_rule_2183_diagnostic = None
+        classify_rule_2184_diagnostic = None
+        classify_rule_2185_diagnostic = None
+        classify_rule_2186_diagnostic = None
+        classify_rule_2192_diagnostic = None
+        classify_rule_2193_diagnostic = None
+        classify_rule_2194_diagnostic = None
+        classify_rule_2200_diagnostic = None
+        classify_rule_2201_diagnostic = None
+        classify_rule_2202_diagnostic = None
+        classify_rule_2203_diagnostic = None
+        classify_rule_2211_diagnostic = None
+        classify_rule_2212_diagnostic = None
+        normalize_uqc_statutory = None
+        OFFICIAL_UQC_MASTER = {}
+        COMMON_UQC_MAPPING = {}
+
 # ============================================================================
 # 1. STATE CODE MASTER & PINCODE PREFIX MAPPINGS
 # ============================================================================
@@ -139,7 +226,7 @@ MAJOR_INDIAN_PORTS: Set[str] = {
 
 ALLOWED_UQC: List[str] = [
     "BAG", "BAL", "BDL", "BKL", "BOU", "BOX", "BTL", "BUN", "CAN", "CBM",
-    "CCM", "CMS", "CTN", "DOZ", "DRM", "GMS", "GRS", "GYD", "KGS", "KLR",
+    "CCM", "CMS", "CTN", "DOZ", "DRM", "GGR", "GMS", "GRS", "GYD", "KGS", "KLR",
     "KME", "MLT", "MTR", "MTS", "NOS", "PAC", "PCS", "PRS", "QTL", "ROL",
     "SET", "SQF", "SQM", "SQY", "TBS", "TGM", "THD", "TON", "TUB", "UGS",
     "UNT", "YDS", "OTH"
@@ -153,6 +240,8 @@ ALLOWED_TRAN_CATG: List[str] = [
     "SEZWP",   # SEZ with payment of tax
     "SEZWOP",  # SEZ without payment of tax
     "EXP",     # Direct Export
+    "EXPWP",   # Export with payment of tax
+    "EXPWOP",  # Export without payment of tax
     "DEXP",    # Deemed Export
     "B2G",     # Business to Government
     "B2C"      # Business to Consumer
@@ -207,13 +296,13 @@ IRN_ERRORS: Dict[int, Dict[str, str]] = {
     },
     2162: {
         "message": "Reverse Charge is not applicable for this transaction",
-        "reason": "Trying to set Reverse Charges applicable for transactions other than B2B/SEZ",
-        "resolution": "Reverse charge can only be 'Y' for B2B/SEZ transactions"
+        "reason": "Trying to set Reverse Charges applicable for transactions other than B2B",
+        "resolution": "Reverse charge can only be 'Y' for B2B transactions"
     },
     2163: {
         "message": "The document date should not be future date.",
-        "reason": "Attempting to set future date for the document date",
-        "resolution": "Check the document date; docdt cannot be in the future"
+        "reason": "Document date exceeds current server calendar day in IST (Rule 2163)",
+        "resolution": "Set document date to today's date or earlier, ensure ERP date logic runs in IST (Asia/Kolkata), and parse strictly as DD/MM/YYYY."
     },
     2164: {
         "message": "Document date is older than 2 days from current date. IRN cannot be generated or changed.",
@@ -231,24 +320,24 @@ IRN_ERRORS: Dict[int, Dict[str, str]] = {
         "resolution": "Set CGST and SGST for intra-state, or set igstonintra='Y' if eligible"
     },
     2173: {
-        "message": "You have exceeded the limit of number of items",
-        "reason": "User passed payload with items exceeding allowed API limit",
-        "resolution": "Split invoice or use bulk/special API"
+        "message": "The number of objects passed in ItemList exceeds the maximum line-item limit supported by the API endpoint",
+        "reason": "ItemList contains more items than the API threshold (standard maximum 1,000 items)",
+        "resolution": "Cap ItemList at maximum 1,000 items, aggregate redundant line items sharing identical HsnCd, GstRt, and unit price, split into separate invoice chunks, or escalate non-splittable bulk invoices to NIC helpdesk"
     },
     2174: {
         "message": "For inter-state transaction, CGST and SGST amounts are not applicable; only IGST amount is applicable",
         "reason": "CGST and SGST taxes passed for inter-state transaction (supplier state != POS)",
-        "resolution": "Set only IGST amount for inter-state/SEZ transactions; CGST and SGST must be 0"
+        "resolution": "Supplier and POS states are different, so it is an inter-state sale. Clear CGST/SGST to 0.00 and pass the full tax rate under IgstAmt. For Bill-to/Ship-to transactions, retain POS as per Section 10(1)(b) of the IGST Act and apply IGST."
     },
     2176: {
         "message": "HSN code(s)-{0} is invalid",
-        "reason": "Wrong HSN code passed",
-        "resolution": "Check HSN code against NIC master (minimum 4 to 8 digits for goods, 6 for services 99xxxx)"
+        "reason": "Wrong HSN code is being passed",
+        "resolution": "Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side."
     },
     2177: {
         "message": "Unit Quantity Code(s)-{0} is/are not as per master",
-        "reason": "Invalid unit code passed",
-        "resolution": "Use standard UQC (e.g., NOS, PCS, KGS, BAG, MTR, TON, etc.)"
+        "reason": "The value passed in the Unit field within an item object of ItemList does not match the official 3-character Unit Quantity Code (UQC) master list prescribed by the NIC / GSTN portal. The IRP does not accept colloquial, arbitrary, or ERP-specific abbreviations (e.g., 'KG', 'LITRE', 'PCS.', or 'NO'). If an item's unit is not explicitly on the master list, the fallback code OTH (Others) must be passed.",
+        "resolution": "Use official 3-letter standard UQC (e.g. KGS, NOS, PCS, MTR, MTS, PAC, BDL) or fallback code OTH (Others) for unlisted units."
     },
     2182: {
         "message": "Taxable value of all items is not equal to total taxable value",
@@ -297,8 +386,30 @@ IRN_ERRORS: Dict[int, Dict[str, str]] = {
     },
     2194: {
         "message": "For Sl. No {0}, Total item value does not match with taxable and tax values of that item",
-        "reason": "totitemval != assamt + cgst + sgst + igst + cess + stcess + othchrg",
-        "resolution": "Ensure totitemval matches taxable value plus all taxes and other charges"
+        "reason": "The total item value (TotItemVal) for a specific line item in ItemList does not match the sum of its assessable value, all applicable taxes, cess, and line-level other charges: TotItemVal = AssAmt + CgstAmt + SgstAmt + IgstAmt + CesAmt + CesNonAdvlAmt + StateCesAmt + StateCesNonAdvlAmt + OthChrg (allowed tolerance of +/- 1.00).",
+        "resolution": "Ensure ItemList[i].TotItemVal equals AssAmt + CgstAmt + SgstAmt + IgstAmt + CesAmt + CesNonAdvlAmt + StateCesAmt + StateCesNonAdvlAmt + OthChrg within +/- 1.00. Check for omitted taxes, gross total used instead of net assessable amount, omitted line other charges, omitted cess, or excessive rounding.",
+        "scenarios": {
+            "TAX_LEFT_OUT_OF_ITEM_TOTAL": {
+                "name": "Tax Left Out of Item Total",
+                "fix": "TotItemVal is the post-tax gross item total. Tax values must be added to AssAmt."
+            },
+            "GROSS_TOTAL_USED_WHEN_DISCOUNT_EXISTS": {
+                "name": "Gross Total (TotAmt) Used When Discount Exists",
+                "fix": "TotItemVal must be derived from AssAmt (net of discount), not from the pre-discount TotAmt."
+            },
+            "LINE_LEVEL_OTHER_CHARGES_OMITTED": {
+                "name": "Line-Level Other Charges (OthChrg) Omitted",
+                "fix": "Any item-level packaging, handling, or other charges in OthChrg must be added into TotItemVal."
+            },
+            "CESS_AMOUNTS_NOT_INCLUDED": {
+                "name": "Cess Amounts Not Included",
+                "fix": "Both ad-valorem Cess (CesAmt) and non-ad-valorem Cess (CesNonAdvlAmt) must be included in TotItemVal."
+            },
+            "DECIMAL_PAISE_ROUNDING_DISCREPANCY": {
+                "name": "Decimal / Paise Rounding Discrepancy (> ₹1.00)",
+                "fix": "The tolerance is strictly +/- 1.00. If rounding differences exceed ₹1.00, align TotItemVal closer to the exact calculated sum."
+            }
+        }
     },
     2195: {
         "message": "e-Commerce GSTIN is not registered as TCS-GSTIN",
@@ -307,33 +418,95 @@ IRN_ERRORS: Dict[int, Dict[str, str]] = {
     },
     2200: {
         "message": "State code {0} is invalid for dispatch details or ship details",
-        "reason": "Invalid 2-digit state code in dispatch or ship details",
-        "resolution": "Provide valid state code (01-38)"
+        "reason": "The 2-digit numeric state code passed in DispDtls.Stcd (Dispatch Details) or ShipDtls.Stcd (Ship-to Details) is invalid, does not match the GST state code master (01 to 38, 97, 99), or does not match the state code prefix of the GSTIN passed in that section.",
+        "resolution": "Ensure DispDtls.Stcd and ShipDtls.Stcd are strictly 2-digit numeric strings with leading zeros ('01' to '38'). Do not use 1-digit codes ('7'), state alpha abbreviations ('MH'), or codes that disagree with the provided section GSTIN prefix. '00' is invalid and '99' is not allowed for physical goods movement.",
+        "scenarios": {
+            "LEADING_ZERO_OMITTED": {
+                "name": "Leading Zero Omitted (1-digit sent)",
+                "fix": "Delhi state code is '07', not '7'. State codes must be strictly 2 digits with leading zeros where applicable ('01' to '09')."
+            },
+            "ALPHA_CODE_USED": {
+                "name": "Alpha Code Used Instead of Numeric Code",
+                "fix": "State codes must be numeric strings (e.g., '27' for Maharashtra, '29' for Karnataka), not 2-letter state abbreviations."
+            },
+            "STATE_CODE_DISAGREES_WITH_GSTIN": {
+                "name": "State Code Disagrees with Provided GSTIN",
+                "fix": "If Gstin is passed inside ShipDtls/DispDtls, the state code Stcd must match the first two digits of that GSTIN."
+            },
+            "INVALID_OR_NON_EXISTENT_CODE": {
+                "name": "Invalid / Non-Existent Code Passed",
+                "fix": "'00' is invalid. '99' is reserved for Center Jurisdiction / Other territory services and cannot be used for physical dispatch points. Use valid state code between '01' and '38'."
+            }
+        }
     },
     2201: {
-        "message": "Invalid Port Code",
-        "reason": "Wrong port code format (must be 6-10 alphanumeric characters, e.g. INMAA1)",
-        "resolution": "Verify Indian Port code from master list"
+        "message": "Invalid Port Code for Export Transaction",
+        "reason": "Export invoice (trancatg EXPWP / EXPWOP) contains a value in ExpDtls.Port (Shipping Bill Port Code) that does not exist in the official Indian Customs EDI / ICEGATE port code master list, has improper formatting, or is erroneously provided for domestic supply.",
+        "resolution": "Ensure ExpDtls.Port is a standard 6-character alphanumeric ICEGATE / UN-LOCODE (e.g. INNSA1, INBOM1, INBOM4, INDEL4, INBLR4) without spaces, hyphens, or city names. Match port type to transport mode (Air vs Sea), and omit ExpDtls entirely for domestic transactions.",
+        "scenarios": {
+            "INFORMAL_OR_CITY_NAME_USED": {
+                "name": "Informal / City Name Used",
+                "fix": "Port codes must be standard 6-character alphanumeric ICEGATE/UN-LOCODEs, not city names."
+            },
+            "AIR_SEA_PORT_CODE_CONFUSION": {
+                "name": "Air / Sea Port Code Confusion",
+                "fix": "Ensure the 6-character port code matches the exact Customs location where the Shipping Bill is filed (e.g. INBOM4 for Air Cargo, INNSA1 for Ocean Sea Port)."
+            },
+            "WRONG_FORMAT_SPACING_SPECIAL_CHARS": {
+                "name": "Wrong Format / Spacing / Special Characters",
+                "fix": "Port codes are strictly 6 alphanumeric uppercase characters without hyphens, dots, or spaces."
+            },
+            "PORT_CODE_PROVIDED_FOR_DOMESTIC_SUPPLY": {
+                "name": "Port Code Provided for Domestic Supply",
+                "fix": "ExpDtls (including Port) is only applicable for Export (EXPWP, EXPWOP) transactions. Omit ExpDtls entirely for domestic supply."
+            }
+        }
     },
     2202: {
-        "message": "Invalid Country Code",
-        "reason": "Wrong 2-letter ISO country code passed for export",
-        "resolution": "Use standard ISO-2 country code (e.g., US, GB, AE, SG, DE)"
+        "message": "Invalid Country Code in Export Details",
+        "reason": "The country code passed in ExpDtls.CntCode does not match the official ISO 3166-1 alpha-2 (2-character) country code master list recognized by the NIC / GSTN portal, contains a 3-letter alpha code, full country name, lowercase letters, or domestic code 'IN'.",
+        "resolution": "Ensure ExpDtls.CntCode is strictly a valid 2-letter uppercase ISO 3166-1 alpha-2 country code (e.g., 'US', 'GB', 'AE', 'DE', 'SG'). Do not use 3-letter codes ('USA'), full country names ('GERMANY'), lowercase letters ('ae'), or domestic code ('IN').",
+        "scenarios": [
+            "THREE_LETTER_ALPHA_CODE",
+            "FULL_COUNTRY_NAME_PASSED",
+            "LOWERCASE_COUNTRY_CODE",
+            "DOMESTIC_CODE_IN_EXPORT_DETAILS",
+            "INVALID_OR_NON_EXISTENT_COUNTRY_CODE"
+        ]
     },
     2203: {
-        "message": "Invalid Foreign Currency",
-        "reason": "Currency does not match destination country or ISO master",
-        "resolution": "Provide valid 3-letter currency code (e.g., USD, EUR, GBP)"
+        "message": "Invalid Foreign Currency in Export Details",
+        "reason": "The currency code passed in ExpDtls.ForCur does not match the official ISO 4217 (3-character) currency code master list recognized by the e-Invoice system, contains currency symbols, colloquial abbreviations, domestic 'INR' in foreign field, or lowercase characters.",
+        "resolution": "Ensure ExpDtls.ForCur is strictly a valid 3-character uppercase ISO 4217 currency code (e.g., 'USD', 'EUR', 'GBP', 'AED', 'SGD'). Do not use currency symbols ('$'), colloquial abbreviations ('US$', 'BUCKS'), lowercase letters ('gbp'), or 'INR' for foreign billed invoices.",
+        "scenarios": [
+            "CURRENCY_SYMBOL_PASSED",
+            "COLLOQUIAL_OR_CUSTOM_ABBREVIATION",
+            "DOMESTIC_CURRENCY_IN_FOREIGN_FIELD",
+            "LOWERCASE_CURRENCY_CODE",
+            "INVALID_OR_NON_EXISTENT_CURRENCY_CODE"
+        ]
     },
     2211: {
-        "message": "Supplier and recipient GSTIN should not be the same.",
-        "reason": "Self-invoicing is not permitted for e-invoice generation",
-        "resolution": "Supplier GSTIN and Buyer GSTIN must be different"
+        "message": "Supplier and recipient GSTIN should not be the same",
+        "reason": "SellerDtls.Gstin and BuyerDtls.Gstin are identical in the payload. The e-Invoice portal does not permit self-invoicing under the same GSTIN (an entity cannot issue a commercial tax invoice to its own distinct GST registration).",
+        "resolution": "For same-state branch transfers, issue a Delivery Challan ('CHL') without IRN. For inter-state distinct persons, pass the destination branch's state-specific GSTIN. For Section 31(3)(f) RCM self-invoices, report directly in GSTR-3B/GSTR-1, not IRP. In testing, use distinct sandbox recipient GSTIN.",
+        "scenarios": [
+            "INTRA_STATE_BRANCH_TRANSFER_DELIVERY_CHALLAN",
+            "INTER_STATE_STOCK_TRANSFER_DISTINCT_GSTIN",
+            "TESTING_SANDBOX_DEFAULT_GSTIN",
+            "SELF_INVOICE_RCM_SECTION_31_3_F"
+        ]
     },
     2212: {
-        "message": "The recipient GSTIN cannot be URP for supply type {0}",
-        "reason": "URP passed for B2B/B2G/SEZ transaction",
-        "resolution": "For B2B, B2G, and SEZ, pass valid 15-character recipient GSTIN"
+        "message": "Recipient GSTIN cannot be URP for given supply type",
+        "reason": "Recipient GSTIN is set to 'URP' for transaction categories (B2B, SEZWP, SEZWOP, DEXP) that strictly require a 15-character registered GSTIN. URP is only permitted for direct exports (EXPWP / EXPWOP) or B2C supplies.",
+        "resolution": "For B2B supplies, pass the buyer's active 15-digit GSTIN. For domestic retail consumers, set trancatg='B2C' and generate local dynamic QR code (do not upload to IRP). For overseas foreign buyers, change supply type to 'EXPWP' or 'EXPWOP'. For SEZ units, pass the registered SEZ GSTIN.",
+        "scenarios": [
+            "REGISTERED_BUYER_MARKED_AS_URP",
+            "DOMESTIC_B2C_SUPPLY",
+            "EXPORT_TRANSACTION_MISCLASSIFIED_AS_B2B",
+            "SEZ_SUPPLY_TREATED_AS_URP"
+        ]
     },
     2213: {
         "message": "The supplier GSTIN cannot be URP",
@@ -747,17 +920,22 @@ class RulesEngine:
                     continue
             if not inv_date:
                 errors.append(ValidationError(2282, "docdt1.docdt", f"Invalid docdt format '{docdt_str}'. Expected date normalized to DD-MM-YYYY."))
-            elif inv_date.date() > datetime.today().date():
-                errors.append(ValidationError(2163, "docdt1.docdt", f"Document date '{docdt_str}' cannot be a future date."))
             else:
-                days_diff = (datetime.today().date() - inv_date.date()).days
-                irn_req = str(invoice.get("irnreq", "Y") or "Y").strip().upper()
-                if days_diff > 2 and irn_req == "Y":
-                    errors.append(ValidationError(
-                        2164,
-                        "docdt1.docdt",
-                        f"Document date '{docdt_str}' is more than 2 days old ({days_diff} days ago). As per NIC rule, IRN cannot be generated or changed for invoices older than 2 days. Prompt: change the date."
-                    ))
+                today_ist = get_ist_today() if get_ist_today else datetime.now().date()
+                if inv_date.date() > today_ist:
+                    is_utc = bool(invoice.get("is_utc_context") or invoice.get("utc_desync") or invoice.get("server_utc"))
+                    diag = classify_future_date_diagnostic(inv_date.date(), raw_str=docdt_str, server_today=today_ist, is_utc_context=is_utc) if classify_future_date_diagnostic else None
+                    reason_msg = diag["reason"] if diag else "Document date cannot exceed the current server calendar day. Set to today's date or earlier."
+                    errors.append(ValidationError(2163, "docdt1.docdt", f"The document date should not be future date. {reason_msg}"))
+                else:
+                    days_diff = (today_ist - inv_date.date()).days
+                    irn_req = str(invoice.get("irnreq", "Y") or "Y").strip().upper()
+                    if days_diff > 2 and irn_req == "Y":
+                        errors.append(ValidationError(
+                            2164,
+                            "docdt1.docdt",
+                            f"Document date '{docdt_str}' is more than 2 days old ({days_diff} days ago). As per NIC rule, IRN cannot be generated or changed for invoices older than 2 days. Prompt: change the date."
+                        ))
 
         orginvno = str(docdt1.get("orginvno", "") or "").strip()
         if orginvno and len(orginvno) > 16:
@@ -797,8 +975,11 @@ class RulesEngine:
 
         if reversecharge not in ["Y", "N"]:
             errors.append(ValidationError(2159, "trandt1.reversecharge", f"Invalid reversecharge '{reversecharge}'. Must be 'Y' or 'N'"))
-        elif trancatg not in ("B2B", "SEZWP", "SEZWOP") and reversecharge == "Y":
-            errors.append(ValidationError(2162, "trandt1.reversecharge", f"Reverse Charge is not applicable for transaction category '{trancatg}'."))
+        elif trancatg != "B2B" and reversecharge == "Y":
+            exp_sec = invoice.get("expdt1") or invoice.get("expdtl") or {}
+            w_pay = exp_sec.get("wthpay") if isinstance(exp_sec, dict) else None
+            msg = get_reverse_charge_rejection_reason(trancatg, w_pay) if get_reverse_charge_rejection_reason else f"Reverse Charge is not applicable for transaction category '{trancatg}'."
+            errors.append(ValidationError(2162, "trandt1.reversecharge", msg))
 
         if transactionmode not in ["REG", "DIS", "SHP", "CMB"]:
             errors.append(ValidationError(2285, "trandt1.transactionmode", f"Invalid transactionmode '{transactionmode}'. Must be REG, DIS, SHP, or CMB"))
@@ -816,19 +997,20 @@ class RulesEngine:
         # ---------------------------------------------------------
         # Section 3: Supplier Details (supplierdt1) & Full Field Validation
         # ---------------------------------------------------------
-        sup = invoice.get("supplierdt1", {}) if isinstance(invoice.get("supplierdt1"), dict) else invoice
-        sup_gstin = str(sup.get("supplier_gstin", "") or "").strip().upper()
-        sup_lglnm = str(sup.get("supplier_lglnm", "") or "").strip()
-        sup_trdnm = str(sup.get("supplier_trdnm", "") or "").strip()
+        sup_raw = invoice.get("supplierdt1") or invoice.get("supplier") or invoice.get("SellerDtls")
+        sup = sup_raw if isinstance(sup_raw, dict) else (invoice.get("supplierdt1", {}) if isinstance(invoice.get("supplierdt1"), dict) else invoice)
+        sup_gstin = str(sup.get("supplier_gstin", sup.get("gstin", sup.get("Gstin", ""))) or "").strip().upper()
+        sup_lglnm = str(sup.get("supplier_lglnm", sup.get("lglnm", sup.get("LglNm", ""))) or "").strip()
+        sup_trdnm = str(sup.get("supplier_trdnm", sup.get("trdnm", sup.get("TrdNm", ""))) or "").strip()
         sup_bno = str(sup.get("supplier_bno", "") or "").strip()
         sup_bnm = str(sup.get("supplier_bnm", "") or "").strip()
         sup_flno = str(sup.get("supplier_flno", "") or "").strip()
-        sup_loc = str(sup.get("supplier_loc", "") or "").strip()
+        sup_loc = str(sup.get("supplier_loc", sup.get("loc", sup.get("Loc", ""))) or "").strip()
         sup_dst = str(sup.get("supplier_dst", "") or "").strip()
-        sup_pin = str(sup.get("supplier_pin", "") or "").strip()
-        sup_state = str(sup.get("supplier_state", "") or "").strip().zfill(2)
-        sup_phone = str(sup.get("supplier_phone", "") or "").strip()
-        sup_email = str(sup.get("supplier_email", "") or "").strip().lower()
+        sup_pin = str(sup.get("supplier_pin", sup.get("pin", sup.get("Pin", ""))) or "").strip()
+        sup_state = str(sup.get("supplier_state", sup.get("state", sup.get("StateCode", (sup_gstin[:2] if len(sup_gstin) >= 2 else "")))) or "").strip().zfill(2)
+        sup_phone = str(sup.get("supplier_phone", sup.get("phone", "")) or "").strip()
+        sup_email = str(sup.get("supplier_email", sup.get("email", "")) or "").strip().lower()
         cust_cd = str(sup.get("cust_cd", invoice.get("cust_cd", "")) or "").strip()
 
         # Supplier GSTIN checks
@@ -908,20 +1090,21 @@ class RulesEngine:
         # ---------------------------------------------------------
         # Section 4: Buyer Details (buyerdt1) & Full Field Validation
         # ---------------------------------------------------------
-        buy = invoice.get("buyerdt1", {}) if isinstance(invoice.get("buyerdt1"), dict) else invoice
-        buy_gstin = str(buy.get("buyer_gstin", "") or "").strip().upper()
-        buy_lglnm = str(buy.get("buyer_lglnm", "") or "").strip()
-        buy_trdnm = str(buy.get("buyer_trdnm", "") or "").strip()
+        buy_raw = invoice.get("buyerdt1") or invoice.get("buyer") or invoice.get("BuyerDtls")
+        buy = buy_raw if isinstance(buy_raw, dict) else (invoice.get("buyerdt1", {}) if isinstance(invoice.get("buyerdt1"), dict) else invoice)
+        buy_gstin = str(buy.get("buyer_gstin", buy.get("gstin", buy.get("Gstin", ""))) or "").strip().upper()
+        buy_lglnm = str(buy.get("buyer_lglnm", buy.get("lglnm", buy.get("LglNm", ""))) or "").strip()
+        buy_trdnm = str(buy.get("buyer_trdnm", buy.get("trdnm", buy.get("TrdNm", ""))) or "").strip()
         buy_bno = str(buy.get("buyer_bno", "") or "").strip()
         buy_bnm = str(buy.get("buyer_bnm", "") or "").strip()
         buy_flno = str(buy.get("buyer_flno", "") or "").strip()
-        buy_loc = str(buy.get("buyer_loc", "") or "").strip()
+        buy_loc = str(buy.get("buyer_loc", buy.get("loc", buy.get("Loc", ""))) or "").strip()
         buy_dst = str(buy.get("buyer_dst", "") or "").strip()
-        buy_pin = str(buy.get("buyer_pin", "") or "").strip()
-        buy_state = str(buy.get("buyer_state", "") or "").strip().zfill(2)
-        pos = str(buy.get("pos", invoice.get("pos", "")) or "").strip().zfill(2)
-        buy_phone = str(buy.get("buyer_phone", "") or "").strip()
-        buy_email = str(buy.get("buyer_email", "") or "").strip().lower()
+        buy_pin = str(buy.get("buyer_pin", buy.get("pin", buy.get("Pin", ""))) or "").strip()
+        buy_state = str(buy.get("buyer_state", buy.get("state", buy.get("StateCode", (buy_gstin[:2] if len(buy_gstin) >= 2 else "")))) or "").strip().zfill(2)
+        pos = str(buy.get("pos", buy.get("Pos", buy.get("buyer_pos", invoice.get("pos", "")))) or "").strip().zfill(2)
+        buy_phone = str(buy.get("buyer_phone", buy.get("phone", "")) or "").strip()
+        buy_email = str(buy.get("buyer_email", buy.get("email", "")) or "").strip().lower()
 
         # Buyer GSTIN checks
         if not buy_gstin:
@@ -942,11 +1125,38 @@ class RulesEngine:
                     errors.append(ValidationError(2248, "buyerdt1.buyer_gstin", "Recipient has to be URP in case of Export transactions."))
             else:
                 if (is_sez or trancatg in ["B2B", "B2G"]) and buy_gstin == "URP":
-                    errors.append(ValidationError(2212, "buyerdt1.buyer_gstin", f"buyer_gstin cannot be 'URP' for transaction category '{trancatg}'."))
+                    if classify_rule_2212_diagnostic:
+                        urp_diag = classify_rule_2212_diagnostic(
+                            buyer_gstin=buy_gstin,
+                            trancatg=trancatg,
+                            buyer_pos=pos,
+                            buyer_state=buy_state,
+                            buyer_name=buy_lglnm,
+                            is_export_foreign=False
+                        )
+                        if not urp_diag["is_valid"]:
+                            errors.append(ValidationError(2212, "buyerdt1.buyer_gstin", urp_diag["reason"]))
+                    else:
+                        errors.append(ValidationError(2212, "buyerdt1.buyer_gstin", f"buyer_gstin cannot be 'URP' for transaction category '{trancatg}'."))
 
         # Self-invoicing check
         if sup_gstin and buy_gstin and sup_gstin == buy_gstin:
-            errors.append(ValidationError(2211, "buyerdt1.buyer_gstin", "Supplier and recipient GSTIN should not be the same."))
+            if classify_rule_2211_diagnostic:
+                is_sb = bool(invoice.get("is_sandbox") or invoice.get("sandbox") or invoice.get("testing_env"))
+                self_diag = classify_rule_2211_diagnostic(
+                    supplier_gstin=sup_gstin,
+                    buyer_gstin=buy_gstin,
+                    doc_type=doc_type,
+                    reversecharge=reversecharge,
+                    trancatg=trancatg,
+                    buyer_pos=pos,
+                    buyer_state=buy_state,
+                    is_sandbox=is_sb
+                )
+                if not self_diag["is_valid"]:
+                    errors.append(ValidationError(2211, "buyerdt1.buyer_gstin", self_diag["reason"]))
+            else:
+                errors.append(ValidationError(2211, "buyerdt1.buyer_gstin", "Supplier and recipient GSTIN should not be the same."))
 
         # Buyer Names & Address lengths
         if not buy_lglnm:
@@ -1066,7 +1276,16 @@ class RulesEngine:
             if shipbdt and not re.match(DATE_REGEX_ANY, shipbdt):
                 errors.append(ValidationError(2282, "expdt1.shipbdt", f"Invalid shipbdt format '{shipbdt}'. Expected DD/MM/YYYY or DD-MM-YYYY."))
 
-            if port:
+            if classify_rule_2201_diagnostic:
+                port_diag = classify_rule_2201_diagnostic(
+                    port=port,
+                    trancatg=trancatg,
+                    transmode=invoice.get("transmode") or invoice.get("trans_mode") or invoice.get("transport_mode") or "1",
+                    is_export=True
+                )
+                if not port_diag["is_valid"]:
+                    errors.append(ValidationError(2201, "expdt1.port", port_diag["reason"]))
+            elif port:
                 if not (6 <= len(port) <= 10):
                     errors.append(ValidationError(2201, "expdt1.port", f"port code must be 6-10 chars. Current: {len(port)}"))
                 elif not re.match(PORT_REGEX, port):
@@ -1095,27 +1314,42 @@ class RulesEngine:
                     errors.append(ValidationError(2285, "expdt1.expduty", f"expduty must be numeric. Got: '{expduty}'"))
 
         elif not is_export:
-            exp_check = invoice.get("expdt1") or {}
-            for f_name in ["expcat", "wthpay", "forcur", "cntcode"]:
-                if exp_check.get(f_name):
-                    errors.append(ValidationError(2285, f"expdt1.{f_name}", f"{f_name} must be empty when trancatg is '{trancatg}'"))
+            # Forbidden export fields for non-export transactions & Rule 2201 validation
+            exp_check = invoice.get("expdt1") or invoice.get("ExpDtls") or invoice.get("exp_details") or invoice.get("export") or {}
+            if isinstance(exp_check, dict):
+                exp_port_val = exp_check.get("port") or exp_check.get("Port") or exp_check.get("port_code")
+                if exp_port_val:
+                    if classify_rule_2201_diagnostic:
+                        port_diag = classify_rule_2201_diagnostic(
+                            port=exp_port_val,
+                            trancatg=trancatg,
+                            is_export=False
+                        )
+                        if not port_diag["is_valid"]:
+                            errors.append(ValidationError(2201, "expdt1.port", port_diag["reason"]))
+                    else:
+                        errors.append(ValidationError(2201, "expdt1.port", "ExpDtls (including Port) is only applicable for Export (EXPWP, EXPWOP) transactions."))
+                for f_name in ["expcat", "wthpay", "forcur", "cntcode"]:
+                    if exp_check.get(f_name):
+                        errors.append(ValidationError(2285, f"expdt1.{f_name}", f"{f_name} must be empty when trancatg is '{trancatg}'"))
 
         # ---------------------------------------------------------
         # Section 6: Dispatch Details (dispdt1) & Shipping Details (shipdtl)
         # ---------------------------------------------------------
-        disp = invoice.get("dispdt1")
+        disp = invoice.get("dispdt1") or invoice.get("DispDtls") or invoice.get("disp_details") or invoice.get("dispatch")
         if disp and isinstance(disp, dict):
-            disp_gstin = str(disp.get("disp_gstin", "") or "").strip().upper()
-            disp_trdnm = str(disp.get("disp_trdnm", "") or "").strip()
-            disp_bno = str(disp.get("disp_bno", "") or "").strip()
-            disp_bnm = str(disp.get("disp_bnm", "") or "").strip()
-            disp_flno = str(disp.get("disp_flno", "") or "").strip()
-            disp_loc = str(disp.get("disp_loc", "") or "").strip()
-            disp_dst = str(disp.get("disp_dst", "") or "").strip()
-            disp_pin = str(disp.get("disp_pin", "") or "").strip()
-            disp_state = str(disp.get("disp_state", "") or "").strip().zfill(2)
-            disp_phone = str(disp.get("disp_phone", "") or "").strip()
-            disp_email = str(disp.get("disp_email", "") or "").strip().lower()
+            disp_gstin = str(disp.get("disp_gstin", disp.get("gstin", disp.get("Gstin", ""))) or "").strip().upper()
+            disp_trdnm = str(disp.get("disp_trdnm", disp.get("trdnm", disp.get("TrdNm", disp.get("nm", disp.get("Nm", ""))))) or "").strip()
+            disp_bno = str(disp.get("disp_bno", disp.get("bno", disp.get("Bno", ""))) or "").strip()
+            disp_bnm = str(disp.get("disp_bnm", disp.get("bnm", disp.get("Bnm", ""))) or "").strip()
+            disp_flno = str(disp.get("disp_flno", disp.get("flno", disp.get("Flno", ""))) or "").strip()
+            disp_loc = str(disp.get("disp_loc", disp.get("loc", disp.get("Loc", ""))) or "").strip()
+            disp_dst = str(disp.get("disp_dst", disp.get("dst", disp.get("Dst", ""))) or "").strip()
+            disp_pin = str(disp.get("disp_pin", disp.get("pin", disp.get("Pin", ""))) or "").strip()
+            raw_disp_state = str(disp.get("disp_state", disp.get("stcd", disp.get("Stcd", disp.get("state", "")))) or "").strip()
+            disp_state = raw_disp_state.zfill(2) if (raw_disp_state.isdigit() and len(raw_disp_state) == 1) else raw_disp_state
+            disp_phone = str(disp.get("disp_phone", disp.get("phone", disp.get("Phone", ""))) or "").strip()
+            disp_email = str(disp.get("disp_email", disp.get("email", disp.get("Email", ""))) or "").strip().lower()
 
             if disp_gstin and disp_gstin != "URP":
                 if not (3 <= len(disp_gstin) <= 15):
@@ -1126,6 +1360,21 @@ class RulesEngine:
                     errors.append(ValidationError(2200, "dispdt1.disp_gstin", "disp_gstin state code (first 2 digits) must be numeric"))
                 elif not re.match(GSTIN_REGEX, disp_gstin):
                     errors.append(ValidationError(2200, "dispdt1.disp_gstin", f"Invalid disp_gstin format '{disp_gstin}'. Must be 15-digit GSTIN or 'URP'"))
+
+            # Rule 2200 Dispatch State Code Validation
+            if raw_disp_state:
+                if classify_rule_2200_diagnostic:
+                    disp_diag = classify_rule_2200_diagnostic(
+                        stcd=raw_disp_state,
+                        gstin=disp_gstin,
+                        pin=disp_pin,
+                        loc=disp_loc,
+                        section="DispDtls"
+                    )
+                    if not disp_diag["is_valid"]:
+                        errors.append(ValidationError(2200, "dispdt1.disp_state", disp_diag["reason"]))
+                elif not raw_disp_state.isdigit() or len(raw_disp_state) != 2 or raw_disp_state not in VALID_STATE_CODES or raw_disp_state in ("00", "99"):
+                    errors.append(ValidationError(2200, "dispdt1.disp_state", f"Invalid state code '{raw_disp_state}' for dispatch details."))
 
             if transactionmode in ["DIS", "CMB"]:
                 if not disp_trdnm:
@@ -1172,20 +1421,21 @@ class RulesEngine:
             elif disp_pin and disp_state and not verify_pincode_state(disp_pin, disp_state):
                 errors.append(ValidationError(3041, "dispdt1.disp_pin", f"Dispatch PIN '{disp_pin}' does not belong to State '{disp_state}'."))
 
-        ship = invoice.get("shipdtl") or invoice.get("shipdt1")
+        ship = invoice.get("shipdtl") or invoice.get("shipdt1") or invoice.get("ShipDtls") or invoice.get("ship_details") or invoice.get("shipping")
         if ship and isinstance(ship, dict):
-            ship_gstin = str(ship.get("ship_gstin", "") or "").strip().upper()
-            ship_lglnm = str(ship.get("ship_lglnm", "") or "").strip()
-            ship_trdnm = str(ship.get("ship_trdnm", "") or "").strip()
-            ship_bno = str(ship.get("ship_bno", "") or "").strip()
-            ship_bnm = str(ship.get("ship_bnm", "") or "").strip()
-            ship_flno = str(ship.get("ship_flno", "") or "").strip()
-            ship_loc = str(ship.get("ship_loc", "") or "").strip()
-            ship_dst = str(ship.get("ship_dst", "") or "").strip()
-            ship_pin = str(ship.get("ship_pin", "") or "").strip()
-            ship_state = str(ship.get("ship_state", "") or "").strip().zfill(2)
-            ship_phone = str(ship.get("ship_phone", "") or "").strip()
-            ship_email = str(ship.get("ship_email", "") or "").strip().lower()
+            ship_gstin = str(ship.get("ship_gstin", ship.get("gstin", ship.get("Gstin", ""))) or "").strip().upper()
+            ship_lglnm = str(ship.get("ship_lglnm", ship.get("lglnm", ship.get("LglNm", ship.get("nm", ship.get("Nm", ""))))) or "").strip()
+            ship_trdnm = str(ship.get("ship_trdnm", ship.get("trdnm", ship.get("TrdNm", ""))) or "").strip()
+            ship_bno = str(ship.get("ship_bno", ship.get("bno", ship.get("Bno", ""))) or "").strip()
+            ship_bnm = str(ship.get("ship_bnm", ship.get("bnm", ship.get("Bnm", ""))) or "").strip()
+            ship_flno = str(ship.get("ship_flno", ship.get("flno", ship.get("Flno", ""))) or "").strip()
+            ship_loc = str(ship.get("ship_loc", ship.get("loc", ship.get("Loc", ""))) or "").strip()
+            ship_dst = str(ship.get("ship_dst", ship.get("dst", ship.get("Dst", ""))) or "").strip()
+            ship_pin = str(ship.get("ship_pin", ship.get("pin", ship.get("Pin", ""))) or "").strip()
+            raw_ship_state = str(ship.get("ship_state", ship.get("stcd", ship.get("Stcd", ship.get("state", "")))) or "").strip()
+            ship_state = raw_ship_state.zfill(2) if (raw_ship_state.isdigit() and len(raw_ship_state) == 1) else raw_ship_state
+            ship_phone = str(ship.get("ship_phone", ship.get("phone", ship.get("Phone", ""))) or "").strip()
+            ship_email = str(ship.get("ship_email", ship.get("email", ship.get("Email", ""))) or "").strip().lower()
 
             if ship_gstin and ship_gstin != "URP":
                 if not (3 <= len(ship_gstin) <= 15):
@@ -1194,6 +1444,21 @@ class RulesEngine:
                     errors.append(ValidationError(2200, "shipdtl.ship_gstin", f"Invalid ship_gstin length ({len(ship_gstin)}). Must be 15 characters."))
                 elif not re.match(GSTIN_REGEX, ship_gstin):
                     errors.append(ValidationError(2200, "shipdtl.ship_gstin", f"Invalid ship_gstin format '{ship_gstin}'. Must be 15-digit GSTIN or 'URP'"))
+
+            # Rule 2200 Shipping State Code Validation
+            if raw_ship_state:
+                if classify_rule_2200_diagnostic:
+                    ship_diag = classify_rule_2200_diagnostic(
+                        stcd=raw_ship_state,
+                        gstin=ship_gstin,
+                        pin=ship_pin,
+                        loc=ship_loc,
+                        section="ShipDtls"
+                    )
+                    if not ship_diag["is_valid"]:
+                        errors.append(ValidationError(2200, "shipdtl.ship_state", ship_diag["reason"]))
+                elif not raw_ship_state.isdigit() or len(raw_ship_state) != 2 or raw_ship_state not in VALID_STATE_CODES or raw_ship_state in ("00", "99"):
+                    errors.append(ValidationError(2200, "shipdtl.ship_state", f"Invalid state code '{raw_ship_state}' for ship details."))
 
             if transactionmode in ["SHP", "CMB"]:
                 if not ship_lglnm:
@@ -1252,6 +1517,22 @@ class RulesEngine:
         if not items:
             errors.append(ValidationError(2228, "itemdtls", "Item list cannot be empty."))
 
+        max_item_limit = int(invoice.get("middleware_threshold") or 1000)
+        is_middleware = bool(invoice.get("is_middleware_restricted") or (invoice.get("middleware_threshold") and int(invoice.get("middleware_threshold")) < 1000))
+        is_unsplit_bulk = bool(invoice.get("is_cannot_split_bulk"))
+
+        if len(items) > max_item_limit or is_middleware:
+            diag = classify_rule_2173_diagnostic(
+                item_count=len(items),
+                items=items,
+                max_limit=1000,
+                is_middleware_restricted=is_middleware,
+                middleware_threshold=invoice.get("middleware_threshold"),
+                is_cannot_split_bulk=is_unsplit_bulk
+            ) if classify_rule_2173_diagnostic else None
+            diag_msg = f". {diag['scenario_name']}: {diag['reason']}" if diag else ""
+            errors.append(ValidationError(2173, "itemdtls", f"ItemList contains {len(items)} items, exceeding the maximum limit of {max_item_limit} items{diag_msg}"))
+
         is_intra = (sup_state == pos and igstonintra != "Y" and not is_export and not is_sez)
         has_goods_item = False
 
@@ -1268,10 +1549,10 @@ class RulesEngine:
             prdnm = str(itm.get("prdnm", "") or "").strip()
             prddesc = str(itm.get("prddesc", "") or "").strip()
             isservc = str(itm.get("isservc", "N") or "N").strip().upper()
-            hsn = str(itm.get("hsncd", "") or "").strip()
+            hsn = str(itm.get("hsncd", "") or itm.get("hsn", "") or "").strip()
             barcde = str(itm.get("barcde", "") or "").strip()
             raw_qty = str(itm.get("qty", "") or "").strip()
-            raw_uqc = str(itm.get("uqc", "") or "").strip().upper()
+            raw_uqc = str(itm.get("uqc", "") or itm.get("unit", "") or "").strip().upper()
 
             if not prdnm:
                 errors.append(ValidationError(2285, f"itemdtls[{sl}].prdnm", f"prdnm (Product Name) is mandatory for item {sl}"))
@@ -1285,9 +1566,13 @@ class RulesEngine:
                 errors.append(ValidationError(2285, f"itemdtls[{sl}].isservc", f"Invalid isservc '{isservc}' for item {sl}. Must be 'Y' (Service) or 'N' (Goods)"))
 
             if not hsn:
-                errors.append(ValidationError(2176, f"itemdtls[{sl}].hsncd", f"hsncd is mandatory for item {sl}"))
+                errors.append(ValidationError(2176, f"itemdtls[{sl}].hsncd", f"HSN code(s)-(blank) is invalid: Wrong HSN code is being passed. Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side."))
             elif not (2 <= len(hsn) <= 8) or not hsn.isdigit():
-                errors.append(ValidationError(2176, f"itemdtls[{sl}].hsncd", f"HSN code '{hsn}' for item {sl} must be 2-8 digits."))
+                errors.append(ValidationError(2176, f"itemdtls[{sl}].hsncd", f"HSN code(s)-{hsn} is invalid: Wrong HSN code is being passed. Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side."))
+            elif validate_hsn_statutory:
+                stat_meta = validate_hsn_statutory(hsn)
+                if stat_meta is None:
+                    errors.append(ValidationError(2176, f"itemdtls[{sl}].hsncd", f"HSN code(s)-{hsn} is invalid: Wrong HSN code is being passed. Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side."))
 
             if barcde and not (1 <= len(barcde) <= 30):
                 errors.append(ValidationError(2285, f"itemdtls[{sl}].barcde", f"barcde length must be 1-30 characters for item {sl}."))
@@ -1300,56 +1585,131 @@ class RulesEngine:
                     errors.append(ValidationError(2239, f"itemdtls[{sl}].uqc", f"uqc is mandatory for goods item {sl} (isservc = 'N')"))
 
             if raw_uqc:
-                if len(raw_uqc) > 3:
-                    errors.append(ValidationError(2177, f"itemdtls[{sl}].uqc", f"uqc exceeds max length of 3 characters for item {sl}. Got: '{raw_uqc}'"))
-                elif raw_uqc not in ALLOWED_UQC:
+                diag_2177 = classify_rule_2177_diagnostic(raw_uqc) if classify_rule_2177_diagnostic else None
+                if diag_2177 and not diag_2177["is_valid"]:
+                    errors.append(ValidationError(
+                        2177,
+                        f"itemdtls[{sl}].uqc",
+                        f"Unit Quantity Code(s)-{raw_uqc} is/are not as per master. {diag_2177['reason']} Fix: {diag_2177['resolution']}"
+                    ))
+                elif not diag_2177 and (len(raw_uqc) > 3 or raw_uqc not in ALLOWED_UQC):
                     errors.append(ValidationError(2177, f"itemdtls[{sl}].uqc", f"Unit Quantity Code '{raw_uqc}' for item {sl} is not as per master."))
 
             # Numerical precision and calculation checks
             try:
                 qty = Decimal(raw_qty or "0")
-                unitrate = Decimal(str(itm.get("unitrate", "0") or "0"))
-                gross = Decimal(str(itm.get("grossamt", "0") or "0"))
-                discount = Decimal(str(itm.get("discount", "0") or "0"))
-                othchrg = Decimal(str(itm.get("othchrg", "0") or "0"))
-                assamt = Decimal(str(itm.get("assamt", "0") or "0"))
-                cgstrt = Decimal(str(itm.get("cgstrt", "0") or "0"))
-                cgstamt = Decimal(str(itm.get("cgstamt", "0") or "0"))
-                sgstrt = Decimal(str(itm.get("sgstrt", "0") or "0"))
-                sgstamt = Decimal(str(itm.get("sgstamt", "0") or "0"))
-                igstrt = Decimal(str(itm.get("igstrt", "0") or "0"))
-                igstamt = Decimal(str(itm.get("igstamt", "0") or "0"))
-                cessrt = Decimal(str(itm.get("cessrt", "0") or "0"))
-                cessamt = Decimal(str(itm.get("cessamt", "0") or "0"))
-                stcessrt = Decimal(str(itm.get("statecessrt", "0") or "0"))
-                stcessamt = Decimal(str(itm.get("statecessamt", "0") or "0"))
-                cesnonad = Decimal(str(itm.get("cessnonadval", "0") or "0"))
-                totitemval = Decimal(str(itm.get("totitemval", "0") or "0"))
+                unitrate = Decimal(str(itm.get("unitrate", itm.get("unitprice", itm.get("UnitPrice", "0"))) or "0"))
+                gross = Decimal(str(itm.get("grossamt", itm.get("totamt", itm.get("TotAmt", "0"))) or "0"))
+                discount = Decimal(str(itm.get("discount", itm.get("discval", itm.get("Discount", "0"))) or "0"))
+                othchrg = Decimal(str(itm.get("othchrg", itm.get("OthChrg", "0")) or "0"))
+                assamt = Decimal(str(itm.get("assamt", itm.get("assval", itm.get("AssAmt", "0"))) or "0"))
+                cgstrt = Decimal(str(itm.get("cgstrt", itm.get("gstrate", itm.get("CgstRt", "0"))) or "0"))
+                cgstamt = Decimal(str(itm.get("cgstamt", itm.get("cgstval", itm.get("CgstAmt", "0"))) or "0"))
+                sgstrt = Decimal(str(itm.get("sgstrt", itm.get("gstrate", itm.get("SgstRt", "0"))) or "0"))
+                sgstamt = Decimal(str(itm.get("sgstamt", itm.get("sgstval", itm.get("SgstAmt", "0"))) or "0"))
+                igstrt = Decimal(str(itm.get("igstrt", itm.get("gstrate", itm.get("IgstRt", "0"))) or "0"))
+                igstamt = Decimal(str(itm.get("igstamt", itm.get("igstval", itm.get("IgstAmt", "0"))) or "0"))
+                gstrate = Decimal(str(itm.get("gstrate", itm.get("GstRt", igstrt if igstrt > 0 else (cgstrt + sgstrt))) or "0"))
+                cessrt = Decimal(str(itm.get("cessrt", itm.get("cesrt", itm.get("CesRt", "0"))) or "0"))
+                cessamt = Decimal(str(itm.get("cessamt", itm.get("cesval", itm.get("CesAmt", "0"))) or "0"))
+                stcessrt = Decimal(str(itm.get("statecessrt", itm.get("stcesrt", itm.get("StCesRt", "0"))) or "0"))
+                stcessamt = Decimal(str(itm.get("statecessamt", itm.get("stcesval", itm.get("StCesAmt", "0"))) or "0"))
+                cesnonad = Decimal(str(itm.get("cessnonadval", itm.get("cesnonadval", itm.get("CesNonAdVal", "0"))) or "0"))
+                stcesnonad = Decimal(str(itm.get("statecesnonadvl", itm.get("statecesnonadval", itm.get("StateCesNonAdvlAmt", itm.get("StateCesNonAdVal", "0")))) or "0"))
+                totitemval = Decimal(str(itm.get("totitemval", itm.get("totval", itm.get("TotItemVal", "0"))) or "0"))
 
-                # Gross Amount validation: Qty * UnitPrice
+                # Gross Amount validation: Qty * UnitPrice (Rule 2192)
                 expected_gross = (qty * unitrate).quantize(Decimal("0.01"))
-                if abs(gross - expected_gross) > Decimal("0.05"):
-                    errors.append(ValidationError(2192, f"itemdtls[{sl}].grossamt", f"TotAmt ({gross}) should equal Qty*UnitPrice ({expected_gross}) for item {sl}"))
+                is_serv_flag = str(itm.get("isservc", itm.get("is_service", "N"))).strip().upper() == "Y" or str(hsn).startswith("99")
+                is_rule_2192_violation = False
+                if is_serv_flag and qty == Decimal("0.00") and unitrate > Decimal("0.00"):
+                    is_rule_2192_violation = True
+                elif abs(gross - expected_gross) > Decimal("0.005"):
+                    is_rule_2192_violation = True
 
-                # Assessable Amount validation: Gross - Discount
+                if is_rule_2192_violation:
+                    diag_2192 = classify_rule_2192_diagnostic(
+                        qty=qty,
+                        unitprice=unitrate,
+                        totamt=gross,
+                        discount=discount,
+                        gstrate=gstrate,
+                        taxes=cgstamt + sgstamt + igstamt,
+                        is_service="Y" if is_serv_flag else "N",
+                        hsn=str(hsn),
+                        item_slno=sl
+                    ) if classify_rule_2192_diagnostic else None
+                    diag_msg = f" ({diag_2192['scenario_name']}): {diag_2192['reason']}" if diag_2192 else ""
+                    errors.append(ValidationError(2192, f"itemdtls[{sl}].grossamt", f"TotAmt ({gross}) should equal Qty*UnitPrice ({expected_gross}) for HSN {hsn}.{diag_msg}"))
+
+                # Assessable Amount validation: Gross - Discount (Rule 2193)
                 expected_assamt = (gross - discount).quantize(Decimal("0.01"))
-                if abs(assamt - expected_assamt) > Decimal("0.05"):
-                    errors.append(ValidationError(2193, f"itemdtls[{sl}].assamt", f"For Sl No {sl}, AssAmt ({assamt}) != Gross - Discount ({expected_assamt})"))
+                if abs(assamt - expected_assamt) > Decimal("0.005"):
+                    diag_2193 = classify_rule_2193_diagnostic(
+                        totamt=gross,
+                        discount=discount,
+                        assamt=assamt,
+                        gstrate=gstrate,
+                        taxes=cgstamt + sgstamt + igstamt,
+                        othchrg=othchrg,
+                        item_slno=sl
+                    ) if classify_rule_2193_diagnostic else None
+                    diag_msg = f" ({diag_2193['scenario_name']}): {diag_2193['reason']}" if diag_2193 else ""
+                    errors.append(ValidationError(2193, f"itemdtls[{sl}].assamt", f"For Sl No {sl}, AssAmt ({assamt}) != Gross - Discount ({expected_assamt}).{diag_msg}"))
 
                 # Inter vs Intra Tax validation
                 if is_intra:
                     if igstamt > 0:
-                        errors.append(ValidationError(2172, f"itemdtls[{sl}].igstamt", f"For Intra-state, IGST is not applicable. Item {sl} has IGST {igstamt}"))
+                        diag = classify_rule_2172_diagnostic(
+                            seller_state=sup_state,
+                            buyer_pos=pos,
+                            buyer_state=buy_state,
+                            buyer_gstin=buy_gstin,
+                            igst_amt=igstamt,
+                            cgst_amt=cgstamt,
+                            sgst_amt=sgstamt,
+                            igstonintra=igstonintra
+                        ) if classify_rule_2172_diagnostic else None
+                        diag_msg = f". {diag['scenario_name']}: {diag['reason']}" if diag else ""
+                        errors.append(ValidationError(2172, f"itemdtls[{sl}].igstamt", f"For Intra-state, IGST is not applicable. Item {sl} has IGST {igstamt}{diag_msg}"))
                     if cgstamt != sgstamt:
                         errors.append(ValidationError(2227, f"itemdtls[{sl}]", f"For Sl No {sl}, SGST ({sgstamt}) and CGST ({cgstamt}) amounts must be equal."))
                 else:
                     if cgstamt > 0 or sgstamt > 0:
-                        errors.append(ValidationError(2174, f"itemdtls[{sl}]", f"For inter-state/SEZ, CGST/SGST not applicable; only IGST applies. Item {sl} has CGST/SGST."))
+                        diag = classify_rule_2174_diagnostic(
+                            seller_state=sup_state,
+                            buyer_pos=pos,
+                            buyer_state=buy_state,
+                            buyer_gstin=buy_gstin,
+                            ship_state=ship.get("ship_state", "") if ship else "",
+                            cgst_amt=cgstamt,
+                            sgst_amt=sgstamt,
+                            igst_amt=igstamt
+                        ) if classify_rule_2174_diagnostic else None
+                        diag_msg = f". {diag['scenario_name']}: {diag['reason']}" if diag else ""
+                        errors.append(ValidationError(2174, f"itemdtls[{sl}].cgstamt", f"For inter-state/SEZ, CGST/SGST not applicable; only IGST applies. Item {sl} has CGST {cgstamt}, SGST {sgstamt}{diag_msg}"))
 
-                # Total Item Value validation
-                expected_totitem = assamt + cgstamt + sgstamt + igstamt + cessamt + stcessamt + cesnonad
+                # Total Item Value validation (Rule 2194)
+                expected_totitem = (assamt + cgstamt + sgstamt + igstamt + cessamt + cesnonad + stcessamt + stcesnonad + othchrg).quantize(Decimal("0.01"))
                 if abs(totitemval - expected_totitem) > Decimal("1.00"):
-                    errors.append(ValidationError(2194, f"itemdtls[{sl}].totitemval", f"For Sl No {sl}, Total item value ({totitemval}) != sum of taxable and taxes ({expected_totitem})"))
+                    diag_2194 = classify_rule_2194_diagnostic(
+                        totitemval=totitemval,
+                        assamt=assamt,
+                        cgstamt=cgstamt,
+                        sgstamt=sgstamt,
+                        igstamt=igstamt,
+                        cesamt=cessamt,
+                        cesnonadval=cesnonad,
+                        statecesamt=stcessamt,
+                        statecesnonadval=stcesnonad,
+                        othchrg=othchrg,
+                        totamt=gross,
+                        discount=discount,
+                        item_slno=sl,
+                        hsn=str(hsn),
+                    ) if classify_rule_2194_diagnostic else None
+                    diag_msg = f" ({diag_2194['scenario_name']}): {diag_2194['reason']}" if diag_2194 else ""
+                    errors.append(ValidationError(2194, f"itemdtls[{sl}].totitemval", f"For Sl No {sl}, Total item value ({totitemval}) != sum of taxable and taxes ({expected_totitem}).{diag_msg}"))
 
                 sum_assamt += assamt
                 sum_cgst += cgstamt
@@ -1365,30 +1725,112 @@ class RulesEngine:
         # ---------------------------------------------------------
         # Section 8: Value Summary (valdt1) Reconciliation
         # ---------------------------------------------------------
-        valdt1 = invoice.get("valdt1", {}) if isinstance(invoice.get("valdt1"), dict) else invoice
+        val_raw = invoice.get("valdt1") or invoice.get("valdtls") or invoice.get("ValDtls")
+        valdt1 = val_raw if isinstance(val_raw, dict) else (invoice.get("valdt1", {}) if isinstance(invoice.get("valdt1"), dict) else invoice)
         try:
-            ttlassval = Decimal(str(valdt1.get("ttlassval", "0") or "0"))
-            cgstval = Decimal(str(valdt1.get("cgstval", "0") or "0"))
-            sgstval = Decimal(str(valdt1.get("sgstval", "0") or "0"))
-            igstval = Decimal(str(valdt1.get("igstval", "0") or "0"))
-            cesval = Decimal(str(valdt1.get("cesval", "0") or "0"))
-            stcesval = Decimal(str(valdt1.get("stcesval", "0") or "0"))
-            cesnonadval = Decimal(str(valdt1.get("cesnonadval", "0") or "0"))
-            totinvval = Decimal(str(valdt1.get("totinvval", "0") or "0"))
-            othchrg = Decimal(str(valdt1.get("othchrg", "0") or "0"))
-            discval = Decimal(str(valdt1.get("discval", "0") or "0"))
+            ttlassval = Decimal(str(valdt1.get("ttlassval", valdt1.get("assval", valdt1.get("AssVal", "0"))) or "0"))
+            cgstval = Decimal(str(valdt1.get("cgstval", valdt1.get("CgstVal", "0")) or "0"))
+            sgstval = Decimal(str(valdt1.get("sgstval", valdt1.get("SgstVal", "0")) or "0"))
+            igstval = Decimal(str(valdt1.get("igstval", valdt1.get("IgstVal", "0")) or "0"))
+            cesval = Decimal(str(valdt1.get("cesval", valdt1.get("CesVal", "0")) or "0"))
+            stcesval = Decimal(str(valdt1.get("stcesval", valdt1.get("StCesVal", "0")) or "0"))
+            cesnonadval = Decimal(str(valdt1.get("cesnonadval", valdt1.get("CesNonAdVal", "0")) or "0"))
+            totinvval = Decimal(str(valdt1.get("totinvval", valdt1.get("totval", valdt1.get("TotInvVal", "0"))) or "0"))
+            othchrg = Decimal(str(valdt1.get("othchrg", valdt1.get("OthChrg", "0")) or "0"))
+            discval = Decimal(str(valdt1.get("discval", valdt1.get("discount", valdt1.get("Discount", "0"))) or "0"))
 
-            # Reconciliation of header totals with line item sums within +/- Rs 2 tolerance
-            if abs(ttlassval - sum_assamt) > Decimal("2.00"):
-                errors.append(ValidationError(2182, "valdt1.ttlassval", f"Taxable value of items ({sum_assamt}) != total taxable value ({ttlassval})"))
-            if abs(cgstval - sum_cgst) > Decimal("2.00"):
-                errors.append(ValidationError(2184, "valdt1.cgstval", f"CGST value of items ({sum_cgst}) != total CGST ({cgstval})"))
-            if abs(sgstval - sum_sgst) > Decimal("2.00"):
-                errors.append(ValidationError(2183, "valdt1.sgstval", f"SGST value of items ({sum_sgst}) != total SGST ({sgstval})"))
-            if abs(igstval - sum_igst) > Decimal("2.00"):
-                errors.append(ValidationError(2185, "valdt1.igstval", f"IGST value of items ({sum_igst}) != total IGST ({igstval})"))
-            if abs(cesval - sum_cess) > Decimal("2.00"):
-                errors.append(ValidationError(2186, "valdt1.cesval", f"Cess value of items ({sum_cess}) != total Cess ({cesval})"))
+            # Reconciliation of header totals with line item sums (Strict mathematical equality for assessable value, +/- Rs 2 tolerance for taxes)
+            if abs(ttlassval - sum_assamt) > Decimal("0.005"):
+                diag_2182 = classify_rule_2182_diagnostic(
+                    header_assval=ttlassval,
+                    sum_item_assamt=sum_assamt,
+                    items=items,
+                    header_discount=discval,
+                ) if classify_rule_2182_diagnostic else None
+                diag_msg = f" ({diag_2182['scenario_name']}): {diag_2182['reason']}" if diag_2182 else ""
+                errors.append(ValidationError(2182, "valdt1.ttlassval", f"Taxable value of items ({sum_assamt}) != total taxable value ({ttlassval}).{diag_msg}"))
+            if not is_intra:
+                if (cgstval > Decimal("0.00") or sgstval > Decimal("0.00")) and sum_igst > Decimal("0.00"):
+                    errors.append(ValidationError(2174, "valdt1.cgstval", "Header Summary vs. Line Items Mismatch: Header totals in ValDtls must mirror line-item taxes. If line items carry IGST, CgstVal and SgstVal in ValDtls must be 0.00."))
+            # Rule 2184 CGST Value Reconciliation (Strict mathematical equality: ValDtls.CgstVal == sum(ItemList[i].CgstAmt), or disallowed in inter-state)
+            is_rule_2184_violation = False
+            if is_intra and abs(cgstval - sum_cgst) > Decimal("0.005"):
+                is_rule_2184_violation = True
+            elif not is_intra and (cgstval > Decimal("0.00") or sum_cgst > Decimal("0.00")):
+                is_rule_2184_violation = True
+
+            if is_rule_2184_violation:
+                diag_2184 = classify_rule_2184_diagnostic(
+                    header_cgst=cgstval,
+                    sum_item_cgst=sum_cgst,
+                    items=items,
+                    header_sgst=sgstval,
+                    sum_item_sgst=sum_sgst,
+                    is_inter_state=(not is_intra),
+                    seller_state=sup_state,
+                    buyer_pos=pos,
+                ) if classify_rule_2184_diagnostic else None
+                diag_msg = f" ({diag_2184['scenario_name']}): {diag_2184['reason']}" if diag_2184 else ""
+                errors.append(ValidationError(2184, "valdt1.cgstval", f"CGST value of items ({sum_cgst}) != total CGST ({cgstval}).{diag_msg}"))
+            # Rule 2183 SGST Value Reconciliation (Strict mathematical equality: ValDtls.SgstVal == sum(ItemList[i].SgstAmt), or disallowed in inter-state)
+            is_rule_2183_violation = False
+            if is_intra and abs(sgstval - sum_sgst) > Decimal("0.005"):
+                is_rule_2183_violation = True
+            elif not is_intra and (sgstval > Decimal("0.00") or sum_sgst > Decimal("0.00")):
+                is_rule_2183_violation = True
+
+            if is_rule_2183_violation:
+                diag_2183 = classify_rule_2183_diagnostic(
+                    header_sgst=sgstval,
+                    sum_item_sgst=sum_sgst,
+                    items=items,
+                    header_cgst=cgstval,
+                    sum_item_cgst=sum_cgst,
+                    is_inter_state=(not is_intra),
+                    seller_state=sup_state,
+                    buyer_pos=pos,
+                ) if classify_rule_2183_diagnostic else None
+                diag_msg = f" ({diag_2183['scenario_name']}): {diag_2183['reason']}" if diag_2183 else ""
+                errors.append(ValidationError(2183, "valdt1.sgstval", f"SGST value of items ({sum_sgst}) != total SGST ({sgstval}).{diag_msg}"))
+            # Rule 2185 IGST Value Reconciliation (Strict mathematical equality: ValDtls.IgstVal == sum(ItemList[i].IgstAmt), or disallowed in intra-state)
+            is_rule_2185_violation = False
+            is_std_intra = (is_intra and igstonintra != "Y" and trancatg not in ("EXP", "EXPWP", "EXPWOP", "SEZWP", "SEZWOP"))
+            if is_std_intra and (igstval > Decimal("0.00") or sum_igst > Decimal("0.00")):
+                is_rule_2185_violation = True
+            elif not is_std_intra and abs(igstval - sum_igst) > Decimal("0.005"):
+                is_rule_2185_violation = True
+
+            if is_rule_2185_violation:
+                diag_2185 = classify_rule_2185_diagnostic(
+                    header_igst=igstval,
+                    sum_item_igst=sum_igst,
+                    items=items,
+                    header_cgst=cgstval,
+                    sum_item_cgst=sum_cgst,
+                    header_sgst=sgstval,
+                    sum_item_sgst=sum_sgst,
+                    is_inter_state=(not is_intra),
+                    seller_state=sup_state,
+                    buyer_pos=pos,
+                    igst_on_intra=igstonintra,
+                    trancatg=trancatg,
+                ) if classify_rule_2185_diagnostic else None
+                diag_msg = f" ({diag_2185['scenario_name']}): {diag_2185['reason']}" if diag_2185 else ""
+                errors.append(ValidationError(2185, "valdt1.igstval", f"IGST value of items ({sum_igst}) != total IGST ({igstval}).{diag_msg}"))
+            # Rule 2186 Cess Value Reconciliation (Strict mathematical equality: ValDtls.CesVal == sum(ItemList[i].CesAmt + ItemList[i].CesNonAdvlAmt))
+            sum_total_cess = sum_cess + sum_cesnonad
+            if abs(cesval - sum_total_cess) > Decimal("0.005"):
+                diag_2186 = classify_rule_2186_diagnostic(
+                    header_cess=cesval,
+                    sum_item_cess=sum_total_cess,
+                    items=items,
+                    header_stcess=stcesval,
+                    sum_item_stcess=sum_stcess,
+                    sum_item_cesad=sum_cess,
+                    sum_item_cesnonad=sum_cesnonad,
+                ) if classify_rule_2186_diagnostic else None
+                diag_msg = f" ({diag_2186['scenario_name']}): {diag_2186['reason']}" if diag_2186 else ""
+                errors.append(ValidationError(2186, "valdt1.cesval", f"Cess value of items ({sum_total_cess}) != total Cess ({cesval}).{diag_msg}"))
             if abs(stcesval - sum_stcess) > Decimal("2.00"):
                 errors.append(ValidationError(2187, "valdt1.stcesval", f"State Cess value of items ({sum_stcess}) != total State Cess ({stcesval})"))
 
@@ -1572,6 +2014,24 @@ class RulesEngine:
 
         return report
 
+    @classmethod
+    def check_rate_slab(cls, declared_rate: Any, hsn: Any) -> Dict[str, Any]:
+        """RULE_08: Rate Slab Mismatch verification against statutory CBIC tariff."""
+        try:
+            from src.rules.rate_slab_checker import rate_slab_checker
+            return rate_slab_checker.check(declared_rate, hsn)
+        except Exception as e:
+            return {"flag": None, "error": str(e)}
+
+    @classmethod
+    def check_section_17_5(cls, text: str, hsn: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """RULE_08: Section 17(5) Ineligible Input Tax Credit (ITC) Detection."""
+        try:
+            from src.rules.section_17_5_detector import section_17_5_detector
+            return section_17_5_detector.scan(text, hsn=hsn)
+        except Exception:
+            return None
+
 
 # Canonical aliases
 GSTValidator = RulesEngine
@@ -1582,6 +2042,8 @@ from src.rules.statutory_rules import (
     calculate_gstin_checksum,
     verify_gstin_checksum,
 )
+from src.rules.rate_slab_checker import RateSlabChecker, rate_slab_checker
+from src.rules.section_17_5_detector import Section175Detector, section_17_5_detector
 
 __all__ = [
     "STATE_MASTER",
@@ -1609,7 +2071,16 @@ __all__ = [
     "GSTValidator",
     "GSTRulesEngine",
     "StatutoryRulesEngine",
+    "RateSlabChecker",
+    "rate_slab_checker",
+    "Section175Detector",
+    "section_17_5_detector",
     "calculate_gstin_checksum",
     "verify_gstin_checksum",
+    "OFFICIAL_UQC_MASTER",
+    "COMMON_UQC_MAPPING",
+    "classify_rule_2177_diagnostic",
+    "classify_rule_2182_diagnostic",
+    "normalize_uqc_statutory",
 ]
 

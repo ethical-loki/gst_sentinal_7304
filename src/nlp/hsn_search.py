@@ -153,19 +153,10 @@ class HSNSemanticSearchEngine:
         ]
 
         for idx, desc_text in enumerate(descriptions):
-            h_code = self.cand_hsn_codes[idx]
-            heading = self.cand_headings[idx]
-            augmented_desc = desc_text
-            if heading == "8501" or h_code.startswith("8501"):
-                augmented_desc = f"{desc_text} servo motor servomotor servomotors industrial servo electric servo drive motor"
-            elif heading == "7307" or h_code.startswith("7307"):
-                augmented_desc = f"{desc_text} pipe fittings tube fittings hydraulic fittings pipe connector coupling elbow flange sleeve nipple adapter"
-            elif heading == "7318" or h_code.startswith("7318"):
-                augmented_desc = f"{desc_text} fasteners bolts nuts screws washers rivets studs threaded rod"
-            sw = self._extract_subwords(augmented_desc)
+            sw = self._extract_subwords(desc_text)
             self.cand_subwords.append(sw)
             self.cand_subword_lens.append(len(sw))
-            cw = set(self._clean_words(augmented_desc))
+            cw = set(self._clean_words(desc_text))
             for w in cw:
                 self.word_to_cand[w].append(idx)
 
@@ -244,11 +235,6 @@ class HSNSemanticSearchEngine:
 
             # Stage 2: Lexical Candidate Pool Retrieval
             q_words = self._clean_words(clean_q)
-            q_lower = clean_q.lower()
-            has_vehicle_context = bool(re.search(r"\b(vehicle|vehicles|car|cars|truck|trucks|tractor|trailer|chassis|bumper|automobile|automobiles|passenger|transit|brakes?)\b", q_lower))
-            is_motor_query = bool(re.search(r"\b(servo|servomotor|servomotors|actuator)\b", q_lower)) or (bool(re.search(r"\b(motor|motors)\b", q_lower)) and not has_vehicle_context)
-            is_fittings_query = bool(re.search(r"\b(fittings?|couplings?|elbows?|flanges?|nipples?|unions?|adapters?|bushings?)\b", q_lower))
-            is_fasteners_query = bool(re.search(r"\b(bolts?|screws?|nuts?|washers?|rivets?|fasteners?|studs?)\b", q_lower))
 
             cand_bm25: Dict[int, float] = defaultdict(float)
             for w in q_words:
@@ -284,35 +270,6 @@ class HSNSemanticSearchEngine:
                 s_final = 0.65 * s_dense_norm + 0.35 * s_lex
                 code_val = self.cand_hsn_codes[idx]
                 head_val = self.cand_headings[idx]
-
-                # Disambiguation safeguard against Chapter 87 automotive vehicle parts misclassification
-                if is_motor_query and not has_vehicle_context and (code_val.startswith("87") or head_val.startswith("87")):
-                    s_final -= 0.60
-
-                # Domain classification boost for Chapter 85 electric/industrial motors
-                if is_motor_query and not has_vehicle_context and (code_val.startswith("8501") or head_val.startswith("8501")):
-                    s_final += 0.25
-
-                # Domain classification boost for Chapter 87 vehicles & automotive
-                if has_vehicle_context:
-                    if code_val.startswith("87") or head_val.startswith("87"):
-                        s_final += 0.55
-                    if code_val.startswith("8501") or head_val.startswith("8501"):
-                        s_final -= 0.60
-
-                # Disambiguation boost for pipe/tube fittings (Heading 7307) over raw tubes/pipes (7304/7305/7306)
-                if is_fittings_query:
-                    if code_val.startswith("7307") or head_val.startswith("7307") or code_val.startswith("391740") or code_val.startswith("7412") or code_val.startswith("7609"):
-                        s_final += 0.35
-                    elif code_val.startswith("7304") or head_val.startswith("7304") or code_val.startswith("7305") or code_val.startswith("7306"):
-                        s_final -= 0.35
-
-                # Disambiguation boost for fasteners (Heading 7318) over general raw steel wire/bars
-                if is_fasteners_query:
-                    if code_val.startswith("7318") or head_val.startswith("7318"):
-                        s_final += 0.35
-                    elif code_val.startswith("7223") or code_val.startswith("7214") or code_val.startswith("7215"):
-                        s_final -= 0.30
 
                 if clean_pref and (code_val.startswith(clean_pref) or head_val.startswith(clean_pref)):
                     s_final += 0.40
@@ -380,6 +337,56 @@ class HSNSemanticSearchEngine:
         if not hsn_code or not str(hsn_code).strip():
             return None
         code = str(hsn_code).strip()
+
+        # Statutory Chapter 99 Services Accounting Codes (SAC) recognized under Indian GST
+        sac_headings: Dict[str, str] = {
+            "9954": "Construction services",
+            "9961": "Services in maintenance, repair and installation",
+            "9962": "Research and development services",
+            "9963": "Accommodation, food and beverage services",
+            "9964": "Passenger transport services",
+            "9965": "Goods transport services",
+            "9966": "Rental services of transport vehicles",
+            "9967": "Supporting services in transport",
+            "9968": "Postal and courier services",
+            "9969": "Electricity, gas and water distribution services",
+            "9971": "Financial and related services",
+            "9972": "Real estate services",
+            "9973": "Leasing or rental services without operator",
+            "9981": "Research and development services",
+            "9982": "Legal and accounting services",
+            "9983": "Other professional, technical and business services",
+            "9984": "Telecommunications, broadcasting and information supply services",
+            "9985": "Support services",
+            "9986": "Support services to agriculture, forestry, fishing, mining and utilities",
+            "9987": "Maintenance, repair and installation services",
+            "9988": "Manufacturing services on physical inputs owned by others",
+            "9989": "Other manufacturing services",
+            "9991": "Public administration and other services provided to the community",
+            "9992": "Education services",
+            "9993": "Human health and social care services",
+            "9994": "Sewage and waste collection, treatment and disposal services",
+            "9995": "Services of membership organizations",
+            "9996": "Recreational, cultural and sporting services",
+            "9997": "Other services",
+            "9998": "Domestic services",
+            "9999": "Services provided by extraterritorial organizations and bodies",
+        }
+        if code.startswith("99") and len(code) in (4, 6) and code[:4] in sac_headings and code != "999999":
+            h4 = code[:4]
+            desc = sac_headings[h4]
+            return {
+                "hsn_code": code,
+                "hsn_4digit": h4,
+                "heading": h4,
+                "chapter": "99",
+                "description": desc,
+                "clean_description": desc.lower(),
+                "standard_rate": 18.0,
+                "is_blocked_17_5": 0,
+                "blocked_17_5_reason": "Eligible: General ITC",
+            }
+
         matched = self.tariff_df[self.tariff_df["hsn_code"] == code]
         if matched.empty:
             matched = self.tariff_df[self.tariff_df["hsn_4digit"] == code]

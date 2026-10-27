@@ -41,7 +41,7 @@
     "trdnm": null,
     "state": "29",
     "pin": "560002",
-    "pos": null,
+    "pos": "29",
     "loc": "Bengaluru",
     "dst": null,
     "bno": null,
@@ -54,8 +54,7 @@
     "buyer_lglnm": "KARNATAKA TRADERS",
     "buyer_loc": "Bengaluru",
     "buyer_pin": "560002",
-    "buyer_state": "29",
-    "buyer_pos": "29"
+    "buyer_state": "29"
   },
   "dispdt1": null,
   "shipdtl": null,
@@ -93,8 +92,7 @@
       "uqc": "NOS",
       "unitrate": 10000.0,
       "grossamt": 20000.0,
-      "discval": 0.0,
-      "igstrt": 18.0
+      "discval": 0.0
     }
   ],
   "valdtls": {
@@ -134,7 +132,8 @@
     "trancatg": "B2B",
     "reversecharge": "N",
     "transactionmode": "REG",
-    "igstonintra": "N"
+    "igstonintra": "N",
+    "RevChrg": "N"
   },
   "docdt1": {
     "document_type": "INV",
@@ -154,7 +153,7 @@
     "buyer_loc": "Bengaluru",
     "buyer_pin": "560002",
     "buyer_state": "29",
-    "buyer_pos": "29"
+    "pos": "29"
   },
   "valdt1": {
     "ttlassval": "20000.00",

@@ -15,6 +15,17 @@ try:
 except ImportError:
     yaml = None
 
+try:
+    from src.rules.rate_slab_checker import rate_slab_checker
+    from src.rules.section_17_5_detector import section_17_5_detector
+except ImportError:
+    try:
+        from rate_slab_checker import rate_slab_checker
+        from section_17_5_detector import section_17_5_detector
+    except ImportError:
+        rate_slab_checker = None
+        section_17_5_detector = None
+
 CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 CHAR_MAP = {c: i for i, c in enumerate(CHARS)}
 
@@ -69,6 +80,7 @@ class StatutoryRulesEngine:
         self.variance_tolerance = 0.05
         self.rule_02_enabled = True
         self.rule_04_enabled = True
+        self.rule_08_enabled = True
 
         if config_path:
             self._load_config(config_path)
@@ -191,5 +203,30 @@ class StatutoryRulesEngine:
             if supplier_gstin and isinstance(supplier_gstin, str) and supplier_gstin.strip():
                 if not verify_gstin_checksum(supplier_gstin):
                     violations.append("RULE_04_INVALID_GSTIN_CHECKSUM")
+
+        # -----------------------------------------------------------------
+        # RULE_08: Rate Slab Mismatch & Section 17(5) Blocked ITC
+        # -----------------------------------------------------------------
+        if self.rule_08_enabled:
+            # Check Rate Slab Mismatch
+            declared_hsn = sample.get("declared_hsn") or sample.get("hsncd") or sample.get("hsn")
+            check_rate = sample.get("declared_effective_rate", sample.get("gstrate", sample.get("rate")))
+            if rate_slab_checker and declared_hsn and check_rate is not None:
+                try:
+                    slab_res = rate_slab_checker.check(check_rate, declared_hsn)
+                    if slab_res and slab_res.get("flag") == "RATE_SLAB_MISMATCH":
+                        violations.append("RULE_08_RATE_SLAB_MISMATCH")
+                except Exception:
+                    pass
+
+            # Check Section 17(5) Blocked ITC
+            p_text = f"{sample.get('product_name', '') or sample.get('prdnm', '')} {sample.get('product_description', '') or sample.get('prddesc', '')}".strip()
+            if section_17_5_detector and (p_text or declared_hsn):
+                try:
+                    sec_match = section_17_5_detector.scan(p_text, hsn=declared_hsn)
+                    if sec_match and sec_match.get("flag") == "ITC_BLOCKED_SECTION_17_5":
+                        violations.append("RULE_08_ITC_BLOCKED_17_5")
+                except Exception:
+                    pass
 
         return violations

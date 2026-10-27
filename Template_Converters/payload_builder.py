@@ -21,6 +21,10 @@ try:
         ALLOWED_EXP_CAT,
         ALLOWED_TRANS_MODE,
         VALID_STATE_CODES,
+        classify_rule_2177_diagnostic,
+        normalize_uqc_statutory,
+        OFFICIAL_UQC_MASTER,
+        COMMON_UQC_MAPPING,
     )
 except ImportError:
     from error_mappings import (
@@ -32,6 +36,10 @@ except ImportError:
         ALLOWED_EXP_CAT,
         ALLOWED_TRANS_MODE,
         VALID_STATE_CODES,
+        classify_rule_2177_diagnostic,
+        normalize_uqc_statutory,
+        OFFICIAL_UQC_MASTER,
+        COMMON_UQC_MAPPING,
     )
 
 try:
@@ -52,6 +60,66 @@ except ImportError:
         validate_nic_2day_rule = None
         audit_and_rectify_line_item_sentinel = None
 
+try:
+    from src.rules.rate_slab_checker import rate_slab_checker
+    from src.rules.section_17_5_detector import section_17_5_detector
+except ImportError:
+    try:
+        import sys
+        from pathlib import Path
+        _root = Path(__file__).resolve().parent.parent
+        if str(_root) not in sys.path:
+            sys.path.insert(0, str(_root))
+        from src.rules.rate_slab_checker import rate_slab_checker
+        from src.rules.section_17_5_detector import section_17_5_detector
+    except Exception:
+        rate_slab_checker = None
+        section_17_5_detector = None
+
+try:
+    from src.ingestion.schemas import (
+        normalize_reverse_charge,
+        get_reverse_charge_rejection_reason,
+        get_ist_today,
+        get_ist_now,
+        classify_future_date_diagnostic,
+        classify_rule_2172_diagnostic,
+        classify_rule_2173_diagnostic,
+        classify_rule_2174_diagnostic,
+        aggregate_redundant_line_items,
+        split_invoice_payload_chunks,
+    )
+except Exception:
+    try:
+        import sys
+        from pathlib import Path
+        _root = Path(__file__).resolve().parent.parent
+        if str(_root) not in sys.path:
+            sys.path.insert(0, str(_root))
+        from src.ingestion.schemas import (
+            normalize_reverse_charge,
+            get_reverse_charge_rejection_reason,
+            get_ist_today,
+            get_ist_now,
+            classify_future_date_diagnostic,
+            classify_rule_2172_diagnostic,
+            classify_rule_2173_diagnostic,
+            classify_rule_2174_diagnostic,
+            aggregate_redundant_line_items,
+            split_invoice_payload_chunks,
+        )
+    except Exception:
+        normalize_reverse_charge = None
+        get_reverse_charge_rejection_reason = None
+        get_ist_today = None
+        get_ist_now = None
+        classify_future_date_diagnostic = None
+        classify_rule_2172_diagnostic = None
+        classify_rule_2173_diagnostic = None
+        classify_rule_2174_diagnostic = None
+        aggregate_redundant_line_items = None
+        split_invoice_payload_chunks = None
+
 KEY_ALIASES = {
     # Header
     "system.cd": "system_cd", "system cd": "system_cd",
@@ -60,8 +128,10 @@ KEY_ALIASES = {
     "self gstin": "self_gstin",
     
     # trandt1
-    "trancatg": "trancatg", "tran_catg": "trancatg",
-    "reversecharge": "reversecharge", "reverse_charge": "reversecharge",
+    "trancatg": "trancatg", "tran_catg": "trancatg", "supply_type": "trancatg", "suptyp": "trancatg",
+    "reversecharge": "reversecharge", "reverse_charge": "reversecharge", "rev_chrg": "reversecharge",
+    "revchrg": "reversecharge", "revcharge": "reversecharge", "rcm": "reversecharge", "regrev": "reversecharge",
+    "trandtls": "trandt1", "tran_dtls": "trandt1", "trandtl": "trandt1",
     "transactionmode": "transactionmode", "trans_mode": "transactionmode",
     "igstonintra": "igstonintra", "igst_on_intra": "igstonintra", "igst on intra": "igstonintra",
     
@@ -77,6 +147,7 @@ KEY_ALIASES = {
     "document_type": "document_type", "doc_type": "document_type",
     "docno": "docno", "doc_no": "docno", "document_no": "docno",
     "docdt": "docdt", "doc_dt": "docdt", "document_date": "docdt",
+    "dt": "docdt", "docdate": "docdt", "doc_date": "docdt",
     
     # supplierdt1
     "supplier_lginm": "supplier_lglnm", "supplier_1g1nm": "supplier_lglnm", "supplier lglnm": "supplier_lglnm",
@@ -197,7 +268,7 @@ COUNTRY_CURRENCY_MAP = {
 
 ALLOWED_UQC = [
     "BAG", "BAL", "BDL", "BKL", "BOU", "BOX", "BTL", "BUN", "CAN", "CBM", 
-    "CCM", "CMS", "CTN", "DOZ", "DRM", "GMS", "GRS", "GYD", "KGS", "KLR", 
+    "CCM", "CMS", "CTN", "DOZ", "DRM", "GGR", "GMS", "GRS", "GYD", "KGS", "KLR", 
     "KME", "MLT", "MTR", "MTS", "NOS", "PAC", "PCS", "PRS", "QTL", "ROL", 
     "SET", "SQF", "SQM", "SQY", "TBS", "TGM", "THD", "TON", "TUB", "UGS", 
     "UNT", "YDS", "OTH"
@@ -383,7 +454,8 @@ def process_payload(input_file: Any, output_valid: str = "valid.json", output_in
     norm_irnreq      = normalize_uppercase(payload.get("irnreq", ""))
     norm_irn         = normalize_field(payload.get("irn", ""))
     norm_trancatg    = normalize_uppercase(payload.get("trancatg", ""))
-    norm_revcharge   = normalize_uppercase(payload.get("reversecharge", ""))
+    raw_rev          = payload.get("reversecharge", payload.get("RevChrg", payload.get("revchrg", "")))
+    norm_revcharge   = normalize_reverse_charge(raw_rev)[0] if normalize_reverse_charge else normalize_uppercase(raw_rev)
     norm_transmode   = normalize_uppercase(payload.get("transactionmode", ""))
     norm_ecom_gstin  = normalize_gstin(payload.get("ecom_gstin", ""))
     norm_igst_intra  = normalize_uppercase(payload.get("igst_on_intra", ""))
@@ -640,8 +712,11 @@ def process_payload(input_file: Any, output_valid: str = "valid.json", output_in
                 errors.append("invforcur exceeds max length of 14 digits")
         except ValueError:
             errors.append(f"invforcur must be numeric. Got: '{norm_invforcur}'")
-    if norm_irnreq not in ["Y", "N"]: errors.append("IRNREQ must be 'Y' or 'N'")
-    if norm_revcharge not in ["Y", "N"]: errors.append("Reverse Charge must be 'Y' or 'N'")
+    if norm_revcharge not in ["Y", "N"]:
+        errors.append("Reverse Charge must be 'Y' or 'N'")
+    elif norm_trancatg and norm_trancatg != "B2B" and norm_revcharge == "Y":
+        reason = get_reverse_charge_rejection_reason(norm_trancatg, norm_wthpay) if get_reverse_charge_rejection_reason else f"Reverse Charge is not applicable for transaction category '{norm_trancatg}'."
+        errors.append(f"Rule 2162: {reason}")
     if norm_transmode not in allowed_transmode:
         errors.append(f"Invalid transactionmode. Must be one of {allowed_transmode}")
     if norm_expduty != "":
@@ -2273,18 +2348,66 @@ class PayloadBuilder:
         # Transaction Details (trandt1)
         raw_trancatg = clean_str(trandt1.get("trancatg", "B2B")).upper() or "B2B"
         trancatg = raw_trancatg
-        reversecharge = clean_str(trandt1.get("reversecharge", "N")).upper() or "N"
+
+        # Determine raw reverse charge and field name
+        raw_rev_val = None
+        has_rev = False
+        rc_field = "trandt1.reversecharge"
+        for k in ("RevChrg", "revchrg", "reversecharge", "reverse_charge", "rev_chrg", "rcm"):
+            if k in trandt1:
+                raw_rev_val = trandt1[k]
+                rc_field = f"trandt1.{k}"
+                has_rev = True
+                break
+        if not has_rev:
+            for k in ("RevChrg", "revchrg", "reversecharge", "reverse_charge", "rev_chrg", "rcm"):
+                if k in data:
+                    raw_rev_val = data[k]
+                    rc_field = k
+                    has_rev = True
+                    break
+        if not has_rev:
+            raw_rev_val = trandt1.get("reversecharge", "N")
+
+        if normalize_reverse_charge:
+            norm_rc, rc_audit = normalize_reverse_charge(raw_rev_val, field_name=rc_field)
+            if rc_audit:
+                audit_log.append(rc_audit)
+            reversecharge = norm_rc
+        else:
+            reversecharge = clean_str(raw_rev_val).upper() or "N"
+
         transactionmode = clean_str(trandt1.get("transactionmode", "REG")).upper() or "REG"
         igstonintra = clean_str(trandt1.get("igstonintra", "N")).upper() or "N"
 
-        # Reverse Charge Rule Check
-        if trancatg not in ("B2B", "SEZWP", "SEZWOP") and reversecharge == "Y":
+        # Scenario 3: Valid Exceptional Intra-State IGST Supply
+        is_exceptional_intra = bool(
+            data.get("is_exceptional_intra_igst") or
+            trandt1.get("is_exceptional_intra_igst") or
+            (str(trandt1.get("igstonintra", "")).strip().upper() == "Y")
+        )
+        if is_exceptional_intra and trancatg not in ("EXP", "EXPWP", "EXPWOP", "SEZWP", "SEZWOP"):
+            if igstonintra != "Y":
+                audit_log.append({
+                    "category": "BUSINESS_RULE_AUTO_CORRECTION",
+                    "field": "trandt1.igstonintra",
+                    "original": igstonintra or "N",
+                    "corrected": "Y",
+                    "description": 'If the transaction legally requires IGST on intra-state movement, set the flag "IgstOnIntra": "Y" under TranDtls.'
+                })
+            igstonintra = "Y"
+
+        # Reverse Charge Rule Check (Rule 2162)
+        if trancatg != "B2B" and reversecharge == "Y":
+            exp_sec = expdt1 or data.get("expdtl") or {}
+            w_pay = exp_sec.get("wthpay") if isinstance(exp_sec, dict) else None
+            reason_msg = get_reverse_charge_rejection_reason(trancatg, w_pay) if get_reverse_charge_rejection_reason else f"Reverse charge is not applicable for '{trancatg}' transactions (Rule 2162); auto-set to 'N'"
             audit_log.append({
                 "category": "BUSINESS_RULE_AUTO_CORRECTION",
                 "field": "trandt1.reversecharge",
                 "original": "Y",
                 "corrected": "N",
-                "description": f"Reverse charge is not applicable for '{trancatg}' transactions (Rule 2162); auto-set to 'N'"
+                "description": reason_msg
             })
             reversecharge = "N"
 
@@ -2356,17 +2479,37 @@ class PayloadBuilder:
                 "description": "Removed invalid punctuation characters from document number per NIC Rule 2281"
             })
 
+        raw_doc_dt = docdt1.get("docdt", docdt1.get("Dt", data.get("docdt", data.get("Dt", ""))))
+        norm_doc_dt = normalize_date_to_standard(raw_doc_dt, audit_log=audit_log, field="docdt1.docdt")
         clean_docdt1 = {
             "document_type": clean_str(docdt1.get("document_type", "INV")).upper() or "INV",
             "docno": clean_docno,
-            "docdt": normalize_date_to_standard(docdt1.get("docdt", ""), audit_log=audit_log, field="docdt1.docdt")
+            "docdt": norm_doc_dt
         }
 
-        # NIC 2-Day rule compliance check for IRN generation
+        # Future date (Rule 2163) and NIC 2-Day rule compliance checks for IRN generation
         if clean_docdt1["docdt"]:
             try:
                 inv_dt = datetime.strptime(clean_docdt1["docdt"], "%d-%m-%Y").date()
-                days_diff = (datetime.today().date() - inv_dt).days
+                today_ist = get_ist_today() if get_ist_today else datetime.now().date()
+                if inv_dt > today_ist:
+                    is_utc = bool(data.get("is_utc_context") or data.get("utc_desync") or data.get("server_utc"))
+                    diag = classify_future_date_diagnostic(inv_dt, raw_str=str(raw_doc_dt), server_today=today_ist, is_utc_context=is_utc) if classify_future_date_diagnostic else None
+                    if diag:
+                        audit_log.append({
+                            "category": f"NIC_RULE_2163_{diag['scenario']}",
+                            "field": "docdt1.docdt",
+                            "original": str(raw_doc_dt),
+                            "corrected": diag["valid_str"].replace("/", "-"),
+                            "description": diag["reason"]
+                        })
+                        clean_docdt1["docdt"] = diag["valid_str"].replace("/", "-")
+                        inv_dt = diag["valid_date"]
+                    else:
+                        clean_docdt1["docdt"] = today_ist.strftime("%d-%m-%Y")
+                        inv_dt = today_ist
+
+                days_diff = (today_ist - inv_dt).days
                 if days_diff > 2 and irnreq == "Y":
                     audit_log.append({
                         "category": "NIC_RULE_DATE_RESTRICTION",
@@ -2467,6 +2610,53 @@ class PayloadBuilder:
                 buy_pin = "999999"
         else:
             # Domestic / SEZ fallback resolution
+            # Scenario 2: Wrong Place of Supply (Pos) Entered
+            # Seller State = "27", Recipient is in Karnataka (29), but payload has: "BuyerDtls": { "Pos": "27" }
+            dest_state = None
+            if buy_gstin and buy_gstin != "URP" and len(buy_gstin) >= 2 and buy_gstin[:2].isdigit():
+                dest_state = buy_gstin[:2]
+            elif buy_state and buy_state.isdigit() and buy_state != "96":
+                dest_state = buy_state
+
+            if dest_state and sup_state and dest_state != sup_state:
+                if pos == sup_state or not pos:
+                    audit_log.append({
+                        "category": "BUSINESS_RULE_AUTO_CORRECTION",
+                        "field": "buyerdt1.pos",
+                        "original": pos or "(blank)",
+                        "corrected": dest_state,
+                        "description": "If this was actually an inter-state sale to an out-of-state recipient, fix the recipient's Pos code to match the destination state."
+                    })
+                    pos = dest_state
+
+            # Rule 2174 / Scenario 2: Incorrect Place of Supply (Pos) Passed on Local Sale
+            ship_state_val = str(shipdtl.get("ship_state", shipdtl.get("state", "")) if shipdtl else "").strip()
+            is_actual_local = bool(
+                raw_invoice.get("is_actual_local_sale") or
+                data.get("is_actual_local_sale") or
+                (dest_state and sup_state and dest_state == sup_state and pos != sup_state and not ship_state_val) or
+                (dest_state and sup_state and dest_state == sup_state and pos != sup_state and ship_state_val == sup_state)
+            )
+            if dest_state and sup_state and is_actual_local and pos != sup_state:
+                audit_log.append({
+                    "category": "BUSINESS_RULE_AUTO_CORRECTION",
+                    "field": "buyerdt1.pos",
+                    "original": pos,
+                    "corrected": sup_state,
+                    "description": f"If the transaction was actually a local intra-state sale, correct Pos to match the supplier's state ({sup_state}) (Rule 2174)."
+                })
+                pos = sup_state
+
+            # Rule 2174 / Scenario 4: Bill-to / Ship-to State Confusion (Section 10(1)(b) of the IGST Act)
+            if ship_state_val and sup_state and ship_state_val == sup_state and pos != sup_state:
+                audit_log.append({
+                    "category": "STATUTORY_BILL_TO_SHIP_TO_RULE",
+                    "field": "buyerdt1.pos",
+                    "original": pos,
+                    "corrected": pos,
+                    "description": 'In "Bill To – Ship To" transactions where the billing party is out-of-state, the Place of Supply is the billing party\'s state, making the invoice inter-state requiring IGST (Section 10(1)(b) of the IGST Act).'
+                })
+
             if not pos and buy_gstin and buy_gstin != "URP" and len(buy_gstin) >= 2:
                 pos = buy_gstin[:2]
                 audit_log.append({
@@ -2563,6 +2753,42 @@ class PayloadBuilder:
         # SEZ & Export are ALWAYS inter-state supplies (IGST only)
         is_intra = (sup_state == pos and igstonintra != "Y" and not is_export and not is_sez)
 
+        # Rule 2173: ItemList maximum line-item limit & redundant granularity evaluation
+        max_item_limit = int(raw_invoice.get("middleware_threshold") or 1000)
+        is_middleware = bool(raw_invoice.get("is_middleware_restricted") or (raw_invoice.get("middleware_threshold") and int(raw_invoice.get("middleware_threshold")) < 1000))
+        is_unsplit_bulk = bool(raw_invoice.get("is_cannot_split_bulk"))
+
+        if len(itemdtls) > max_item_limit or is_middleware:
+            consolidated_items, red_count, totals = aggregate_redundant_line_items(itemdtls) if aggregate_redundant_line_items else (itemdtls, 0, {})
+            diag = classify_rule_2173_diagnostic(
+                item_count=len(itemdtls),
+                items=itemdtls,
+                max_limit=1000,
+                is_middleware_restricted=is_middleware,
+                middleware_threshold=raw_invoice.get("middleware_threshold"),
+                is_cannot_split_bulk=is_unsplit_bulk
+            ) if classify_rule_2173_diagnostic else None
+
+            if red_count > 0 and len(consolidated_items) <= max_item_limit:
+                audit_log.append({
+                    "category": "RULE_2173_ITEM_LIMIT_SUMMARIZATION",
+                    "field": "itemdtls",
+                    "original": f"{len(itemdtls)} items",
+                    "corrected": f"{len(consolidated_items)} items",
+                    "description": f"{diag['scenario_name']}: {diag['reason']} Aggregated {len(itemdtls)} line items into {len(consolidated_items)} summarized items sharing identical HsnCd, GstRt, and unit price. {diag['fix']}" if diag else "Aggregated redundant line items."
+                })
+                itemdtls = consolidated_items
+            elif len(itemdtls) > max_item_limit:
+                audit_log.append({
+                    "category": "RULE_2173_ITEM_LIMIT_EXCEEDED",
+                    "field": "itemdtls",
+                    "original": f"{len(itemdtls)} items",
+                    "corrected": f"Capped to {max_item_limit} items" if not is_unsplit_bulk else f"{len(itemdtls)} items",
+                    "description": f"{diag['scenario_name']}: {diag['reason']} {diag['fix']}" if diag else f"Capped items to limit {max_item_limit}."
+                })
+                if not is_unsplit_bulk and raw_invoice.get("auto_cap_items", True):
+                    itemdtls = itemdtls[:max_item_limit]
+
         # Line Items (itemdtls) with auto-math & tax allocation
         clean_itemdtls: List[Dict[str, Any]] = []
         total_assamt = Decimal("0.00")
@@ -2604,14 +2830,14 @@ class PayloadBuilder:
                             "field": f"itemdtls[{idx}].hsncd",
                             "original": orig_hsn or "(blank)",
                             "corrected": hsncd,
-                            "description": f"⚠️ Wrong HSN Code Detected: Customer entered '{orig_hsn or '(blank)'}', which is not the correct statutory code for '{prdnm}' ('{prddesc}'). Based on Statutory Tariff Master & ML HSN Intelligence (128-D Contrastive Hybrid), the correct official HSN is '{hsncd}' ({best_m.get('description', '')[:50]}...) with statutory {hsn_statutory_rate}% GST. Auto-corrected to ensure NIC IRN compliance."
+                            "description": f"⚠️ NIC Rule 2176 Violation: HSN code(s)-{orig_hsn or '(blank)'} is invalid. Wrong HSN code is being passed. Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side. Based on Statutory Tariff Master & ML HSN Intelligence, the correct official HSN is '{hsncd}' ({best_m.get('description', '')[:50]}...) with statutory {hsn_statutory_rate}% GST. Auto-corrected to ensure NIC IRN compliance."
                         })
                         audit_log.append({
                             "category": "WRONG_HSN_CODE_DETECTED",
                             "field": f"itemdtls[{idx}].hsncd",
                             "original": orig_hsn or "(blank)",
                             "corrected": hsncd,
-                            "description": f"⚠️ Wrong HSN Code Detected: Customer entered '{orig_hsn or '(blank)'}', which is not the correct statutory code for '{prdnm}' ('{prddesc}'). Based on Statutory Tariff Master & ML HSN Intelligence (128-D Contrastive Hybrid), the correct official HSN is '{hsncd}' ({best_m.get('description', '')[:50]}...) with statutory {hsn_statutory_rate}% GST. Auto-corrected to ensure NIC IRN compliance."
+                            "description": f"⚠️ NIC Rule 2176 Violation: HSN code(s)-{orig_hsn or '(blank)'} is invalid. Wrong HSN code is being passed. Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side. Based on Statutory Tariff Master & ML HSN Intelligence, the correct official HSN is '{hsncd}' ({best_m.get('description', '')[:50]}...) with statutory {hsn_statutory_rate}% GST. Auto-corrected to ensure NIC IRN compliance."
                         })
                         if best_m.get("is_blocked_17_5") == 1:
                             audit_log.append({
@@ -2624,8 +2850,69 @@ class PayloadBuilder:
                     elif hsn_statutory_rate is None:
                         hsn_statutory_rate = Decimal(str(best_m.get("gst_rate", 18.0)))
 
-            raw_uqc = normalize_uppercase(item.get("uqc", "NOS")) or "NOS"
-            uqc = raw_uqc if raw_uqc in ALLOWED_UQC else "OTH"
+            # Day 8: Rate Slab Check & Section 17(5) Rule Detection
+            rate_slab_mismatch_rate = None
+            declared_rate_candidate = None
+            for g_k in ("gstrate", "gst_rate", "gst rate", "tax_rate", "gstrt", "gst_rt"):
+                if g_k in item and item.get(g_k) is not None and str(item.get(g_k)).strip() != "":
+                    try:
+                        declared_rate_candidate = float(clean_decimal_str(item.get(g_k), 2))
+                        break
+                    except Exception:
+                        pass
+            if declared_rate_candidate is None:
+                try:
+                    r_ig = float(clean_decimal_str(item.get("igstrt", "0.00"), 2))
+                    r_cg = float(clean_decimal_str(item.get("cgstrt", "0.00"), 2))
+                    r_sg = float(clean_decimal_str(item.get("sgstrt", "0.00"), 2))
+                    if r_ig > 0:
+                        declared_rate_candidate = r_ig
+                    elif r_cg + r_sg > 0:
+                        declared_rate_candidate = r_cg + r_sg
+                except Exception:
+                    pass
+
+            if rate_slab_checker and declared_rate_candidate is not None and hsncd:
+                rate_slab_res = rate_slab_checker.check(declared_rate_candidate, hsncd)
+                if rate_slab_res and rate_slab_res.get("flag") == "RATE_SLAB_MISMATCH":
+                    stat_r = Decimal(str(rate_slab_res.get("statutory_rate", 18.0)))
+                    rate_slab_mismatch_rate = stat_r
+                    hsn_statutory_rate = stat_r
+                    audit_log.append({
+                        "category": "RATE_SLAB_MISMATCH",
+                        "field": f"itemdtls[{idx}].gstrate",
+                        "original": str(rate_slab_res.get("declared_rate")),
+                        "corrected": str(stat_r),
+                        "description": rate_slab_res.get("message", f"⚠️ Rate Slab Mismatch: Declared rate {rate_slab_res.get('declared_rate')}% does not match statutory rate {stat_r}% for HSN {hsncd}. Overriding with statutory rate.")
+                    })
+
+            # Section 17(5) text scan
+            if section_17_5_detector:
+                p_text = f"{prdnm} {prddesc}".strip()
+                sec175_match = section_17_5_detector.scan(p_text, hsn=hsncd)
+                if sec175_match and sec175_match.get("flag") == "ITC_BLOCKED_SECTION_17_5":
+                    sub_clause = sec175_match.get("sub_clause", "17(5)")
+                    full_tag = sec175_match.get("full_tag", f"ITC Blocked: CGST Act Section {sub_clause}")
+                    matched_term = sec175_match.get("matched_term", "")
+                    audit_log.append({
+                        "category": "ITC_BLOCKED_SECTION_17_5",
+                        "field": f"itemdtls[{idx}].prddesc",
+                        "original": prddesc or prdnm,
+                        "corrected": full_tag,
+                        "description": f"🚫 {full_tag}: Ineligible for Input Tax Credit under CGST Act. Matched term: '{matched_term}'. Detected in product description for item '{prdnm}'."
+                    })
+
+            raw_uqc = str(item.get("uqc") or item.get("unit") or "NOS").strip()
+            norm_uqc, diag_uqc = normalize_uqc_statutory(raw_uqc)
+            if not diag_uqc["is_valid"]:
+                audit_log.append({
+                    "category": "UQC_MASTER_AUTO_ALIGNMENT",
+                    "field": f"itemdtls[{idx}].uqc",
+                    "original": raw_uqc,
+                    "corrected": norm_uqc,
+                    "description": f"Unit Quantity Code '{raw_uqc}' is not as per NIC master (Rule 2177). {diag_uqc['reason']} Auto-aligned to '{norm_uqc}'."
+                })
+            uqc = norm_uqc
 
             qty_d = Decimal(clean_decimal_str(item.get("qty", "1.000"), 3, audit_log=audit_log, field=f"itemdtls[{idx}].qty"))
             unitrate_d = Decimal(clean_decimal_str(item.get("unitrate", "0.00"), 2, audit_log=audit_log, field=f"itemdtls[{idx}].unitrate"))
@@ -2747,7 +3034,10 @@ class PayloadBuilder:
             raw_cgstrt = Decimal(clean_decimal_str(item.get("cgstrt", "0.00"), 2))
             raw_sgstrt = Decimal(clean_decimal_str(item.get("sgstrt", "0.00"), 2))
 
-            if declared_gstrate is not None:
+            if rate_slab_mismatch_rate is not None:
+                # Override gst_rate with statutory_rate (fix the silent wrong rate bug)
+                gst_rate = rate_slab_mismatch_rate
+            elif declared_gstrate is not None:
                 gst_rate = declared_gstrate
             elif raw_igstrt > 0:
                 gst_rate = raw_igstrt
@@ -2765,7 +3055,19 @@ class PayloadBuilder:
             statecessamt_d = Decimal(clean_decimal_str(item.get("statecessamt", "0.00"), 2))
 
             # Tax Allocation
+            raw_item_igst = Decimal(clean_decimal_str(item.get("igstamt", item.get("igstval", "0.00")), 2))
+            raw_item_cgst = Decimal(clean_decimal_str(item.get("cgstamt", item.get("cgstval", "0.00")), 2))
+            raw_item_sgst = Decimal(clean_decimal_str(item.get("sgstamt", item.get("sgstval", "0.00")), 2))
+
             if is_intra:
+                if raw_item_igst > Decimal("0.00") and raw_item_cgst == Decimal("0.00") and raw_item_sgst == Decimal("0.00"):
+                    audit_log.append({
+                        "category": "TAX_ALLOCATION_AUTO_CORRECTION",
+                        "field": f"itemdtls[{idx}].igstamt",
+                        "original": str(raw_item_igst),
+                        "corrected": "0.00",
+                        "description": "Same supplier state and POS means regular intra-state supply. Clear IgstAmt and split tax equally between CGST and SGST."
+                    })
                 cgstrt_d = (gst_rate / Decimal("2")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                 sgstrt_d = cgstrt_d
                 igstrt_d = Decimal("0.00")
@@ -2773,6 +3075,14 @@ class PayloadBuilder:
                 sgstamt_d = cgstamt_d
                 igstamt_d = Decimal("0.00")
             else:
+                if raw_item_cgst > Decimal("0.00") or raw_item_sgst > Decimal("0.00"):
+                    audit_log.append({
+                        "category": "TAX_ALLOCATION_AUTO_CORRECTION",
+                        "field": f"itemdtls[{idx}].cgstamt",
+                        "original": f"CGST: {raw_item_cgst}, SGST: {raw_item_sgst}",
+                        "corrected": f"IGST: {(assamt_d * gst_rate / Decimal('100')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)}",
+                        "description": "Supplier and POS states are different, so it is an inter-state sale. Clear CGST/SGST to 0.00 and pass the full tax rate under IgstAmt (Rule 2174)."
+                    })
                 igstrt_d = gst_rate
                 cgstrt_d = Decimal("0.00")
                 sgstrt_d = Decimal("0.00")
@@ -2886,6 +3196,34 @@ class PayloadBuilder:
                     "description": "Reconciled Total Invoice Value with sum of items, taxes, other charges minus discounts (Rule 2189)"
                 })
 
+        # Scenario 4: Summary vs. Item Level Mismatch
+        raw_igstval_str = valdt1.get("igstval") or valdt1.get("igstamt") or ""
+        if raw_igstval_str:
+            curr_igst_d = Decimal(clean_decimal_str(raw_igstval_str, 2))
+            if curr_igst_d > Decimal("0.00") and total_igst == Decimal("0.00") and (total_cgst > 0 or total_sgst > 0):
+                audit_log.append({
+                    "category": "INVOICE_TOTALS_RECONCILIATION",
+                    "field": "valdt1.igstval",
+                    "original": raw_igstval_str,
+                    "corrected": "0.00",
+                    "description": "Header total tax values in ValDtls must match the sum of item-level taxes in ItemList."
+                })
+
+        # Scenario 3: Header Summary vs. Line Items Mismatch (Rule 2174)
+        raw_cgstval_str = valdt1.get("cgstval") or valdt1.get("cgstamt") or ""
+        raw_sgstval_str = valdt1.get("sgstval") or valdt1.get("sgstamt") or ""
+        if raw_cgstval_str or raw_sgstval_str:
+            curr_cgst_d = Decimal(clean_decimal_str(raw_cgstval_str or "0.00", 2))
+            curr_sgst_d = Decimal(clean_decimal_str(raw_sgstval_str or "0.00", 2))
+            if (curr_cgst_d > Decimal("0.00") or curr_sgst_d > Decimal("0.00")) and total_igst > Decimal("0.00") and total_cgst == Decimal("0.00") and total_sgst == Decimal("0.00"):
+                audit_log.append({
+                    "category": "INVOICE_TOTALS_RECONCILIATION",
+                    "field": "valdt1.cgstval",
+                    "original": f"CGST: {raw_cgstval_str}, SGST: {raw_sgstval_str}",
+                    "corrected": "0.00",
+                    "description": "Header totals in ValDtls must mirror line-item taxes. If line items carry IGST, CgstVal and SgstVal in ValDtls must be 0.00 (Rule 2174)."
+                })
+
         clean_valdt1 = {
             "ttlassval": str(total_assamt),
             "cgstval": str(total_cgst),
@@ -2933,12 +3271,17 @@ class PayloadBuilder:
         out_invoice["trandt1"] = {
             "trancatg": trancatg,
             "reversecharge": reversecharge,
+            "RevChrg": reversecharge,
             "transactionmode": transactionmode,
             "igstonintra": igstonintra
         }
+        out_invoice["reversecharge"] = reversecharge
+        out_invoice["RevChrg"] = reversecharge
         if clean_expdt1:
             out_invoice["expdt1"] = clean_expdt1
         out_invoice["docdt1"] = clean_docdt1
+        out_invoice["docdt"] = clean_docdt1["docdt"]
+        out_invoice["Dt"] = clean_docdt1["docdt"].replace("-", "/")
         out_invoice["supplierdt1"] = clean_supplierdt1
         out_invoice["buyerdt1"] = clean_buyerdt1
         if clean_dispdt1:
@@ -2985,6 +3328,10 @@ class PayloadBuilder:
     def convert_payload_document(cls, input_data: Any) -> Dict[str, Any]:
         """Backward-compatible wrapper returning only corrected payload."""
         return cls.convert_payload_document_with_audit(input_data)[0]
+
+    # Aliases
+    build_payload = auto_correct_and_build
+
 
 if __name__ == "__main__":
     import os

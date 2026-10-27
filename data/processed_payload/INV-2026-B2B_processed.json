@@ -48,7 +48,7 @@
     "trdnm": "APEX COMMERCE",
     "state": "29",
     "pin": "560001",
-    "pos": null,
+    "pos": "29",
     "loc": "Bengaluru",
     "dst": "Bengaluru",
     "bno": "55",
@@ -60,7 +60,6 @@
     "buyer_gstin": "URP",
     "buyer_lglnm": "APEX COMMERCE ENTERPRISES",
     "buyer_trdnm": "APEX COMMERCE",
-    "buyer_pos": "29",
     "buyer_bno": "55",
     "buyer_bnm": "MG Road Commercial Plaza",
     "buyer_loc": "Bengaluru",
@@ -104,8 +103,7 @@
       "uqc": "NOS",
       "unitrate": 10000.0,
       "grossamt": 50000.0,
-      "discval": 0.0,
-      "igstrt": 18.0
+      "discval": 0.0
     }
   ],
   "valdtls": {
@@ -146,7 +144,8 @@
     "trancatg": "B2B",
     "reversecharge": "N",
     "transactionmode": "REGULAR_TRANSIT",
-    "igstonintra": "N"
+    "igstonintra": "N",
+    "RevChrg": "N"
   },
   "docdt1": {
     "document_type": "INV",
@@ -171,12 +170,19 @@
     "buyer_gstin": "URP",
     "buyer_lglnm": "APEX COMMERCE ENTERPRISES",
     "buyer_trdnm": "APEX COMMERCE",
-    "buyer_pos": "29",
+    "pos": "29",
     "buyer_bno": "55",
     "buyer_bnm": "MG Road Commercial Plaza",
     "buyer_loc": "Bengaluru",
     "buyer_dst": "Bengaluru",
     "buyer_pin": "560001",
     "buyer_state": "29"
+  },
+  "valdt1": {
+    "assval": 50000.0,
+    "cgstval": 4500.0,
+    "sgstval": 4500.0,
+    "igstval": 0.0,
+    "totinvval": 59000.0
   }
 }

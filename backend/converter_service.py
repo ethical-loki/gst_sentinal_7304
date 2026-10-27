@@ -58,6 +58,13 @@ try:
 except ImportError as e:
     raise ImportError(f"Failed to import Template_Converters modules: {e}")
 
+try:
+    from src.rules.section_17_5_detector import section_17_5_detector
+    from src.rules.rate_slab_checker import rate_slab_checker
+except ImportError:
+    section_17_5_detector = None
+    rate_slab_checker = None
+
 
 def load_default_sample_dirty() -> Dict[str, Any]:
     """Loads default dirty customer input sample from Template_Converters or project root, keeping dates fresh."""
@@ -522,19 +529,30 @@ def compute_buyer_risk_profile(invoice: dict) -> dict:
             factors.append(f"✅ Intrastate supply ({supp_st}) correctly routed through dual CGST + SGST.")
             
     # 4. Section 17(5) Blocked Credit Check
-    blocked_keywords = ["motor car", "passenger vehicle", "club membership", "food and beverages", "beauty treatment", "outdoor catering", "personal consumption"]
-    sec_17_5_blocked = False
+    sec_17_5_match = None
     for itm in items:
-        p_text = f"{itm.get('prdnm', '')} {itm.get('prddesc', '')}".lower()
+        p_text = f"{itm.get('prdnm', '')} {itm.get('prddesc', '')}".strip()
         hsn = str(itm.get('hsncd', itm.get('hsn', '')) or '').strip()
-        if any(kw in p_text for kw in blocked_keywords) or hsn.startswith("8703"):
-            sec_17_5_blocked = True
+        if section_17_5_detector:
+            sec_17_5_match = section_17_5_detector.scan(p_text, hsn=hsn)
+        else:
+            blocked_keywords = ["motor car", "passenger vehicle", "club membership", "food and beverages", "beauty treatment", "outdoor catering", "personal consumption"]
+            if any(kw in p_text.lower() for kw in blocked_keywords) or hsn.startswith("8703"):
+                sec_17_5_match = {
+                    "sub_clause": "17(5)",
+                    "full_tag": "ITC Blocked: CGST Act Section 17(5)",
+                    "matched_term": "motor car / personal consumption",
+                }
+        if sec_17_5_match:
             break
             
-    if sec_17_5_blocked:
+    if sec_17_5_match:
         score += 40
         itc_status = "BLOCKED_SEC_17_5"
-        factors.append("🚫 Section 17(5) Blocked Credit: Ineligible for ITC (Motor Vehicle / Personal Consumption restrictions).")
+        sub_clause = sec_17_5_match.get("sub_clause", "17(5)")
+        matched_term = sec_17_5_match.get("matched_term", "restricted item")
+        term_desc = f"{matched_term} detected" if "detected" not in matched_term.lower() else matched_term
+        factors.append(f"🚫 ITC Blocked: CGST Act Section {sub_clause} — {term_desc.capitalize()}")
     elif is_urp:
         itc_status = "NOT_APPLICABLE_URP"
     else:
@@ -789,15 +807,19 @@ def get_converter_misclass_scorer():
 
 
 def get_converter_hsn_search_engine():
-    """Initializes and returns cached HSNSemanticSearchEngine."""
+    """Initializes and returns cached HSNIntelligenceEngine / HSNSemanticSearchEngine."""
     global _converter_hsn_engine
     if _converter_hsn_engine is None:
         try:
-            from src.nlp.hsn_search import HSNSemanticSearchEngine
-            _converter_hsn_engine = HSNSemanticSearchEngine()
-        except Exception as e:
-            print(f"[WARN] Failed to load HSNSemanticSearchEngine in converter_service: {e}")
-            _converter_hsn_engine = None
+            from src.nlp.hsn_intelligence import HSNIntelligenceEngine
+            _converter_hsn_engine = HSNIntelligenceEngine()
+        except Exception:
+            try:
+                from src.nlp.hsn_search import HSNSemanticSearchEngine
+                _converter_hsn_engine = HSNSemanticSearchEngine()
+            except Exception as e:
+                print(f"[WARN] Failed to load HSN search engine in converter_service: {e}")
+                _converter_hsn_engine = None
     return _converter_hsn_engine
 
 

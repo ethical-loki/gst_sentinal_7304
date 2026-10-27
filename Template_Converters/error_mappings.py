@@ -135,7 +135,7 @@ MAJOR_INDIAN_PORTS: Set[str] = {
 
 ALLOWED_UQC: List[str] = [
     "BAG", "BAL", "BDL", "BKL", "BOU", "BOX", "BTL", "BUN", "CAN", "CBM",
-    "CCM", "CMS", "CTN", "DOZ", "DRM", "GMS", "GRS", "GYD", "KGS", "KLR",
+    "CCM", "CMS", "CTN", "DOZ", "DRM", "GGR", "GMS", "GRS", "GYD", "KGS", "KLR",
     "KME", "MLT", "MTR", "MTS", "NOS", "PAC", "PCS", "PRS", "QTL", "ROL",
     "SET", "SQF", "SQM", "SQY", "TBS", "TGM", "THD", "TON", "TUB", "UGS",
     "UNT", "YDS", "OTH"
@@ -150,6 +150,8 @@ ALLOWED_TRAN_CATG: List[str] = [
     "SEZWP",   # SEZ with payment of tax
     "SEZWOP",  # SEZ without payment of tax
     "EXP",     # Direct Export
+    "EXPWP",   # Export with payment of tax
+    "EXPWOP",  # Export without payment of tax
     "DEXP",    # Deemed Export
     "B2G",     # Business to Government
     "B2C"      # Business to Consumer
@@ -204,13 +206,13 @@ IRN_ERRORS: Dict[int, Dict[str, str]] = {
     },
     2162: {
         "message": "Reverse Charge is not applicable for this transaction",
-        "reason": "Trying to set Reverse Charges applicable for transactions other than B2B/SEZ",
-        "resolution": "Reverse charge can only be 'Y' for B2B/SEZ transactions"
+        "reason": "Trying to set Reverse Charges applicable for transactions other than B2B",
+        "resolution": "Reverse charge can only be 'Y' for B2B transactions"
     },
     2163: {
         "message": "The document date should not be future date.",
-        "reason": "Attempting to set future date for the document date",
-        "resolution": "Check the document date; docdt cannot be in the future"
+        "reason": "Document date exceeds current server calendar day in IST (Rule 2163)",
+        "resolution": "Set document date to today's date or earlier, ensure ERP date logic runs in IST (Asia/Kolkata), and parse strictly as DD/MM/YYYY."
     },
     2164: {
         "message": "Document date is older than 2 days from current date. IRN cannot be generated or changed.",
@@ -228,49 +230,155 @@ IRN_ERRORS: Dict[int, Dict[str, str]] = {
         "resolution": "Set CGST and SGST for intra-state, or set igstonintra='Y' if eligible"
     },
     2173: {
-        "message": "You have exceeded the limit of number of items",
-        "reason": "User passed payload with items exceeding allowed API limit",
-        "resolution": "Split invoice or use bulk/special API"
+        "message": "The number of objects passed in ItemList exceeds the maximum line-item limit supported by the API endpoint",
+        "reason": "ItemList contains more items than the API threshold (standard maximum 1,000 items)",
+        "resolution": "Cap ItemList at maximum 1,000 items, aggregate redundant line items sharing identical HsnCd, GstRt, and unit price, split into separate invoice chunks, or escalate non-splittable bulk invoices to NIC helpdesk"
     },
     2174: {
         "message": "For inter-state transaction, CGST and SGST amounts are not applicable; only IGST amount is applicable",
         "reason": "CGST and SGST taxes passed for inter-state transaction (supplier state != POS)",
-        "resolution": "Set only IGST amount for inter-state/SEZ transactions; CGST and SGST must be 0"
+        "resolution": "Supplier and POS states are different, so it is an inter-state sale. Clear CGST/SGST to 0.00 and pass the full tax rate under IgstAmt. For Bill-to/Ship-to transactions, retain POS as per Section 10(1)(b) of the IGST Act and apply IGST."
     },
     2176: {
         "message": "HSN code(s)-{0} is invalid",
-        "reason": "Wrong HSN code passed",
-        "resolution": "Check HSN code against NIC master (minimum 4 to 8 digits for goods, 6 for services 99xxxx)"
+        "reason": "Wrong HSN code is being passed",
+        "resolution": "Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side."
     },
     2177: {
         "message": "Unit Quantity Code(s)-{0} is/are not as per master",
-        "reason": "Invalid unit code passed",
-        "resolution": "Use standard UQC (e.g., NOS, PCS, KGS, BAG, MTR, TON, etc.)"
+        "reason": "The value passed in the Unit field within an item object of ItemList does not match the official 3-character Unit Quantity Code (UQC) master list prescribed by the NIC / GSTN portal. The IRP does not accept colloquial, arbitrary, or ERP-specific abbreviations (e.g., 'KG', 'LITRE', 'PCS.', or 'NO'). If an item's unit is not explicitly on the master list, the fallback code OTH (Others) must be passed.",
+        "resolution": "Use official 3-letter standard UQC (e.g. KGS, NOS, PCS, MTR, MTS, PAC, BDL) or fallback code OTH (Others) for unlisted units."
     },
     2182: {
         "message": "Taxable value of all items is not equal to total taxable value",
-        "reason": "Sum of assamt across all items != ttlassval in valdt1",
-        "resolution": "Reconcile sum(item.assamt) to equal valdt1.ttlassval"
+        "reason": "Total taxable/assessable value declared at invoice header (ValDtls.AssVal) does not match the sum of taxable/assessable values across all line items (sum(ItemList[i].AssAmt)). Strict mathematical equality enforced.",
+        "resolution": "Reconcile ValDtls.AssVal dynamically to strictly equal sum(ItemList[i].AssAmt). Check for: 1. Header not updated after item edits; 2. Pre-tax discount deducted twice; 3. Paise/decimal rounding issue; 4. Gross total (TotAmt) used instead of AssAmt.",
+        "scenarios": {
+            "HEADER_NOT_UPDATED_AFTER_ITEM_EDITS": {
+                "name": "Header Not Updated After Item Edits",
+                "fix": "Ensure ValDtls.AssVal dynamically recalculates the sum of all ItemList[i].AssAmt before sending."
+            },
+            "PRE_TAX_DISCOUNT_DEDUCTED_TWICE": {
+                "name": "Pre-tax Discount Deducted Twice",
+                "fix": "In e-Invoicing, AssVal must equal the sum of item assessable values (AssAmt), which already account for item-level discounts. Deducting the discount again at ValDtls.AssVal causes a mismatch."
+            },
+            "PAISE_DECIMAL_ROUNDING_ISSUE": {
+                "name": "Paise / Decimal Rounding Issue",
+                "fix": "Line-item totals and header assessable values must be identical to 2 decimal places. Reconcile header assessable value or adjust last line item AssAmt."
+            },
+            "GROSS_TOTAL_USED_AS_ASSVAL": {
+                "name": "Gross Total (TotAmt) Used Instead of AssAmt",
+                "fix": "AssVal must strictly equal the sum of AssAmt (net taxable value), not TotAmt (gross value before discount)."
+            }
+        }
     },
     2183: {
         "message": "SGST value of all items is not equal to total SGST Value",
-        "reason": "Sum of sgstamt across all items != sgstval in valdt1",
-        "resolution": "Reconcile sum(item.sgstamt) to equal valdt1.sgstval"
+        "reason": "Total SGST declared at the invoice header (ValDtls.SgstVal) does not match the sum of individual SGST amounts across all line items (sum(ItemList[i].SgstAmt)). Strict mathematical equality enforced.",
+        "resolution": "Ensure ValDtls.SgstVal dynamically computes the sum of all ItemList[i].SgstAmt. Check for stale header after item edits, paise rounding mismatch, combined taxes under SGST, omitted header values, or inter-state SGST.",
+        "scenarios": {
+            "HEADER_NOT_RECALCULATED_AFTER_ITEM_EDITS": {
+                "name": "Header Not Recalculated After Item Edits",
+                "fix": "Ensure ValDtls.SgstVal dynamically computes the sum of all ItemList[i].SgstAmt before sending."
+            },
+            "DECIMAL_PAISE_ROUNDING_MISMATCH": {
+                "name": "Decimal / Paise Rounding Mismatch",
+                "fix": "Line-item sum and SgstVal must match to 2 decimal places. Adjust header or line item paise rounding."
+            },
+            "COMBINED_TAX_PASSED_AS_SINGLE_VALUE": {
+                "name": "Combined Tax Passed as Single Value",
+                "fix": "Split tax equally between CGST and SGST at the header instead of placing the entire tax under SGST."
+            },
+            "ITEM_LEVEL_POPULATED_HEADER_ZERO_OR_NULL": {
+                "name": "Item Level Populated, Header Left as 0 or Null",
+                "fix": "Header tax values in ValDtls are mandatory for intra-state supplies. Populate ValDtls.SgstVal from items."
+            },
+            "INTER_STATE_TRANSACTION_PASSING_SGST": {
+                "name": "Inter-State Transaction Passing SGST",
+                "fix": "Inter-state transactions must not carry SGST amounts. Clear both item-level SgstAmt and ValDtls.SgstVal to 0.00 and pass the tax under IgstAmt / IgstVal."
+            }
+        }
     },
     2184: {
-        "message": "CGST value of all items must be equal to total CGST value",
-        "reason": "Sum of cgstamt across all items != cgstval in valdt1",
-        "resolution": "Reconcile sum(item.cgstamt) to equal valdt1.cgstval"
+        "message": "CGST value of all items is not equal to total CGST Value",
+        "reason": "Total CGST declared at the invoice header (ValDtls.CgstVal) does not match the sum of individual CGST amounts across all line items (sum(ItemList[i].CgstAmt)). Strict mathematical equality enforced.",
+        "resolution": "Ensure ValDtls.CgstVal dynamically computes the sum of all ItemList[i].CgstAmt. Check for stale header after item edits, paise rounding mismatch, combined taxes under CGST, omitted header values, or inter-state CGST.",
+        "scenarios": {
+            "HEADER_NOT_RECALCULATED_AFTER_ITEM_EDITS": {
+                "name": "Header Not Recalculated After Item Edits",
+                "fix": "Ensure ValDtls.CgstVal dynamically computes the sum of all ItemList[i].CgstAmt before sending."
+            },
+            "DECIMAL_PAISE_ROUNDING_MISMATCH": {
+                "name": "Decimal / Paise Rounding Mismatch",
+                "fix": "Line-item sum and CgstVal must match to 2 decimal places. Reconcile paise rounding."
+            },
+            "COMBINED_TAX_PASSED_AS_SINGLE_VALUE": {
+                "name": "Combined Tax Passed as Single Value",
+                "fix": "The full tax was placed entirely under CGST at the header instead of splitting it equally between CGST and SGST."
+            },
+            "ITEM_LEVEL_POPULATED_HEADER_ZERO_OR_NULL": {
+                "name": "Item Level Populated, Header Left as 0 or Null",
+                "fix": "Header tax values in ValDtls are mandatory for intra-state supplies. CgstVal cannot be 0.00 if line items have positive CGST."
+            },
+            "INTER_STATE_TRANSACTION_PASSING_CGST": {
+                "name": "Inter-State Transaction Passing CGST",
+                "fix": "Inter-state transactions must not carry CGST amounts. Clear both item-level CgstAmt and ValDtls.CgstVal to 0.00 and pass the tax under IgstAmt / IgstVal."
+            }
+        }
     },
     2185: {
-        "message": "IGST value of all items must be equal to total IGST Value",
-        "reason": "Sum of igstamt across all items != igstval in valdt1",
-        "resolution": "Reconcile sum(item.igstamt) to equal valdt1.igstval"
+        "message": "IGST value of all items is not equal to total IGST Value",
+        "reason": "Total IGST declared at the invoice header (ValDtls.IgstVal) does not match the sum of individual IGST amounts across all line items (sum(ItemList[i].IgstAmt)). Strict mathematical equality enforced.",
+        "resolution": "Ensure ValDtls.IgstVal dynamically computes the sum of all ItemList[i].IgstAmt. Check for stale header after item edits, paise rounding mismatch, omitted header values, intra-state IGST, or export/SEZ with payment miscalculation.",
+        "scenarios": {
+            "HEADER_NOT_RECALCULATED_AFTER_ITEM_EDITS": {
+                "name": "Header Not Recalculated After Item Edits",
+                "fix": "Ensure ValDtls.IgstVal dynamically computes the sum of all ItemList[i].IgstAmt before sending."
+            },
+            "DECIMAL_PAISE_ROUNDING_MISMATCH": {
+                "name": "Decimal / Paise Rounding Mismatch",
+                "fix": "Line-item sum and IgstVal must match to 2 decimal places. Reconcile paise rounding."
+            },
+            "ITEM_LEVEL_POPULATED_HEADER_ZERO_OR_NULL": {
+                "name": "Item Level Populated, Header Left as 0 or Null",
+                "fix": "Header tax values in ValDtls are mandatory for inter-state supplies. IgstVal cannot be 0.00 if line items have positive IGST."
+            },
+            "INTRA_STATE_SUPPLY_PASSING_IGST_IN_SUMMARY": {
+                "name": "Intra-State Supply Passing IGST in Summary",
+                "fix": "For standard intra-state supplies, ValDtls.IgstVal must be 0.00 unless IgstOnIntra is set to 'Y'."
+            },
+            "EXPORT_SEZ_WITH_PAYMENT_MISCALCULATION": {
+                "name": "Export / SEZ with Payment Miscalculation",
+                "fix": "In EXPWP / SEZWP, IGST amounts must follow the exact same item-to-header aggregation rules. Ensure sum of IgstAmt across export line items strictly matches ValDtls.IgstVal."
+            }
+        }
     },
     2186: {
-        "message": "Cess value of all items must be equal to total Cess Value",
-        "reason": "Sum of cessamt across all items != cesval in valdt1",
-        "resolution": "Reconcile sum(item.cessamt) to equal valdt1.cesval"
+        "message": "Cess value of all items is not equal to total Cess Value",
+        "reason": "Total GST Compensation Cess declared at the invoice header (ValDtls.CesVal) does not match the sum of individual Cess amounts across all line items (sum(ItemList[i].CesAmt + ItemList[i].CesNonAdvlAmt)). Strict mathematical equality enforced.",
+        "resolution": "Ensure ValDtls.CesVal dynamically sums both ad-valorem Cess (CesAmt) and non-ad-valorem Cess (CesNonAdvlAmt) across all line items to 2 decimal places. Do not mix State Cess into CesVal.",
+        "scenarios": {
+            "HEADER_NOT_RECALCULATED_AFTER_ITEM_EDITS": {
+                "name": "Header Not Recalculated After Item Edits",
+                "fix": "Ensure ValDtls.CesVal dynamically sums both ad-valorem Cess (CesAmt) and non-ad-valorem Cess (CesNonAdvlAmt) across all line items."
+            },
+            "AD_VALOREM_VS_NON_AD_VALOREM_CESS_OMISSION": {
+                "name": "Ad-Valorem vs Non-Ad-Valorem Cess Omission",
+                "fix": "ValDtls.CesVal represents the aggregate Cess total. It must include both percentage-based Cess (CesAmt) and fixed/quantity-based Cess (CesNonAdvlAmt)."
+            },
+            "STATE_CESS_MIXED_WITH_CENTRAL_CESS": {
+                "name": "State Cess Mixed with Central Cess",
+                "fix": "Do not merge State Cess (Kerala Flood Cess / State Cess) into GST Compensation Cess. Keep them in their distinct fields (CesVal vs StCesVal)."
+            },
+            "DECIMAL_PAISE_ROUNDING_MISMATCH": {
+                "name": "Decimal / Paise Rounding Mismatch",
+                "fix": "Sum of item CesAmt must match ValDtls.CesVal to 2 decimal places. Reconcile paise rounding."
+            },
+            "CESS_POPULATED_LINE_ITEM_ZERO_HEADER": {
+                "name": "Cess Populated at Line Item but 0/Null at Header",
+                "fix": "If any line item carries Cess, ValDtls.CesVal must reflect the non-zero total. If no goods attract Cess, leave both item and header fields as 0.00."
+            }
+        }
     },
     2187: {
         "message": "State Cess Value of all items must be equal to total State CessValue",
@@ -284,18 +392,76 @@ IRN_ERRORS: Dict[int, Dict[str, str]] = {
     },
     2192: {
         "message": "TotAmt value should be equal to (Qty * UnitPrice) for HSN {0}",
-        "reason": "grossamt != qty * unitrate",
-        "resolution": "grossamt must equal round(qty * unitrate, 2)"
+        "reason": "The gross total amount of a line item (TotAmt) does not equal the arithmetic product of its quantity (Qty) and unit price (UnitPrice): ItemList[i].TotAmt = ItemList[i].Qty * ItemList[i].UnitPrice. Strict calculation checked at each item row. Triggered by premature discount/tax deduction, decimal rounding in unit price, or zero quantity on services.",
+        "resolution": "TotAmt represents gross value before discount and pre-tax. Ensure TotAmt strictly equals Qty * UnitPrice up to 2 decimal places. For services with conceptual quantity, set Qty: 1.",
+        "scenarios": {
+            "PREMATURE_DISCOUNT_DEDUCTION": {
+                "name": "Premature Discount Deduction",
+                "fix": "TotAmt represents gross value before discount. Discounts are deducted in AssAmt, not TotAmt. Reconcile TotAmt = Qty * UnitPrice."
+            },
+            "PREMATURE_TAX_INCLUSION": {
+                "name": "Premature Tax Inclusion",
+                "fix": "TotAmt is pre-tax. Taxes belong to IgstAmt / CgstAmt / SgstAmt, and post-tax values belong to TotItemVal. Reconcile TotAmt = Qty * UnitPrice."
+            },
+            "DECIMAL_ROUNDING_IN_UNIT_PRICE": {
+                "name": "Decimal Rounding in Unit Price",
+                "fix": "TotAmt must match Qty * UnitPrice up to 2 decimal places (or set UnitPrice with 3-4 decimals if ERP supports)."
+            },
+            "SERVICES_WITH_NULL_OR_MISSING_QTY": {
+                "name": "Services with Null or Missing Qty",
+                "fix": "Even for service lines (IsServc='Y' or HSN 99xxxx) where quantity is conceptual, set Qty: 1 so that 1 * UnitPrice = TotAmt."
+            }
+        }
     },
     2193: {
         "message": "For Sl. No. {0}, Taxable Value (AssAmt) value is not equal to (TotAmt - Discount)",
-        "reason": "assamt != grossamt - discount",
-        "resolution": "assamt must equal round(grossamt - discount, 2)"
+        "reason": "The net taxable value of a line item (AssAmt) does not equal the item gross amount (TotAmt) minus the item discount (Discount): ItemList[i].AssAmt = ItemList[i].TotAmt - ItemList[i].Discount. If Discount is 0.00 or omitted, AssAmt must strictly equal TotAmt.",
+        "resolution": "Ensure AssAmt strictly equals TotAmt - Discount for every item row. Provide actual discount in Discount field, exclude taxes and extra charges from AssAmt.",
+        "scenarios": {
+            "DISCOUNT_PASSED_BUT_NOT_SUBTRACTED": {
+                "name": "Discount Passed but Not Subtracted",
+                "fix": "When a discount is entered, AssAmt must reflect the discounted assessable base (AssAmt = TotAmt - Discount)."
+            },
+            "DISCOUNT_SUBTRACTED_IN_TAXABLE_BASE_BUT_ZERO_IN_FIELD": {
+                "name": "Discount Subtracted in Taxable Base but Left 0 in Field",
+                "fix": "If Discount is passed as 0.00, the schema expects AssAmt = TotAmt. Provide the actual discount amount in 'Discount' (or set TotAmt to net amount)."
+            },
+            "POST_TAX_VALUE_ENTERED_INTO_ASSESSABLE_AMOUNT": {
+                "name": "Post-Tax Value Entered into Assessable Amount",
+                "fix": "AssAmt is the taxable amount on which GST is levied. Tax should not be added here; tax is added in TotItemVal."
+            },
+            "OTHER_ITEM_CHARGES_ADDED_DIRECTLY_TO_ASSAMT": {
+                "name": "Other Item Charges Added Directly to AssAmt",
+                "fix": "Pass item other charges in OthChrg (or reflect them in UnitPrice directly) so that AssAmt = TotAmt - Discount remains balanced."
+            }
+        }
     },
     2194: {
         "message": "For Sl. No {0}, Total item value does not match with taxable and tax values of that item",
-        "reason": "totitemval != assamt + cgst + sgst + igst + cess + stcess + othchrg",
-        "resolution": "Ensure totitemval matches taxable value plus all taxes and other charges"
+        "reason": "The total item value (TotItemVal) for a specific line item in ItemList does not match the sum of its assessable value, all applicable taxes, cess, and line-level other charges: TotItemVal = AssAmt + CgstAmt + SgstAmt + IgstAmt + CesAmt + CesNonAdvlAmt + StateCesAmt + StateCesNonAdvlAmt + OthChrg (allowed tolerance of +/- 1.00).",
+        "resolution": "Ensure ItemList[i].TotItemVal equals AssAmt + CgstAmt + SgstAmt + IgstAmt + CesAmt + CesNonAdvlAmt + StateCesAmt + StateCesNonAdvlAmt + OthChrg within +/- 1.00. Check for omitted taxes, gross total used instead of net assessable amount, omitted line other charges, omitted cess, or excessive rounding.",
+        "scenarios": {
+            "TAX_LEFT_OUT_OF_ITEM_TOTAL": {
+                "name": "Tax Left Out of Item Total",
+                "fix": "TotItemVal is the post-tax gross item total. Tax values must be added to AssAmt."
+            },
+            "GROSS_TOTAL_USED_WHEN_DISCOUNT_EXISTS": {
+                "name": "Gross Total (TotAmt) Used When Discount Exists",
+                "fix": "TotItemVal must be derived from AssAmt (net of discount), not from the pre-discount TotAmt."
+            },
+            "LINE_LEVEL_OTHER_CHARGES_OMITTED": {
+                "name": "Line-Level Other Charges (OthChrg) Omitted",
+                "fix": "Any item-level packaging, handling, or other charges in OthChrg must be added into TotItemVal."
+            },
+            "CESS_AMOUNTS_NOT_INCLUDED": {
+                "name": "Cess Amounts Not Included",
+                "fix": "Both ad-valorem Cess (CesAmt) and non-ad-valorem Cess (CesNonAdvlAmt) must be included in TotItemVal."
+            },
+            "DECIMAL_PAISE_ROUNDING_DISCREPANCY": {
+                "name": "Decimal / Paise Rounding Discrepancy (> ₹1.00)",
+                "fix": "The tolerance is strictly +/- 1.00. If rounding differences exceed ₹1.00, align TotItemVal closer to the exact calculated sum."
+            }
+        }
     },
     2195: {
         "message": "e-Commerce GSTIN is not registered as TCS-GSTIN",
@@ -304,33 +470,71 @@ IRN_ERRORS: Dict[int, Dict[str, str]] = {
     },
     2200: {
         "message": "State code {0} is invalid for dispatch details or ship details",
-        "reason": "Invalid 2-digit state code in dispatch or ship details",
-        "resolution": "Provide valid state code (01-38)"
+        "reason": "The 2-digit numeric state code passed in DispDtls.Stcd (Dispatch Details) or ShipDtls.Stcd (Ship-to Details) is invalid, does not match the GST state code master (01 to 38, 97, 99), or does not match the state code prefix of the GSTIN passed in that section.",
+        "resolution": "Ensure DispDtls.Stcd and ShipDtls.Stcd are strictly 2-digit numeric strings with leading zeros ('01' to '38'). Do not use 1-digit codes ('7'), state alpha abbreviations ('MH'), or codes that disagree with the provided section GSTIN prefix. '00' is invalid and '99' is not allowed for physical goods movement.",
+        "scenarios": [
+            "LEADING_ZERO_OMITTED",
+            "ALPHA_CODE_USED",
+            "STATE_CODE_DISAGREES_WITH_GSTIN",
+            "INVALID_OR_NON_EXISTENT_CODE"
+        ]
     },
     2201: {
-        "message": "Invalid Port Code",
-        "reason": "Wrong port code format (must be 6-10 alphanumeric characters, e.g. INMAA1)",
-        "resolution": "Verify Indian Port code from master list"
+        "message": "Invalid Port Code for Export Transaction",
+        "reason": "Export invoice (trancatg EXPWP / EXPWOP) contains a value in ExpDtls.Port (Shipping Bill Port Code) that does not exist in the official Indian Customs EDI / ICEGATE port code master list, has improper formatting, or is erroneously provided for domestic supply.",
+        "resolution": "Ensure ExpDtls.Port is a standard 6-character alphanumeric ICEGATE / UN-LOCODE (e.g. INNSA1, INBOM1, INBOM4, INDEL4, INBLR4) without spaces, hyphens, or city names. Match port type to transport mode (Air vs Sea), and omit ExpDtls entirely for domestic transactions.",
+        "scenarios": [
+            "INFORMAL_OR_CITY_NAME_USED",
+            "AIR_SEA_PORT_CODE_CONFUSION",
+            "WRONG_FORMAT_SPACING_SPECIAL_CHARS",
+            "PORT_CODE_PROVIDED_FOR_DOMESTIC_SUPPLY"
+        ]
     },
     2202: {
-        "message": "Invalid Country Code",
-        "reason": "Wrong 2-letter ISO country code passed for export",
-        "resolution": "Use standard ISO-2 country code (e.g., US, GB, AE, SG, DE)"
+        "message": "Invalid Country Code in Export Details",
+        "reason": "The country code passed in ExpDtls.CntCode does not match the official ISO 3166-1 alpha-2 (2-character) country code master list recognized by the NIC / GSTN portal, contains a 3-letter alpha code, full country name, lowercase letters, or domestic code 'IN'.",
+        "resolution": "Ensure ExpDtls.CntCode is strictly a valid 2-letter uppercase ISO 3166-1 alpha-2 country code (e.g., 'US', 'GB', 'AE', 'DE', 'SG'). Do not use 3-letter codes ('USA'), full country names ('GERMANY'), lowercase letters ('ae'), or domestic code ('IN').",
+        "scenarios": [
+            "THREE_LETTER_ALPHA_CODE",
+            "FULL_COUNTRY_NAME_PASSED",
+            "LOWERCASE_COUNTRY_CODE",
+            "DOMESTIC_CODE_IN_EXPORT_DETAILS",
+            "INVALID_OR_NON_EXISTENT_COUNTRY_CODE"
+        ]
     },
     2203: {
-        "message": "Invalid Foreign Currency",
-        "reason": "Currency does not match destination country or ISO master",
-        "resolution": "Provide valid 3-letter currency code (e.g., USD, EUR, GBP)"
+        "message": "Invalid Foreign Currency in Export Details",
+        "reason": "The currency code passed in ExpDtls.ForCur does not match the official ISO 4217 (3-character) currency code master list recognized by the e-Invoice system, contains currency symbols, colloquial abbreviations, domestic 'INR' in foreign field, or lowercase characters.",
+        "resolution": "Ensure ExpDtls.ForCur is strictly a valid 3-character uppercase ISO 4217 currency code (e.g., 'USD', 'EUR', 'GBP', 'AED', 'SGD'). Do not use currency symbols ('$'), colloquial abbreviations ('US$', 'BUCKS'), lowercase letters ('gbp'), or 'INR' for foreign billed invoices.",
+        "scenarios": [
+            "CURRENCY_SYMBOL_PASSED",
+            "COLLOQUIAL_OR_CUSTOM_ABBREVIATION",
+            "DOMESTIC_CURRENCY_IN_FOREIGN_FIELD",
+            "LOWERCASE_CURRENCY_CODE",
+            "INVALID_OR_NON_EXISTENT_CURRENCY_CODE"
+        ]
     },
     2211: {
-        "message": "Supplier and recipient GSTIN should not be the same.",
-        "reason": "Self-invoicing is not permitted for e-invoice generation",
-        "resolution": "Supplier GSTIN and Buyer GSTIN must be different"
+        "message": "Supplier and recipient GSTIN should not be the same",
+        "reason": "SellerDtls.Gstin and BuyerDtls.Gstin are identical in the payload. The e-Invoice portal does not permit self-invoicing under the same GSTIN (an entity cannot issue a commercial tax invoice to its own distinct GST registration).",
+        "resolution": "For same-state branch transfers, issue a Delivery Challan ('CHL') without IRN. For inter-state distinct persons, pass the destination branch's state-specific GSTIN. For Section 31(3)(f) RCM self-invoices, report directly in GSTR-3B/GSTR-1, not IRP. In testing, use distinct sandbox recipient GSTIN.",
+        "scenarios": [
+            "INTRA_STATE_BRANCH_TRANSFER_DELIVERY_CHALLAN",
+            "INTER_STATE_STOCK_TRANSFER_DISTINCT_GSTIN",
+            "TESTING_SANDBOX_DEFAULT_GSTIN",
+            "SELF_INVOICE_RCM_SECTION_31_3_F"
+        ]
     },
     2212: {
-        "message": "The recipient GSTIN cannot be URP for supply type {0}",
-        "reason": "URP passed for B2B/B2G/SEZ transaction",
-        "resolution": "For B2B, B2G, and SEZ, pass valid 15-character recipient GSTIN"
+        "message": "Recipient GSTIN cannot be URP for given supply type",
+        "reason": "Recipient GSTIN is set to 'URP' for transaction categories (B2B, SEZWP, SEZWOP, DEXP) that strictly require a 15-character registered GSTIN. URP is only permitted for direct exports (EXPWP / EXPWOP) or B2C supplies.",
+        "resolution": "For B2B supplies, pass the buyer's active 15-digit GSTIN. For domestic retail consumers, set trancatg='B2C' and generate local dynamic QR code (do not upload to IRP). For overseas foreign buyers, change supply type to 'EXPWP' or 'EXPWOP'. For SEZ units, pass the registered SEZ GSTIN.",
+        "scenarios": [
+            "REGISTERED_BUYER_MARKED_AS_URP",
+            "DOMESTIC_B2C_SUPPLY",
+            "EXPORT_TRANSACTION_MISCLASSIFIED_AS_B2B",
+            "SEZ_SUPPLY_TREATED_AS_URP"
+        ]
     },
     2213: {
         "message": "The supplier GSTIN cannot be URP",
@@ -582,3 +786,255 @@ EWB_ERRORS: Dict[int, Dict[str, str]] = {
     4075: {"message": "Invalid ship-to GSTIN"},
     4076: {"message": "Bill-to and ship-to GSTIN should not be same for this transaction type"}
 }
+
+# Alias for compatibility across rules engine and validator
+NIC_ERROR_CODES = IRN_ERRORS
+
+# ============================================================================
+# 6. OFFICIAL NIC / GSTN UQC MASTER CATALOG & STATUTORY MAPPINGS (Rule 2177)
+# ============================================================================
+
+OFFICIAL_UQC_MASTER: Dict[str, Dict[str, str]] = {
+    "BAG": {"description": "Bags", "category": "Packaging / Quantity"},
+    "BAL": {"description": "Bales", "category": "Packaging / Quantity"},
+    "BDL": {"description": "Bundles", "category": "Packaging / Quantity"},
+    "BKL": {"description": "Buckles", "category": "Measure"},
+    "BOU": {"description": "Billions of Units", "category": "Count / Large Units"},
+    "BOX": {"description": "Boxes", "category": "Packaging"},
+    "BTL": {"description": "Bottles", "category": "Packaging"},
+    "BUN": {"description": "Bunches", "category": "Packaging / Quantity"},
+    "CAN": {"description": "Cans", "category": "Packaging"},
+    "CBM": {"description": "Cubic Meters", "category": "Volume"},
+    "CCM": {"description": "Cubic Centimeters", "category": "Volume"},
+    "CMS": {"description": "Centimeters", "category": "Length"},
+    "CTN": {"description": "Cartons", "category": "Packaging"},
+    "DOZ": {"description": "Dozens", "category": "Count"},
+    "DRM": {"description": "Drums", "category": "Packaging"},
+    "GGR": {"description": "Great Gross", "category": "Count (12 gross = 1728 units)"},
+    "GMS": {"description": "Grams", "category": "Weight"},
+    "GRS": {"description": "Gross", "category": "Count (12 dozen = 144 units)"},
+    "GYD": {"description": "Gross Yards", "category": "Length"},
+    "KGS": {"description": "Kilograms", "category": "Weight"},
+    "KLR": {"description": "Kilolitres", "category": "Volume"},
+    "KME": {"description": "Kilometres", "category": "Length"},
+    "MLT": {"description": "Millilitres", "category": "Volume"},
+    "MTR": {"description": "Metres", "category": "Length"},
+    "MTS": {"description": "Metric Tons", "category": "Weight"},
+    "NOS": {"description": "Numbers", "category": "Count"},
+    "PAC": {"description": "Packs", "category": "Packaging"},
+    "PCS": {"description": "Pieces", "category": "Count"},
+    "PRS": {"description": "Pairs", "category": "Count"},
+    "QTL": {"description": "Quintals", "category": "Weight (100 kg)"},
+    "ROL": {"description": "Rolls", "category": "Packaging / Length"},
+    "SET": {"description": "Sets", "category": "Packaging / Grouping"},
+    "SQF": {"description": "Square Feet", "category": "Area"},
+    "SQM": {"description": "Square Metres", "category": "Area"},
+    "SQY": {"description": "Square Yards", "category": "Area"},
+    "TBS": {"description": "Tablets", "category": "Pharmaceutical / Measure"},
+    "TGM": {"description": "Ten Grams", "category": "Weight"},
+    "THD": {"description": "Thousands", "category": "Count"},
+    "TON": {"description": "Tonnes", "category": "Weight"},
+    "TUB": {"description": "Tubes", "category": "Packaging"},
+    "UGS": {"description": "US Gallons", "category": "Volume"},
+    "UNT": {"description": "Units", "category": "Count / Measure"},
+    "YDS": {"description": "Yards", "category": "Length"},
+    "OTH": {"description": "Others", "category": "Any unit not listed above"}
+}
+
+COMMON_UQC_MAPPING: Dict[str, Tuple[str, str, str]] = {
+    # 1. Standard Weight KG
+    "KG": ("KGS", "STANDARD_WEIGHT_KG", "GST portal requires 3-letter standard KGS."),
+    "KGS": ("KGS", "VALID_MASTER_UQC", "Valid standard UQC."),
+    "KILOGRAM": ("KGS", "STANDARD_WEIGHT_KG", "GST portal requires 3-letter standard KGS."),
+    "KILOGRAMS": ("KGS", "STANDARD_WEIGHT_KG", "GST portal requires 3-letter standard KGS."),
+    "KG.": ("KGS", "STANDARD_WEIGHT_KG", "GST portal requires 3-letter standard KGS."),
+    "KGS.": ("KGS", "STANDARD_WEIGHT_KG", "GST portal requires 3-letter standard KGS."),
+
+    # 2. Count NO / PIECES
+    "NO": ("NOS", "COLLOQUIAL_COUNT_NO", "Map to either NOS (Numbers) or PCS (Pieces)."),
+    "NO.": ("NOS", "COLLOQUIAL_COUNT_NO", "Map to either NOS (Numbers) or PCS (Pieces)."),
+    "NOS.": ("NOS", "COLLOQUIAL_COUNT_NO", "Map to either NOS (Numbers) or PCS (Pieces)."),
+    "NUMBER": ("NOS", "COLLOQUIAL_COUNT_NO", "Map to either NOS (Numbers) or PCS (Pieces)."),
+    "NUMBERS": ("NOS", "COLLOQUIAL_COUNT_NO", "Map to either NOS (Numbers) or PCS (Pieces)."),
+    "PIECE": ("PCS", "COLLOQUIAL_COUNT_PIECES", "Map to either NOS (Numbers) or PCS (Pieces)."),
+    "PIECES": ("PCS", "COLLOQUIAL_COUNT_PIECES", "Map to either NOS (Numbers) or PCS (Pieces)."),
+    "PC": ("PCS", "COLLOQUIAL_COUNT_PIECES", "Map to either NOS (Numbers) or PCS (Pieces)."),
+    "PCS.": ("PCS", "COLLOQUIAL_COUNT_PIECES", "Map to either NOS (Numbers) or PCS (Pieces)."),
+
+    # 3. Non-Standard Volume Litre
+    "LTR": ("OTH", "NON_STANDARD_VOLUME_LTR", "LTR is not part of the standard UQC list. Convert to KLR / MLT or pass OTH."),
+    "LTRS": ("OTH", "NON_STANDARD_VOLUME_LTR", "LTR is not part of the standard UQC list. Convert to KLR / MLT or pass OTH."),
+    "LITER": ("OTH", "NON_STANDARD_VOLUME_LTR", "LTR is not part of the standard UQC list. Convert to KLR / MLT or pass OTH."),
+    "LITERS": ("OTH", "NON_STANDARD_VOLUME_LTR", "LTR is not part of the standard UQC list. Convert to KLR / MLT or pass OTH."),
+    "LITRE": ("OTH", "NON_STANDARD_VOLUME_LTR", "LTR is not part of the standard UQC list. Convert to KLR / MLT or pass OTH."),
+    "LITRES": ("OTH", "NON_STANDARD_VOLUME_LTR", "LTR is not part of the standard UQC list. Convert to KLR / MLT or pass OTH."),
+    "L": ("OTH", "NON_STANDARD_VOLUME_LTR", "LTR is not part of the standard UQC list. Convert to KLR / MLT or pass OTH."),
+    "L.": ("OTH", "NON_STANDARD_VOLUME_LTR", "LTR is not part of the standard UQC list. Convert to KLR / MLT or pass OTH."),
+
+    # 4. Linear Measure Meter
+    "METER": ("MTR", "LINEAR_MEASURE_METER", "Standard unit of linear measurement is MTR."),
+    "METERS": ("MTR", "LINEAR_MEASURE_METER", "Standard unit of linear measurement is MTR."),
+    "METRE": ("MTR", "LINEAR_MEASURE_METER", "Standard unit of linear measurement is MTR."),
+    "METRES": ("MTR", "LINEAR_MEASURE_METER", "Standard unit of linear measurement is MTR."),
+    "MT": ("MTR", "LINEAR_MEASURE_METER", "Standard unit of linear measurement is MTR."),
+    "MTR.": ("MTR", "LINEAR_MEASURE_METER", "Standard unit of linear measurement is MTR."),
+
+    # 5. Weight Tonne / Metric Ton
+    "TONNE": ("TON", "WEIGHT_TONNES", "Use MTS (Metric Ton) or TON (Tonne)."),
+    "TONNES": ("TON", "WEIGHT_TONNES", "Use MTS (Metric Ton) or TON (Tonne)."),
+    "METRIC TON": ("MTS", "WEIGHT_METRIC_TON", "Use MTS (Metric Ton) or TON (Tonne)."),
+    "METRIC TONS": ("MTS", "WEIGHT_METRIC_TON", "Use MTS (Metric Ton) or TON (Tonne)."),
+    "MT.": ("MTR", "LINEAR_MEASURE_METER", "Standard unit of linear measurement is MTR."),
+
+    # 6. Bundles
+    "BNDL": ("BDL", "PACKAGING_BUNDLE", "The valid 3-letter code for bundles is BDL."),
+    "BUNDLE": ("BDL", "PACKAGING_BUNDLE", "The valid 3-letter code for bundles is BDL."),
+    "BUNDLES": ("BDL", "PACKAGING_BUNDLE", "The valid 3-letter code for bundles is BDL."),
+
+    # 7. Packs / Packets
+    "PACKET": ("PAC", "PACKAGING_PACKET", "The valid code for packs/packets is PAC."),
+    "PACKETS": ("PAC", "PACKAGING_PACKET", "The valid code for packs/packets is PAC."),
+    "PKT": ("PAC", "PACKAGING_PACKET", "The valid code for packs/packets is PAC."),
+    "PKTS": ("PAC", "PACKAGING_PACKET", "The valid code for packs/packets is PAC."),
+    "PACK": ("PAC", "PACKAGING_PACKET", "The valid code for packs/packets is PAC."),
+    "PACKS": ("PAC", "PACKAGING_PACKET", "The valid code for packs/packets is PAC."),
+
+    # Common English Names / Plurals
+    "BAGS": ("BAG", "PACKAGING_BAGS", "The valid 3-letter code for bags is BAG."),
+    "BALES": ("BAL", "PACKAGING_BALES", "The valid 3-letter code for bales is BAL."),
+    "BOXES": ("BOX", "PACKAGING_BOXES", "The valid 3-letter code for boxes is BOX."),
+    "BOTTLE": ("BTL", "PACKAGING_BOTTLES", "The valid 3-letter code for bottles is BTL."),
+    "BOTTLES": ("BTL", "PACKAGING_BOTTLES", "The valid 3-letter code for bottles is BTL."),
+    "BUNCH": ("BUN", "PACKAGING_BUNCHES", "The valid 3-letter code for bunches is BUN."),
+    "BUNCHES": ("BUN", "PACKAGING_BUNCHES", "The valid 3-letter code for bunches is BUN."),
+    "CANS": ("CAN", "PACKAGING_CANS", "The valid 3-letter code for cans is CAN."),
+    "CARTON": ("CTN", "PACKAGING_CARTONS", "The valid 3-letter code for cartons is CTN."),
+    "CARTONS": ("CTN", "PACKAGING_CARTONS", "The valid 3-letter code for cartons is CTN."),
+    "DOZEN": ("DOZ", "COUNT_DOZENS", "The valid 3-letter code for dozens is DOZ."),
+    "DOZENS": ("DOZ", "COUNT_DOZENS", "The valid 3-letter code for dozens is DOZ."),
+    "DRUM": ("DRM", "PACKAGING_DRUMS", "The valid 3-letter code for drums is DRM."),
+    "DRUMS": ("DRM", "PACKAGING_DRUMS", "The valid 3-letter code for drums is DRM."),
+    "GRAM": ("GMS", "WEIGHT_GRAMS", "The valid 3-letter code for grams is GMS."),
+    "GRAMS": ("GMS", "WEIGHT_GRAMS", "The valid 3-letter code for grams is GMS."),
+    "GM": ("GMS", "WEIGHT_GRAMS", "The valid 3-letter code for grams is GMS."),
+    "GMS.": ("GMS", "WEIGHT_GRAMS", "The valid 3-letter code for grams is GMS."),
+    "QUINTAL": ("QTL", "WEIGHT_QUINTALS", "The valid 3-letter code for quintals is QTL."),
+    "QUINTALS": ("QTL", "WEIGHT_QUINTALS", "The valid 3-letter code for quintals is QTL."),
+    "ROLL": ("ROL", "PACKAGING_ROLLS", "The valid 3-letter code for rolls is ROL."),
+    "ROLLS": ("ROL", "PACKAGING_ROLLS", "The valid 3-letter code for rolls is ROL."),
+    "SETS": ("SET", "PACKAGING_SETS", "The valid 3-letter code for sets is SET."),
+    "TABLET": ("TBS", "MEASURE_TABLETS", "The valid 3-letter code for tablets is TBS."),
+    "TABLETS": ("TBS", "MEASURE_TABLETS", "The valid 3-letter code for tablets is TBS."),
+    "THOUSAND": ("THD", "COUNT_THOUSANDS", "The valid 3-letter code for thousands is THD."),
+    "THOUSANDS": ("THD", "COUNT_THOUSANDS", "The valid 3-letter code for thousands is THD."),
+    "TUBE": ("TUB", "PACKAGING_TUBES", "The valid 3-letter code for tubes is TUB."),
+    "TUBES": ("TUB", "PACKAGING_TUBES", "The valid 3-letter code for tubes is TUB."),
+    "UNIT": ("UNT", "COUNT_UNITS", "The valid 3-letter code for units is UNT."),
+    "UNITS": ("UNT", "COUNT_UNITS", "The valid 3-letter code for units is UNT."),
+    "YARD": ("YDS", "LENGTH_YARDS", "The valid 3-letter code for yards is YDS."),
+    "YARDS": ("YDS", "LENGTH_YARDS", "The valid 3-letter code for yards is YDS.")
+}
+
+
+def classify_rule_2177_diagnostic(declared_uqc: Any) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2177:
+    'Unit Quantity Code (UQC) is not as per master'
+    The IRP does not accept colloquial, arbitrary, or ERP-specific abbreviations
+    (e.g., 'KG', 'LITRE', 'PCS.', or 'NO'). If an item's unit is not explicitly on
+    the official 3-character master list, the fallback code OTH (Others) must be passed.
+    """
+    raw_s = str(declared_uqc or "").strip()
+    clean_upper = raw_s.upper()
+
+    # 1. Strict Exact match on official 3-letter uppercase master (no punctuation)
+    if raw_s == clean_upper and raw_s in ALLOWED_UQC and len(raw_s) == 3:
+        meta = OFFICIAL_UQC_MASTER.get(raw_s, {"description": raw_s, "category": "Standard"})
+        return {
+            "error_code": 2177,
+            "is_valid": True,
+            "scenario": "VALID_MASTER_UQC",
+            "scenario_name": "Valid Official Master UQC",
+            "declared_uqc": raw_s,
+            "rectified_uqc": raw_s,
+            "description": meta["description"],
+            "category": meta["category"],
+            "reason": f"Unit Quantity Code '{raw_s}' is officially recognized on the NIC master list ({meta['description']}).",
+            "resolution": "No correction required."
+        }
+
+    # 2. Known colloquial / ERP abbreviation mapping takes precedence for non-standard inputs
+    if raw_s in COMMON_UQC_MAPPING or clean_upper in COMMON_UQC_MAPPING:
+        lookup_key = raw_s if raw_s in COMMON_UQC_MAPPING else clean_upper
+        target, scen, reason = COMMON_UQC_MAPPING[lookup_key]
+        if scen != "VALID_MASTER_UQC":
+            meta = OFFICIAL_UQC_MASTER.get(target, {"description": target, "category": "Standard"})
+            return {
+                "error_code": 2177,
+                "is_valid": False,
+                "scenario": scen,
+                "scenario_name": f"Colloquial / ERP Unit Mapping ({raw_s} -> {target})",
+                "declared_uqc": raw_s,
+                "rectified_uqc": target,
+                "description": meta["description"],
+                "category": meta["category"],
+                "reason": reason,
+                "resolution": f"Map '{raw_s}' to official 3-letter standard '{target}' ({meta['description']})."
+            }
+
+    # 3. Normalized string in colloquial mapping (e.g. after rstrip)
+    norm = clean_upper.rstrip(".")
+    if norm in COMMON_UQC_MAPPING:
+        target, scen, reason = COMMON_UQC_MAPPING[norm]
+        meta = OFFICIAL_UQC_MASTER.get(target, {"description": target, "category": "Standard"})
+        return {
+            "error_code": 2177,
+            "is_valid": False,
+            "scenario": scen,
+            "scenario_name": f"Colloquial / ERP Unit Mapping ({raw_s} -> {target})",
+            "declared_uqc": raw_s,
+            "rectified_uqc": target,
+            "description": meta["description"],
+            "category": meta["category"],
+            "reason": reason,
+            "resolution": f"Map '{raw_s}' to official 3-letter standard '{target}' ({meta['description']})."
+        }
+
+    # 4. If normalized string matches master but had casing or punctuation differences
+    if norm in ALLOWED_UQC and len(norm) == 3:
+        meta = OFFICIAL_UQC_MASTER.get(norm, {"description": norm, "category": "Standard"})
+        return {
+            "error_code": 2177,
+            "is_valid": False,
+            "scenario": "CASE_OR_PUNCTUATION_FORMATTING",
+            "scenario_name": f"Formatting Normalization ({raw_s} -> {norm})",
+            "declared_uqc": raw_s,
+            "rectified_uqc": norm,
+            "description": meta["description"],
+            "category": meta["category"],
+            "reason": f"GST portal requires strict 3-letter uppercase code without punctuation. Original '{raw_s}' formatted to '{norm}'.",
+            "resolution": f"Pass official 3-letter standard '{norm}'."
+        }
+
+    # 5. Custom / Non-listed units fallback to OTH
+    return {
+        "error_code": 2177,
+        "is_valid": False,
+        "scenario": "CUSTOM_NON_LISTED_UNIT",
+        "scenario_name": f"Custom / Non-Listed Unit ({raw_s} -> OTH)",
+        "declared_uqc": raw_s,
+        "rectified_uqc": "OTH",
+        "description": "Others",
+        "category": "Any unit not listed above",
+        "reason": "Use OTH (Others) for unlisted units. The IRP does not accept colloquial, arbitrary, or ERP-specific abbreviations. If an item's unit is not explicitly on the master list, the fallback code OTH (Others) must be passed.",
+        "resolution": "Pass OTH (Others) for unlisted units."
+    }
+
+
+def normalize_uqc_statutory(declared_uqc: Any) -> Tuple[str, Dict[str, Any]]:
+    """
+    Normalizes any raw input Unit Quantity Code to an official 3-letter NIC master code.
+    Returns (rectified_uqc, diagnostic_dict).
+    """
+    diag = classify_rule_2177_diagnostic(declared_uqc)
+    return diag["rectified_uqc"], diag

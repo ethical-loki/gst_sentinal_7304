@@ -11,7 +11,7 @@
   "refclm": null,
   "document_type": "INV",
   "docno": "INV-INGEST-001",
-  "docdt": "2026-10-21",
+  "docdt": "2026-10-25",
   "orginvno": null,
   "orginvdt": null,
   "supplier": {
@@ -41,7 +41,7 @@
     "trdnm": null,
     "state": "29",
     "pin": "560001",
-    "pos": null,
+    "pos": "29",
     "loc": "Bengaluru",
     "dst": null,
     "bno": null,
@@ -54,8 +54,7 @@
     "buyer_lglnm": "RETAIL CONSUMER",
     "buyer_loc": "Bengaluru",
     "buyer_pin": "560001",
-    "buyer_state": "29",
-    "buyer_pos": "29"
+    "buyer_state": "29"
   },
   "dispdt1": null,
   "shipdtl": null,
@@ -76,8 +75,8 @@
       "assval": 20000.0,
       "gstrate": 18.0,
       "igstval": 0.0,
-      "cgstval": 300.0,
-      "sgstval": 300.0,
+      "cgstval": 1800.0,
+      "sgstval": 1800.0,
       "cesrate": 0.0,
       "cesval": 0.0,
       "cesnonadvl": 0.0,
@@ -85,14 +84,13 @@
       "statecesval": 0.0,
       "statecesnonadvl": 0.0,
       "othchrg": 0.0,
-      "totitemval": 20600.0,
+      "totitemval": 23600.0,
       "taxability": "TAX",
       "barcde": null,
       "hsncd": "71022110",
       "unitrate": "10000.00",
       "grossamt": "20000.00",
       "discval": "0.00",
-      "igstrt": "18.0",
       "sentinel_audit": {
         "is_flagged": true,
         "should_rectify": true,
@@ -121,8 +119,8 @@
   ],
   "valdtls": {
     "assval": 20000.0,
-    "cgstval": 300.0,
-    "sgstval": 300.0,
+    "cgstval": 1800.0,
+    "sgstval": 1800.0,
     "igstval": 0.0,
     "cesval": 0.0,
     "stcesval": 0.0,
@@ -130,7 +128,7 @@
     "discount": 0.0,
     "othchrg": 0.0,
     "rndoffamt": 0.0,
-    "totinvval": 20600.0,
+    "totinvval": 23600.0,
     "ttlassval": "20000.00"
   },
   "ewbdt1": null,
@@ -142,12 +140,13 @@
   "trandt1": {
     "trancatg": "B2C",
     "reversecharge": "N",
-    "transactionmode": "REG"
+    "transactionmode": "REG",
+    "RevChrg": "N"
   },
   "docdt1": {
     "document_type": "INV",
     "docno": "INV-INGEST-001",
-    "docdt": "2026-10-21"
+    "docdt": "2026-10-25"
   },
   "supplierdt1": {
     "supplier_gstin": "29ABCDE1234F1Z5",
@@ -162,14 +161,14 @@
     "buyer_loc": "Bengaluru",
     "buyer_pin": "560001",
     "buyer_state": "29",
-    "buyer_pos": "29"
+    "pos": "29"
   },
   "valdt1": {
     "ttlassval": "20000.00",
-    "cgstval": "300.00",
-    "sgstval": "300.00",
+    "cgstval": "1800.00",
+    "sgstval": "1800.00",
     "igstval": "0.00",
-    "totinvval": "20600.00",
+    "totinvval": "23600.00",
     "assval": "20000.00",
     "cesval": "0.00",
     "stcesval": "0.00"

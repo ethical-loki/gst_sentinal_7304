@@ -2491,6 +2491,108 @@
                     </div>
                 </div>
 
+                <!-- ========================================================
+                     DYNAMIC MULTI-INPUT & STREAM INGESTION MATCHER
+                     ======================================================== -->
+                <div class="batch-matcher-card" id="batchMatcherCard" style="margin-top: 32px; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); backdrop-filter: blur(12px);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom: 20px;">
+                        <div>
+                            <div style="display:inline-flex; align-items:center; gap:8px; font-size:0.75rem; font-weight:700; color:#38bdf8; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">
+                                <span class="pulse-dot" style="background:#38bdf8;"></span> Day 05 High-Throughput Stream Pipeline
+                            </div>
+                            <h3 style="margin:0; font-size:1.35rem; color:#f8fafc; font-weight:700; display:flex; align-items:center; gap:8px;">
+                                ⚡ Dynamic Multi-Input &amp; Batch Stream Ingestion Matcher
+                            </h3>
+                            <p style="margin:6px 0 0 0; font-size:0.85rem; color:#94a3b8; max-width:720px;">
+                                High-performance vector geometry dot-product <code style="color:#c7d2fe; background:rgba(99,102,241,0.2); padding:2px 6px; border-radius:4px;">S = Q · D<sup>T</sup></code> over 13,850 statutory tariff items with automatic quantity/junk stripping and statutory dynamic thresholding guardrails.
+                            </p>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" id="batchTabBtnText" onclick="switchBatchTab('text')" class="score-pill active" style="cursor:pointer; background:rgba(99,102,241,0.3); border:1px solid #6366f1; color:#ffffff; padding:6px 14px; font-weight:700;">
+                                📝 Batch Text Stream
+                            </button>
+                            <button type="button" id="batchTabBtnFile" onclick="switchBatchTab('file')" class="score-pill" style="cursor:pointer; background:rgba(30,41,59,0.6); border:1px solid rgba(148,163,184,0.3); color:#94a3b8; padding:6px 14px; font-weight:700;">
+                                📊 Spreadsheet (CSV / XLSX)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Panel 1: Batch Text Stream -->
+                    <div id="batchPanelText">
+                        <label style="display:block; font-size:0.82rem; font-weight:600; color:#cbd5e1; margin-bottom:8px;">
+                            Input Item Descriptions (one product per line — dirty text, trade sizes, quantities &amp; units automatically cleaned):
+                        </label>
+                        <textarea id="batchItemInput" rows="6" style="width:100%; box-sizing:border-box; background:#090e1a; color:#f8fafc; border:1px solid rgba(99,102,241,0.4); border-radius:10px; padding:12px 14px; font-family:'JetBrains Mono', monospace; font-size:0.85rem; line-height:1.6; resize:vertical; outline:none;" placeholder="SS 304 hex nipple 1/2 inch 10 pcs&#10;allen cap screw M12 x 50 grade 8.8&#10;solar on grid inverter 5kw 3 phase&#10;industrial ball valve 2 inch class 150&#10;pure cotton printed saree with blouse piece"></textarea>
+                        
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:12px;">
+                            <div style="display:flex; gap:10px;">
+                                <button type="button" id="btnRunBatch" onclick="runBatchMatch()" style="background:linear-gradient(135deg, #0ea5e9, #6366f1); color:#ffffff; border:none; border-radius:8px; padding:8px 18px; font-size:0.88rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow: 0 4px 14px rgba(14,165,233,0.3);">
+                                    ⚡ Run Batch Vector Match (M × N)
+                                </button>
+                                <button type="button" onclick="loadBatchSample()" style="background:rgba(30,41,59,0.8); border:1px solid rgba(148,163,184,0.3); color:#cbd5e1; border-radius:8px; padding:8px 14px; font-size:0.84rem; font-weight:600; cursor:pointer;">
+                                    📋 Load Sample Stream (10 Items)
+                                </button>
+                            </div>
+                            <button type="button" onclick="document.getElementById('batchItemInput').value=''; document.getElementById('batchResultsWrap').style.display='none'; document.getElementById('batchTelemetryStrip').style.display='none';" style="background:transparent; border:none; color:#64748b; font-size:0.82rem; cursor:pointer;">
+                                ✕ Clear Input
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Panel 2: Spreadsheet Upload -->
+                    <div id="batchPanelFile" style="display:none;">
+                        <div style="background:#090e1a; border:2px dashed rgba(99,102,241,0.35); border-radius:12px; padding:28px 20px; text-align:center;">
+                            <svg style="width:40px; height:40px; fill:#818cf8; margin-bottom:12px;" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                            <h4 style="margin:0 0 6px 0; color:#f1f5f9; font-size:1.05rem;">Upload Line-Item Spreadsheet (.xlsx or .csv)</h4>
+                            <p style="margin:0 0 16px 0; font-size:0.82rem; color:#94a3b8;">Automatically vector-matches and augments every row with HSN, description, confidence &amp; guardrails.</p>
+                            
+                            <div style="display:inline-flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:center;">
+                                <input type="file" id="spreadsheetFileInput" accept=".csv,.xlsx,.xls" style="font-size:0.82rem; color:#cbd5e1; background:rgba(30,41,59,0.7); padding:6px 10px; border-radius:6px; border:1px solid rgba(148,163,184,0.3);">
+                                <input type="text" id="spreadsheetColInput" placeholder="Column: item_description" value="item_description" style="width:180px; background:#0b1120; border:1px solid rgba(99,102,241,0.3); border-radius:6px; padding:6px 10px; color:#f8fafc; font-size:0.82rem;">
+                                <button type="button" id="btnUploadSpreadsheet" onclick="uploadSpreadsheet()" style="background:linear-gradient(135deg, #10b981, #0ea5e9); color:#ffffff; border:none; border-radius:6px; padding:7px 16px; font-size:0.84rem; font-weight:700; cursor:pointer;">
+                                    📤 Ingest &amp; Augment File
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Telemetry & Performance Strip -->
+                    <div id="batchTelemetryStrip" style="display:none; margin-top:20px; padding:12px 16px; background:rgba(9, 14, 26, 0.8); border:1px solid rgba(56, 189, 248, 0.3); border-radius:10px; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                            <span style="font-size:0.82rem; color:#38bdf8; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                                <span class="pulse-dot" style="background:#38bdf8;"></span> Ingestion Telemetry:
+                            </span>
+                            <span id="batchCountBadge" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); padding:3px 10px; border-radius:6px; font-size:0.78rem; font-weight:700;">0 items</span>
+                            <span id="batchLatencyBadge" style="background:rgba(129,140,248,0.15); color:#a5b4fc; border:1px solid rgba(129,140,248,0.3); padding:3px 10px; border-radius:6px; font-size:0.78rem; font-weight:700;">⚡ 0 ms</span>
+                            <span id="batchThroughputBadge" style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.3); padding:3px 10px; border-radius:6px; font-size:0.78rem; font-weight:700;">🚀 0 items/sec</span>
+                        </div>
+                        <div style="display:flex; gap:8px; font-size:0.75rem; font-weight:700;">
+                            <span id="countAutoMatch" style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid #34d399; padding:2px 8px; border-radius:4px;">🟢 Auto: 0</span>
+                            <span id="countReview" style="background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid #fbbf24; padding:2px 8px; border-radius:4px;">🟡 Review: 0</span>
+                            <span id="countUnmapped" style="background:rgba(248,113,113,0.15); color:#f87171; border:1px solid #f87171; padding:2px 8px; border-radius:4px;">🔴 Unmapped: 0</span>
+                        </div>
+                    </div>
+
+                    <!-- Batch Results Container -->
+                    <div id="batchResultsWrap" style="display:none; margin-top:20px; overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:0.84rem; color:#cbd5e1; text-align:left;">
+                            <thead>
+                                <tr style="border-bottom:1px solid rgba(148,163,184,0.2); background:rgba(30,41,59,0.5); color:#94a3b8; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">
+                                    <th style="padding:10px 12px; width:40px;">#</th>
+                                    <th style="padding:10px 12px;">Query (Cleaned Description)</th>
+                                    <th style="padding:10px 12px; width:220px;">Top-1 Statutory Match</th>
+                                    <th style="padding:10px 12px; width:140px;">Similarity / Rate</th>
+                                    <th style="padding:10px 12px; width:170px;">Guardrail Decision</th>
+                                    <th style="padding:10px 12px; width:130px; text-align:center;">Multi-Candidates</th>
+                                </tr>
+                            </thead>
+                            <tbody id="batchResultsTbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </section>
 
@@ -3938,6 +4040,277 @@
                 dropdown.style.display = 'none';
             }
         });
+
+        /* ==========================================================
+           BATCH STREAM & SPREADSHEET INGESTION CONTROLLER
+           ========================================================== */
+        function escapeHtml(str) {
+            return String(str || '').replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[m]);
+        }
+
+        let currentBatchTab = 'text';
+
+        function switchBatchTab(tab) {
+            currentBatchTab = tab;
+            const btnText = document.getElementById('batchTabBtnText');
+            const btnFile = document.getElementById('batchTabBtnFile');
+            const panelText = document.getElementById('batchPanelText');
+            const panelFile = document.getElementById('batchPanelFile');
+
+            if (tab === 'text') {
+                btnText.style.background = 'rgba(99,102,241,0.3)';
+                btnText.style.border = '1px solid #6366f1';
+                btnText.style.color = '#ffffff';
+                btnFile.style.background = 'rgba(30,41,59,0.6)';
+                btnFile.style.border = '1px solid rgba(148,163,184,0.3)';
+                btnFile.style.color = '#94a3b8';
+                panelText.style.display = 'block';
+                panelFile.style.display = 'none';
+            } else {
+                btnFile.style.background = 'rgba(99,102,241,0.3)';
+                btnFile.style.border = '1px solid #6366f1';
+                btnFile.style.color = '#ffffff';
+                btnText.style.background = 'rgba(30,41,59,0.6)';
+                btnText.style.border = '1px solid rgba(148,163,184,0.3)';
+                btnText.style.color = '#94a3b8';
+                panelFile.style.display = 'block';
+                panelText.style.display = 'none';
+            }
+        }
+
+        function loadBatchSample() {
+            const samples = [
+                "SS 304 hex nipple 1/2 inch 10 pcs",
+                "allen cap screw M12 x 50 grade 8.8 500 nos",
+                "solar on grid inverter 5kw 3 phase 415v",
+                "industrial cast steel ball valve 2 inch class 150 flanged",
+                "pure mulberry silk printed saree with blouse piece",
+                "fresh chilled boneless buffalo meat 25kg carton",
+                "paracetamol tablets 500mg strip of 10",
+                "portland pozzolana cement 50kg bag grade 53",
+                "hydraulic high pressure rubber hose pipe 100 psi",
+                "unbranded plastic scrap miscellaneous lot 1000kg"
+            ];
+            document.getElementById('batchItemInput').value = samples.join('\n');
+            showToast('📋 Loaded 10 sample real-world dirty line items');
+        }
+
+        async function runBatchMatch() {
+            const raw = document.getElementById('batchItemInput').value.trim();
+            if (!raw) {
+                showToast('⚠️ Please enter at least one product description');
+                return;
+            }
+            const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length === 0) return;
+
+            const btn = document.getElementById('btnRunBatch');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Computing Vector Dot-Products...';
+
+            const t0 = performance.now();
+            try {
+                const resp = await fetch('/api/v1/hsn-intelligence/batch-match', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: lines, top_k: 4 })
+                });
+                if (!resp.ok) {
+                    throw new Error(`HTTP ${resp.status}`);
+                }
+                const data = await resp.json();
+                const clientLatency = (performance.now() - t0).toFixed(1);
+                renderBatchResults(data, clientLatency);
+                showToast(`⚡ Processed ${data.total_items} items in ${data.batch_latency_ms} ms`);
+            } catch (err) {
+                console.error('Batch match failed:', err);
+                showToast('❌ Batch match request failed');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '⚡ Run Batch Vector Match (M × N)';
+            }
+        }
+
+        async function uploadSpreadsheet() {
+            const fileInput = document.getElementById('spreadsheetFileInput');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showToast('⚠️ Please select a .csv or .xlsx file');
+                return;
+            }
+            const file = fileInput.files[0];
+            const col = document.getElementById('spreadsheetColInput').value.trim() || 'item_description';
+
+            const btn = document.getElementById('btnUploadSpreadsheet');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Ingesting & Augmenting...';
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('description_col', col);
+
+            const t0 = performance.now();
+            try {
+                const resp = await fetch('/api/v1/hsn-intelligence/upload-spreadsheet', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!resp.ok) {
+                    const errTxt = await resp.text();
+                    throw new Error(errTxt || `HTTP ${resp.status}`);
+                }
+                const data = await resp.json();
+                const clientLatency = (performance.now() - t0).toFixed(1);
+                
+                const adapted = {
+                    total_items: data.total_rows,
+                    batch_latency_ms: data.inference_latency_ms,
+                    results: (data.sample_augmented_records || []).map(r => ({
+                        original_query: r[col] || '',
+                        clean_query: r[col] || '',
+                        top1_candidate: {
+                            hsn_code: r.matched_hsn,
+                            description: r.matched_description,
+                            similarity_score: r.similarity_score,
+                            confidence_score: r.similarity_score,
+                            gst_rate: 18.0
+                        },
+                        guardrail_decision: r.guardrail_decision,
+                        is_automated_match: r.guardrail_decision === 'AUTOMATED_MATCH',
+                        candidates: []
+                    }))
+                };
+                renderBatchResults(adapted, clientLatency);
+                showToast(`✅ Successfully augmented ${data.total_rows} spreadsheet rows!`);
+            } catch (err) {
+                console.error('Spreadsheet upload failed:', err);
+                showToast(`❌ Upload failed: ${err.message || 'Error processing spreadsheet'}`);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '📤 Ingest & Augment File';
+            }
+        }
+
+        function renderBatchResults(data, clientLatency) {
+            const strip = document.getElementById('batchTelemetryStrip');
+            const wrap = document.getElementById('batchResultsWrap');
+            const tbody = document.getElementById('batchResultsTbody');
+
+            strip.style.display = 'flex';
+            wrap.style.display = 'block';
+            tbody.innerHTML = '';
+
+            const items = data.items || data.results || [];
+            const count = data.total_items || items.length;
+            const latency = data.latency_ms !== undefined ? data.latency_ms : (data.batch_latency_ms || clientLatency || 0);
+            const throughput = latency > 0 ? Math.round((count / (latency / 1000))) : 0;
+
+            document.getElementById('batchCountBadge').innerText = `${count} items`;
+            document.getElementById('batchLatencyBadge').innerText = `⚡ ${latency} ms (${(latency / (count || 1)).toFixed(1)} ms/item)`;
+            document.getElementById('batchThroughputBadge').innerText = `🚀 ${throughput} items/sec`;
+
+            let autoCount = data.automated_matches !== undefined ? data.automated_matches : 0;
+            let reviewCount = data.flagged_for_review !== undefined ? data.flagged_for_review : 0;
+            let unmappedCount = data.unmapped !== undefined ? data.unmapped : 0;
+
+            items.forEach((res, idx) => {
+                const dec = res.decision || res.guardrail_decision || (res.is_automated_match ? 'AUTOMATED_MATCH' : 'FLAG_FOR_REVIEW');
+                if (data.automated_matches === undefined) {
+                    if (dec === 'AUTOMATED_MATCH') autoCount++;
+                    else if (dec === 'FLAG_FOR_REVIEW') reviewCount++;
+                    else unmappedCount++;
+                }
+
+                let decBadge = '';
+                if (dec === 'AUTOMATED_MATCH') {
+                    decBadge = `<span style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid #34d399; padding:3px 8px; border-radius:6px; font-weight:700; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">🟢 AUTOMATED_MATCH</span>`;
+                } else if (dec === 'FLAG_FOR_REVIEW') {
+                    decBadge = `<span style="background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid #fbbf24; padding:3px 8px; border-radius:6px; font-weight:700; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">🟡 FLAG_FOR_REVIEW</span>`;
+                } else {
+                    decBadge = `<span style="background:rgba(248,113,113,0.15); color:#f87171; border:1px solid #f87171; padding:3px 8px; border-radius:6px; font-weight:700; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">🔴 UNMAPPED</span>`;
+                }
+
+                const top1 = res.top_match || res.top1_candidate || {};
+                const hsn = res.matched_hsn || top1.hsn_code || 'N/A';
+                const desc = res.official_description || top1.description || 'No matching statutory item';
+                const simVal = res.confidence_pct !== undefined ? res.confidence_pct : (top1.score !== undefined ? (top1.score * 100).toFixed(1) : (top1.similarity_score ? (top1.similarity_score * 100).toFixed(1) : '0.0'));
+                const rateVal = res.standard_rate !== undefined ? res.standard_rate : (top1.standard_rate !== undefined ? top1.standard_rate : 18.0);
+
+                const cleanQuery = res.cleaned_description || res.clean_query || res.raw_description || res.original_query || '';
+                const rawQuery = res.raw_description || res.original_query || '';
+
+                const runners = res.runners_up || res.candidates || [];
+                const hasRunnersUp = runners.length > 0;
+
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid rgba(148,163,184,0.1)';
+                tr.innerHTML = `
+                    <td style="padding:10px 12px; color:#64748b; font-weight:700;">${idx + 1}</td>
+                    <td style="padding:10px 12px; color:#f1f5f9; font-weight:600;">
+                        ${escapeHtml(cleanQuery)}
+                        ${rawQuery && rawQuery !== cleanQuery ? `<div style="font-size:0.72rem; color:#64748b; margin-top:2px;">Raw: ${escapeHtml(rawQuery)}</div>` : ''}
+                    </td>
+                    <td style="padding:10px 12px;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="font-family:'JetBrains Mono', monospace; font-weight:800; color:#38bdf8; font-size:0.9rem;">${hsn}</span>
+                            <button type="button" onclick="copyToClipboard(event, '${hsn}')" style="background:transparent; border:none; color:#64748b; cursor:pointer; padding:2px;" title="Copy HSN">📋</button>
+                        </div>
+                        <div style="font-size:0.72rem; color:#94a3b8; margin-top:2px; max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(desc)}">${escapeHtml(desc)}</div>
+                    </td>
+                    <td style="padding:10px 12px;">
+                        <span style="font-weight:700; color:${parseFloat(simVal) >= 70 ? '#34d399' : (parseFloat(simVal) >= 45 ? '#fbbf24' : '#f87171')};">${simVal}%</span>
+                        <span style="font-size:0.72rem; color:#94a3b8; margin-left:4px;">GST ${rateVal}%</span>
+                    </td>
+                    <td style="padding:10px 12px;">${decBadge}</td>
+                    <td style="padding:10px 12px; text-align:center;">
+                        ${hasRunnersUp ? `
+                            <button type="button" onclick="toggleBatchRunnersUp(${idx})" id="btnRunnersUp_${idx}" style="background:rgba(99,102,241,0.2); border:1px solid rgba(99,102,241,0.4); color:#c7d2fe; border-radius:6px; padding:3px 8px; font-size:0.72rem; cursor:pointer; font-weight:600;">
+                                ▼ Top 3 Runners
+                            </button>
+                        ` : `<span style="color:#64748b; font-size:0.75rem;">—</span>`}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+
+                if (hasRunnersUp) {
+                    const drawerTr = document.createElement('tr');
+                    drawerTr.id = `runnersUpRow_${idx}`;
+                    drawerTr.style.display = 'none';
+                    drawerTr.style.background = 'rgba(15, 23, 42, 0.9)';
+                    drawerTr.innerHTML = `
+                        <td colspan="6" style="padding:12px 16px; border-bottom:1px solid rgba(99,102,241,0.2);">
+                            <div style="font-size:0.75rem; font-weight:700; color:#818cf8; text-transform:uppercase; margin-bottom:8px;">
+                                🏃 Runner-Up Candidate Embeddings (Parallel Dot-Product Top 2 - 4):
+                            </div>
+                            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px;">
+                                ${runners.map(c => `
+                                    <div style="background:rgba(30,41,59,0.7); border:1px solid rgba(148,163,184,0.2); border-radius:8px; padding:8px 10px;">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                            <span style="font-family:'JetBrains Mono', monospace; font-weight:700; color:#38bdf8;">HSN ${c.hsn_code}</span>
+                                            <span style="font-weight:700; color:#fbbf24; font-size:0.75rem;">${c.confidence_pct ? c.confidence_pct : (c.score ? (c.score * 100).toFixed(1) : (c.similarity_score ? (c.similarity_score * 100).toFixed(1) : '0'))}% match</span>
+                                        </div>
+                                        <div style="font-size:0.72rem; color:#cbd5e1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(c.description)}">${escapeHtml(c.description)}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(drawerTr);
+                }
+            });
+
+            document.getElementById('countAutoMatch').innerText = `🟢 Auto: ${autoCount}`;
+            document.getElementById('countReview').innerText = `🟡 Review: ${reviewCount}`;
+            document.getElementById('countUnmapped').innerText = `🔴 Unmapped: ${unmappedCount}`;
+        }
+
+        function toggleBatchRunnersUp(idx) {
+            const row = document.getElementById(`runnersUpRow_${idx}`);
+            const btn = document.getElementById(`btnRunnersUp_${idx}`);
+            if (!row) return;
+            const isOpen = row.style.display !== 'none';
+            row.style.display = isOpen ? 'none' : 'table-row';
+            if (btn) btn.innerHTML = isOpen ? '▼ Top 3 Runners' : '▲ Hide Runners';
+        }
     </script>
 
     <!-- FLOATING SIDE SCREEN TOGGLE TAB ON RIGHT EDGE -->
