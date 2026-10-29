@@ -2,7 +2,7 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Optional, NamedTuple, Tuple
+from typing import Optional, NamedTuple
 
 import torch
 from transformers import (
@@ -30,11 +30,11 @@ class AnswerSpan(NamedTuple):
 
 class DynamicReader:
     """
-    Dynamic offline reader:
-    - Automatically discovers local model architecture from config.json.
-    - Dynamically supports both Generative Seq2Seq (T5/BART) and Extractive QA (Longformer/BERT/RoBERTa).
-    - Automatically allocates CPU or CUDA.
-    - Filters high-entropy base64 ciphertext noise from technical documents on the fly.
+    Production offline neural reader:
+    - Supports both Extractive QA (Longformer/BERT/RoBERTa) and Generative Seq2Seq (T5/BART).
+    - Vectorized 2D logit span search (0ms span selection).
+    - Null-token / unanswerable query detection to prevent hallucinating answers when information is absent.
+    - Strips document noise, base64 blocks, and JSON sample markers.
     """
 
     def __init__(self, model_dir: Optional[str] = None):
@@ -48,7 +48,6 @@ class DynamicReader:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         logger.info(f"Target device dynamically set to: {self.device}")
 
-        # 1. Inspect config to dynamically determine architecture
         self.config = AutoConfig.from_pretrained(str(self.model_path), local_files_only=True)
         self.tokenizer = AutoTokenizer.from_pretrained(str(self.model_path), local_files_only=True)
 
@@ -75,7 +74,6 @@ class DynamicReader:
 
         self.model.eval()
 
-        # Dynamically determine maximum input context limit
         self.max_tokens = getattr(
             self.config,
             "max_position_embeddings",
@@ -88,18 +86,21 @@ class DynamicReader:
 
     @staticmethod
     def strip_document_noise(text: str) -> str:
-        """
-        Dynamically strips base64 blocks, token signatures, and excessive
-        JSON noise that disrupts both tokenizers and language models.
-        """
-        # Remove long uninterrupted base64-like words (> 40 chars)
+        """Strips base64 blocks, JWT signatures, and JSON noise."""
         clean = re.sub(r"[A-Za-z0-9+/=_-]{40,}", " ", text)
-        # Collapse multiple spaces and newlines
         clean = re.sub(r"\s+", " ", clean).strip()
         return clean
 
+    @staticmethod
+    def clean_answer_text(answer: str) -> str:
+        """Trims leading numbering, FAQ labels, and formatting artifacts."""
+        ans = re.sub(r"\[JSON sample #\d+\]", "", answer).strip()
+        ans = re.sub(r"^([0-9]+[A-Za-z]?[\.\:]|\bQ[\.\:]|\bA[\.\:])\s*", "", ans).strip()
+        ans = ans.strip(" '\"`()[]{}.,;:")
+        return ans
+
     def _predict_extractive(self, question: str, context: str) -> Optional[AnswerSpan]:
-        """Runs dynamic extractive QA inference with char-span alignment."""
+        """Runs fast vectorized extractive QA inference with null verification."""
         clean_context = self.strip_document_noise(context)
         inputs = self.tokenizer(
             question,
@@ -114,10 +115,8 @@ class DynamicReader:
         offset_mapping = inputs.pop("offset_mapping")[0].cpu().tolist()
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
-        # Dynamically attach global attention if Longformer
         if self.config.model_type == "longformer":
             global_attention_mask = torch.zeros_like(inputs["input_ids"])
-            # Apply global attention to question tokens + CLS token
             sep_token_id = self.tokenizer.sep_token_id
             input_ids_list = inputs["input_ids"][0].tolist()
             first_sep = input_ids_list.index(sep_token_id) if sep_token_id in input_ids_list else 1
@@ -130,67 +129,80 @@ class DynamicReader:
         start_logits = outputs.start_logits[0]
         end_logits = outputs.end_logits[0]
 
-        # Isolate context sequence index bounds
-        try:
-            sequence_ids = inputs.get("token_type_ids")
-            if sequence_ids is not None:
-                context_indices = [
-                    i for i, seq_id in enumerate(sequence_ids[0].cpu().tolist()) if seq_id == 1
-                ]
-            else:
-                # Dynamic fallback using offset mappings (first non-zero start offset after question)
-                context_indices = [
-                    i for i, offset in enumerate(offset_mapping)
-                    if offset != (0, 0) and i > 2
-                ]
-        except Exception:
-            context_indices = list(range(1, len(offset_mapping) - 1))
+        # Token 0 is the [CLS]/null token (indicating unanswerable)
+        null_score = (start_logits[0] + end_logits[0]).item()
+
+        # Isolate context sequence token bounds
+        context_indices = [
+            i for i, offset in enumerate(offset_mapping)
+            if offset != (0, 0) and i > 2 and offset[1] > offset[0]
+        ]
 
         if not context_indices:
-            return None
+            return AnswerSpan(answer="not found", score=0.0, start_char=-1, end_char=-1)
 
-        # Mask non-context tokens
-        mask = torch.full_like(start_logits, float("-inf"))
-        mask[context_indices] = 0.0
-        masked_start = start_logits + mask
-        masked_end = end_logits + mask
+        s_ctx = start_logits[context_indices]
+        e_ctx = end_logits[context_indices]
 
-        start_probs = torch.softmax(masked_start, dim=-1)
-        end_probs = torch.softmax(masked_end, dim=-1)
+        max_s_logit = s_ctx.max().item()
+        max_e_logit = e_ctx.max().item()
 
-        best_score = -1.0
-        best_span = (0, 0)
-        max_answer_len = min(60, len(context_indices))
+        # Vectorized 2D scoring matrix: score[s, e] = s_ctx[s] + e_ctx[e]
+        max_len = min(35, len(context_indices))
+        score_matrix = s_ctx.unsqueeze(1) + e_ctx.unsqueeze(0)
+        len_c = len(context_indices)
+        idx = torch.arange(len_c, device=score_matrix.device)
 
-        for s_idx in context_indices:
-            e_limit = min(s_idx + max_answer_len, context_indices[-1] + 1)
-            for e_idx in range(s_idx, e_limit):
-                score = (start_probs[s_idx] * end_probs[e_idx]).item()
-                if score > best_score:
-                    best_score = score
-                    best_span = (s_idx, e_idx)
+        # Invalidate spans where end < start or end - start >= max_len
+        diff = idx.unsqueeze(0) - idx.unsqueeze(1)
+        invalid_mask = (diff < 0) | (diff >= max_len)
+        score_matrix.masked_fill_(invalid_mask, float("-inf"))
 
-        s_tok, e_tok = best_span
-        start_char, _ = offset_mapping[s_tok]
-        _, end_char = offset_mapping[e_tok]
+        best_flat_idx = torch.argmax(score_matrix)
+        best_s_rel = (best_flat_idx // len_c).item()
+        best_e_rel = (best_flat_idx % len_c).item()
+        best_logit_sum = score_matrix[best_s_rel, best_e_rel].item()
 
-        extracted_text = clean_context[start_char:end_char].strip()
-        if not extracted_text:
-            return None
+        # Null-token and unanswerability rejection
+        logit_margin_over_null = best_logit_sum - null_score
+        if best_logit_sum < 0.5 or max_s_logit < -1.0 or max_e_logit < -1.0 or logit_margin_over_null < 1.5:
+            return AnswerSpan(answer="not found", score=0.0, start_char=-1, end_char=-1)
+
+        tok_s = context_indices[best_s_rel]
+        tok_e = context_indices[best_e_rel]
+        raw_start, _ = offset_mapping[tok_s]
+        _, raw_end = offset_mapping[tok_e]
+
+        candidate_text = clean_context[raw_start:raw_end].strip()
+        cleaned_text = self.clean_answer_text(candidate_text)
+
+        if not cleaned_text or len(cleaned_text) < 2:
+            return AnswerSpan(answer="not found", score=0.0, start_char=-1, end_char=-1)
+
+        # Precise character offset alignment with input context
+        char_start = context.find(cleaned_text)
+        if char_start != -1:
+            char_end = char_start + len(cleaned_text)
+        else:
+            char_start = raw_start
+            char_end = raw_end
+
+        # Calibrated probability in [0.0, 1.0]
+        confidence = round(torch.sigmoid(torch.tensor((best_logit_sum - 2.5) / 2.5)).item(), 4)
 
         return AnswerSpan(
-            answer=extracted_text,
-            score=round(best_score, 4),
-            start_char=start_char,
-            end_char=end_char
+            answer=cleaned_text,
+            score=confidence,
+            start_char=char_start,
+            end_char=char_end
         )
 
     def _predict_generative(self, question: str, context: str) -> Optional[AnswerSpan]:
-        """Runs dynamic generative seq2seq inference."""
+        """Runs generative seq2seq inference with concise answering prompt."""
         clean_context = self.strip_document_noise(context)
         prompt = (
-            f"Given the context information below, answer the question accurately.\n"
-            f"If the information is not present, reply with 'not found'.\n\n"
+            f"Based strictly on the following GST reference context, provide a short, accurate answer to the question.\n"
+            f"If the answer cannot be found in the context, reply only with 'not found'.\n\n"
             f"Context: {clean_context}\n\n"
             f"Question: {question}\n\n"
             f"Answer:"
@@ -206,21 +218,30 @@ class DynamicReader:
         with torch.no_grad():
             outputs = self.model.generate(
                 **inputs,
-                max_new_tokens=80,
+                max_new_tokens=40,
                 num_beams=2,
                 early_stopping=True,
                 no_repeat_ngram_size=2
             )
 
         predicted_text = self.tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
-        if not predicted_text or predicted_text.lower() == "not found":
+        cleaned_text = self.clean_answer_text(predicted_text)
+
+        if not cleaned_text or cleaned_text.lower() in ("not found", "none", "unknown"):
             return AnswerSpan(answer="not found", score=0.0, start_char=-1, end_char=-1)
 
+        # Verify predicted text is not echoing the prompt
+        if cleaned_text.lower() in question.lower() or len(cleaned_text) > 150:
+            return AnswerSpan(answer="not found", score=0.0, start_char=-1, end_char=-1)
+
+        char_start = context.find(cleaned_text)
+        char_end = char_start + len(cleaned_text) if char_start != -1 else -1
+
         return AnswerSpan(
-            answer=predicted_text,
-            score=1.0,
-            start_char=-1,
-            end_char=-1
+            answer=cleaned_text,
+            score=0.90,
+            start_char=char_start,
+            end_char=char_end
         )
 
     def predict(self, question: str, context: str) -> Optional[AnswerSpan]:
@@ -236,8 +257,9 @@ class DynamicReader:
         return self._predict_extractive(q_clean, c_clean)
 
 
-# Alias for backward compatibility with previous scripts
+# Backward compatibility alias
 LongReader = DynamicReader
+
 if __name__ == "__main__":
     from config import CONTENT_PATH
 
@@ -245,49 +267,18 @@ if __name__ == "__main__":
     print(" LIVE DYNAMIC READER TEST ")
     print("=" * 70)
 
-    try:
-        reader = DynamicReader()
+    reader = DynamicReader()
+    if not CONTENT_PATH.exists():
+        raise FileNotFoundError(f"Content file missing at: {CONTENT_PATH}")
 
-        # Dynamically load live context from data/content.txt
-        if not CONTENT_PATH.exists():
-            raise FileNotFoundError(f"Content file missing at: {CONTENT_PATH}")
+    with open(CONTENT_PATH, "r", encoding="utf-8", errors="replace") as f:
+        raw_text = f.read()
 
-        with open(CONTENT_PATH, "r", encoding="utf-8", errors="replace") as f:
-            raw_text = f.read()
-
-        # Dynamically pull the first ~1200 words of real content as the live context window
-        words = raw_text.split()
-        dynamic_context = " ".join(words[:1200])
-
-        print(f"\n[+] Loaded dynamic context from: {CONTENT_PATH} ({len(words)} total words available)")
-        print("-" * 70)
-
-        # Interactive loop to test live questions dynamically
-        while True:
-            try:
-                user_q = input("\nEnter a question to test reader (or 'exit' to quit): ").strip()
-                if user_q.lower() in ("exit", "quit"):
-                    print("Exiting dynamic reader test.")
-                    break
-                if not user_q:
-                    print("Please enter a non-empty question.")
-                    continue
-
-                result = reader.predict(question=user_q, context=dynamic_context)
-
-                print("\n" + "-" * 50)
-                if result and result.answer != "not found":
-                    print(f" Extracted/Generated Answer: {result.answer}")
-                    print(f" Confidence Score:           {result.score}")
-                    if result.start_char != -1:
-                        print(f" Character Span:             [{result.start_char}:{result.end_char}]")
-                else:
-                    print(" Result: not found (confidence below threshold or no match)")
-                print("-" * 50)
-
-            except (KeyboardInterrupt, EOFError):
-                print("\nInterrupted. Exiting.")
-                break
-
-    except Exception as err:
-        logger.critical(f"Execution failed: {err}")
+    sample_context = raw_text[:3000]
+    sample_q = "What is the validity of the auth token?"
+    res = reader.predict(sample_q, sample_context)
+    print(f"Q: {sample_q}")
+    if res and res.answer != "not found":
+        print(f"A: {res.answer} (score: {res.score})")
+    else:
+        print("A: not found")

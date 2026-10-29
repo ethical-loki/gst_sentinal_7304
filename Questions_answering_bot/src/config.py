@@ -20,4 +20,4 @@ TOP_K = 3
 
 # Inference Threshold
 # If the top reader probability is below this value, reply "not found"
-SCORE_THRESHOLD = 0.05
+SCORE_THRESHOLD = 0.25
