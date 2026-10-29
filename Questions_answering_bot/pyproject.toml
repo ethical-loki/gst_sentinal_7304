@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "gst-sentinel-qa-bot"
+version = "1.0.0"
+description = "Fully offline extractive QA bot for GST/HSN document corpus using BM25 + Longformer"
+readme = "docs/README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+keywords = ["gst", "qa-bot", "nlp", "longformer", "information-retrieval", "offline"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "torch>=2.0.0",
+    "transformers>=4.30.0",
+    "sentencepiece>=0.1.99",
+    "scikit-learn>=1.3.0",
+    "pydantic>=2.0.0",
+    "psutil>=5.9.0",
+]
+
+[project.scripts]
+gst-qa-bot = "run:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.setuptools.package-dir]
+"" = "."

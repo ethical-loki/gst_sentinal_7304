@@ -1,10 +1,13 @@
 # Python Virtual Environment
+.venv311/
 venv/
 .venv/
 env/
 ENV/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
 # Local SQLite databases & temporary DB locks
 *.db
@@ -13,6 +16,13 @@ __pycache__/
 *-journal
 *.db-wal
 *.db-shm
+
+# GST Sentinal - Generated Data & Operational Reports
+data/processed_payload/
+Template_Converters/audit_summary.txt
+Template_Converters/corrected_payload.json
+Template_Converters/correction_audit_report.csv
+Template_Converters/validation_report.json
 
 # Data and client uploads
 data/raw/client_uploads/
@@ -35,3 +45,6 @@ secrets/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# ML Model weights
+Questions_answering_bot/models/

@@ -3,7 +3,7 @@
   "system_cd": "SAP_ERP",
   "branch_cd": "BLR01",
   "vertical_cd": "DOM",
-  "irnreq": "Y",
+  "irnreq": "N",
   "trandt1": {
     "trancatg": "B2C",
     "reversecharge": "N",
@@ -14,12 +14,12 @@
   "docdtl": {
     "document_type": "INV",
     "docno": "INV-INGEST-001",
-    "docdt": "25-10-2026"
+    "docdt": "27-10-2026"
   },
   "docdt1": {
     "document_type": "INV",
     "docno": "INV-INGEST-001",
-    "docdt": "25-10-2026"
+    "docdt": "27-10-2026"
   },
   "supplierdt1": {
     "supplier_gstin": "29ABCDE1234F1Z5",
@@ -56,7 +56,7 @@
       "product_name": "Industrial Motor",
       "product_desc": "",
       "is_service": "N",
-      "hsn_cd": "71022110",
+      "hsn_cd": "85015320",
       "qty": "2.000",
       "unit": "NOS",
       "unit_price": "10000.00",

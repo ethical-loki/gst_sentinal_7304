@@ -1,5 +1,13 @@
-import csv
 import os
+
+# Prevent OpenBLAS thread allocation failure on Windows
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
+
+import csv
 from typing import List, Dict, Any, Optional, Union
 import pandas as pd
 import pyarrow as pa
@@ -21,6 +29,22 @@ from src.ingestion.schemas import (
     classify_rule_2194_diagnostic,
     classify_rule_2200_diagnostic,
     classify_rule_2201_diagnostic,
+    classify_rule_2258_diagnostic,
+    classify_rule_2259_diagnostic,
+    classify_rule_2260_diagnostic,
+    classify_rule_2261_diagnostic,
+    classify_rule_2262_diagnostic,
+    classify_rule_2265_diagnostic,
+    classify_rule_2266_diagnostic,
+    classify_rule_2268_diagnostic,
+    classify_rule_2269_diagnostic,
+    classify_rule_2271_diagnostic,
+    classify_rule_2272_diagnostic,
+    classify_rule_2273_diagnostic,
+    classify_rule_2274_diagnostic,
+    classify_rule_2275_diagnostic,
+    classify_rule_2276_diagnostic,
+    classify_rule_2278_diagnostic,
     normalize_uqc_statutory,
 )
 
@@ -262,6 +286,122 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
                 else:
                     exp_port = diag_2201.get("rectified_port") or exp_port
                 rule_2201_msg = f"Rule 2201 Violation ({diag_2201['scenario_name']}): {diag_2201['reason']}"
+
+        # Statutory Interceptions: Rules 2258-2278
+        sup_gstin = str(sup.get("supplier_gstin") or sup.get("gstin") or sup.get("Gstin") or "").strip().upper()
+        sup_pin = str(sup.get("supplier_pin") or sup.get("pin") or sup.get("Pin") or "").strip()
+        buy_pin = str(buy.get("buyer_pin") or buy.get("pin") or buy.get("Pin") or "").strip()
+
+        # Rule 2258 & Rule 2259
+        rule_2258_msg = None
+        rule_2259_msg = None
+        if sup_gstin and sup_st:
+            diag_2258 = classify_rule_2258_diagnostic(supplier_gstin=sup_gstin, supplier_state=sup_st) if classify_rule_2258_diagnostic else None
+            if diag_2258 and not diag_2258["is_valid"]:
+                sup_st = diag_2258["rectified_state"]
+                rule_2258_msg = f"Rule 2258 Violation ({diag_2258['scenario_name']}): {diag_2258['reason']}"
+        if sup_st:
+            diag_2259 = classify_rule_2259_diagnostic(supplier_state=sup_st, supplier_gstin=sup_gstin) if classify_rule_2259_diagnostic else None
+            if diag_2259 and not diag_2259["is_valid"]:
+                sup_st = diag_2259["rectified_state"]
+                rule_2259_msg = f"Rule 2259 Violation ({diag_2259['scenario_name']}): {diag_2259['reason']}"
+
+        # Rule 2260, 2261, 2265, 2269
+        rule_2260_msg = None
+        rule_2261_msg = None
+        rule_2265_msg = None
+        rule_2269_msg = None
+        if is_exp_tx and buy_st != "96":
+            diag_2261 = classify_rule_2261_diagnostic(buyer_state=buy_st, trancatg=trancatg) if classify_rule_2261_diagnostic else None
+            if diag_2261 and not diag_2261["is_valid"]:
+                buy_st = "96"
+                buy_pos = "96"
+                rule_2261_msg = f"Rule 2261 Violation ({diag_2261['scenario_name']}): {diag_2261['reason']}"
+        elif not is_exp_tx and buy_st == "96":
+            diag_2269 = classify_rule_2269_diagnostic(buyer_state=buy_st, trancatg=trancatg, buyer_gstin=buy_gstin) if classify_rule_2269_diagnostic else None
+            if diag_2269 and not diag_2269["is_valid"]:
+                buy_st = diag_2269["rectified_state"]
+                rule_2269_msg = f"Rule 2269 Violation ({diag_2269['scenario_name']}): {diag_2269['reason']}"
+        else:
+            if buy_st:
+                diag_2260 = classify_rule_2260_diagnostic(buyer_state=buy_st, buyer_gstin=buy_gstin, trancatg=trancatg) if classify_rule_2260_diagnostic else None
+                if diag_2260 and not diag_2260["is_valid"]:
+                    buy_st = diag_2260["rectified_state"]
+                    rule_2260_msg = f"Rule 2260 Violation ({diag_2260['scenario_name']}): {diag_2260['reason']}"
+
+        if buy_gstin and buy_gstin != "URP" and len(buy_gstin) >= 2 and buy_gstin[:2].isdigit():
+            diag_2265 = classify_rule_2265_diagnostic(buyer_gstin=buy_gstin, buyer_state=buy_st) if classify_rule_2265_diagnostic else None
+            if diag_2265 and not diag_2265["is_valid"]:
+                buy_st = diag_2265["rectified_state"]
+                rule_2265_msg = f"Rule 2265 Violation ({diag_2265['scenario_name']}): {diag_2265['reason']}"
+
+        # Rule 2262 & Rule 2268
+        rule_2262_msg = None
+        rule_2268_msg = None
+        if igstonintra == "Y":
+            if is_exp_tx:
+                diag_2268 = classify_rule_2268_diagnostic(igst_on_intra=igstonintra, trancatg=trancatg) if classify_rule_2268_diagnostic else None
+                if diag_2268 and not diag_2268["is_valid"]:
+                    igstonintra = "N"
+                    rule_2268_msg = f"Rule 2268 Violation ({diag_2268['scenario_name']}): {diag_2268['reason']}"
+            elif sup_st and buy_pos and sup_st != buy_pos:
+                diag_2262 = classify_rule_2262_diagnostic(seller_state=sup_st, buyer_pos=buy_pos, igst_on_intra=igstonintra) if classify_rule_2262_diagnostic else None
+                if diag_2262 and not diag_2262["is_valid"]:
+                    igstonintra = "N"
+                    rule_2262_msg = f"Rule 2262 Violation ({diag_2262['scenario_name']}): {diag_2262['reason']}"
+
+        # Rule 2271 & Rule 2272
+        rule_2271_msg = None
+        rule_2272_msg = None
+        if ship and not is_exp_tx:
+            diag_2271 = classify_rule_2271_diagnostic(ship_state=ship_st, trancatg=trancatg, ship_gstin=ship_gstin, ship_pin=ship_pin, buyer_state=buy_st) if classify_rule_2271_diagnostic else None
+            if diag_2271 and not diag_2271["is_valid"]:
+                ship_st = diag_2271["rectified_state"]
+                rule_2271_msg = f"Rule 2271 Violation ({diag_2271['scenario_name']}): {diag_2271['reason']}"
+
+            diag_2272 = classify_rule_2272_diagnostic(ship_pin=ship_pin, trancatg=trancatg, buyer_pin=buy_pin, ship_state=ship_st) if classify_rule_2272_diagnostic else None
+            if diag_2272 and not diag_2272["is_valid"]:
+                ship_pin = str(diag_2272["rectified_pin"])
+                rule_2272_msg = f"Rule 2272 Violation ({diag_2272['scenario_name']}): {diag_2272['reason']}"
+
+        # Rule 2273
+        rule_2273_msg = None
+        if disp:
+            diag_2273 = classify_rule_2273_diagnostic(disp_pin=disp_pin, trancatg=trancatg, seller_pin=sup_pin, disp_state=disp_st) if classify_rule_2273_diagnostic else None
+            if diag_2273 and not diag_2273["is_valid"]:
+                disp_pin = str(diag_2273["rectified_pin"])
+                rule_2273_msg = f"Rule 2273 Violation ({diag_2273['scenario_name']}): {diag_2273['reason']}"
+
+        # Rule 2274 & Rule 2275
+        rule_2274_msg = None
+        rule_2275_msg = None
+        if is_exp_tx:
+            diag_2275 = classify_rule_2275_diagnostic(buyer_pin=buy_pin, trancatg=trancatg, buyer_state=buy_st) if classify_rule_2275_diagnostic else None
+            if diag_2275 and not diag_2275["is_valid"]:
+                buy_pin = "999999"
+                rule_2275_msg = f"Rule 2275 Violation ({diag_2275['scenario_name']}): {diag_2275['reason']}"
+        else:
+            diag_2274 = classify_rule_2274_diagnostic(buyer_pin=buy_pin, trancatg=trancatg, buyer_state=buy_st, buyer_gstin=buy_gstin) if classify_rule_2274_diagnostic else None
+            if diag_2274 and not diag_2274["is_valid"]:
+                buy_pin = str(diag_2274["rectified_pin"])
+                rule_2274_msg = f"Rule 2274 Violation ({diag_2274['scenario_name']}): {diag_2274['reason']}"
+
+        # Rule 2276
+        rule_2276_msg = None
+        diag_2276 = classify_rule_2276_diagnostic(seller_pin=sup_pin, trancatg=trancatg, seller_state=sup_st, seller_gstin=sup_gstin) if classify_rule_2276_diagnostic else None
+        if diag_2276 and not diag_2276["is_valid"]:
+            sup_pin = str(diag_2276["rectified_pin"])
+            rule_2276_msg = f"Rule 2276 Violation ({diag_2276['scenario_name']}): {diag_2276['reason']}"
+
+        # Rule 2278
+        rule_2278_msg = None
+        is_canc_reuse = bool(payload.get("is_cancelled_reuse"))
+        canc_registry = payload.get("cancelled_doc_registry")
+        if is_canc_reuse or canc_registry:
+            diag_2278 = classify_rule_2278_diagnostic(docno=docno, doc_type=doc_type, is_cancelled_reuse=is_canc_reuse, cancelled_doc_registry=canc_registry, supplier_gstin=sup_gstin) if classify_rule_2278_diagnostic else None
+            if diag_2278 and not diag_2278["is_valid"]:
+                docno = diag_2278["rectified_docno"]
+                rule_2278_msg = f"Rule 2278 Violation ({diag_2278['scenario_name']}): {diag_2278['reason']}"
 
         for i, item in enumerate(itemdtls, start=1):
             slno = str(item.get("slno") or i).strip()
@@ -531,6 +671,15 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
                 risk_prob = max(risk_prob, 0.95)
                 audit_reasons_str = f"{audit_reasons_str}; {rule_2201_msg}" if audit_reasons_str else rule_2201_msg
 
+            # Statutory Rules Telemetry (2258-2278)
+            stat_msgs = [m for m in [rule_2258_msg, rule_2259_msg, rule_2260_msg, rule_2261_msg, rule_2262_msg, rule_2265_msg, rule_2268_msg, rule_2269_msg, rule_2271_msg, rule_2272_msg, rule_2273_msg, rule_2274_msg, rule_2275_msg, rule_2276_msg, rule_2278_msg] if m]
+            if stat_msgs:
+                status_badge = "FLAGGED_AND_RECTIFIED"
+                risk_level = "HIGH"
+                risk_prob = max(risk_prob, 0.95)
+                for sm in stat_msgs:
+                    audit_reasons_str = f"{audit_reasons_str}; {sm}" if audit_reasons_str else sm
+
             rows.append({
                 # Document & Transaction Details
                 "invoice_id": docno,
@@ -541,11 +690,11 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
                 "igst_on_intra": igstonintra,
 
                 # Supplier Details
-                "supplier_gstin": str(sup.get("supplier_gstin") or sup.get("gstin") or "").strip(),
+                "supplier_gstin": sup_gstin,
                 "supplier_lglnm": str(sup.get("supplier_lglnm") or sup.get("lglnm") or "").strip(),
                 "supplier_trdnm": str(sup.get("supplier_trdnm") or sup.get("trdnm") or "").strip(),
-                "supplier_state": str(sup.get("supplier_state") or sup.get("state") or "").strip(),
-                "supplier_pin": str(sup.get("supplier_pin") or sup.get("pin") or "").strip(),
+                "supplier_state": sup_st,
+                "supplier_pin": sup_pin,
                 "supplier_loc": str(sup.get("supplier_loc") or sup.get("loc") or "").strip(),
                 "supplier_phone": str(sup.get("supplier_phone") or sup.get("phone") or "").strip(),
                 "supplier_email": str(sup.get("supplier_email") or sup.get("email") or "").strip(),
@@ -554,8 +703,8 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
                 "buyer_gstin": str(buy.get("buyer_gstin") or buy.get("gstin") or "").strip(),
                 "buyer_lglnm": str(buy.get("buyer_lglnm") or buy.get("lglnm") or "").strip(),
                 "buyer_trdnm": str(buy.get("buyer_trdnm") or buy.get("trdnm") or "").strip(),
-                "buyer_state": str(buy.get("buyer_state") or buy.get("state") or "").strip(),
-                "buyer_pin": str(buy.get("buyer_pin") or buy.get("pin") or "").strip(),
+                "buyer_state": buy_st,
+                "buyer_pin": buy_pin,
                 "buyer_pos": buy_pos,
                 "buyer_loc": str(buy.get("buyer_loc") or buy.get("loc") or "").strip(),
                 "buyer_phone": str(buy.get("buyer_phone") or buy.get("phone") or "").strip(),
@@ -1013,6 +1162,122 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
                 exp_port_m = diag_2201_m.get("rectified_port") or exp_port_m
             rule_2201_msg_m = f"Rule 2201 Violation ({diag_2201_m['scenario_name']}): {diag_2201_m['reason']}"
 
+    # Statutory Interceptions: Rules 2258-2278 (Model Branch)
+    sup_gstin_m = str(getattr(sup, "gstin", "") or "").strip().upper()
+    sup_pin_m = str(getattr(sup, "pin", "") or "").strip()
+    buy_pin_m = str(getattr(buy, "pin", "") or "").strip()
+
+    # Rule 2258 & Rule 2259
+    rule_2258_msg_m = None
+    rule_2259_msg_m = None
+    if sup_gstin_m and sup_st:
+        diag_2258_m = classify_rule_2258_diagnostic(supplier_gstin=sup_gstin_m, supplier_state=sup_st) if classify_rule_2258_diagnostic else None
+        if diag_2258_m and not diag_2258_m["is_valid"]:
+            sup_st = diag_2258_m["rectified_state"]
+            rule_2258_msg_m = f"Rule 2258 Violation ({diag_2258_m['scenario_name']}): {diag_2258_m['reason']}"
+    if sup_st:
+        diag_2259_m = classify_rule_2259_diagnostic(supplier_state=sup_st, supplier_gstin=sup_gstin_m) if classify_rule_2259_diagnostic else None
+        if diag_2259_m and not diag_2259_m["is_valid"]:
+            sup_st = diag_2259_m["rectified_state"]
+            rule_2259_msg_m = f"Rule 2259 Violation ({diag_2259_m['scenario_name']}): {diag_2259_m['reason']}"
+
+    # Rule 2260, 2261, 2265, 2269
+    rule_2260_msg_m = None
+    rule_2261_msg_m = None
+    rule_2265_msg_m = None
+    rule_2269_msg_m = None
+    if is_exp_tx_m and buy_st != "96":
+        diag_2261_m = classify_rule_2261_diagnostic(buyer_state=buy_st, trancatg=trancatg_m) if classify_rule_2261_diagnostic else None
+        if diag_2261_m and not diag_2261_m["is_valid"]:
+            buy_st = "96"
+            buy_pos = "96"
+            rule_2261_msg_m = f"Rule 2261 Violation ({diag_2261_m['scenario_name']}): {diag_2261_m['reason']}"
+    elif not is_exp_tx_m and buy_st == "96":
+        diag_2269_m = classify_rule_2269_diagnostic(buyer_state=buy_st, trancatg=trancatg_m, buyer_gstin=buy_gstin) if classify_rule_2269_diagnostic else None
+        if diag_2269_m and not diag_2269_m["is_valid"]:
+            buy_st = diag_2269_m["rectified_state"]
+            rule_2269_msg_m = f"Rule 2269 Violation ({diag_2269_m['scenario_name']}): {diag_2269_m['reason']}"
+    else:
+        if buy_st:
+            diag_2260_m = classify_rule_2260_diagnostic(buyer_state=buy_st, buyer_gstin=buy_gstin, trancatg=trancatg_m) if classify_rule_2260_diagnostic else None
+            if diag_2260_m and not diag_2260_m["is_valid"]:
+                buy_st = diag_2260_m["rectified_state"]
+                rule_2260_msg_m = f"Rule 2260 Violation ({diag_2260_m['scenario_name']}): {diag_2260_m['reason']}"
+
+    if buy_gstin and buy_gstin != "URP" and len(buy_gstin) >= 2 and buy_gstin[:2].isdigit():
+        diag_2265_m = classify_rule_2265_diagnostic(buyer_gstin=buy_gstin, buyer_state=buy_st) if classify_rule_2265_diagnostic else None
+        if diag_2265_m and not diag_2265_m["is_valid"]:
+            buy_st = diag_2265_m["rectified_state"]
+            rule_2265_msg_m = f"Rule 2265 Violation ({diag_2265_m['scenario_name']}): {diag_2265_m['reason']}"
+
+    # Rule 2262 & Rule 2268
+    rule_2262_msg_m = None
+    rule_2268_msg_m = None
+    if igstonintra_m == "Y":
+        if is_exp_tx_m:
+            diag_2268_m = classify_rule_2268_diagnostic(igst_on_intra=igstonintra_m, trancatg=trancatg_m) if classify_rule_2268_diagnostic else None
+            if diag_2268_m and not diag_2268_m["is_valid"]:
+                igstonintra_m = "N"
+                rule_2268_msg_m = f"Rule 2268 Violation ({diag_2268_m['scenario_name']}): {diag_2268_m['reason']}"
+        elif sup_st and buy_pos and sup_st != buy_pos:
+            diag_2262_m = classify_rule_2262_diagnostic(seller_state=sup_st, buyer_pos=buy_pos, igst_on_intra=igstonintra_m) if classify_rule_2262_diagnostic else None
+            if diag_2262_m and not diag_2262_m["is_valid"]:
+                igstonintra_m = "N"
+                rule_2262_msg_m = f"Rule 2262 Violation ({diag_2262_m['scenario_name']}): {diag_2262_m['reason']}"
+
+    # Rule 2271 & Rule 2272
+    rule_2271_msg_m = None
+    rule_2272_msg_m = None
+    if ship and not is_exp_tx_m:
+        diag_2271_m = classify_rule_2271_diagnostic(ship_state=ship_st_m, trancatg=trancatg_m, ship_gstin=ship_gstin_m, ship_pin=ship_pin_m, buyer_state=buy_st) if classify_rule_2271_diagnostic else None
+        if diag_2271_m and not diag_2271_m["is_valid"]:
+            ship_st_m = diag_2271_m["rectified_state"]
+            rule_2271_msg_m = f"Rule 2271 Violation ({diag_2271_m['scenario_name']}): {diag_2271_m['reason']}"
+
+        diag_2272_m = classify_rule_2272_diagnostic(ship_pin=ship_pin_m, trancatg=trancatg_m, buyer_pin=buy_pin_m, ship_state=ship_st_m) if classify_rule_2272_diagnostic else None
+        if diag_2272_m and not diag_2272_m["is_valid"]:
+            ship_pin_m = str(diag_2272_m["rectified_pin"])
+            rule_2272_msg_m = f"Rule 2272 Violation ({diag_2272_m['scenario_name']}): {diag_2272_m['reason']}"
+
+    # Rule 2273
+    rule_2273_msg_m = None
+    if disp:
+        diag_2273_m = classify_rule_2273_diagnostic(disp_pin=disp_pin_m, trancatg=trancatg_m, seller_pin=sup_pin_m, disp_state=disp_st_m) if classify_rule_2273_diagnostic else None
+        if diag_2273_m and not diag_2273_m["is_valid"]:
+            disp_pin_m = str(diag_2273_m["rectified_pin"])
+            rule_2273_msg_m = f"Rule 2273 Violation ({diag_2273_m['scenario_name']}): {diag_2273_m['reason']}"
+
+    # Rule 2274 & Rule 2275
+    rule_2274_msg_m = None
+    rule_2275_msg_m = None
+    if is_exp_tx_m:
+        diag_2275_m = classify_rule_2275_diagnostic(buyer_pin=buy_pin_m, trancatg=trancatg_m, buyer_state=buy_st) if classify_rule_2275_diagnostic else None
+        if diag_2275_m and not diag_2275_m["is_valid"]:
+            buy_pin_m = "999999"
+            rule_2275_msg_m = f"Rule 2275 Violation ({diag_2275_m['scenario_name']}): {diag_2275_m['reason']}"
+    else:
+        diag_2274_m = classify_rule_2274_diagnostic(buyer_pin=buy_pin_m, trancatg=trancatg_m, buyer_state=buy_st, buyer_gstin=buy_gstin) if classify_rule_2274_diagnostic else None
+        if diag_2274_m and not diag_2274_m["is_valid"]:
+            buy_pin_m = str(diag_2274_m["rectified_pin"])
+            rule_2274_msg_m = f"Rule 2274 Violation ({diag_2274_m['scenario_name']}): {diag_2274_m['reason']}"
+
+    # Rule 2276
+    rule_2276_msg_m = None
+    diag_2276_m = classify_rule_2276_diagnostic(seller_pin=sup_pin_m, trancatg=trancatg_m, seller_state=sup_st, seller_gstin=sup_gstin_m) if classify_rule_2276_diagnostic else None
+    if diag_2276_m and not diag_2276_m["is_valid"]:
+        sup_pin_m = str(diag_2276_m["rectified_pin"])
+        rule_2276_msg_m = f"Rule 2276 Violation ({diag_2276_m['scenario_name']}): {diag_2276_m['reason']}"
+
+    # Rule 2278
+    rule_2278_msg_m = None
+    is_canc_reuse_m = bool(getattr(payload, "is_cancelled_reuse", False))
+    canc_registry_m = getattr(payload, "cancelled_doc_registry", None)
+    if is_canc_reuse_m or canc_registry_m:
+        diag_2278_m = classify_rule_2278_diagnostic(docno=inv_id, doc_type=str(payload.document_type), is_cancelled_reuse=is_canc_reuse_m, cancelled_doc_registry=canc_registry_m, supplier_gstin=sup_gstin_m) if classify_rule_2278_diagnostic else None
+        if diag_2278_m and not diag_2278_m["is_valid"]:
+            inv_id = diag_2278_m["rectified_docno"]
+            rule_2278_msg_m = f"Rule 2278 Violation ({diag_2278_m['scenario_name']}): {diag_2278_m['reason']}"
+
     for item in payload.itemdtls:
         slno = str(getattr(item, "slno", "") or getattr(item, "item_slno", "") or "1").strip()
         qty = float(getattr(item, "qty", 0.0) or 0.0)
@@ -1265,31 +1530,40 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
             risk_prob = max(risk_prob, 0.95)
             audit_reasons_str = f"{audit_reasons_str}; {rule_2201_msg_m}" if audit_reasons_str else rule_2201_msg_m
 
+        # Statutory Rules Telemetry (2258-2278) Model Branch
+        stat_msgs_m = [m for m in [rule_2258_msg_m, rule_2259_msg_m, rule_2260_msg_m, rule_2261_msg_m, rule_2262_msg_m, rule_2265_msg_m, rule_2268_msg_m, rule_2269_msg_m, rule_2271_msg_m, rule_2272_msg_m, rule_2273_msg_m, rule_2274_msg_m, rule_2275_msg_m, rule_2276_msg_m, rule_2278_msg_m] if m]
+        if stat_msgs_m:
+            status_badge = "FLAGGED_AND_RECTIFIED"
+            risk_level = "HIGH"
+            risk_prob = max(risk_prob, 0.95)
+            for sm in stat_msgs_m:
+                audit_reasons_str = f"{audit_reasons_str}; {sm}" if audit_reasons_str else sm
+
         rows.append({
             # Document & Transaction Details
             "invoice_id": inv_id,
             "doc_type": str(payload.document_type).strip(),
             "doc_date": doc_dt,
-            "transaction_category": str(getattr(payload, "trancatg", "B2B") or "B2B").strip(),
-            "reverse_charge": normalize_reverse_charge(getattr(payload, "reversecharge", getattr(payload, "RevChrg", "N")))[0],
-            "igst_on_intra": str(getattr(payload, "igstonintra", "N") or "N").strip(),
+            "transaction_category": trancatg_m,
+            "reverse_charge": reversecharge_m,
+            "igst_on_intra": igstonintra_m,
 
             # Supplier Details
-            "supplier_gstin": str(sup.gstin).strip(),
-            "supplier_lglnm": str(sup.lglnm).strip(),
+            "supplier_gstin": sup_gstin_m,
+            "supplier_lglnm": str(getattr(sup, "lglnm", getattr(sup, "legal_name", "")) or "").strip(),
             "supplier_trdnm": str(getattr(sup, "trdnm", "") or "").strip(),
-            "supplier_state": str(sup.state).strip(),
-            "supplier_pin": str(sup.pin).strip(),
+            "supplier_state": sup_st,
+            "supplier_pin": sup_pin_m,
             "supplier_loc": str(getattr(sup, "loc", "") or "").strip(),
             "supplier_phone": str(getattr(sup, "phone", "") or "").strip(),
             "supplier_email": str(getattr(sup, "email", "") or "").strip(),
 
             # Buyer Details
-            "buyer_gstin": str(buy.gstin).strip(),
-            "buyer_lglnm": str(buy.lglnm).strip(),
+            "buyer_gstin": buy_gstin,
+            "buyer_lglnm": str(getattr(buy, "lglnm", getattr(buy, "legal_name", "")) or "").strip(),
             "buyer_trdnm": str(getattr(buy, "trdnm", "") or "").strip(),
-            "buyer_state": str(buy.state).strip(),
-            "buyer_pin": str(buy.pin).strip(),
+            "buyer_state": buy_st,
+            "buyer_pin": buy_pin_m,
             "buyer_pos": buy_pos,
             "buyer_loc": str(getattr(buy, "loc", "") or "").strip(),
             "buyer_phone": str(getattr(buy, "phone", "") or "").strip(),
@@ -1899,3 +2173,7 @@ def export_audit_report_csv(validation_report: Dict[str, Any], output_csv_path: 
                 ])
 
     return output_csv_path
+
+
+# Backwards compatibility and mock payload alias
+flatten_mock_invoice_payload = flatten_invoice_payload

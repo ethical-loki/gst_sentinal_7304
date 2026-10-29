@@ -5,6 +5,14 @@ Description: Complete FastAPI backend serving Excel-based HSN/SAC search with
 """
 
 import os
+
+# Prevent OpenBLAS thread allocation failure on Windows
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
+
 import json
 import time
 from pathlib import Path
@@ -1118,11 +1126,71 @@ async def download_ingestion_file(file_type: str):
     return FileResponse(path=str(path), filename=name, media_type=media_type)
 
 
+# =========================================================================
+# MODULE 4: STATUTORY QUESTION ANSWERING BOT (LONGFORMER + FTS5)
+# =========================================================================
+
+from backend.qa_service import ask_qa, get_sample_questions, get_system_status
+
+
+@app.get("/qa", response_class=HTMLResponse)
+@app.get("/qa-bot", response_class=HTMLResponse)
+async def serve_qa_page():
+    """Serves the modernized Statutory Question Answering Bot UI."""
+    candidates = [
+        BASE_DIR / "frontend" / "qa.html",
+        BASE_DIR / "static" / "qa.html"
+    ]
+    for p in candidates:
+        if p.exists():
+            with open(p, "r", encoding="utf-8") as f:
+                return HTMLResponse(content=f.read())
+    raise HTTPException(status_code=404, detail="qa.html not found in frontend or static directory.")
+
+
+@app.post("/api/qa/ask")
+async def api_ask_qa(request: Request):
+    """
+    Module 4 QA Inference Endpoint:
+    Accepts question, optional top_k, optional threshold.
+    Returns extracted answer span, confidence score, raw context snippet,
+    and distinct separated JSON payload and content data.
+    """
+    try:
+        body = await request.json() if (await request.body()) else {}
+        question = body.get("question", "")
+        top_k = body.get("top_k", None)
+        threshold = body.get("threshold", None)
+        return ask_qa(question=question, top_k=top_k, threshold=threshold)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"QA inference error: {str(e)}")
+
+
+@app.get("/api/qa/samples")
+async def api_qa_samples():
+    """Returns curated statutory questions for quick-select demonstration."""
+    try:
+        return {"status": "success", "samples": get_sample_questions()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving samples: {str(e)}")
+
+
+@app.get("/api/qa/status")
+async def api_qa_status():
+    """Returns offline QA Bot system readiness, device, model, and index metrics."""
+    try:
+        return get_system_status()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error checking status: {str(e)}")
+
+
 if __name__ == "__main__":
     import uvicorn
     print("\n🚀 Starting GST Sentinel Server at http://127.0.0.1:8000 ...")
+    print("👉 Statutory Question Answering Bot        : http://127.0.0.1:8000/qa")
     print("👉 GST Sentinel Ingestion & Lakehouse Portal: http://127.0.0.1:8000/ingestion")
     print("👉 E-Invoice & E-Way Converter Dashboard    : http://127.0.0.1:8000/converter")
     print("👉 HSN Code Search Engine                   : http://127.0.0.1:8000/\n")
     uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)
+
 

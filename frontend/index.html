@@ -359,14 +359,20 @@
         /* Floating Hero Navigation Grid with Configured Images */
         .hero-nav-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 18px;
-            max-width: 1160px;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            max-width: 1320px;
             margin: 0 auto 26px auto;
             text-align: left;
         }
 
-        @media (max-width: 980px) {
+        @media (max-width: 1100px) {
+            .hero-nav-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 680px) {
             .hero-nav-grid {
                 grid-template-columns: 1fr;
             }
@@ -434,6 +440,12 @@
             --card-accent: #38bdf8;
             --card-border: rgba(56, 189, 248, 0.5);
             --card-glow: rgba(56, 189, 248, 0.22);
+        }
+
+        .card-qa {
+            --card-accent: #c084fc;
+            --card-border: rgba(192, 132, 252, 0.5);
+            --card-glow: rgba(192, 132, 252, 0.25);
         }
 
         .card-audit {
@@ -2086,6 +2098,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                 Data Ingestion
             </button>
+            <button type="button" class="nav-pill-btn" style="background:rgba(192, 132, 252, 0.15); border:1px solid rgba(192, 132, 252, 0.35); color:#e9d5ff;" id="tabBtn-qa" onclick="window.location.href='/qa'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                Statutory QA Bot
+            </button>
         </nav>
 
         <div class="nav-right-cluster">
@@ -2228,6 +2244,43 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
                             </span>
                             <a href="/ingestion" class="quick-launch-link" onclick="event.stopPropagation()">Launch App ↗</a>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Statutory QA Bot -->
+                    <div class="hero-module-card card-qa" onclick="window.location.href='/qa'">
+                        <div class="card-img-banner">
+                            <img src="/static/images/qa_preview.jpg" alt="Statutory QA Bot" loading="lazy" onerror="this.src='/frontend/images/qa_preview.jpg'">
+                            <div class="card-img-overlay">
+                                <span class="card-pill-tag tag-purple" style="background:rgba(192, 132, 252, 0.25); color:#e9d5ff; border:1px solid rgba(192, 132, 252, 0.4);">Extractive NLP</span>
+                                <span style="font-size:0.68rem; color:#e9d5ff; font-weight:700;">Longformer-4096</span>
+                            </div>
+                        </div>
+                        <div class="card-header-row">
+                            <div class="card-title-group">
+                                <div class="card-icon-container" style="color: #c084fc; border-color: rgba(192, 132, 252, 0.35);">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                                </div>
+                                <h3 style="margin:0;">Statutory QA Bot</h3>
+                            </div>
+                            <span class="mini-chip">FTS5 BM25</span>
+                        </div>
+                        <div class="card-body">
+                            <p>
+                                Autonomous neural question answering across GST Acts, circulars, and notifications with instant BM25 passage retrieval and exact answer span prediction.
+                            </p>
+                            <div class="card-features-chips">
+                                <span class="mini-chip">Extractive QA</span>
+                                <span class="mini-chip">Separated Payloads</span>
+                                <span class="mini-chip">Span Highlighting</span>
+                            </div>
+                        </div>
+                        <div class="card-footer-action">
+                            <span class="action-link-text">
+                                Open QA Workspace
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+                            </span>
+                            <a href="/qa" class="quick-launch-link" onclick="event.stopPropagation()">Launch App ↗</a>
                         </div>
                     </div>
 

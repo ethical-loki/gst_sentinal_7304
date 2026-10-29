@@ -1,0 +1,102 @@
+[
+  {
+    "question": "What is GST?",
+    "answer": "Goods and Services Tax",
+    "answerable": true
+  },
+  {
+    "question": "What does HSN stand for?",
+    "answer": "Harmonized System of Nomenclature",
+    "answerable": true
+  },
+  {
+    "question": "What is the full form of IGST?",
+    "answer": "Integrated Goods and Services Tax",
+    "answerable": true
+  },
+  {
+    "question": "Who administers GST in India?",
+    "answer": "GST Council",
+    "answerable": true
+  },
+  {
+    "question": "What is the GST rate for essential food items?",
+    "answer": "nil",
+    "answerable": true
+  },
+  {
+    "question": "What is the threshold limit for GST registration?",
+    "answer": "20 lakhs",
+    "answerable": true
+  },
+  {
+    "question": "What is an e-way bill?",
+    "answer": "electronic way bill",
+    "answerable": true
+  },
+  {
+    "question": "What is reverse charge mechanism?",
+    "answer": "tax paid by recipient instead of supplier",
+    "answerable": true
+  },
+  {
+    "question": "What is the composition scheme under GST?",
+    "answer": "simplified tax scheme for small taxpayers",
+    "answerable": true
+  },
+  {
+    "question": "What is GSTR-3B?",
+    "answer": "monthly self-declared summary return",
+    "answerable": true
+  },
+  {
+    "question": "What is the penalty for not registering under GST?",
+    "answer": "10% of the tax due or Rs.10000 whichever is higher",
+    "answerable": true
+  },
+  {
+    "question": "What is input tax credit?",
+    "answer": "credit of tax paid on inputs used for business",
+    "answerable": true
+  },
+  {
+    "question": "How many digits are in an HSN code?",
+    "answer": "8",
+    "answerable": true
+  },
+  {
+    "question": "What is the GST rate for gold?",
+    "answer": "3%",
+    "answerable": true
+  },
+  {
+    "question": "What is GSTIN?",
+    "answer": "Goods and Services Tax Identification Number",
+    "answerable": true
+  },
+  {
+    "question": "Who can opt for composition scheme?",
+    "answer": "small taxpayers with turnover below prescribed limit",
+    "answerable": true
+  },
+  {
+    "question": "What is the due date for filing GSTR-3B?",
+    "answer": "20th of the following month",
+    "answerable": true
+  },
+  {
+    "question": "What is inter-state supply under GST?",
+    "answer": "supply of goods or services from one state to another",
+    "answerable": true
+  },
+  {
+    "question": "Is there a question that has absolutely no answer in the document whatsoever?",
+    "answer": null,
+    "answerable": false
+  },
+  {
+    "question": "What is the capital of Mars?",
+    "answer": null,
+    "answerable": false
+  }
+]

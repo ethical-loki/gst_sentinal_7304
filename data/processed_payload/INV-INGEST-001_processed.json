@@ -3,7 +3,7 @@
   "system_cd": "SAP_ERP",
   "branch_cd": "BLR01",
   "vertical_cd": "DOM",
-  "irnreq": "Y",
+  "irnreq": "N",
   "trancatg": "B2C",
   "reversecharge": "N",
   "transactionmode": "REG",
@@ -11,7 +11,7 @@
   "refclm": null,
   "document_type": "INV",
   "docno": "INV-INGEST-001",
-  "docdt": "2026-10-25",
+  "docdt": "2026-10-27",
   "orginvno": null,
   "orginvdt": null,
   "supplier": {
@@ -65,7 +65,7 @@
       "prdnm": "Industrial Motor",
       "prddesc": null,
       "is_service": "N",
-      "hsn": "71022110",
+      "hsn": "85015320",
       "qty": 2.0,
       "unit": "NOS",
       "unitprice": 10000.0,
@@ -87,34 +87,39 @@
       "totitemval": 23600.0,
       "taxability": "TAX",
       "barcde": null,
-      "hsncd": "71022110",
+      "hsncd": "85015320",
       "unitrate": "10000.00",
       "grossamt": "20000.00",
       "discval": "0.00",
+      "uqc": "NOS",
       "sentinel_audit": {
         "is_flagged": true,
         "should_rectify": true,
         "original_hsn": "8481",
-        "rectified_hsn": "71022110",
-        "statutory_rate": 3.0,
-        "error_probability": 0.9564,
-        "post_intervention_risk": 0.1638,
-        "risk_drop": 0.7926,
+        "rectified_hsn": "85015320",
+        "statutory_rate": 18.0,
+        "error_probability": 0.8825,
+        "post_intervention_risk": 0.0872,
+        "risk_drop": 0.7953,
         "risk_level": "HIGH",
         "reasons": [
-          "Declared HSN belongs to Chapter 84 (Machinery), but semantic text matches Chapter 71 (Natural Pearls, Precious Stones, Jewellery) with 77.5% similarity.",
-          "High text noise/entropy (1.00): Description contains unstructured serial numbers or garbled tokens."
+          "Declared HSN belongs to Chapter 84 (Machinery), but semantic text matches Chapter 85 (Electrical Machinery) with 92.0% similarity.",
+          "High text noise/entropy (1.00): Description contains unstructured serial numbers or garbled tokens.",
+          "Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side."
         ],
         "shap_attributions": {
-          "top1_similarity_score": 0.4522,
-          "margin_top1_top2": 0.1451,
-          "chapter_match_flag": 3.2774,
-          "token_entropy": 0.7613,
-          "unit_price_deviation": 0.1246,
-          "supplier_prior_error_freq": 0.0937
+          "top1_similarity_score": -0.8972,
+          "margin_top1_top2": 0.3281,
+          "chapter_match_flag": 3.2181,
+          "token_entropy": 0.7593,
+          "unit_price_deviation": 0.1838,
+          "supplier_prior_error_freq": 0.2461
         },
-        "status_badge": "FLAGGED_AND_RECTIFIED"
-      }
+        "status_badge": "FLAGGED_AND_RECTIFIED",
+        "error_code": 2176,
+        "resolution": "Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side."
+      },
+      "assamt": "20000.00"
     }
   ],
   "valdtls": {
@@ -146,14 +151,15 @@
   "docdt1": {
     "document_type": "INV",
     "docno": "INV-INGEST-001",
-    "docdt": "2026-10-25"
+    "docdt": "2026-10-27"
   },
   "supplierdt1": {
     "supplier_gstin": "29ABCDE1234F1Z5",
     "supplier_lglnm": "BHARAT ENTERPRISES",
     "supplier_loc": "Bengaluru",
     "supplier_pin": "560001",
-    "supplier_state": "29"
+    "supplier_state": "29",
+    "pin": "560001"
   },
   "buyerdt1": {
     "buyer_gstin": "URP",
@@ -161,7 +167,8 @@
     "buyer_loc": "Bengaluru",
     "buyer_pin": "560001",
     "buyer_state": "29",
-    "pos": "29"
+    "pos": "29",
+    "pin": "560001"
   },
   "valdt1": {
     "ttlassval": "20000.00",

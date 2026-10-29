@@ -7,6 +7,14 @@ taxable value overrides, and enforces the official NIC 2-day IRN document date r
 """
 
 import os
+
+# Prevent OpenBLAS thread allocation failure on Windows
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
+
 import re
 import sys
 from datetime import datetime, date
@@ -134,15 +142,31 @@ def lookup_hsn_code(
         formatted: List[Dict[str, Any]] = []
 
         for m in res:
-            code = str(m.get("hsn_code", m.get("hsn", "")))
+            code = str(m.get("hsn_code", m.get("hsn", ""))).strip()
+            heading = str(m.get("heading", m.get("hsn_4digit", ""))).strip()
+            desc = str(m.get("description", "")).strip()
+
+            if code in ("None", "none", "", "nan") or not code.isdigit():
+                if heading and heading.isdigit() and len(heading) in (4, 6, 8):
+                    code = heading
+                else:
+                    import re
+                    match = re.search(r'\b(\d{4,8})\b', desc)
+                    if match:
+                        code = match.group(1)
+                    else:
+                        continue
+
+            if not heading or heading in ("None", "none", "nan") or not heading.isdigit():
+                heading = code[:4]
+
             rate = float(m.get("standard_rate", m.get("gst_rate", 18.0)))
-            heading = str(m.get("heading", m.get("hsn_4digit", code[:4])))
             formatted.append({
                 "hsn_code": code,
                 "hsn_4digit": heading,
                 "heading": heading,
                 "chapter": str(m.get("chapter", code[:2])),
-                "description": str(m.get("description", "")),
+                "description": desc,
                 "clean_description": str(m.get("clean_description", "")),
                 "gst_rate": rate,
                 "igst_rate": rate,

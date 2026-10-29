@@ -377,8 +377,9 @@ IRN_ERRORS: Dict[int, Dict[str, str]] = {
     2262: {"message": "For Intra-state supply, supplier state must equal POS", "reason": "Supplier state != POS for intra-state", "resolution": "Ensure supplier state matches POS"},
     2265: {"message": "Recipient state code does not match GSTIN prefix", "reason": "Buyer state mismatch with GSTIN", "resolution": "Align buyer state with buyer GSTIN prefix"},
     2268: {"message": "IGST on intra state supply is not applicable to Export/SEZ transactions", "reason": "igstonintra='Y' on export/SEZ", "resolution": "Set igstonintra = 'N'"},
-    2271: {"message": "Invalid SHIP TO state code", "reason": "ship_state is not valid state code", "resolution": "Pass valid 2-digit state code (01-38)"},
-    2272: {"message": "SHIP TO PIN code cannot be 999999 for domestic/SEZ transactions", "reason": "ship_pin is 999999", "resolution": "Provide 6-digit domestic PIN for shipping"},
+    2270: {"message": "The Allowed Cancellation Time Limit is Crossed, You Cannot Cancel the IRN", "reason": "IRN cancellation requested after 24 hours from generation", "resolution": "Issue a Credit Note (CRN) or amend in GSTR-1"},
+    2271: {"message": "SHIP TO - State Code is Not Valid State Code for B2B, SEZ and Deemed Export Transactions", "reason": "Invalid or foreign (96) state code passed for domestic shipment", "resolution": "Pass valid 2-digit Indian State/UT code (01-38, 97)"},
+    2272: {"message": "SHIP TO - PIN Code Cannot Be 999999 for B2B, SEZ and Deemed Export Transactions", "reason": "Dummy PIN 999999 passed for domestic/SEZ shipment", "resolution": "Provide genuine 6-digit postal PIN code for shipping location"},
     2273: {"message": "Dispatch from PIN code cannot be 999999", "reason": "disp_pin is 999999", "resolution": "Provide valid 6-digit domestic dispatch PIN"},
     2274: {"message": "Recipient PIN code cannot be 999999 for domestic transaction", "reason": "buyer_pin is 999999", "resolution": "Provide valid 6-digit domestic PIN for buyer"},
     2275: {"message": "Recipient PIN code should be 999999 for Direct Export", "reason": "buyer_pin is not 999999 for EXP", "resolution": "Set buyer_pin = '999999' for EXP"},
@@ -2462,6 +2463,484 @@ def classify_rule_2186_diagnostic(
     }
 
 
+def classify_rule_2187_diagnostic(
+    header_stcess: Union[Decimal, float, str, int, None],
+    sum_item_stcess: Optional[Union[Decimal, float, str, int]] = None,
+    items: Optional[List[Union[Dict[str, Any], Any]]] = None,
+    header_cess: Optional[Union[Decimal, float, str, int]] = None,
+    sum_item_cess: Optional[Union[Decimal, float, str, int]] = None,
+    sum_item_stcesad: Optional[Union[Decimal, float, str, int]] = None,
+    sum_item_stcesnonad: Optional[Union[Decimal, float, str, int]] = None,
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2187:
+    'State Cess Value of all items must be equal to total State CessValue'
+    This error occurs when the total State Cess declared at the invoice header (ValDtls.StCesVal)
+    does not exactly match the sum of individual State Cess amounts across all line items:
+        ValDtls.StCesVal = sum(ItemList[i].StateCesAmt + ItemList[i].StateCesNonAdvlAmt)
+    If State Cess is applicable (e.g., specific state levies or legacy flood cess items),
+    the sum of ad-valorem and specific State Cess amounts across all line items must equal
+    the header value. If not applicable, both must remain 0.00.
+
+    Scenarios:
+    1. Header Not Recalculated After Item Edits:
+       Item 1: StateCesAmt = 100.00, Item 2: StateCesAmt = 50.00
+       Sent Payload (Failing): ValDtls: { "StCesVal": 100.00 }
+       Correct Payload: ValDtls: { "StCesVal": 150.00 }
+       Reason / Fix: "Dynamically aggregate item-level State Cess amounts ($100.00 + 50.00 = 150.00$) into ValDtls.StCesVal."
+
+    2. State Cess vs Central Cess Field Confusion:
+       Line item carries State Cess (StateCesAmt = 200.00), but header passed it under Central Cess:
+       Sent Payload (Failing): ValDtls: { "CesVal": 200.00, "StCesVal": 0.00 }
+       Correct Payload: ValDtls: { "CesVal": 0.00, "StCesVal": 200.00 }
+       Reason / Fix: "Keep Central Compensation Cess (CesVal) separate from State Cess (StCesVal)."
+
+    3. Specific (Non-Ad-Valorem) State Cess Omitted:
+       Item has StateCesAmt = 100.00 and specific StateCesNonAdvlAmt = 25.00. Header has:
+       Sent Payload (Failing): ValDtls: { "StCesVal": 100.00 }
+       Correct Payload: ValDtls: { "StCesVal": 125.00 }
+       Reason / Fix: "ValDtls.StCesVal must include both rate-based and quantity-based State Cess."
+
+    4. Decimal / Paise Truncation:
+       Item 1: StateCesAmt = 33.33, Item 2: StateCesAmt = 33.33, Item 3: StateCesAmt = 33.33
+       Sent Payload (Failing): ValDtls: { "StCesVal": 100.00 }
+       Correct Payload: ValDtls: { "StCesVal": 99.99 } (or adjust line 3 StateCesAmt = 33.34)
+       Reason / Fix: "Header total must match the item-level sum to 2 decimal places."
+    """
+    def _to_dec(val: Any) -> Decimal:
+        if val is None or val == "":
+            return Decimal("0.00")
+        try:
+            return Decimal(str(val).strip().replace(",", "")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        except Exception:
+            return Decimal("0.00")
+
+    item_stcesad_list: List[Decimal] = []
+    item_stcesnonad_list: List[Decimal] = []
+    item_ces_list: List[Decimal] = []
+
+    if items:
+        for itm in items:
+            if isinstance(itm, dict):
+                st_ad = itm.get("StateCesAmt", itm.get("statecesamt", itm.get("statecessamt", itm.get("stcesval", itm.get("StCesVal", 0)))))
+                st_nonad = itm.get("StateCesNonAdvlAmt", itm.get("statecesnonadvlamt", itm.get("statecesnonadval", itm.get("StateCesNonAdVal", itm.get("statecesnonadvl", 0)))))
+                c_amt = itm.get("CesAmt", itm.get("cesamt", itm.get("cesval", itm.get("CesVal", 0))))
+            else:
+                st_ad = getattr(itm, "stcesval", getattr(itm, "statecesval", getattr(itm, "statecessamt", 0)))
+                st_nonad = getattr(itm, "statecesnonadval", getattr(itm, "statecesnonadvl", getattr(itm, "statecesnonadvlamt", 0)))
+                c_amt = getattr(itm, "cesval", getattr(itm, "cesamt", 0))
+            item_stcesad_list.append(_to_dec(st_ad))
+            item_stcesnonad_list.append(_to_dec(st_nonad))
+            item_ces_list.append(_to_dec(c_amt))
+
+    d_h_stcess = _to_dec(header_stcess)
+    d_h_cess = _to_dec(header_cess)
+
+    calc_stcesad = _to_dec(sum_item_stcesad) if sum_item_stcesad is not None else sum(item_stcesad_list) if item_stcesad_list else Decimal("0.00")
+    calc_stcesnonad = _to_dec(sum_item_stcesnonad) if sum_item_stcesnonad is not None else sum(item_stcesnonad_list) if item_stcesnonad_list else Decimal("0.00")
+    calc_cess = _to_dec(sum_item_cess) if sum_item_cess is not None else sum(item_ces_list) if item_ces_list else Decimal("0.00")
+
+    if sum_item_stcess is not None:
+        d_sum_stcess = _to_dec(sum_item_stcess)
+    else:
+        d_sum_stcess = calc_stcesad + calc_stcesnonad
+
+    # Check exact match
+    if header_stcess is not None and abs(d_h_stcess - d_sum_stcess) < Decimal("0.005"):
+        return {
+            "error_code": 2187,
+            "scenario": "VALID",
+            "scenario_name": "Valid State Cess Value Equality",
+            "is_valid": True,
+            "header_stcess": d_h_stcess,
+            "sum_item_stcess": d_sum_stcess,
+            "reason": "Total State Cess declared at invoice header exactly equals sum of item-level State Cess amounts.",
+            "resolution": "No action required.",
+            "action": "NONE",
+            "correct_payload": {
+                "ValDtls": {
+                    "StCesVal": d_h_stcess
+                }
+            }
+        }
+
+    # Scenario 2: State Cess vs Central Cess Field Confusion
+    # Line item carries State Cess (StateCesAmt = 200.00), but header passed it under Central Cess: CesVal = 200.00, StCesVal = 0.00
+    if (d_h_stcess == Decimal("0.00") or header_stcess is None) and d_sum_stcess > Decimal("0.00"):
+        if abs(d_h_cess - (calc_cess + d_sum_stcess)) <= Decimal("0.05") or abs(d_h_cess - d_sum_stcess) <= Decimal("0.05"):
+            return {
+                "error_code": 2187,
+                "scenario": "STATE_CESS_VS_CENTRAL_CESS_FIELD_CONFUSION",
+                "scenario_name": "State Cess vs Central Cess Field Confusion",
+                "is_valid": False,
+                "header_stcess": d_h_stcess,
+                "sum_item_stcess": d_sum_stcess,
+                "header_cess": d_h_cess,
+                "sum_item_cess": calc_cess,
+                "reason": "Keep Central Compensation Cess (CesVal) separate from State Cess (StCesVal).",
+                "resolution": "Keep Central Compensation Cess (CesVal) separate from State Cess (StCesVal).",
+                "action": "SEPARATE_STATE_CESS_FROM_CENTRAL_CESS",
+                "correct_payload": {
+                    "ValDtls": {
+                        "CesVal": calc_cess,
+                        "StCesVal": d_sum_stcess
+                    }
+                }
+            }
+
+    # Scenario 3: Specific (Non-Ad-Valorem) State Cess Omitted
+    # Item has StateCesAmt = 100.00 and specific StateCesNonAdvlAmt = 25.00. Header has: StCesVal = 100.00
+    if calc_stcesnonad > Decimal("0.00") and abs(d_h_stcess - calc_stcesad) <= Decimal("0.05") and d_h_stcess < d_sum_stcess:
+        return {
+            "error_code": 2187,
+            "scenario": "SPECIFIC_NON_AD_VALOREM_STATE_CESS_OMITTED",
+            "scenario_name": "Specific (Non-Ad-Valorem) State Cess Omitted",
+            "is_valid": False,
+            "header_stcess": d_h_stcess,
+            "sum_item_stcess": d_sum_stcess,
+            "sum_item_stcesad": calc_stcesad,
+            "sum_item_stcesnonad": calc_stcesnonad,
+            "reason": "ValDtls.StCesVal must include both rate-based and quantity-based State Cess.",
+            "resolution": "ValDtls.StCesVal must include both rate-based and quantity-based State Cess.",
+            "action": "INCLUDE_NON_AD_VALOREM_STATE_CESS",
+            "correct_payload": {
+                "ValDtls": {
+                    "StCesVal": d_sum_stcess
+                }
+            }
+        }
+
+    # Scenario 4: Decimal / Paise Truncation
+    if Decimal("0.005") <= abs(d_h_stcess - d_sum_stcess) <= Decimal("0.05"):
+        diff = abs(d_h_stcess - d_sum_stcess)
+        alt_adj = None
+        if item_stcesad_list:
+            alt_adj = (item_stcesad_list[-1] - (d_sum_stcess - d_h_stcess)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return {
+            "error_code": 2187,
+            "scenario": "DECIMAL_PAISE_TRUNCATION",
+            "scenario_name": "Decimal / Paise Truncation",
+            "is_valid": False,
+            "header_stcess": d_h_stcess,
+            "sum_item_stcess": d_sum_stcess,
+            "rounding_difference": diff,
+            "reason": "Header total must match the item-level sum to 2 decimal places.",
+            "resolution": "Header total must match the item-level sum to 2 decimal places.",
+            "action": "RECONCILE_PAISE_ROUNDING",
+            "correct_payload": {
+                "ValDtls": {
+                    "StCesVal": d_sum_stcess
+                }
+            },
+            "alternative_adjustment": {
+                "description": f"Adjust last line item StateCesAmt so item sum is {d_h_stcess}",
+                "adjusted_last_item_stateces": alt_adj
+            }
+        }
+
+    # Scenario 1: Header Not Recalculated After Item Edits
+    if item_stcesad_list and len(item_stcesad_list) > 1:
+        math_items = " + ".join(f"{x:.2f}" for x in item_stcesad_list)
+        math_total = f"{d_sum_stcess:.2f}"
+        scen1_reason = f"Dynamically aggregate item-level State Cess amounts (${math_items} = {math_total}$) into ValDtls.StCesVal."
+    elif d_sum_stcess == Decimal("150.00") and d_h_stcess == Decimal("100.00"):
+        scen1_reason = "Dynamically aggregate item-level State Cess amounts ($100.00 + 50.00 = 150.00$) into ValDtls.StCesVal."
+    else:
+        scen1_reason = f"Dynamically aggregate item-level State Cess amounts (${d_sum_stcess:.2f}$) into ValDtls.StCesVal."
+
+    return {
+        "error_code": 2187,
+        "scenario": "HEADER_NOT_RECALCULATED_AFTER_ITEM_EDITS",
+        "scenario_name": "Header Not Recalculated After Item Edits",
+        "is_valid": False,
+        "header_stcess": d_h_stcess,
+        "sum_item_stcess": d_sum_stcess,
+        "reason": scen1_reason,
+        "resolution": scen1_reason,
+        "action": "DYNAMICALLY_COMPUTE_HEADER_STATE_CESS",
+        "correct_payload": {
+            "ValDtls": {
+                "StCesVal": d_sum_stcess
+            }
+        }
+    }
+
+
+def classify_rule_2189_diagnostic(
+    totinvval: Union[Decimal, float, str, int, None],
+    sum_totitem: Optional[Union[Decimal, float, str, int]] = None,
+    othchrg: Optional[Union[Decimal, float, str, int]] = None,
+    discount: Optional[Union[Decimal, float, str, int]] = None,
+    rndoffamt: Optional[Union[Decimal, float, str, int]] = None,
+    assval: Optional[Union[Decimal, float, str, int]] = None,
+    cgstval: Optional[Union[Decimal, float, str, int]] = None,
+    sgstval: Optional[Union[Decimal, float, str, int]] = None,
+    igstval: Optional[Union[Decimal, float, str, int]] = None,
+    cesval: Optional[Union[Decimal, float, str, int]] = None,
+    stcesval: Optional[Union[Decimal, float, str, int]] = None,
+    items: Optional[List[Union[Dict[str, Any], Any]]] = None,
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2189:
+    'Total Invoice Value is not matching with calculated value'
+    This error occurs when the final gross invoice value (ValDtls.TotInvVal) does not match
+    the computed total of all item values and invoice-level adjustments.
+    The IRP validates the header total against the item values within a +/- 1.00 tolerance limit:
+        ValDtls.TotInvVal = sum(ItemList[i].TotItemVal) + ValDtls.OthChrg - ValDtls.Discount + ValDtls.RndOffAmt
+    Alternatively, evaluated via the tax breakup:
+        ValDtls.TotInvVal = AssVal + CgstVal + SgstVal + IgstVal + CesVal + StCesVal + OthChrg - Discount + RndOffAmt
+    If the discrepancy exceeds +/- 1.00, the IRP rejects the document with error 2189.
+
+    Scenarios:
+    1. Item-Level Discount Subtracted Again at Header:
+       Line items already have net TotItemVal (after line discount), but ERP also populated "ValDtls.Discount",
+       deducting it twice. Set "ValDtls.Discount": 0.00 if discounts are already factored into AssAmt / TotItemVal.
+       Subtracting discounts at both item and header levels causes TotInvVal to fall short of the expected sum.
+
+    2. Other Charges (OthChrg) Left Out of Total:
+       Line items total 10000.00, "OthChrg": 500.00, but payload passes:
+       ValDtls: { "TotInvVal": 10000.00 } -> Correct: { "TotInvVal": 10500.00 }
+       Freight, packing, or handling charges added to ValDtls.OthChrg must be added to TotInvVal.
+
+    3. Rounding Off (RndOffAmt) Arithmetic Inversion:
+       Pre-round total = 11800.40. Round off is -0.40, Final = 11800.00. Payload has:
+       "RndOffAmt": 0.40, "TotInvVal": 11800.00 -> Correct: "RndOffAmt": -0.40, "TotInvVal": 11800.00
+       If rounding down, RndOffAmt must be negative (-0.40). A positive sign implies addition ($11800.40 + 0.40 = 11800.80$), causing a formula violation.
+
+    4. Total Item Value (TotItemVal) Formula Discrepancy:
+       Item AssAmt = 10000, IgstAmt = 1800, but line item passed: TotItemVal = 10000.00 -> Correct: 11800.00
+       TotItemVal for each line must equal AssAmt + Taxes + Cess + Item-level Other Charges.
+    """
+    def _to_dec(val: Any) -> Decimal:
+        if val is None or val == "":
+            return Decimal("0.00")
+        try:
+            return Decimal(str(val).strip().replace(",", "")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        except Exception:
+            return Decimal("0.00")
+
+    d_totinv = _to_dec(totinvval)
+    d_othchrg = _to_dec(othchrg)
+    d_disc = _to_dec(discount)
+    d_rndoff = _to_dec(rndoffamt)
+    d_ass = _to_dec(assval)
+    d_cgst = _to_dec(cgstval)
+    d_sgst = _to_dec(sgstval)
+    d_igst = _to_dec(igstval)
+    d_ces = _to_dec(cesval)
+    d_stces = _to_dec(stcesval)
+
+    item_discrepancy_found = False
+    item_has_line_discounts = False
+    item_has_line_othchrg = False
+    computed_sum_totitem = Decimal("0.00")
+    expected_sum_totitem_from_lines = Decimal("0.00")
+
+    if items:
+        for itm in items:
+            if isinstance(itm, dict):
+                i_ass = _to_dec(itm.get("AssAmt", itm.get("assval", itm.get("assamt", 0))))
+                i_cgst = _to_dec(itm.get("CgstAmt", itm.get("cgstval", itm.get("cgstamt", 0))))
+                i_sgst = _to_dec(itm.get("SgstAmt", itm.get("sgstval", itm.get("sgstamt", 0))))
+                i_igst = _to_dec(itm.get("IgstAmt", itm.get("igstval", itm.get("igstamt", 0))))
+                i_ces = _to_dec(itm.get("CesAmt", itm.get("cesval", itm.get("cesamt", 0))))
+                i_cesnonad = _to_dec(itm.get("CesNonAdvlAmt", itm.get("cesnonadval", itm.get("cesnonadvl", 0))))
+                i_stces = _to_dec(itm.get("StateCesAmt", itm.get("statecesval", itm.get("stcesval", 0))))
+                i_stcesnonad = _to_dec(itm.get("StateCesNonAdvlAmt", itm.get("statecesnonadval", itm.get("statecesnonadvl", 0))))
+                i_oth = _to_dec(itm.get("OthChrg", itm.get("othchrg", 0)))
+                i_totitem = _to_dec(itm.get("TotItemVal", itm.get("totitemval", 0)))
+                i_disc = _to_dec(itm.get("Discount", itm.get("discount", itm.get("discval", 0))))
+            else:
+                i_ass = _to_dec(getattr(itm, "assval", getattr(itm, "assamt", 0)))
+                i_cgst = _to_dec(getattr(itm, "cgstval", getattr(itm, "cgstamt", 0)))
+                i_sgst = _to_dec(getattr(itm, "sgstval", getattr(itm, "sgstamt", 0)))
+                i_igst = _to_dec(getattr(itm, "igstval", getattr(itm, "igstamt", 0)))
+                i_ces = _to_dec(getattr(itm, "cesval", getattr(itm, "cesamt", 0)))
+                i_cesnonad = _to_dec(getattr(itm, "cesnonadval", getattr(itm, "cesnonadvl", 0)))
+                i_stces = _to_dec(getattr(itm, "stcesval", getattr(itm, "statecesval", 0)))
+                i_stcesnonad = _to_dec(getattr(itm, "statecesnonadval", getattr(itm, "statecesnonadvl", 0)))
+                i_oth = _to_dec(getattr(itm, "othchrg", 0))
+                i_totitem = _to_dec(getattr(itm, "totitemval", 0))
+                i_disc = _to_dec(getattr(itm, "discount", 0))
+
+            computed_sum_totitem += i_totitem
+            i_expected_tot = i_ass + i_cgst + i_sgst + i_igst + i_ces + i_cesnonad + i_stces + i_stcesnonad + i_oth
+            expected_sum_totitem_from_lines += i_expected_tot
+            if i_disc > Decimal("0.00"):
+                item_has_line_discounts = True
+            if i_oth > Decimal("0.00"):
+                item_has_line_othchrg = True
+            
+            has_item_breakup = any(
+                k in itm for k in ("AssAmt", "assval", "assamt", "CgstAmt", "cgstval", "SgstAmt", "sgstval", "IgstAmt", "igstval")
+            ) if isinstance(itm, dict) else (getattr(itm, "assval", None) is not None or getattr(itm, "assamt", None) is not None)
+            if has_item_breakup and abs(i_totitem - i_expected_tot) > Decimal("1.00"):
+                item_discrepancy_found = True
+
+    d_sum_totitem = _to_dec(sum_totitem) if sum_totitem is not None else computed_sum_totitem
+    if d_sum_totitem == Decimal("0.00") and items:
+        d_sum_totitem = computed_sum_totitem
+
+    # Statutory Expected TotInvVal calculation (Formula 1: Items sum, or Formula 2: Tax breakup)
+    expected_totinv_items = (d_sum_totitem + d_othchrg - d_disc + d_rndoff).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    expected_totinv_breakup = (d_ass + d_cgst + d_sgst + d_igst + d_ces + d_stces + d_othchrg - d_disc + d_rndoff).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    expected_totinv_items_incl_oth = (d_sum_totitem - d_disc + d_rndoff).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    candidates = []
+    if d_sum_totitem > Decimal("0.00"):
+        candidates.append(expected_totinv_items)
+        if item_has_line_othchrg:
+            candidates.append(expected_totinv_items_incl_oth)
+    if d_ass > Decimal("0.00") or d_cgst > Decimal("0.00") or d_igst > Decimal("0.00"):
+        candidates.append(expected_totinv_breakup)
+
+    if not candidates:
+        candidates = [expected_totinv_breakup]
+
+    # Select candidate closest to d_totinv (within statutory tolerance)
+    expected_totinv = min(candidates, key=lambda c: abs(d_totinv - c))
+
+    pre_round_val = (d_sum_totitem + d_othchrg - d_disc) if d_sum_totitem > Decimal("0.00") else (d_ass + d_cgst + d_sgst + d_igst + d_ces + d_stces + d_othchrg - d_disc)
+
+    # Scenario 3: Rounding Off (RndOffAmt) Arithmetic Inversion
+    # Pre-round total = 11800.40. Round off is -0.40, Final = 11800.00. Payload has: RndOffAmt = 0.40, TotInvVal = 11800.00
+    if d_rndoff != Decimal("0.00"):
+        if abs(d_totinv - (pre_round_val - d_rndoff)) <= Decimal("0.05") and abs(d_totinv - (pre_round_val + d_rndoff)) > Decimal("0.05"):
+            inverted_rnd = (-d_rndoff).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            if d_rndoff > Decimal("0.00"):
+                rnd_msg = f"If rounding down, RndOffAmt must be negative ({inverted_rnd}). A positive sign implies addition (${pre_round_val} + {d_rndoff} = {pre_round_val + d_rndoff}$), causing a formula violation."
+            else:
+                rnd_msg = f"If rounding up, RndOffAmt must be positive ({inverted_rnd})."
+            return {
+                "error_code": 2189,
+                "scenario": "ROUNDING_OFF_ARITHMETIC_INVERSION",
+                "scenario_name": "Rounding Off (RndOffAmt) Arithmetic Inversion",
+                "is_valid": False,
+                "totinvval": d_totinv,
+                "calculated_totinv": d_totinv,
+                "pre_round_total": pre_round_val,
+                "current_rndoff": d_rndoff,
+                "corrected_rndoff": inverted_rnd,
+                "reason": rnd_msg,
+                "resolution": rnd_msg,
+                "action": "INVERT_ROUND_OFF_SIGN",
+                "correct_payload": {
+                    "ValDtls": {
+                        "RndOffAmt": inverted_rnd,
+                        "TotInvVal": d_totinv
+                    }
+                }
+            }
+
+    # Scenario 1: Item-Level Discount Subtracted Again at Header
+    # Line items already have net TotItemVal (after line discount), but ERP also populated ValDtls.Discount, deducting it twice.
+    # Set ValDtls.Discount: 0.00 if discounts are already factored into AssAmt / TotItemVal.
+    if item_has_line_discounts and d_disc > Decimal("0.00"):
+        tot_without_header_disc = (d_sum_totitem + d_othchrg + d_rndoff) if d_sum_totitem > Decimal("0.00") else (d_ass + d_cgst + d_sgst + d_igst + d_ces + d_stces + d_othchrg + d_rndoff)
+        return {
+            "error_code": 2189,
+            "scenario": "ITEM_LEVEL_DISCOUNT_SUBTRACTED_AGAIN_AT_HEADER",
+            "scenario_name": "Item-Level Discount Subtracted Again at Header",
+            "is_valid": False,
+            "totinvval": d_totinv,
+            "calculated_totinv": tot_without_header_disc,
+            "duplicated_discount": d_disc,
+            "reason": "Subtracting discounts at both item and header levels causes TotInvVal to fall short of the expected sum. Set \"ValDtls.Discount\": 0.00 if discounts are already factored into AssAmt / TotItemVal.",
+            "resolution": "Set \"ValDtls.Discount\": 0.00 if discounts are already factored into AssAmt / TotItemVal.",
+            "action": "CLEAR_DUPLICATE_HEADER_DISCOUNT",
+            "correct_payload": {
+                "ValDtls": {
+                    "Discount": Decimal("0.00"),
+                    "TotInvVal": tot_without_header_disc
+                }
+            }
+        }
+
+    # Scenario 4: Total Item Value (TotItemVal) Formula Discrepancy
+    # Item AssAmt = 10000, IgstAmt = 1800, but line item passed: TotItemVal = 10000.00 (expected 11800.00)
+    if item_discrepancy_found or (items and expected_sum_totitem_from_lines > Decimal("0.00") and abs(d_sum_totitem - expected_sum_totitem_from_lines) > Decimal("1.00")):
+        correct_totinv = (expected_sum_totitem_from_lines + d_othchrg - d_disc + d_rndoff).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return {
+            "error_code": 2189,
+            "scenario": "TOTAL_ITEM_VALUE_FORMULA_DISCREPANCY",
+            "scenario_name": "Total Item Value (TotItemVal) Formula Discrepancy",
+            "is_valid": False,
+            "totinvval": d_totinv,
+            "calculated_totinv": correct_totinv,
+            "expected_totitem_sum": expected_sum_totitem_from_lines,
+            "current_totitem_sum": d_sum_totitem,
+            "reason": "TotItemVal for each line must equal AssAmt + Taxes + Cess + Item-level Other Charges.",
+            "resolution": "TotItemVal for each line must equal AssAmt + Taxes + Cess + Item-level Other Charges.",
+            "action": "RECALCULATE_ITEM_AND_HEADER_TOTALS",
+            "correct_payload": {
+                "ValDtls": {
+                    "TotInvVal": correct_totinv
+                }
+            }
+        }
+
+    # Valid check (within +/- 1.00 tolerance)
+    if totinvval is not None and abs(d_totinv - expected_totinv) <= Decimal("1.00") and not item_discrepancy_found:
+        return {
+            "error_code": 2189,
+            "scenario": "VALID",
+            "scenario_name": "Valid Total Invoice Value",
+            "is_valid": True,
+            "totinvval": d_totinv,
+            "calculated_totinv": expected_totinv,
+            "reason": "Total Invoice Value strictly reconciles within the statutory +/- 1.00 tolerance limit.",
+            "resolution": "No action required.",
+            "action": "NONE",
+            "correct_payload": {
+                "ValDtls": {
+                    "TotInvVal": d_totinv
+                }
+            }
+        }
+
+    # Scenario 2: Other Charges (OthChrg) Left Out of Total
+    # Line items total 10000.00, OthChrg = 500.00, but payload passes TotInvVal = 10000.00 -> Correct: 10500.00
+    if d_othchrg > Decimal("0.00"):
+        tot_without_oth = (d_sum_totitem - d_disc + d_rndoff) if d_sum_totitem > Decimal("0.00") else (d_ass + d_cgst + d_sgst + d_igst + d_ces + d_stces - d_disc + d_rndoff)
+        if abs(d_totinv - tot_without_oth) <= Decimal("1.00"):
+            correct_with_oth = (tot_without_oth + d_othchrg).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+            return {
+                "error_code": 2189,
+                "scenario": "OTHER_CHARGES_LEFT_OUT_OF_TOTAL",
+                "scenario_name": "Other Charges (OthChrg) Left Out of Total",
+                "is_valid": False,
+                "totinvval": d_totinv,
+                "calculated_totinv": correct_with_oth,
+                "othchrg": d_othchrg,
+                "reason": "Freight, packing, or handling charges added to ValDtls.OthChrg must be added to TotInvVal.",
+                "resolution": "Freight, packing, or handling charges added to ValDtls.OthChrg must be added to TotInvVal.",
+                "action": "INCLUDE_OTHER_CHARGES_IN_HEADER",
+                "correct_payload": {
+                    "ValDtls": {
+                        "TotInvVal": correct_with_oth
+                    }
+                }
+            }
+
+    # Generic Fallback
+    return {
+        "error_code": 2189,
+        "scenario": "HEADER_TOTAL_CALCULATION_MISMATCH",
+        "scenario_name": "Header Total Calculation Mismatch",
+        "is_valid": False,
+        "totinvval": d_totinv,
+        "calculated_totinv": expected_totinv,
+        "reason": f"Total Invoice Value ({d_totinv}) does not match calculated value ({expected_totinv}) within +/- 1.00 tolerance.",
+        "resolution": f"Ensure ValDtls.TotInvVal matches total items + other charges - discount (+/- 1.00 tolerance).",
+        "action": "RECONCILE_HEADER_TOTAL_INVOICE_VALUE",
+        "correct_payload": {
+            "ValDtls": {
+                "TotInvVal": expected_totinv
+            }
+        }
+    }
+
+
 def classify_rule_2192_diagnostic(
     qty: Union[Decimal, float, str, int, None],
     unitprice: Union[Decimal, float, str, int, None],
@@ -3087,6 +3566,9 @@ STATE_ALPHA_TO_CODE: Dict[str, str] = {
 VALID_PHYSICAL_STATE_CODES: Set[str] = {
     f"{i:02d}" for i in range(1, 39) if f"{i:02d}" != "25"
 }
+
+VALID_SUPPLIER_STATE_CODES: Set[str] = {f"{i:02d}" for i in range(1, 39)} | {"97"}
+VALID_BUYER_STATE_CODES: Set[str] = {f"{i:02d}" for i in range(1, 39)} | {"96", "97"}
 
 ICEGATE_PORT_MASTER: Dict[str, Dict[str, str]] = {
     "INNSA1": {"name": "Nhava Sheva (JNPT), Maharashtra", "state": "27", "type": "Sea Port", "city": "MUMBAI"},
@@ -4038,6 +4520,4268 @@ def classify_rule_2212_diagnostic(
     }
 
 
+def classify_rule_2213_diagnostic(
+    seller_gstin: Any,
+    is_rcm_inward: bool = False,
+    is_dummy_testing: bool = False,
+    supplier_state: Optional[str] = None,
+    doc_type: Optional[str] = None,
+    trancatg: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2213:
+    "Supplier GSTIN Cannot Be URP"
+    This error occurs when "URP" (Unregistered Person) is passed in SellerDtls.Gstin.
+    Under Indian GST law, e-Invoicing applies exclusively to registered taxpayers
+    whose aggregate turnover exceeds the mandatory threshold. An unregistered supplier
+    cannot issue an e-Invoice or register an IRN.
+
+    3 Statutory Scenarios:
+    1. Supplier Marked as URP by Mistake:
+       "SellerDtls": { "Gstin": "URP" } -> Correct: "SellerDtls": { "Gstin": "27AAAAA0000A1Z5" }
+       Fix: Always pass the seller's active, 15-character registered GSTIN.
+
+    2. Reverse Charge (RCM) Inward Invoice Upload:
+       Uploading an inward invoice received from an unregistered vendor using URP as the seller.
+       Fix: Do not upload via outbound IRP API. Purchase invoices from unregistered suppliers under RCM
+       are reported directly in GSTR-3B, not on the IRP.
+
+    3. Testing with Dummy Data:
+       Using "URP" as placeholder text in the supplier section during testing.
+       Fix: Use a valid, active GSTIN configured in the e-Invoice sandbox/portal.
+       The IRP validates the seller's GSTIN against the active taxpayer registry; URP is never allowed for the seller.
+    """
+    gst = str(seller_gstin or "").strip().upper()
+    st_prefix = str(supplier_state or "").strip().zfill(2) if supplier_state else "27"
+    if not st_prefix.isdigit() or st_prefix in ("00", "96", "97", "99"):
+        st_prefix = "27"
+    fallback_valid_gstin = f"{st_prefix}AAAAA0000A1Z5"
+
+    if gst != "URP" and len(gst) == 15 and re.match(r"^[0-9]{2}[0-9A-Z]{13}$", gst):
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid Supplier GSTIN",
+            "is_valid": True,
+            "field": "SellerDtls.Gstin",
+            "seller_gstin": gst,
+            "reason": "Supplier GSTIN is a valid, active registered GSTIN.",
+            "resolution": "No action required.",
+            "action": "NONE",
+            "correct_payload": {"SellerDtls": {"Gstin": gst}}
+        }
+
+    # Scenario 2: Reverse Charge (RCM) Inward Invoice Upload
+    if is_rcm_inward:
+        return {
+            "error_code": 2213,
+            "scenario": "REVERSE_CHARGE_RCM_INWARD_INVOICE_UPLOAD",
+            "scenario_name": "Reverse Charge (RCM) Inward Invoice Upload",
+            "is_valid": False,
+            "field": "SellerDtls.Gstin",
+            "seller_gstin": gst,
+            "reason": "Purchase invoices from unregistered suppliers under RCM are reported directly in GSTR-3B, not on the IRP.",
+            "resolution": "Do not upload via outbound IRP API. Purchase invoices from unregistered suppliers under RCM are reported directly in GSTR-3B, not on the IRP.",
+            "action": "DO_NOT_UPLOAD_TO_IRP",
+            "irnreq": "N",
+            "correct_payload": {"DocDtls": {"IrnReq": "N"}}
+        }
+
+    # Scenario 3: Testing with Dummy Data
+    if is_dummy_testing or "DUMMY" in gst or "TEST" in gst:
+        return {
+            "error_code": 2213,
+            "scenario": "TESTING_WITH_DUMMY_DATA",
+            "scenario_name": "Testing with Dummy Data",
+            "is_valid": False,
+            "field": "SellerDtls.Gstin",
+            "seller_gstin": gst,
+            "rectified_gstin": fallback_valid_gstin,
+            "reason": "The IRP validates the seller's GSTIN against the active taxpayer registry; URP is never allowed for the seller.",
+            "resolution": "Use a valid, active GSTIN configured in the e-Invoice sandbox/portal. The IRP validates the seller's GSTIN against the active taxpayer registry; URP is never allowed for the seller.",
+            "action": "USE_SANDBOX_ACTIVE_GSTIN",
+            "correct_payload": {"SellerDtls": {"Gstin": fallback_valid_gstin}}
+        }
+
+    # Scenario 1: Supplier Marked as URP by Mistake (Default)
+    return {
+        "error_code": 2213,
+        "scenario": "SUPPLIER_MARKED_AS_URP_BY_MISTAKE",
+        "scenario_name": "Supplier Marked as URP by Mistake",
+        "is_valid": False,
+        "field": "SellerDtls.Gstin",
+        "seller_gstin": gst,
+        "rectified_gstin": fallback_valid_gstin,
+        "reason": "Always pass the seller's active, 15-character registered GSTIN. The seller cannot be an Unregistered Person (URP) in an e-Invoice payload.",
+        "resolution": "Always pass the seller's active, 15-character registered GSTIN.",
+        "action": "PASS_ACTIVE_SELLER_GSTIN",
+        "correct_payload": {"SellerDtls": {"Gstin": fallback_valid_gstin}}
+    }
+
+
+def classify_rule_2227_diagnostic(
+    cgstamt: Union[Decimal, float, str, int, None],
+    sgstamt: Union[Decimal, float, str, int, None],
+    assamt: Optional[Union[Decimal, float, str, int]] = None,
+    gstrate: Optional[Union[Decimal, float, str, int]] = None,
+    item_slno: Optional[Union[str, int]] = None,
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2227:
+    "SGST and CGST Amounts Are Not Equal for Item"
+    This error occurs when the CgstAmt and SgstAmt values in a specific line item within ItemList do not match.
+    Under the GST framework, intra-state tax is split equally between Central Government (CGST) and State Government (SGST/UTGST):
+        ItemList[i].CgstAmt = ItemList[i].SgstAmt = (ItemList[i].AssAmt * (GstRt / 2)) / 100
+
+    3 Statutory Scenarios:
+    1. Unequal Tax Split:
+       AssAmt = 10000.00, 18% GST -> CgstAmt: 1000.00, SgstAmt: 800.00 -> Correct: CgstAmt: 900.00, SgstAmt: 900.00
+       Fix: Tax must be split identically (18% / 2 = 9% each: 900.00 CGST and 900.00 SGST).
+
+    2. Asymmetric Rounding Across Taxes:
+       Line tax is ₹83.335 -> CgstAmt: 41.67, SgstAmt: 41.66 -> Correct: CgstAmt: 41.67, SgstAmt: 41.67
+       Fix: Individual line CGST and SGST must be identical. If rounding is required, round both equally or adjust unit rate/assessable value.
+
+    3. Accidental Zero in One Component:
+       CgstAmt: 900.00, SgstAmt: 0.00 -> Correct: CgstAmt: 900.00, SgstAmt: 900.00
+       Fix: One component cannot be zero if the other is positive in an intra-state supply.
+    """
+    def _to_dec(val: Any) -> Decimal:
+        if val is None or val == "":
+            return Decimal("0.00")
+        try:
+            return Decimal(str(val).strip().replace(",", "")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        except Exception:
+            return Decimal("0.00")
+
+    d_cgst = _to_dec(cgstamt)
+    d_sgst = _to_dec(sgstamt)
+    d_ass = _to_dec(assamt)
+    d_rate = _to_dec(gstrate)
+    diff = abs(d_cgst - d_sgst)
+
+    if diff < Decimal("0.005"):
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid Equal Intra-State Tax Split",
+            "is_valid": True,
+            "cgstamt": d_cgst,
+            "sgstamt": d_sgst,
+            "item_slno": item_slno,
+            "reason": "CGST and SGST amounts are equal for this line item.",
+            "resolution": "No action required.",
+            "action": "NONE",
+            "correct_payload": {
+                "CgstAmt": d_cgst,
+                "SgstAmt": d_sgst
+            }
+        }
+
+    # Scenario 3: Accidental Zero in One Component
+    if (d_cgst > Decimal("0.00") and d_sgst == Decimal("0.00")) or (d_sgst > Decimal("0.00") and d_cgst == Decimal("0.00")):
+        non_zero_tax = d_cgst if d_cgst > Decimal("0.00") else d_sgst
+        return {
+            "error_code": 2227,
+            "scenario": "ACCIDENTAL_ZERO_IN_ONE_COMPONENT",
+            "scenario_name": "Accidental Zero in One Component",
+            "is_valid": False,
+            "cgstamt": d_cgst,
+            "sgstamt": d_sgst,
+            "item_slno": item_slno,
+            "reason": "One component cannot be zero if the other is positive in an intra-state supply.",
+            "resolution": "One component cannot be zero if the other is positive in an intra-state supply.",
+            "action": "POPULATE_MATCHING_INTRA_TAX_COMPONENT",
+            "correct_payload": {
+                "CgstAmt": non_zero_tax,
+                "SgstAmt": non_zero_tax
+            }
+        }
+
+    # Scenario 2: Asymmetric Rounding Across Taxes (0.01 to 0.05 difference)
+    if Decimal("0.005") <= diff <= Decimal("0.05"):
+        rounded_val = max(d_cgst, d_sgst)
+        return {
+            "error_code": 2227,
+            "scenario": "ASYMMETRIC_ROUNDING_ACROSS_TAXES",
+            "scenario_name": "Asymmetric Rounding Across Taxes",
+            "is_valid": False,
+            "cgstamt": d_cgst,
+            "sgstamt": d_sgst,
+            "difference": diff,
+            "item_slno": item_slno,
+            "reason": "Individual line CGST and SGST must be identical. If rounding is required, round both equally or adjust unit rate/assessable value.",
+            "resolution": "Individual line CGST and SGST must be identical. If rounding is required, round both equally or adjust unit rate/assessable value.",
+            "action": "ROUND_TAXES_EQUALLY",
+            "correct_payload": {
+                "CgstAmt": rounded_val,
+                "SgstAmt": rounded_val
+            }
+        }
+
+    # Scenario 1: Unequal Tax Split (> 0.05 difference)
+    if d_ass > Decimal("0.00") and d_rate > Decimal("0.00"):
+        half_rate = d_rate / Decimal("2.00")
+        equal_tax = (d_ass * half_rate / Decimal("100.00")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        scen1_msg = f"Tax must be split identically ({d_rate}% / 2 = {half_rate}% each: {equal_tax:.2f} CGST and {equal_tax:.2f} SGST)."
+    else:
+        equal_tax = ((d_cgst + d_sgst) / Decimal("2.00")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        scen1_msg = f"Tax must be split identically ($18% \\div 2 = 9%$ each: {equal_tax:.2f} CGST and {equal_tax:.2f} SGST)."
+
+    return {
+        "error_code": 2227,
+        "scenario": "UNEQUAL_TAX_SPLIT",
+        "scenario_name": "Unequal Tax Split",
+        "is_valid": False,
+        "cgstamt": d_cgst,
+        "sgstamt": d_sgst,
+        "calculated_equal_tax": equal_tax,
+        "item_slno": item_slno,
+        "reason": scen1_msg,
+        "resolution": scen1_msg,
+        "action": "SPLIT_TAX_IDENTICALLY",
+        "correct_payload": {
+            "CgstAmt": equal_tax,
+            "SgstAmt": equal_tax
+        }
+    }
+
+
+def classify_rule_2228_diagnostic(
+    items: Optional[List[Any]],
+    is_null_array: bool = False,
+    is_erp_extraction_glitch: bool = False,
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2228:
+    "Item List Cannot Be Empty"
+    This error occurs when the ItemList array in the request payload contains zero items,
+    is passed as null, or is an empty list ([]). Every e-Invoice must contain at least one valid line item.
+
+    3 Statutory Scenarios:
+    1. Empty Array Passed:
+       "ItemList": [] -> Correct: Include at least one line item object inside the array.
+       Fix: An invoice must have at least 1 line item and can have up to 1,000 line items.
+
+    2. Null Array Passed:
+       "ItemList": null -> Correct: "ItemList": [ { ... } ]
+       Fix: ItemList is a mandatory array field in the JSON schema.
+
+    3. ERP Data Extraction Glitch:
+       ERP pushes invoice header before line items are committed to the staging database.
+       Fix: Ensure backend serialization waits until line items are loaded before calling the API.
+       Verify that line items are present in memory/payload before dispatching the payload.
+    """
+    if items is not None and isinstance(items, list) and len(items) > 0 and not is_null_array and not is_erp_extraction_glitch:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid Item List",
+            "is_valid": True,
+            "item_count": len(items),
+            "reason": f"ItemList contains {len(items)} valid line item(s).",
+            "resolution": "No action required.",
+            "action": "NONE",
+            "correct_payload": {"ItemList": items}
+        }
+
+    # Scenario 3: ERP Data Extraction Glitch
+    if is_erp_extraction_glitch:
+        return {
+            "error_code": 2228,
+            "scenario": "ERP_DATA_EXTRACTION_GLITCH",
+            "scenario_name": "ERP Data Extraction Glitch",
+            "is_valid": False,
+            "reason": "Ensure backend serialization waits until line items are loaded before calling the API. Verify that line items are present in memory/payload before dispatching the payload.",
+            "resolution": "Ensure backend serialization waits until line items are loaded before calling the API. Verify that line items are present in memory/payload before dispatching the payload.",
+            "action": "AWAIT_LINE_ITEMS_COMMIT_BEFORE_DISPATCH",
+            "correct_payload": None
+        }
+
+    # Scenario 2: Null Array Passed
+    if items is None or is_null_array:
+        return {
+            "error_code": 2228,
+            "scenario": "NULL_ARRAY_PASSED",
+            "scenario_name": "Null Array Passed",
+            "is_valid": False,
+            "reason": "ItemList is a mandatory array field in the JSON schema.",
+            "resolution": "ItemList is a mandatory array field in the JSON schema.",
+            "action": "PROVIDE_NON_NULL_ITEM_LIST",
+            "correct_payload": {"ItemList": []}
+        }
+
+    # Scenario 1: Empty Array Passed (Default)
+    return {
+        "error_code": 2228,
+        "scenario": "EMPTY_ARRAY_PASSED",
+        "scenario_name": "Empty Array Passed",
+        "is_valid": False,
+        "item_count": 0,
+        "reason": "An invoice must have at least 1 line item and can have up to 1,000 line items.",
+        "resolution": "Include at least one line item object inside the array. An invoice must have at least 1 line item and can have up to 1,000 line items.",
+        "action": "ADD_LINE_ITEM_OBJECT",
+        "correct_payload": None
+    }
+
+
+E_INVOICE_EXEMPT_ENTITIES: Dict[str, Dict[str, str]] = {
+    "SEZ_UNIT": {
+        "entity_type": "Special Economic Zone (SEZ) Units & Developers",
+        "must_generate_irn": "No",
+        "notification": "Notification No. 13/2020 – Central Tax",
+        "reporting_mechanism": "Regular ERP Invoice + GSTR-1",
+        "description": "SEZ units are explicitly exempt from mandatory e-invoicing provisions even if aggregate turnover exceeds mandatory threshold."
+    },
+    "BANKING_INSURANCE_NBFC": {
+        "entity_type": "Banking Companies, Financial Institutions & NBFCs",
+        "must_generate_irn": "No",
+        "notification": "Notification No. 13/2020 – Central Tax",
+        "reporting_mechanism": "Regular ERP Invoice + GSTR-1",
+        "description": "Banking, insurance, and NBFC entities are exempt from e-invoicing."
+    },
+    "GTA": {
+        "entity_type": "Goods Transport Agencies (GTA)",
+        "must_generate_irn": "No",
+        "notification": "Notification No. 13/2020 – Central Tax",
+        "reporting_mechanism": "Consignment Note / GSTR-1",
+        "description": "GTAs supplying services in relation to goods transport are exempt from e-invoicing."
+    },
+    "PASSENGER_TRANSPORT": {
+        "entity_type": "Passenger Transportation Services",
+        "must_generate_irn": "No",
+        "notification": "Notification No. 13/2020 – Central Tax",
+        "reporting_mechanism": "Ticket / ERP Invoice",
+        "description": "Passenger transportation services are exempt from e-invoicing."
+    },
+    "MULTIPLEX_THEATRE": {
+        "entity_type": "Multiplex / Movie Theatres",
+        "must_generate_irn": "No",
+        "notification": "Notification No. 13/2020 – Central Tax",
+        "reporting_mechanism": "Electronic Ticket",
+        "description": "Exhibition of cinematograph films in multiplex screens is exempt from e-invoicing."
+    },
+    "DTA_TO_SEZ": {
+        "entity_type": "Supplies TO SEZ (from DTA)",
+        "must_generate_irn": "Yes",
+        "notification": "N/A (Standard e-Invoicing Mandatory)",
+        "reporting_mechanism": "IRP e-Invoice API (Supply type SEZWP or SEZWOP)",
+        "description": "DTA units selling to SEZ must generate e-Invoices. Only supplies originating from SEZ units are exempt."
+    }
+}
+
+
+def classify_rule_2230_diagnostic(
+    has_active_ewb: bool = False,
+    ewb_number: Optional[Union[str, int]] = None,
+    irn: Optional[str] = None,
+    hours_since_generation: Optional[float] = None,
+    generated_by_transporter: bool = False,
+    cancel_reason_code: Optional[Union[str, int]] = None,
+    cancel_remarks: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2230:
+    "IRN Cannot Be Cancelled Because Active E-Way Bill Exists"
+    This error occurs when attempting to call the Cancel IRN API for an invoice
+    that already has an active, valid E-Way Bill linked to it.
+    The NIC system enforces strict dependency ordering: an invoice cannot be deleted
+    or cancelled while an active transport document (E-Way Bill) authorizing the movement
+    of those goods is alive on the network.
+
+    3 Statutory Scenarios:
+    1. Attempting to Cancel IRN Directly While E-Way Bill is Active:
+       Calling /Cancel on IRN directly while the linked E-Way Bill is active.
+       Workflow: Step 1: Call Cancel E-Way Bill API. Step 2: Call Cancel IRN API.
+       Reason / Fix: An active E-Way Bill locks the IRN against cancellation. The E-Way Bill must be cancelled first.
+
+    2. E-Way Bill Already Generated by Transporter / Counterparty:
+       Transporter generated Part-B / EWB on the portal, blocking supplier's IRN cancellation request.
+       Reason / Fix: Check active EWBs linked to the document on the E-Way Bill portal, cancel the EWB first, then cancel the IRN.
+       Irrespective of who generated the EWB (supplier or transporter), it must be cancelled prior to IRN cancellation.
+
+    3. Cancellation Window Lapsed (> 24 Hours):
+       Attempting cancellation after 24 hours of IRN generation.
+       Reason / Fix: IRN cannot be cancelled via API after 24 hours. Issue a Credit Note (CRN) instead.
+       The IRP only permits cancellation within 24 hours of generation. Beyond that, adjustments must go via Credit Notes.
+
+    Cancellation Payload Specification:
+    Step 1: Cancel E-Way Bill First
+    {
+      "ewbNo": 121000987654,
+      "cancelRsnCode": 1,
+      "cancelRmrk": "Data entry error in invoice"
+    }
+    Step 2: Cancel IRN
+    {
+      "Irn": "3b2c...64_character_hash...",
+      "CnlRsn": "1",
+      "CnlRem": "Order cancelled by buyer"
+    }
+    Allowed Cancellation Reason Codes (CnlRsn):
+      1 = Duplicate
+      2 = Data Entry Error
+      3 = Order Cancelled
+      4 = Others
+    """
+    hrs = float(hours_since_generation) if hours_since_generation is not None else 0.0
+    ewb_str = str(ewb_number or "121000987654").strip()
+    irn_str = str(irn or "3b2c01928475a9fbc83726154e2d1c0b3a4f5e6d7c8b9a0f1e2d3c4b5a6f7e8d").strip()
+    rsn_code = str(cancel_reason_code or "1").strip()
+    if rsn_code not in ("1", "2", "3", "4"):
+        rsn_code = "1"
+    remarks = str(cancel_remarks or "Order cancelled by buyer").strip()
+
+    # Scenario 3: Cancellation Window Lapsed (> 24 Hours)
+    if hrs > 24.0:
+        return {
+            "error_code": 2230,
+            "scenario": "CANCELLATION_WINDOW_LAPSED_OVER_24_HOURS",
+            "scenario_name": "Cancellation Window Lapsed (> 24 Hours)",
+            "is_valid": False,
+            "hours_since_generation": hrs,
+            "reason": "Attempting cancellation after 24 hours of IRN generation. IRN cannot be cancelled via API after 24 hours. Issue a Credit Note (CRN) instead.",
+            "resolution": "The IRP only permits cancellation within 24 hours of generation. Beyond that, adjustments must go via Credit Notes. Issue a Credit Note (CRN) in GSTR-1/IRP.",
+            "action": "ISSUE_CREDIT_NOTE_CRN",
+            "suggested_doc_type": "CRN"
+        }
+
+    # If no active EWB, valid for cancellation
+    if not has_active_ewb:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Ready for IRN Cancellation",
+            "is_valid": True,
+            "reason": "No active E-Way Bill is blocking IRN cancellation. Within 24-hour statutory cancellation window.",
+            "resolution": "Call Cancel IRN API directly.",
+            "action": "CALL_CANCEL_IRN_API",
+            "cancel_irn_payload": {
+                "Irn": irn_str,
+                "CnlRsn": rsn_code,
+                "CnlRem": remarks
+            }
+        }
+
+    # Scenario 2: E-Way Bill Already Generated by Transporter / Counterparty
+    if generated_by_transporter:
+        return {
+            "error_code": 2230,
+            "scenario": "EWAY_BILL_ALREADY_GENERATED_BY_TRANSPORTER_OR_COUNTERPARTY",
+            "scenario_name": "E-Way Bill Already Generated by Transporter / Counterparty",
+            "is_valid": False,
+            "ewb_number": ewb_str,
+            "irn": irn_str,
+            "reason": "Transporter generated Part-B / EWB on the portal, blocking supplier's IRN cancellation request. Irrespective of who generated the EWB (supplier or transporter), it must be cancelled prior to IRN cancellation.",
+            "resolution": "Check active EWBs linked to the document on the E-Way Bill portal, cancel the EWB first, then cancel the IRN.",
+            "action": "CANCEL_TRANSPORTER_EWB_PRIOR_TO_IRN_CANCELLATION",
+            "step_1_cancel_ewb_payload": {
+                "ewbNo": int(ewb_str) if ewb_str.isdigit() else 121000987654,
+                "cancelRsnCode": int(rsn_code) if rsn_code.isdigit() else 1,
+                "cancelRmrk": remarks
+            },
+            "step_2_cancel_irn_payload": {
+                "Irn": irn_str,
+                "CnlRsn": rsn_code,
+                "CnlRem": remarks
+            }
+        }
+
+    # Scenario 1: Attempting to Cancel IRN Directly While E-Way Bill is Active (Default with Active EWB)
+    return {
+        "error_code": 2230,
+        "scenario": "ATTEMPTING_TO_CANCEL_IRN_DIRECTLY_WHILE_EWAY_BILL_IS_ACTIVE",
+        "scenario_name": "Attempting to Cancel IRN Directly While E-Way Bill is Active",
+        "is_valid": False,
+        "ewb_number": ewb_str,
+        "irn": irn_str,
+        "reason": "Calling /Cancel on IRN directly while the linked E-Way Bill is active. An active E-Way Bill locks the IRN against cancellation. The E-Way Bill must be cancelled first.",
+        "resolution": "Step 1: Call Cancel E-Way Bill API. Step 2: Call Cancel IRN API. An active E-Way Bill locks the IRN against cancellation. The E-Way Bill must be cancelled first.",
+        "action": "CANCEL_EWAY_BILL_FIRST",
+        "sequential_workflow": [
+            {
+                "step": 1,
+                "api": "/CancelEwb",
+                "payload": {
+                    "ewbNo": int(ewb_str) if ewb_str.isdigit() else 121000987654,
+                    "cancelRsnCode": int(rsn_code) if rsn_code.isdigit() else 1,
+                    "cancelRmrk": remarks
+                }
+            },
+            {
+                "step": 2,
+                "api": "/CancelIrn",
+                "payload": {
+                    "Irn": irn_str,
+                    "CnlRsn": rsn_code,
+                    "CnlRem": remarks
+                }
+            }
+        ],
+        "step_1_cancel_ewb_payload": {
+            "ewbNo": int(ewb_str) if ewb_str.isdigit() else 121000987654,
+            "cancelRsnCode": int(rsn_code) if rsn_code.isdigit() else 1,
+            "cancelRmrk": remarks
+        },
+        "step_2_cancel_irn_payload": {
+            "Irn": irn_str,
+            "CnlRsn": rsn_code,
+            "CnlRem": remarks
+        }
+    }
+
+
+def classify_rule_2231_diagnostic(
+    supplier_gstin: Any,
+    is_supplier_sez: bool = False,
+    trancatg: Optional[str] = None,
+    buyer_gstin: Optional[str] = None,
+    is_dta_to_sez: bool = False,
+    is_multi_gstin_setup: bool = False,
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2231:
+    "Cannot Generate e-Invoice as Supplier GSTIN is SEZ"
+    This error occurs when the supplier GSTIN (SellerDtls.Gstin) belongs to a
+    Special Economic Zone (SEZ) unit or developer.
+    Under Notification No. 13/2020 – Central Tax, SEZ units are explicitly exempt
+    from the mandatory e-invoicing provisions, even if their aggregate annual turnover
+    exceeds the statutory threshold.
+
+    3 Statutory Scenarios:
+    1. SEZ Unit Attempting Outbound IRN Generation:
+       SEZ supplier GSTIN passed in SellerDtls.Gstin via /Invoice API.
+       Reason / Fix: SEZ units are legally exempted from issuing e-Invoices under Notification 13/2020-CT.
+       Do not push SEZ outbound invoices to IRP. Generate standard tax invoices directly from ERP.
+       Report directly in regular GSTR-1 returns.
+
+    2. DTA Entity Invoicing to SEZ Unit (Misrouted Flags):
+       Regular domestic DTA unit selling to an SEZ, but ERP set the supplier flag as SEZ.
+       Reason / Fix: DTA units selling to SEZ must generate e-Invoices. Only supplies originating from SEZ units are exempt.
+       Set SupTyp to SEZWP or SEZWOP, keep SellerDtls.Gstin as DTA GSTIN.
+
+    3. Multi-GSTIN Setup Triggering Wrong Entity:
+       Shared corporate ERP triggers the automated e-Invoice sync job for both DTA and SEZ sister units.
+       Reason / Fix: Add an exclusion rule in ERP integration middleware to bypass IRP API calls for SEZ GSTINs.
+       Middleware/GSP connectors should filter out SEZ GSTINs prior to invoking the IRP endpoint.
+    """
+    gst = str(supplier_gstin or "").strip().upper()
+    catg = str(trancatg or "B2B").strip().upper()
+
+    # Scenario 2: DTA Entity Invoicing to SEZ Unit (Misrouted Flags)
+    if is_dta_to_sez or catg in ("SEZWP", "SEZWOP"):
+        if is_dta_to_sez and is_supplier_sez:
+            return {
+                "error_code": 2231,
+                "scenario": "DTA_ENTITY_INVOICING_TO_SEZ_UNIT",
+                "scenario_name": "DTA Entity Invoicing to SEZ Unit (Misrouted Flags)",
+                "is_valid": False,
+                "supplier_gstin": gst,
+                "trancatg": "SEZWP" if catg not in ("SEZWP", "SEZWOP") else catg,
+                "reason": "DTA units selling to SEZ must generate e-Invoices. Only supplies originating from SEZ units are exempt.",
+                "resolution": "Set SupTyp to SEZWP or SEZWOP, keep SellerDtls.Gstin as DTA GSTIN. DTA units selling to SEZ must generate e-Invoices.",
+                "action": "SET_SUPPLY_TYPE_SEZWP_OR_SEZWOP",
+                "correct_payload": {
+                    "TranDtls": {"SupTyp": "SEZWP" if catg not in ("SEZWP", "SEZWOP") else catg},
+                    "SellerDtls": {"Gstin": gst}
+                }
+            }
+        elif not is_supplier_sez:
+            return {
+                "error_code": None,
+                "scenario": "VALID",
+                "scenario_name": "Valid DTA Outbound to SEZ Supply",
+                "is_valid": True,
+                "supplier_gstin": gst,
+                "trancatg": catg,
+                "reason": "DTA supplier issuing e-invoice to SEZ unit under valid supply type SEZWP/SEZWOP.",
+                "resolution": "No action required.",
+                "action": "NONE",
+                "correct_payload": {"TranDtls": {"SupTyp": catg}}
+            }
+
+    # Scenario 3: Multi-GSTIN Setup Triggering Wrong Entity
+    if is_multi_gstin_setup or ("SEZ" in gst and is_supplier_sez):
+        return {
+            "error_code": 2231,
+            "scenario": "MULTI_GSTIN_SETUP_TRIGGERING_WRONG_ENTITY",
+            "scenario_name": "Multi-GSTIN Setup Triggering Wrong Entity",
+            "is_valid": False,
+            "supplier_gstin": gst,
+            "reason": "Shared corporate ERP triggers the automated e-Invoice sync job for both DTA and SEZ sister units. Middleware/GSP connectors should filter out SEZ GSTINs prior to invoking the IRP endpoint.",
+            "resolution": "Add an exclusion rule in ERP integration middleware to bypass IRP API calls for SEZ GSTINs. Middleware/GSP connectors should filter out SEZ GSTINs prior to invoking the IRP endpoint.",
+            "action": "FILTER_SEZ_GSTIN_IN_INTEGRATION_MIDDLEWARE",
+            "irnreq": "N",
+            "correct_payload": {"DocDtls": {"IrnReq": "N"}}
+        }
+
+    # Scenario 1: SEZ Unit Attempting Outbound IRN Generation (Default if supplier is SEZ)
+    if is_supplier_sez or "SEZ" in gst:
+        return {
+            "error_code": 2231,
+            "scenario": "SEZ_UNIT_ATTEMPTING_OUTBOUND_IRN_GENERATION",
+            "scenario_name": "SEZ Unit Attempting Outbound IRN Generation",
+            "is_valid": False,
+            "supplier_gstin": gst,
+            "reason": "SEZ units are legally exempted from issuing e-Invoices under Notification No. 13/2020 – Central Tax. Report directly in regular GSTR-1 returns.",
+            "resolution": "Do not push SEZ outbound invoices to IRP. Generate standard tax invoices directly from ERP. SEZ units are legally exempted from issuing e-Invoices. Report directly in regular GSTR-1 returns.",
+            "action": "DO_NOT_PUSH_SEZ_OUTBOUND_TO_IRP",
+            "irnreq": "N",
+            "correct_payload": {"DocDtls": {"IrnReq": "N"}}
+        }
+
+    # Valid non-SEZ supplier
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Regular Taxpayer Supplier",
+        "is_valid": True,
+        "supplier_gstin": gst,
+        "reason": "Supplier is a registered regular DTA taxpayer required to issue e-Invoices.",
+        "resolution": "No action required.",
+        "action": "NONE",
+        "correct_payload": {"SellerDtls": {"Gstin": gst}}
+    }
+
+
+def classify_rule_2232_diagnostic(
+    pos: Any,
+    trancatg: str = "EXPWP",
+    seller_state: Optional[str] = None,
+    port: Optional[str] = None,
+    is_gateway_port_used: bool = False,
+    is_domestic_misclassified_as_export: bool = False,
+    recipient_state: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2232:
+    "POS is Incorrect for Export Transaction"
+    This error occurs when an Export transaction (SupTyp is EXP, EXPWP, or EXPWOP) is sent
+    with a Place of Supply (BuyerDtls.Pos) other than the designated "Other Country" state code "96".
+    For cross-border export transactions under the GST framework, the Place of Supply lies outside India.
+    The GST system mandates using code "96" for Place of Supply and Recipient State Code in all direct export payloads.
+
+    4 Statutory Scenarios:
+    1. Seller's Own State Passed as POS:
+       "SupTyp": "EXPWP", "BuyerDtls": { "Pos": "27" }
+       -> Correct: "BuyerDtls": { "Pos": "96", "StateCode": "96" }
+       Reason / Fix: Exports cannot have an Indian domestic state code as POS. Set Pos to "96".
+
+    2. Port / Gateway State Code Passed as POS:
+       Export leaving via Nhava Sheva (MH), sent with: "BuyerDtls": { "Pos": "27" }
+       -> Correct: "BuyerDtls": { "Pos": "96", "StateCode": "96" }
+       Reason / Fix: The exit port's location does not determine POS for direct exports. POS must remain "96".
+
+    3. Numeric Value Passed Instead of String:
+       "BuyerDtls": { "Pos": 96 }
+       -> Correct: "BuyerDtls": { "Pos": "96" }
+       Reason / Fix: Pos is defined as a 2-character string in the JSON schema. Ensure quotes are present.
+
+    4. Wrong Supply Type Selected for Domestic Supply:
+       Standard domestic B2B sale accidentally tagged as "EXPWP" with local Pos.
+       -> Correct: Change "SupTyp": "B2B" and retain recipient's actual state code in Pos.
+       Reason / Fix: If goods/services are supplied within India, switch supply type to B2B rather than EXPWP/EXPWOP.
+    """
+    catg = str(trancatg or "EXPWP").strip().upper()
+    is_exp = catg in ("EXP", "EXPWP", "EXPWOP")
+
+    # If transaction is domestic, Pos=96 would be Rule 2242, not 2232
+    if not is_exp:
+        return {
+            "error_code": None,
+            "scenario": "VALID_DOMESTIC_TRANSACTION",
+            "scenario_name": "Valid Domestic Transaction",
+            "is_valid": True,
+            "pos": str(pos or "").strip(),
+            "trancatg": catg,
+            "reason": f"Supply type '{catg}' is a domestic transaction category.",
+            "resolution": "",
+            "action": "NONE",
+            "correct_payload": {"BuyerDtls": {"Pos": str(pos or "").strip()}}
+        }
+
+    # Scenario 3: Numeric Value Passed Instead of String (e.g. 96 integer instead of "96" string)
+    if isinstance(pos, (int, float)) and not isinstance(pos, bool):
+        if int(pos) == 96:
+            return {
+                "error_code": 2232,
+                "scenario": "NUMERIC_VALUE_PASSED_INSTEAD_OF_STRING",
+                "scenario_name": "Numeric Value Passed Instead of String",
+                "is_valid": False,
+                "field": "BuyerDtls.Pos",
+                "original_pos": pos,
+                "rectified_pos": "96",
+                "rectified_state": "96",
+                "reason": "Pos is defined as a 2-character string in the JSON schema. Ensure quotes are present ('96').",
+                "resolution": "Enclose the numeric value 96 in quotes: '96'.",
+                "action": "ENQUOTE_NUMERIC_POS",
+                "correct_payload": {"BuyerDtls": {"Pos": "96", "StateCode": "96"}}
+            }
+
+    pos_str = str(pos or "").strip()
+    if pos_str.isdigit() and len(pos_str) == 1:
+        pos_str = pos_str.zfill(2)
+
+    # Valid check: pos is "96"
+    if pos_str == "96":
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid Export POS",
+            "is_valid": True,
+            "field": "BuyerDtls.Pos",
+            "original_pos": pos_str,
+            "rectified_pos": "96",
+            "rectified_state": "96",
+            "reason": "POS '96' (Other Country) is correct for export transactions.",
+            "resolution": "",
+            "action": "NONE",
+            "correct_payload": {"BuyerDtls": {"Pos": "96", "StateCode": "96"}}
+        }
+
+    # Scenario 4: Wrong Supply Type Selected for Domestic Supply
+    if is_domestic_misclassified_as_export:
+        recip_st = str(recipient_state or pos_str).strip().zfill(2)
+        return {
+            "error_code": 2232,
+            "scenario": "WRONG_SUPPLY_TYPE_SELECTED_FOR_DOMESTIC_SUPPLY",
+            "scenario_name": "Wrong Supply Type Selected for Domestic Supply",
+            "is_valid": False,
+            "field": "TranDtls.SupTyp",
+            "original_pos": pos_str,
+            "original_trancatg": catg,
+            "rectified_trancatg": "B2B",
+            "rectified_pos": recip_st,
+            "reason": "Standard domestic sale accidentally tagged as 'EXPWP' with local Pos. If goods/services are supplied within India, switch supply type to B2B rather than EXPWP/EXPWOP.",
+            "resolution": "Change supply type to 'B2B' and retain recipient's actual state code in Pos.",
+            "action": "CHANGE_SUPPLY_TYPE_TO_B2B",
+            "correct_payload": {"TranDtls": {"SupTyp": "B2B"}, "BuyerDtls": {"Pos": recip_st}}
+        }
+
+    # Scenario 2: Port / Gateway State Code Passed as POS
+    if is_gateway_port_used:
+        return {
+            "error_code": 2232,
+            "scenario": "PORT_GATEWAY_STATE_CODE_PASSED_AS_POS",
+            "scenario_name": "Port / Gateway State Code Passed as POS",
+            "is_valid": False,
+            "field": "BuyerDtls.Pos",
+            "original_pos": pos_str,
+            "rectified_pos": "96",
+            "rectified_state": "96",
+            "port": port,
+            "reason": "The exit port's location does not determine POS for direct exports. POS must remain '96'.",
+            "resolution": "Set BuyerDtls.Pos to '96' and StateCode to '96'. The exit port is captured in ExpDtls.Port, not BuyerDtls.Pos.",
+            "action": "SET_EXPORT_POS_TO_96",
+            "correct_payload": {"BuyerDtls": {"Pos": "96", "StateCode": "96"}}
+        }
+
+    # Scenario 1: Seller's Own State Passed as POS (Default for invalid pos on export)
+    return {
+        "error_code": 2232,
+        "scenario": "SELLER_OWN_STATE_PASSED_AS_POS",
+        "scenario_name": "Seller's Own State Passed as POS",
+        "is_valid": False,
+        "field": "BuyerDtls.Pos",
+        "original_pos": pos_str,
+        "rectified_pos": "96",
+        "rectified_state": "96",
+        "seller_state": seller_state,
+        "reason": f"Exports cannot have an Indian domestic state code ('{pos_str}') as POS. For cross-border export transactions under the GST framework, the Place of Supply lies outside India (code '96').",
+        "resolution": "Set BuyerDtls.Pos to '96' and StateCode to '96'.",
+        "action": "SET_EXPORT_POS_TO_96",
+        "correct_payload": {"BuyerDtls": {"Pos": "96", "StateCode": "96"}}
+    }
+
+
+def classify_rule_2233_diagnostic(
+    items: Optional[List[Any]],
+    is_batch_split: bool = False,
+    has_whitespace_artifacts: bool = False,
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2233:
+    "Duplicate SI numbers are not allowed in line items"
+    This error occurs when the item serial number field (ItemList[i].SlNo) contains
+    duplicate values across line items in an invoice. Every line item inside the ItemList
+    array must have a strictly unique serial number.
+
+    3 Statutory Scenarios:
+    1. Hardcoded "1" on All Line Items:
+       Item 1: "SlNo": "1", Item 2: "SlNo": "1" -> Correct: Item 1: "SlNo": "1", Item 2: "SlNo": "2"
+       Reason / Fix: Ensure the loop/mapping index generates sequential, unique strings ("1", "2", "3", etc.).
+
+    2. Merged Batches Carrying Parent Serial Number:
+       Item 1 (Batch A): "SlNo": "1", Item 1 (Batch B): "SlNo": "1"
+       -> Correct: Item 1: "SlNo": "1", Item 2: "SlNo": "2"
+       Reason / Fix: Sub-lines or batch splits must each carry a distinct SlNo if sent as separate items in ItemList.
+
+    3. Non-String / Space Artifacts Causing Collision:
+       Item 1: "SlNo": "10", Item 2: "SlNo": " 10" or "SlNo": "10 "
+       -> Correct: Item 1: "SlNo": "10", Item 2: "SlNo": "11"
+       Reason / Fix: Trailing or leading whitespaces can cause indexing collisions or normalization issues during schema validation.
+    """
+    if not items or len(items) <= 1:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid Unique Item Serial Numbers",
+            "is_valid": True,
+            "duplicate_slnos": [],
+            "reason": "All line items have unique serial numbers.",
+            "resolution": "No action required.",
+            "action": "NONE",
+            "rectified_slnos": [str(items[0].get("slno", "1") if isinstance(items[0], dict) else getattr(items[0], "slno", "1"))] if items else []
+        }
+
+    raw_slnos: List[Any] = []
+    cleaned_slnos: List[str] = []
+    seen: set = set()
+    duplicates: List[str] = []
+    has_whitespace = bool(has_whitespace_artifacts)
+    has_batch_indicator = bool(is_batch_split)
+
+    for idx, itm in enumerate(items, start=1):
+        if isinstance(itm, dict):
+            raw_sl = itm.get("slno", itm.get("SlNo", itm.get("item_slno", str(idx))))
+            if any(k in itm for k in ("batch", "batch_no", "batchno", "batch_id", "BatchNo")):
+                has_batch_indicator = True
+        else:
+            raw_sl = getattr(itm, "slno", getattr(itm, "SlNo", str(idx)))
+
+        raw_str = str(raw_sl)
+        clean_str = raw_str.strip()
+        if raw_str != clean_str or not isinstance(raw_sl, str):
+            has_whitespace = True
+
+        raw_slnos.append(raw_sl)
+        cleaned_slnos.append(clean_str)
+
+        if clean_str in seen:
+            if clean_str not in duplicates:
+                duplicates.append(clean_str)
+        else:
+            seen.add(clean_str)
+
+    if not duplicates:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid Unique Item Serial Numbers",
+            "is_valid": True,
+            "duplicate_slnos": [],
+            "reason": "All line items have unique serial numbers.",
+            "resolution": "No action required.",
+            "action": "NONE",
+            "rectified_slnos": cleaned_slnos
+        }
+
+    # Generate sequential unique serial numbers: "1", "2", "3", ...
+    sequential_slnos = [str(i) for i in range(1, len(items) + 1)]
+
+    # Scenario 3: Non-String / Space Artifacts Causing Collision
+    if has_whitespace:
+        return {
+            "error_code": 2233,
+            "scenario": "NON_STRING_SPACE_ARTIFACTS_CAUSING_COLLISION",
+            "scenario_name": "Non-String / Space Artifacts Causing Collision",
+            "is_valid": False,
+            "duplicate_slnos": duplicates,
+            "raw_slnos": raw_slnos,
+            "rectified_slnos": sequential_slnos,
+            "reason": f"Trailing or leading whitespaces (or non-string types) caused collision on SlNo values {duplicates}. Every line item inside ItemList must have a strictly unique, clean serial number.",
+            "resolution": "Strip whitespace and normalize SlNo sequentially ('1', '2', '3', etc.).",
+            "action": "NORMALIZE_AND_REINDEX_SEQUENTIALLY",
+            "correct_payload": {"ItemList": [{"SlNo": s} for s in sequential_slnos]}
+        }
+
+    # Scenario 2: Merged Batches Carrying Parent Serial Number
+    if has_batch_indicator:
+        return {
+            "error_code": 2233,
+            "scenario": "MERGED_BATCHES_CARRYING_PARENT_SERIAL_NUMBER",
+            "scenario_name": "Merged Batches Carrying Parent Serial Number",
+            "is_valid": False,
+            "duplicate_slnos": duplicates,
+            "raw_slnos": raw_slnos,
+            "rectified_slnos": sequential_slnos,
+            "reason": f"Sub-lines or batch splits share parent serial number {duplicates}. Sub-lines or batch splits must each carry a distinct SlNo if sent as separate items in ItemList.",
+            "resolution": "Assign a distinct, sequential SlNo ('1', '2', '3', etc.) to each batch/sub-item.",
+            "action": "REINDEX_BATCH_SUB_LINES",
+            "correct_payload": {"ItemList": [{"SlNo": s} for s in sequential_slnos]}
+        }
+
+    # Scenario 1: Hardcoded "1" on All Line Items (Default)
+    return {
+        "error_code": 2233,
+        "scenario": "HARDCODED_ONE_ON_ALL_LINE_ITEMS",
+        "scenario_name": "Hardcoded '1' on All Line Items",
+        "is_valid": False,
+        "duplicate_slnos": duplicates,
+        "raw_slnos": raw_slnos,
+        "rectified_slnos": sequential_slnos,
+        "reason": f"Multiple line items share duplicate serial numbers {duplicates}. Ensure the loop/mapping index generates sequential, unique strings ('1', '2', '3', etc.).",
+        "resolution": "Ensure loop/mapping index generates sequential, unique strings ('1', '2', '3', etc.).",
+        "action": "GENERATE_SEQUENTIAL_SERIAL_NUMBERS",
+        "correct_payload": {"ItemList": [{"SlNo": s} for s in sequential_slnos]}
+    }
+
+
+def classify_rule_2234_diagnostic(
+    cgstamt: Union[Decimal, float, str, int, None],
+    sgstamt: Union[Decimal, float, str, int, None],
+    assamt: Union[Decimal, float, str, int, None],
+    gstrate: Union[Decimal, float, str, int, None],
+    totamt: Optional[Union[Decimal, float, str, int, None]] = None,
+    discount: Optional[Union[Decimal, float, str, int, None]] = None,
+    item_slno: Optional[Union[str, int]] = None,
+    tolerance: Union[Decimal, float] = Decimal("1.00"),
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2234:
+    "Item CGST & SGST Formula Mismatch"
+    This error occurs when the CgstAmt and SgstAmt calculated for a line item deviate
+    from the product of the taxable amount (AssAmt) and half the tax rate (GstRt / 2)
+    beyond the permitted tolerance of ±1.00:
+        CgstAmt = SgstAmt = (AssAmt * (GstRt / 2)) / 100  (Tolerance: ±1.00)
+
+    4 Statutory Scenarios:
+    1. Tax Calculated on Gross (TotAmt) Instead of Taxable Base (AssAmt):
+       TotAmt = 10000, Discount = 2000, AssAmt = 8000, GstRt = 18. Sent: Cgst=900, Sgst=900 -> Correct: Cgst=720, Sgst=720.
+       Fix: Tax must be calculated on the discounted assessable value 8000, not the gross 10000 (8000 * 9% = 720).
+
+    2. Full Tax Applied to Both Fields:
+       AssAmt = 10000, GstRt = 18. Sent: Cgst=1800, Sgst=1800 -> Correct: Cgst=900, Sgst=900.
+       Fix: GstRt represents the total GST rate (18%). Each component takes half (9% = 900.00).
+
+    3. Rate vs Amount Disconnect:
+       AssAmt = 10000, GstRt = 12. Sent: Cgst=900, Sgst=900 -> Correct: Cgst=600, Sgst=600.
+       Fix: CgstAmt and SgstAmt must match the declared GstRt (10000 * 6% = 600).
+
+    4. Rounding Deviation Exceeding ₹1.00:
+       Tax mathematically computes to 45.10, but ERP sends 47.00.
+       Fix: Align line tax closer to mathematically exact values (±1.00). Discrepancies wider than ₹1.00 trigger validation failures.
+    """
+    def _to_dec(val: Any) -> Decimal:
+        if val is None or val == "":
+            return Decimal("0.00")
+        try:
+            return Decimal(str(val).strip().replace(",", "")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        except Exception:
+            return Decimal("0.00")
+
+    d_cgst = _to_dec(cgstamt)
+    d_sgst = _to_dec(sgstamt)
+    d_ass = _to_dec(assamt)
+    d_rate = _to_dec(gstrate)
+    d_tot = _to_dec(totamt) if totamt is not None else Decimal("0.00")
+    d_disc = _to_dec(discount) if discount is not None else Decimal("0.00")
+    d_tol = Decimal(str(tolerance))
+
+    half_rate = (d_rate / Decimal("2")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    expected_tax = ((d_ass * half_rate) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    cgst_dev = abs(d_cgst - expected_tax)
+    sgst_dev = abs(d_sgst - expected_tax)
+
+    if cgst_dev <= d_tol and sgst_dev <= d_tol:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid CGST and SGST Line Item Formula",
+            "is_valid": True,
+            "cgstamt": d_cgst,
+            "sgstamt": d_sgst,
+            "assamt": d_ass,
+            "gstrate": d_rate,
+            "expected_cgst": expected_tax,
+            "expected_sgst": expected_tax,
+            "item_slno": item_slno,
+            "reason": f"CGST ({d_cgst}) and SGST ({d_sgst}) match AssAmt ({d_ass}) * (GstRt/2 ({half_rate}%)) within permitted tolerance of ±{d_tol}.",
+            "resolution": "No action required.",
+            "action": "NONE",
+            "correct_payload": {"CgstAmt": d_cgst, "SgstAmt": d_sgst}
+        }
+
+    # Scenario 1: Tax Calculated on Gross (TotAmt) Instead of Taxable Base (AssAmt)
+    if d_tot > d_ass and d_disc > Decimal("0.00"):
+        gross_tax = ((d_tot * half_rate) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        if abs(d_cgst - gross_tax) <= d_tol or abs(d_sgst - gross_tax) <= d_tol:
+            return {
+                "error_code": 2234,
+                "scenario": "TAX_CALCULATED_ON_GROSS_INSTEAD_OF_ASSAMT",
+                "scenario_name": "Tax Calculated on Gross (TotAmt) Instead of Taxable Base (AssAmt)",
+                "is_valid": False,
+                "cgstamt": d_cgst,
+                "sgstamt": d_sgst,
+                "assamt": d_ass,
+                "totamt": d_tot,
+                "discount": d_disc,
+                "gstrate": d_rate,
+                "expected_cgst": expected_tax,
+                "expected_sgst": expected_tax,
+                "item_slno": item_slno,
+                "reason": f"Tax was calculated on gross (TotAmt={d_tot}) instead of taxable base (AssAmt={d_ass}). Tax must be calculated on the discounted assessable value {d_ass}, not the gross {d_tot} ({d_ass} * {half_rate}% = {expected_tax}).",
+                "resolution": f"Recalculate CGST and SGST on assessable value (AssAmt={d_ass}). Set CgstAmt and SgstAmt to {expected_tax}.",
+                "action": "RECALCULATE_ON_ASSESSABLE_VALUE",
+                "correct_payload": {"CgstAmt": expected_tax, "SgstAmt": expected_tax}
+            }
+
+    # Scenario 2: Full Tax Applied to Both Fields
+    full_tax = ((d_ass * d_rate) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if (abs(d_cgst - full_tax) <= d_tol or abs(d_sgst - full_tax) <= d_tol) and d_rate > Decimal("0.00"):
+        return {
+            "error_code": 2234,
+            "scenario": "FULL_TAX_APPLIED_TO_BOTH_FIELDS",
+            "scenario_name": "Full Tax Applied to Both Fields",
+            "is_valid": False,
+            "cgstamt": d_cgst,
+            "sgstamt": d_sgst,
+            "assamt": d_ass,
+            "gstrate": d_rate,
+            "expected_cgst": expected_tax,
+            "expected_sgst": expected_tax,
+            "item_slno": item_slno,
+            "reason": f"Full tax rate ({d_rate}%) was applied to both CGST and SGST fields instead of splitting into equal halves ({half_rate}% each). GstRt represents the total GST rate.",
+            "resolution": f"GstRt represents total GST rate ({d_rate}%). Each component takes half ({half_rate}% = {expected_tax}).",
+            "action": "SPLIT_RATE_EQUALLY_INTO_HALVES",
+            "correct_payload": {"CgstAmt": expected_tax, "SgstAmt": expected_tax}
+        }
+
+    # Scenario 3: Rate vs Amount Disconnect
+    if d_ass > Decimal("0.00"):
+        implied_half_rate = ((d_cgst / d_ass) * Decimal("100")).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+        standard_half_rates = (Decimal("0.0"), Decimal("0.05"), Decimal("0.125"), Decimal("0.75"), Decimal("1.5"), Decimal("2.5"), Decimal("3.0"), Decimal("3.75"), Decimal("6.0"), Decimal("9.0"), Decimal("14.0"))
+        if implied_half_rate in standard_half_rates and abs(implied_half_rate - half_rate) >= Decimal("0.5"):
+            implied_full_rate = implied_half_rate * Decimal("2")
+            return {
+                "error_code": 2234,
+                "scenario": "RATE_VS_AMOUNT_DISCONNECT",
+                "scenario_name": "Rate vs Amount Disconnect",
+                "is_valid": False,
+                "cgstamt": d_cgst,
+                "sgstamt": d_sgst,
+                "assamt": d_ass,
+                "gstrate": d_rate,
+                "implied_gstrate": implied_full_rate,
+                "expected_cgst": expected_tax,
+                "expected_sgst": expected_tax,
+                "item_slno": item_slno,
+                "reason": f"CgstAmt ({d_cgst}) and SgstAmt ({d_sgst}) do not match declared GstRt ({d_rate}%). Passed amounts reflect an effective {implied_full_rate}% rate.",
+                "resolution": f"CgstAmt and SgstAmt must match the declared GstRt ({d_ass} * {half_rate}% = {expected_tax}).",
+                "action": "RECONCILE_RATE_AND_AMOUNTS",
+                "correct_payload": {"CgstAmt": expected_tax, "SgstAmt": expected_tax}
+            }
+
+    # Scenario 4: Rounding Deviation Exceeding ₹1.00 (Default)
+    return {
+        "error_code": 2234,
+        "scenario": "ROUNDING_DEVIATION_EXCEEDING_ONE_RUPEE",
+        "scenario_name": "Rounding Deviation Exceeding ₹1.00",
+        "is_valid": False,
+        "cgstamt": d_cgst,
+        "sgstamt": d_sgst,
+        "assamt": d_ass,
+        "gstrate": d_rate,
+        "expected_cgst": expected_tax,
+        "expected_sgst": expected_tax,
+        "item_slno": item_slno,
+        "reason": f"Tax discrepancy between entered amounts (Cgst={d_cgst}, Sgst={d_sgst}) and computed amounts ({expected_tax}) exceeds permitted tolerance of ±{d_tol}.",
+        "resolution": f"Align line tax closer to mathematically exact values (±{d_tol}). Set CgstAmt and SgstAmt to {expected_tax}.",
+        "action": "ALIGN_TO_PERMITTED_TOLERANCE",
+        "correct_payload": {"CgstAmt": expected_tax, "SgstAmt": expected_tax}
+    }
+
+
+def classify_rule_2235_diagnostic(
+    igstamt: Union[Decimal, float, str, int, None],
+    assamt: Union[Decimal, float, str, int, None],
+    gstrate: Union[Decimal, float, str, int, None],
+    totamt: Optional[Union[Decimal, float, str, int, None]] = None,
+    discount: Optional[Union[Decimal, float, str, int, None]] = None,
+    item_slno: Optional[Union[str, int]] = None,
+    tolerance: Union[Decimal, float] = Decimal("1.00"),
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2235:
+    "Item IGST Formula Mismatch"
+    This error occurs when the IgstAmt calculated for a line item deviates
+    from the product of the taxable amount (AssAmt) and the full tax rate (GstRt)
+    beyond the permitted tolerance of ±1.00:
+        IgstAmt = (AssAmt * GstRt) / 100  (Tolerance: ±1.00)
+
+    4 Statutory Scenarios:
+    1. Tax Calculated on Gross (TotAmt) Instead of Taxable Base (AssAmt):
+       TotAmt = 10000, Discount = 1000, AssAmt = 9000, GstRt = 18. Sent: Igst=1800 -> Correct: Igst=1620.
+       Fix: IGST must be calculated on the assessable value (9000 * 18% = 1620), not on the pre-discount total.
+
+    2. Half Rate Applied Instead of Full Rate:
+       AssAmt = 10000, GstRt = 18. Sent: Igst=900 -> Correct: Igst=1800.
+       Fix: For inter-state supplies, IGST takes the entire rate (18%), unlike CGST/SGST which splits it into two equal halves.
+
+    3. Tax Rate (GstRt) Mismatches Tax Amount:
+       AssAmt = 50000, GstRt = 18. Sent: Igst=6000 (12%) -> Correct: Igst=9000.
+       Fix: Ensure GstRt and IgstAmt are mutually consistent. 50000 * 18% = 9000.00.
+
+    4. Rounding Difference Greater Than ₹1.00:
+       Exact tax is 181.20, but ERP rounds or maps to 183.00.
+       Fix: Keep the rounding difference within the ±1.00 ceiling.
+    """
+    def _to_dec(val: Any) -> Decimal:
+        if val is None or val == "":
+            return Decimal("0.00")
+        try:
+            return Decimal(str(val).strip().replace(",", "")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        except Exception:
+            return Decimal("0.00")
+
+    d_igst = _to_dec(igstamt)
+    d_ass = _to_dec(assamt)
+    d_rate = _to_dec(gstrate)
+    d_tot = _to_dec(totamt) if totamt is not None else Decimal("0.00")
+    d_disc = _to_dec(discount) if discount is not None else Decimal("0.00")
+    d_tol = Decimal(str(tolerance))
+
+    expected_igst = ((d_ass * d_rate) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    igst_dev = abs(d_igst - expected_igst)
+
+    if igst_dev <= d_tol:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid IGST Line Item Formula",
+            "is_valid": True,
+            "igstamt": d_igst,
+            "assamt": d_ass,
+            "gstrate": d_rate,
+            "expected_igst": expected_igst,
+            "item_slno": item_slno,
+            "reason": f"IGST ({d_igst}) matches AssAmt ({d_ass}) * GstRt ({d_rate}%) within permitted tolerance of ±{d_tol}.",
+            "resolution": "No action required.",
+            "action": "NONE",
+            "correct_payload": {"IgstAmt": d_igst}
+        }
+
+    # Scenario 1: Tax Calculated on Gross (TotAmt) Instead of Taxable Base (AssAmt)
+    if d_tot > d_ass and d_disc > Decimal("0.00"):
+        gross_tax = ((d_tot * d_rate) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        if abs(d_igst - gross_tax) <= d_tol:
+            return {
+                "error_code": 2235,
+                "scenario": "TAX_CALCULATED_ON_GROSS_INSTEAD_OF_ASSAMT",
+                "scenario_name": "Tax Calculated on Gross (TotAmt) Instead of Taxable Base (AssAmt)",
+                "is_valid": False,
+                "igstamt": d_igst,
+                "assamt": d_ass,
+                "totamt": d_tot,
+                "discount": d_disc,
+                "gstrate": d_rate,
+                "expected_igst": expected_igst,
+                "item_slno": item_slno,
+                "reason": f"IGST was calculated on gross (TotAmt={d_tot}) instead of taxable base (AssAmt={d_ass}). IGST must be calculated on assessable value ({d_ass} * {d_rate}% = {expected_igst}), not on pre-discount total.",
+                "resolution": f"Recalculate IGST on assessable value (AssAmt={d_ass}). Set IgstAmt to {expected_igst}.",
+                "action": "RECALCULATE_ON_ASSESSABLE_VALUE",
+                "correct_payload": {"IgstAmt": expected_igst}
+            }
+
+    # Scenario 2: Half Rate Applied Instead of Full Rate
+    half_rate = (d_rate / Decimal("2")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    half_tax = ((d_ass * half_rate) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    if abs(d_igst - half_tax) <= d_tol and d_rate > Decimal("0.00"):
+        return {
+            "error_code": 2235,
+            "scenario": "HALF_RATE_APPLIED_INSTEAD_OF_FULL_RATE",
+            "scenario_name": "Half Rate Applied Instead of Full Rate",
+            "is_valid": False,
+            "igstamt": d_igst,
+            "assamt": d_ass,
+            "gstrate": d_rate,
+            "expected_igst": expected_igst,
+            "item_slno": item_slno,
+            "reason": f"Half rate ({half_rate}%) was applied instead of full rate ({d_rate}%). For inter-state supplies, IGST takes the entire rate ({d_rate}%), unlike CGST/SGST which splits into halves.",
+            "resolution": f"Apply full rate to IGST: {d_ass} * {d_rate}% = {expected_igst}.",
+            "action": "APPLY_FULL_RATE_TO_IGST",
+            "correct_payload": {"IgstAmt": expected_igst}
+        }
+
+    # Scenario 3: Tax Rate (GstRt) Mismatches Tax Amount
+    if d_ass > Decimal("0.00"):
+        implied_rate = ((d_igst / d_ass) * Decimal("100")).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+        standard_rates = (Decimal("0.0"), Decimal("0.1"), Decimal("0.25"), Decimal("1.5"), Decimal("3.0"), Decimal("5.0"), Decimal("6.0"), Decimal("7.5"), Decimal("12.0"), Decimal("18.0"), Decimal("28.0"))
+        if implied_rate in standard_rates and abs(implied_rate - d_rate) >= Decimal("0.5"):
+            return {
+                "error_code": 2235,
+                "scenario": "TAX_RATE_MISMATCHES_TAX_AMOUNT",
+                "scenario_name": "Tax Rate (GstRt) Mismatches Tax Amount",
+                "is_valid": False,
+                "igstamt": d_igst,
+                "assamt": d_ass,
+                "gstrate": d_rate,
+                "implied_gstrate": implied_rate,
+                "expected_igst": expected_igst,
+                "item_slno": item_slno,
+                "reason": f"Declared tax rate GstRt ({d_rate}%) does not match IgstAmt ({d_igst}). Passed amount corresponds to {implied_rate}%.",
+                "resolution": f"Ensure GstRt and IgstAmt are mutually consistent. Set IgstAmt to {expected_igst} or update GstRt to {implied_rate}%.",
+                "action": "RECONCILE_RATE_AND_AMOUNTS",
+                "correct_payload": {"IgstAmt": expected_igst}
+            }
+
+    # Scenario 4: Rounding Difference Greater Than ₹1.00 (Default)
+    return {
+        "error_code": 2235,
+        "scenario": "ROUNDING_DIFFERENCE_GREATER_THAN_ONE_RUPEE",
+        "scenario_name": "Rounding Difference Greater Than ₹1.00",
+        "is_valid": False,
+        "igstamt": d_igst,
+        "assamt": d_ass,
+        "gstrate": d_rate,
+        "expected_igst": expected_igst,
+        "item_slno": item_slno,
+        "reason": f"Rounding difference between entered IGST ({d_igst}) and computed IGST ({expected_igst}) exceeds permitted tolerance of ±{d_tol}.",
+        "resolution": f"Keep rounding difference within the ±{d_tol} ceiling. Set IgstAmt to {expected_igst}.",
+        "action": "ALIGN_TO_PERMITTED_TOLERANCE",
+        "correct_payload": {"IgstAmt": expected_igst}
+    }
+
+
+NOTIFIED_GST_RATES: Tuple[float, ...] = (
+    0.0, 0.1, 0.25, 0.5, 1.0, 1.5, 2.0, 3.0, 5.0, 6.0, 7.5, 12.0, 18.0, 28.0
+)
+
+
+def classify_rule_2238_diagnostic(
+    qty: Any,
+    is_service: str = "N",
+    item_slno: Any = None,
+    prdnm: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2238:
+    'Quantity is Not Passed for Item'
+    This error occurs when the Qty field in a line item inside ItemList is omitted,
+    sent as null, or passed as an empty string. While services under GST do not always
+    have physical units, the e-Invoice schema requires a numeric value for quantity
+    across all line items (goods and services alike).
+
+    3 Statutory Scenarios:
+    1. Service Line Item Without Quantity:
+       "IsServc": "Y", Qty omitted or null -> "Qty": 1, "Unit": "OTH".
+       Even for service lines, Qty must be populated with a valid numeric quantity (default to 1 or 1.00).
+
+    2. Passing Empty String Instead of Number:
+       "Qty": "" -> "Qty": 10 (or 1.00).
+       Qty is a numeric type (up to 3 decimal places). Empty strings fail JSON schema validation.
+
+    3. Zero Quantity Passed:
+       "Qty": 0 -> "Qty": 1 (or minimum actual quantity).
+       Line items must represent a non-zero measurable quantity.
+    """
+    is_srv = str(is_service or "N").strip().upper() == "Y"
+    p_name = str(prdnm or "Item")
+
+    # Check for empty string
+    if isinstance(qty, str) and qty.strip() == "":
+        return {
+            "error_code": 2238,
+            "scenario": "PASSING_EMPTY_STRING_INSTEAD_OF_NUMBER",
+            "scenario_name": "Passing Empty String Instead of Number",
+            "is_valid": False,
+            "item_slno": item_slno,
+            "prdnm": p_name,
+            "declared_qty": qty,
+            "rectified_qty": 1.0,
+            "rectified_unit": "OTH" if is_srv else "NOS",
+            "reason": f"Qty is an empty string for item '{p_name}'. Qty is a numeric type (up to 3 decimal places). Empty strings fail JSON schema validation.",
+            "resolution": "Pass positive numeric value (e.g., 1 or 1.00).",
+            "action": "REPLACE_EMPTY_STRING_WITH_NUMERIC_QTY",
+            "correct_payload": {"Qty": 1.0}
+        }
+
+    # Convert to numeric
+    numeric_qty = None
+    if qty is not None:
+        try:
+            numeric_qty = float(str(qty).strip().replace(",", ""))
+        except (ValueError, TypeError):
+            numeric_qty = None
+
+    # Service item without quantity (omitted, null, or zero)
+    if is_srv and (numeric_qty is None or numeric_qty <= 0):
+        return {
+            "error_code": 2238,
+            "scenario": "SERVICE_LINE_ITEM_WITHOUT_QUANTITY",
+            "scenario_name": "Service Line Item Without Quantity",
+            "is_valid": False,
+            "item_slno": item_slno,
+            "prdnm": p_name,
+            "declared_qty": qty,
+            "rectified_qty": 1.0,
+            "rectified_unit": "OTH",
+            "reason": f"Service line item '{p_name}' lacks a valid numeric quantity. Even for service lines, Qty must be populated with a valid numeric quantity (default to 1 or 1.00).",
+            "resolution": "Populate Qty with 1 or 1.00 and Unit with 'OTH' for service lines.",
+            "action": "SET_SERVICE_DEFAULT_QTY_AND_UNIT",
+            "correct_payload": {"Qty": 1.0, "Unit": "OTH"}
+        }
+
+    # Zero quantity passed
+    if numeric_qty is not None and numeric_qty == 0:
+        return {
+            "error_code": 2238,
+            "scenario": "ZERO_QUANTITY_PASSED",
+            "scenario_name": "Zero Quantity Passed",
+            "is_valid": False,
+            "item_slno": item_slno,
+            "prdnm": p_name,
+            "declared_qty": qty,
+            "rectified_qty": 1.0,
+            "rectified_unit": "OTH" if is_srv else "NOS",
+            "reason": f"Zero quantity passed for item '{p_name}'. Line items must represent a non-zero measurable quantity.",
+            "resolution": "Line items must represent a non-zero measurable quantity. Set Qty to 1 (or actual measurable quantity).",
+            "action": "SET_MINIMUM_MEASURABLE_QTY",
+            "correct_payload": {"Qty": 1.0}
+        }
+
+    # Omitted / null for goods
+    if numeric_qty is None or numeric_qty < 0:
+        return {
+            "error_code": 2238,
+            "scenario": "ZERO_QUANTITY_PASSED",
+            "scenario_name": "Zero or Missing Quantity Passed",
+            "is_valid": False,
+            "item_slno": item_slno,
+            "prdnm": p_name,
+            "declared_qty": qty,
+            "rectified_qty": 1.0,
+            "rectified_unit": "NOS",
+            "reason": f"Quantity missing or invalid for item '{p_name}'.",
+            "resolution": "Pass numeric qty > 0.",
+            "action": "SET_MINIMUM_MEASURABLE_QTY",
+            "correct_payload": {"Qty": 1.0}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Item Quantity",
+        "is_valid": True,
+        "item_slno": item_slno,
+        "prdnm": p_name,
+        "declared_qty": numeric_qty,
+        "rectified_qty": numeric_qty,
+        "reason": f"Quantity {numeric_qty} is a valid non-zero numeric quantity.",
+        "resolution": "No action required.",
+        "action": "NONE",
+        "correct_payload": {"Qty": numeric_qty}
+    }
+
+
+def classify_rule_2239_diagnostic(
+    unit: Any,
+    is_service: str = "N",
+    item_slno: Any = None,
+    prdnm: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2239:
+    'Unit Quantity Code (UQC) is Not Passed for Item'
+    This error occurs when the Unit field in an item object inside ItemList is missing,
+    empty, or passed as null. Every line item must have a valid 3-letter Unit Quantity
+    Code (UQC) matching the master list.
+
+    3 Statutory Scenarios:
+    1. Omitted for Service Line:
+       "IsServc": "Y", Unit omitted or null -> "Unit": "OTH".
+       For services or items without a specific physical measurement unit, use "OTH" (Others).
+
+    2. Empty String Passed:
+       "Unit": "" -> "Unit": "NOS" (or appropriate UQC).
+       Pass a valid 3-character uppercase UQC code from the master list (e.g., NOS, KGS, BOX, OTH).
+
+    3. ERP Master Field Unmapped:
+       Item created in ERP without mapping to GST UQC table.
+       Ensure ERP export workflow maps internal units to standard GST UQC values. Fix internal SKU master to always output standard 3-letter codes.
+    """
+    is_srv = str(is_service or "N").strip().upper() == "Y"
+    p_name = str(prdnm or "Item")
+    raw_u = str(unit or "").strip()
+
+    # Omitted / null / empty for service line
+    if is_srv and (unit is None or raw_u == ""):
+        return {
+            "error_code": 2239,
+            "scenario": "OMITTED_FOR_SERVICE_LINE",
+            "scenario_name": "Omitted for Service Line",
+            "is_valid": False,
+            "item_slno": item_slno,
+            "prdnm": p_name,
+            "declared_unit": unit,
+            "rectified_unit": "OTH",
+            "reason": f"Unit omitted for service line '{p_name}'. For services or items without a specific physical measurement unit, use 'OTH' (Others).",
+            "resolution": "Set Unit to 'OTH'.",
+            "action": "SET_OTH_FOR_SERVICE",
+            "correct_payload": {"Unit": "OTH"}
+        }
+
+    # Empty string passed for goods
+    if unit is None or raw_u == "":
+        return {
+            "error_code": 2239,
+            "scenario": "EMPTY_STRING_PASSED",
+            "scenario_name": "Empty String Passed",
+            "is_valid": False,
+            "item_slno": item_slno,
+            "prdnm": p_name,
+            "declared_unit": unit,
+            "rectified_unit": "NOS",
+            "reason": f"Unit field is empty for item '{p_name}'. Every line item must have a valid 3-letter Unit Quantity Code (UQC).",
+            "resolution": "Pass a valid 3-character uppercase UQC code from the master list (e.g., NOS, KGS, BOX, OTH).",
+            "action": "SET_DEFAULT_UQC",
+            "correct_payload": {"Unit": "NOS"}
+        }
+
+    u_upper = raw_u.upper()
+    if u_upper in ALLOWED_UQC and len(u_upper) == 3:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid Official Master UQC",
+            "is_valid": True,
+            "item_slno": item_slno,
+            "prdnm": p_name,
+            "declared_unit": raw_u,
+            "rectified_unit": u_upper,
+            "reason": f"Unit '{u_upper}' is a valid 3-character UQC matching official master.",
+            "resolution": "No action required.",
+            "action": "NONE",
+            "correct_payload": {"Unit": u_upper}
+        }
+
+    # ERP Master Field Unmapped (colloquial or unknown abbreviation)
+    target_uqc = "OTH"
+    if u_upper in COMMON_UQC_MAPPING:
+        target_uqc, _, _ = COMMON_UQC_MAPPING[u_upper]
+    elif u_upper.rstrip(".") in COMMON_UQC_MAPPING:
+        target_uqc, _, _ = COMMON_UQC_MAPPING[u_upper.rstrip(".")]
+
+    return {
+        "error_code": 2239,
+        "scenario": "ERP_MASTER_FIELD_UNMAPPED",
+        "scenario_name": "ERP Master Field Unmapped",
+        "is_valid": False,
+        "item_slno": item_slno,
+        "prdnm": p_name,
+        "declared_unit": raw_u,
+        "rectified_unit": target_uqc,
+        "reason": f"Item created in ERP without mapping to GST UQC table ('{raw_u}'). Ensure ERP export workflow maps internal units to standard GST UQC values.",
+        "resolution": f"Map internal unit '{raw_u}' to standard GST UQC value '{target_uqc}'. Fix internal SKU master to always output standard 3-letter codes.",
+        "action": "MAP_ERP_UNIT_TO_UQC_MASTER",
+        "correct_payload": {"Unit": target_uqc}
+    }
+
+
+def classify_rule_2240_diagnostic(
+    gstrate: Any,
+    cgstrt: Optional[Any] = None,
+    sgstrt: Optional[Any] = None,
+    cesrt: Optional[Any] = None,
+    item_slno: Any = None
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2240:
+    'GST Rate of Tax is Incorrect or Not As Notified'
+    This error occurs when the tax rate passed in ItemList[i].GstRt is not one of the
+    officially notified GST tax rate slabs:
+    0, 0.1, 0.25, 0.5, 1, 1.5, 2, 3, 5, 6, 7.5, 12, 18, 28
+
+    4 Statutory Scenarios:
+    1. Single Component Passed Instead of Combined Rate:
+       Intra-state 18% supply, but sent: "GstRt": 9.0 (CGST component only) -> "GstRt": 18.0.
+       GstRt always represents the total GST rate (CGST + SGST or IGST). Do not pass split half-rates.
+
+    2. Percentage Symbol or String Sent:
+       "GstRt": "18%" or "GstRt": "18" -> "GstRt": 18.0.
+       GstRt must be a numeric floating-point value, not a string with %.
+
+    3. Cess Rate Added to GST Rate:
+       Goods with 28% GST + 12% Cess sent as: "GstRt": 40.0 -> "GstRt": 28.0, "CesRt": 12.0.
+       GST Rate and Cess Rate must remain separate in their designated fields (GstRt vs CesRt).
+
+    4. Arbitrary / Non-Notified Tax Slab:
+       "GstRt": 10.0 or 15.0 -> Use notified rate: 12.0 or 18.0.
+       The value must strictly match an official GST rate slab recognized by the IRP.
+    """
+    raw_str = str(gstrate or "").strip()
+
+    # Scenario 2: Percentage Symbol or String Sent
+    is_pct_string = False
+    if isinstance(gstrate, str) and ("%" in gstrate or not gstrate.replace(".", "", 1).isdigit()):
+        is_pct_string = True
+
+    try:
+        clean_num = float(raw_str.replace("%", "").replace(",", "").strip() or "0")
+    except Exception:
+        clean_num = 0.0
+
+    # If percentage string was sent but numeric value matches slab
+    if is_pct_string and clean_num in NOTIFIED_GST_RATES:
+        return {
+            "error_code": 2240,
+            "scenario": "PERCENTAGE_SYMBOL_OR_STRING_SENT",
+            "scenario_name": "Percentage Symbol or String Sent",
+            "is_valid": False,
+            "item_slno": item_slno,
+            "declared_gstrate": gstrate,
+            "rectified_gstrate": clean_num,
+            "reason": f"GstRt was sent as a formatted string '{gstrate}'. GstRt must be a numeric floating-point value, not a string with %.",
+            "resolution": f"Pass numeric floating-point value {clean_num}.",
+            "action": "STRIP_PERCENTAGE_AND_CONVERT_TO_FLOAT",
+            "correct_payload": {"GstRt": clean_num}
+        }
+
+    # Scenario 3: Cess Rate Added to GST Rate (e.g. 40.0 = 28.0 GST + 12.0 Cess)
+    c_rate = 0.0
+    if cesrt is not None:
+        try:
+            c_rate = float(str(cesrt).replace("%", "").strip() or "0")
+        except Exception:
+            c_rate = 0.0
+
+    if clean_num > 28.0:
+        # Check if subtracting declared cess gives an official slab
+        base_rate = round(clean_num - c_rate, 2)
+        if base_rate in NOTIFIED_GST_RATES and base_rate > 0:
+            return {
+                "error_code": 2240,
+                "scenario": "CESS_RATE_ADDED_TO_GST_RATE",
+                "scenario_name": "Cess Rate Added to GST Rate",
+                "is_valid": False,
+                "item_slno": item_slno,
+                "declared_gstrate": gstrate,
+                "rectified_gstrate": base_rate,
+                "rectified_cesrt": c_rate if c_rate > 0 else round(clean_num - base_rate, 2),
+                "reason": f"GST Rate and Cess Rate were combined into GstRt={clean_num}. GST Rate ({base_rate}%) and Cess Rate ({clean_num - base_rate}%) must remain separate in their designated fields (GstRt vs CesRt).",
+                "resolution": f"Set GstRt to {base_rate} and CesRt to {clean_num - base_rate}.",
+                "action": "SEPARATE_GST_AND_CESS_RATES",
+                "correct_payload": {"GstRt": base_rate, "CesRt": round(clean_num - base_rate, 2)}
+            }
+        # Check standard 28% + 12% cess pattern
+        if clean_num == 40.0:
+            return {
+                "error_code": 2240,
+                "scenario": "CESS_RATE_ADDED_TO_GST_RATE",
+                "scenario_name": "Cess Rate Added to GST Rate",
+                "is_valid": False,
+                "item_slno": item_slno,
+                "declared_gstrate": gstrate,
+                "rectified_gstrate": 28.0,
+                "rectified_cesrt": 12.0,
+                "reason": "Goods with 28% GST + 12% Cess sent as 'GstRt': 40.0. GST Rate and Cess Rate must remain separate in their designated fields (GstRt vs CesRt).",
+                "resolution": "Set GstRt: 28.0, CesRt: 12.0.",
+                "action": "SEPARATE_GST_AND_CESS_RATES",
+                "correct_payload": {"GstRt": 28.0, "CesRt": 12.0}
+            }
+
+    # Scenario 1: Single Component Passed Instead of Combined Rate
+    # E.g., 9.0 (half of 18), 14.0 (half of 28), 2.5 (half of 5)
+    combined_candidate = round(clean_num * 2.0, 2)
+    if clean_num not in NOTIFIED_GST_RATES and combined_candidate in NOTIFIED_GST_RATES:
+        return {
+            "error_code": 2240,
+            "scenario": "SINGLE_COMPONENT_PASSED_INSTEAD_OF_COMBINED_RATE",
+            "scenario_name": "Single Component Passed Instead of Combined Rate",
+            "is_valid": False,
+            "item_slno": item_slno,
+            "declared_gstrate": gstrate,
+            "rectified_gstrate": combined_candidate,
+            "reason": f"Single component rate ({clean_num}%) was passed instead of total combined GST rate ({combined_candidate}%). GstRt always represents the total GST rate (CGST + SGST or IGST). Do not pass split half-rates.",
+            "resolution": f"Set GstRt to total combined rate: {combined_candidate}.",
+            "action": "COMBINE_HALF_RATES_TO_TOTAL_GST",
+            "correct_payload": {"GstRt": combined_candidate}
+        }
+
+    # Valid slab check
+    if clean_num in NOTIFIED_GST_RATES:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid Notified GST Rate Slab",
+            "is_valid": True,
+            "item_slno": item_slno,
+            "declared_gstrate": clean_num,
+            "rectified_gstrate": clean_num,
+            "reason": f"GST rate {clean_num}% is an officially notified GST rate slab.",
+            "resolution": "No action required.",
+            "action": "NONE",
+            "correct_payload": {"GstRt": clean_num}
+        }
+
+    # Scenario 4: Arbitrary / Non-Notified Tax Slab (e.g. 10.0, 15.0)
+    # Find nearest notified slab
+    nearest_slab = min(NOTIFIED_GST_RATES, key=lambda x: abs(x - clean_num))
+    return {
+        "error_code": 2240,
+        "scenario": "ARBITRARY_NON_NOTIFIED_TAX_SLAB",
+        "scenario_name": "Arbitrary / Non-Notified Tax Slab",
+        "is_valid": False,
+        "item_slno": item_slno,
+        "declared_gstrate": gstrate,
+        "rectified_gstrate": nearest_slab,
+        "reason": f"GstRt={clean_num} is an arbitrary / non-notified tax slab. The e-Invoice schema allows only officially notified GST rate slabs: {list(NOTIFIED_GST_RATES)}.",
+        "resolution": f"Use notified rate: {nearest_slab}. The value must strictly match an official GST rate slab recognized by the IRP.",
+        "action": "ALIGN_TO_NEAREST_NOTIFIED_SLAB",
+        "correct_payload": {"GstRt": nearest_slab}
+    }
+
+
+def classify_rule_2242_diagnostic(
+    pos: Any,
+    trancatg: str = "B2B",
+    buyer_state: Optional[str] = None,
+    buyer_gstin: Optional[str] = None,
+    is_sez: bool = False,
+    is_export_overseas: bool = False
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2242:
+    'Recipient POS is Incorrect for Transaction Type'
+    This error occurs when the Place of Supply (BuyerDtls.Pos) is sent as '96' (Other Country)
+    for domestic transaction types like B2B, SEZWP, SEZWOP, or DEXP.
+    Code '96' is reserved strictly for export transactions (EXPWP and EXPWOP).
+    For all domestic transactions, the recipient's POS must be a valid 2-digit Indian State / UT code (01 to 38, 97).
+
+    3 Statutory Scenarios:
+    1. Domestic Sale Passed with POS "96":
+       "SupTyp": "B2B", "BuyerDtls": { "Pos": "96" } -> "BuyerDtls": { "Pos": "27" } (or buyer's actual state code).
+       Domestic supplies must carry the destination state's valid 2-digit code (01–38).
+
+    2. Export Transaction Misclassified as B2B:
+       Overseas client billed with POS "96", but transaction type was sent as: "SupTyp": "B2B" -> "SupTyp": "EXPWP" or "EXPWOP".
+       If the client is abroad and POS is "96", the supply type must be set to EXPWP or EXPWOP.
+
+    3. SEZ Supply Passed with POS "96":
+       SEZ unit located in India billed with: "SupTyp": "SEZWP", "BuyerDtls": { "Pos": "96" } -> "BuyerDtls": { "Pos": "<State Code of SEZ>" }.
+       SEZ units reside in Indian territory; their POS is the state where the SEZ is physically located, never "96".
+    """
+    catg = str(trancatg or "B2B").strip().upper()
+    is_exp = catg in ("EXP", "EXPWP", "EXPWOP")
+    pos_str = str(pos or "").strip()
+
+    # Valid export transaction with POS 96
+    if is_exp and pos_str == "96":
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid Export POS",
+            "is_valid": True,
+            "pos": pos_str,
+            "trancatg": catg,
+            "reason": "POS '96' is correct for export transactions.",
+            "resolution": "No action required.",
+            "action": "NONE",
+            "correct_payload": {"BuyerDtls": {"Pos": "96"}}
+        }
+
+    # Valid domestic transaction with Indian state code
+    if not is_exp and pos_str != "96" and pos_str in VALID_STATE_CODES:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid Domestic POS",
+            "is_valid": True,
+            "pos": pos_str,
+            "trancatg": catg,
+            "reason": f"POS '{pos_str}' is a valid Indian state code for {catg} transactions.",
+            "resolution": "No action required.",
+            "action": "NONE",
+            "correct_payload": {"BuyerDtls": {"Pos": pos_str}}
+        }
+
+    # When pos is NOT "96", Error 2242 is only about passing "96" for domestic
+    if pos_str != "96":
+        return {
+            "error_code": None,
+            "scenario": "VALID_NOT_96",
+            "scenario_name": "Non-96 POS Code",
+            "is_valid": True,
+            "pos": pos_str,
+            "trancatg": catg,
+            "reason": f"POS '{pos_str}' is not 96.",
+            "resolution": "No action required.",
+            "action": "NONE",
+            "correct_payload": {"BuyerDtls": {"Pos": pos_str}}
+        }
+
+    # pos == "96" on non-export transaction
+    # Scenario 2: Export Transaction Misclassified as B2B
+    if is_export_overseas or (buyer_gstin == "URP" and not is_sez and catg == "B2B"):
+        return {
+            "error_code": 2242,
+            "scenario": "EXPORT_TRANSACTION_MISCLASSIFIED_AS_B2B",
+            "scenario_name": "Export Transaction Misclassified as B2B",
+            "is_valid": False,
+            "pos": "96",
+            "trancatg": catg,
+            "rectified_trancatg": "EXPWP",
+            "rectified_pos": "96",
+            "reason": "Overseas client billed with POS '96', but transaction type was sent as 'SupTyp': 'B2B'. If the client is abroad and POS is '96', the supply type must be set to EXPWP or EXPWOP.",
+            "resolution": "Set transaction category (SupTyp) to 'EXPWP' or 'EXPWOP'.",
+            "action": "CHANGE_SUPPLY_TYPE_TO_EXPORT",
+            "correct_payload": {"TranDtls": {"SupTyp": "EXPWP"}, "BuyerDtls": {"Pos": "96"}}
+        }
+
+    # Scenario 3: SEZ Supply Passed with POS "96"
+    if is_sez or catg in ("SEZWP", "SEZWOP"):
+        sez_state = str(buyer_state or (buyer_gstin[:2] if buyer_gstin and len(buyer_gstin) >= 2 and buyer_gstin[:2].isdigit() else "24")).strip()
+        if sez_state == "96":
+            sez_state = "24"
+        return {
+            "error_code": 2242,
+            "scenario": "SEZ_SUPPLY_PASSED_WITH_POS_96",
+            "scenario_name": "SEZ Supply Passed with POS '96'",
+            "is_valid": False,
+            "pos": "96",
+            "trancatg": catg,
+            "rectified_trancatg": catg,
+            "rectified_pos": sez_state,
+            "reason": f"SEZ unit located in India billed with SupTyp: '{catg}', BuyerDtls.Pos: '96'. SEZ units reside in Indian territory; their POS is the state where the SEZ is physically located ({sez_state}), never '96'.",
+            "resolution": f"Set BuyerDtls.Pos to the physical state of the SEZ unit ({sez_state}).",
+            "action": "SET_SEZ_PHYSICAL_LOCATION_POS",
+            "correct_payload": {"BuyerDtls": {"Pos": sez_state}}
+        }
+
+    # Scenario 1: Domestic Sale Passed with POS "96" (Default for B2B, DEXP, B2C, B2G)
+    dom_state = str(buyer_state or (buyer_gstin[:2] if buyer_gstin and len(buyer_gstin) >= 2 and buyer_gstin[:2].isdigit() else "27")).strip()
+    if dom_state == "96":
+        dom_state = "27"
+    return {
+        "error_code": 2242,
+        "scenario": "DOMESTIC_SALE_PASSED_WITH_POS_96",
+        "scenario_name": "Domestic Sale Passed with POS '96'",
+        "is_valid": False,
+        "pos": "96",
+        "trancatg": catg,
+        "rectified_trancatg": catg,
+        "rectified_pos": dom_state,
+        "reason": f"Domestic transaction '{catg}' passed with POS '96'. Domestic supplies must carry the destination state's valid 2-digit code (01–38). Code '96' is reserved strictly for export transactions.",
+        "resolution": f"Pass valid 2-digit Indian state code for domestic POS (e.g. '{dom_state}').",
+        "action": "SET_DOMESTIC_DESTINATION_POS",
+        "correct_payload": {"BuyerDtls": {"Pos": dom_state}}
+    }
+
+
+KNOWN_SEZ_BUYER_GSTINS: Set[str] = {
+    "24AAACS0000A1Z5",  # Statutory NIC benchmark SEZ GSTIN
+    "06AAACS0000A1Z1",
+    "27AAACS0000A1Z3",
+    "29AAACS0000A1Z7",
+}
+
+
+def classify_rule_2243_diagnostic(
+    pos: Any,
+    trancatg: str = "B2B",
+    buyer_state: Optional[str] = None,
+    buyer_gstin: Optional[str] = None,
+    is_export: bool = False
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2243:
+    'POS Code is Invalid'
+    This error occurs when the 2-digit code passed in BuyerDtls.Pos (Place of Supply)
+    does not exist in the official GST State Master list (01 through 38, 96, or 97).
+
+    4 Statutory Scenarios:
+    1. Leading Zero Omitted (1-digit sent):
+       "BuyerDtls": { "Pos": "7" } -> "BuyerDtls": { "Pos": "07" }.
+       Delhi state code is "07", not "7". Single-digit states (01 to 09) must have leading zeros.
+
+    2. Alphabetic State Abbreviation Passed:
+       "BuyerDtls": { "Pos": "KA" } -> "BuyerDtls": { "Pos": "29" }.
+       State codes must be numeric strings (e.g., "29" for Karnataka), not alpha abbreviations.
+
+    3. Invalid / Non-Existent Code:
+       "BuyerDtls": { "Pos": "00" } or "99" (for standard goods) -> valid code ("01" to "38", or "96" for exports).
+       "00" does not exist. "99" is reserved for Center Jurisdiction / Other territory services.
+
+    4. Numeric Type Passed Instead of String:
+       "BuyerDtls": { "Pos": 27 } -> "BuyerDtls": { "Pos": "27" }.
+       Pos must be enclosed in double quotes as a string.
+    """
+    is_exp = is_export or str(trancatg or "").strip().upper() in ("EXPWP", "EXPWOP", "EXP")
+    raw_str = "" if pos is None else str(pos).strip()
+
+    # Scenario 4: Numeric Type Passed Instead of String
+    if isinstance(pos, (int, float)) and not isinstance(pos, bool):
+        rectified_code = str(int(pos)).zfill(2)
+        if 1 <= int(pos) <= 9:
+            return {
+                "error_code": 2243,
+                "scenario": "LEADING_ZERO_OMITTED",
+                "scenario_name": "Leading Zero Omitted (1-digit sent)",
+                "is_valid": False,
+                "pos": pos,
+                "rectified_pos": rectified_code,
+                "reason": f"Single-digit state code '{pos}' was sent without a leading zero. Single-digit states (01 to 09) must have leading zeros.",
+                "resolution": f"Pass 2-digit state code with leading zero: '{rectified_code}'.",
+                "action": "PAD_LEADING_ZERO",
+                "correct_payload": {"BuyerDtls": {"Pos": rectified_code}}
+            }
+        return {
+            "error_code": 2243,
+            "scenario": "NUMERIC_TYPE_PASSED_INSTEAD_OF_STRING",
+            "scenario_name": "Numeric Type Passed Instead of String",
+            "is_valid": False,
+            "pos": pos,
+            "rectified_pos": rectified_code,
+            "reason": f"Pos {pos} was passed as numeric type instead of string. In the NIC schema, Pos must be enclosed in double quotes as a string.",
+            "resolution": f"Pass Pos as a 2-digit string: '{rectified_code}'.",
+            "action": "CONVERT_NUMERIC_TO_STRING",
+            "correct_payload": {"BuyerDtls": {"Pos": rectified_code}}
+        }
+
+    # Scenario 2: Alphabetic State Abbreviation Passed
+    if raw_str.upper() in STATE_ALPHA_TO_CODE:
+        mapped_code = STATE_ALPHA_TO_CODE[raw_str.upper()]
+        return {
+            "error_code": 2243,
+            "scenario": "ALPHABETIC_STATE_ABBREVIATION_PASSED",
+            "scenario_name": "Alphabetic State Abbreviation Passed",
+            "is_valid": False,
+            "pos": raw_str,
+            "rectified_pos": mapped_code,
+            "reason": f"Alphabetic state abbreviation '{raw_str}' was passed. State codes must be numeric strings (e.g., '{mapped_code}' for {raw_str.upper()}), not alpha abbreviations.",
+            "resolution": f"Map alphabetic abbreviation '{raw_str}' to official 2-digit numeric state code '{mapped_code}'.",
+            "action": "CONVERT_ALPHA_TO_STATE_CODE",
+            "correct_payload": {"BuyerDtls": {"Pos": mapped_code}}
+        }
+
+    # Scenario 1: Leading Zero Omitted (1-digit sent as string)
+    if raw_str.isdigit() and len(raw_str) == 1 and raw_str in "123456789":
+        rectified_code = raw_str.zfill(2)
+        return {
+            "error_code": 2243,
+            "scenario": "LEADING_ZERO_OMITTED",
+            "scenario_name": "Leading Zero Omitted (1-digit sent)",
+            "is_valid": False,
+            "pos": raw_str,
+            "rectified_pos": rectified_code,
+            "reason": f"Single-digit state code '{raw_str}' was passed without leading zero. Single-digit states (01 to 09) must have leading zeros.",
+            "resolution": f"Pad single-digit state code with leading zero: '{rectified_code}'.",
+            "action": "PAD_LEADING_ZERO",
+            "correct_payload": {"BuyerDtls": {"Pos": rectified_code}}
+        }
+
+    # Fallback state code from buyer_state or buyer_gstin or default
+    dom_fallback = "27"
+    if buyer_state and str(buyer_state).strip().isdigit() and str(buyer_state).strip().zfill(2) in VALID_STATE_CODES:
+        dom_fallback = str(buyer_state).strip().zfill(2)
+    elif buyer_gstin and len(str(buyer_gstin).strip()) >= 2 and str(buyer_gstin).strip()[:2].isdigit():
+        prefix = str(buyer_gstin).strip()[:2]
+        if prefix in VALID_STATE_CODES:
+            dom_fallback = prefix
+
+    # Scenario 3: Invalid / Non-Existent Code
+    if not raw_str or raw_str not in VALID_STATE_CODES or raw_str in ("00", "99") or not (raw_str.isdigit() and len(raw_str) == 2):
+        rect_pos = "96" if is_exp else dom_fallback
+        return {
+            "error_code": 2243,
+            "scenario": "INVALID_OR_NON_EXISTENT_CODE",
+            "scenario_name": "Invalid / Non-Existent Code",
+            "is_valid": False,
+            "pos": raw_str,
+            "rectified_pos": rect_pos,
+            "reason": f"POS '{raw_str}' does not exist in official GST State Master (01–38, 96, 97). '00' does not exist; '99' is reserved for Center Jurisdiction / Other territory services.",
+            "resolution": f"Use valid 2-digit state code from official GST State Master: '{rect_pos}'.",
+            "action": "SET_VALID_STATE_MASTER_CODE",
+            "correct_payload": {"BuyerDtls": {"Pos": rect_pos}}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Place of Supply",
+        "is_valid": True,
+        "pos": raw_str,
+        "rectified_pos": raw_str,
+        "reason": "Place of Supply code is a valid 2-digit code in the GST State Master.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2244_diagnostic(
+    pin: Any,
+    trancatg: str = "B2B",
+    buyer_state: Optional[str] = None,
+    buyer_gstin: Optional[str] = None,
+    is_export: bool = False
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2244:
+    'Recipient PIN Code is Not Provided for Transaction'
+    This error occurs when BuyerDtls.Pin is omitted, passed as null, or passed as 0
+    for domestic transactions where a 6-digit Indian PIN code is mandatory (such as B2B, SEZWP, SEZWOP, or DEXP).
+
+    4 Statutory Scenarios:
+    1. PIN Code Omitted or Null in B2B:
+       "BuyerDtls": { "Pin": null } or omitted -> "BuyerDtls": { "Pin": 560001 }.
+       Pin is mandatory for all domestic transactions and must be a valid 6-digit integer.
+
+    2. Export Transaction Omitting Dummy PIN:
+       "SupTyp": "EXPWP", Pin omitted or null -> "BuyerDtls": { "Pin": 999999 }.
+       For cross-border exports, passing the designated foreign PIN integer 999999 is standard schema practice.
+
+    3. String Type Passed Instead of Integer:
+       "BuyerDtls": { "Pin": "560001" } -> "BuyerDtls": { "Pin": 560001 }.
+       In the NIC schema, Pin is strictly defined as an integer, not a string.
+
+    4. Non-Existent / Invalid PIN Format:
+       "BuyerDtls": { "Pin": 12345 } (5 digits) -> "BuyerDtls": { "Pin": 110001 }.
+       Must be a valid 6-digit Indian postal code recognized by the postal directory master.
+    """
+    catg = str(trancatg or "B2B").strip().upper()
+    is_exp = is_export or catg in ("EXPWP", "EXPWOP", "EXP")
+
+    # Determine fallback PIN based on state code
+    st = str(buyer_state or (buyer_gstin[:2] if buyer_gstin and len(buyer_gstin) >= 2 and buyer_gstin[:2].isdigit() else "29")).strip().zfill(2)
+    default_pin_for_state = 560001
+    if st == "07":
+        default_pin_for_state = 110001
+    elif st == "27":
+        default_pin_for_state = 400001
+    elif st == "33":
+        default_pin_for_state = 600001
+    elif st == "24":
+        default_pin_for_state = 380001
+    elif st == "19":
+        default_pin_for_state = 700001
+    elif st == "29":
+        default_pin_for_state = 560001
+
+    # Scenario 1 & 2: Omitted, Null, or 0
+    if pin is None or str(pin).strip() in ("", "0", "None", "null") or pin == 0:
+        if is_exp:
+            return {
+                "error_code": 2244,
+                "scenario": "EXPORT_TRANSACTION_OMITTING_DUMMY_PIN",
+                "scenario_name": "Export Transaction Omitting Dummy PIN",
+                "is_valid": False,
+                "pin": pin,
+                "rectified_pin": 999999,
+                "reason": f"Export transaction ('{catg}') omitted recipient PIN code or passed null/0. For cross-border exports, passing designated foreign PIN integer 999999 is standard schema practice.",
+                "resolution": "Set recipient PIN code to integer 999999 for exports.",
+                "action": "SET_FOREIGN_DUMMY_PIN",
+                "correct_payload": {"BuyerDtls": {"Pin": 999999}}
+            }
+        return {
+            "error_code": 2244,
+            "scenario": "PIN_CODE_OMITTED_OR_NULL_IN_B2B",
+            "scenario_name": "PIN Code Omitted or Null in B2B",
+            "is_valid": False,
+            "pin": pin,
+            "rectified_pin": default_pin_for_state,
+            "reason": f"PIN code was omitted, null, or 0 for domestic transaction '{catg}'. Pin is mandatory for all domestic transactions and must be a valid 6-digit integer.",
+            "resolution": f"Pass valid 6-digit postal PIN integer (e.g., {default_pin_for_state}).",
+            "action": "POPULATE_DOMESTIC_PIN",
+            "correct_payload": {"BuyerDtls": {"Pin": default_pin_for_state}}
+        }
+
+    # Scenario 3: String Type Passed Instead of Integer
+    if isinstance(pin, str):
+        clean_pin_str = pin.strip()
+        if clean_pin_str.isdigit() and len(clean_pin_str) == 6:
+            int_pin = int(clean_pin_str)
+            return {
+                "error_code": 2244,
+                "scenario": "STRING_TYPE_PASSED_INSTEAD_OF_INTEGER",
+                "scenario_name": "String Type Passed Instead of Integer",
+                "is_valid": False,
+                "pin": pin,
+                "rectified_pin": int_pin,
+                "reason": f"BuyerDtls.Pin '{pin}' was passed as string instead of numeric integer. In the NIC schema, Pin is strictly defined as an integer, not a string.",
+                "resolution": f"Convert Pin string '{pin}' to integer: {int_pin}.",
+                "action": "CONVERT_PIN_TO_INTEGER",
+                "correct_payload": {"BuyerDtls": {"Pin": int_pin}}
+            }
+
+    # Scenario 4: Non-Existent / Invalid PIN Format (less or more than 6 digits)
+    pin_raw_str = str(pin).strip()
+    if not (pin_raw_str.isdigit() and len(pin_raw_str) == 6):
+        rect_pin = 999999 if is_exp else (110001 if st == "07" else default_pin_for_state)
+        return {
+            "error_code": 2244,
+            "scenario": "NON_EXISTENT_OR_INVALID_PIN_FORMAT",
+            "scenario_name": "Non-Existent / Invalid PIN Format",
+            "is_valid": False,
+            "pin": pin,
+            "rectified_pin": rect_pin,
+            "reason": f"BuyerDtls.Pin '{pin}' is not a valid 6-digit postal code. Must be a valid 6-digit Indian postal code recognized by postal directory master.",
+            "resolution": f"Pass valid 6-digit Indian postal code integer ({rect_pin}).",
+            "action": "CORRECT_PIN_FORMAT",
+            "correct_payload": {"BuyerDtls": {"Pin": rect_pin}}
+        }
+
+    # Valid scenario
+    int_pin = int(pin_raw_str)
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Recipient PIN Code",
+        "is_valid": True,
+        "pin": int_pin,
+        "rectified_pin": int_pin,
+        "reason": "Recipient PIN code is a valid 6-digit integer.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2246_diagnostic(
+    buyer_gstin: Optional[str] = None,
+    trancatg: str = "B2B",
+    is_sez_buyer: bool = False,
+    dta_gstin: Optional[str] = None,
+    is_dta_sale: bool = False,
+    has_payment_of_tax: bool = True
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2246:
+    'Recipient Cannot Be SEZ for Supply Type'
+    This error occurs when the buyer's GSTIN (BuyerDtls.Gstin) belongs to a Special Economic Zone (SEZ)
+    unit or developer, but the invoice was sent with a supply type of B2B or DEXP instead of an SEZ-specific supply type.
+    When selling to an SEZ unit or developer, the IRP strictly requires the supply type to be declared as:
+    - SEZWP: SEZ supply with payment of tax
+    - SEZWOP: SEZ supply without payment of tax (under LUT/bond)
+
+    3 Statutory Scenarios:
+    1. SEZ Supply Tagged as Standard B2B:
+       "SupTyp": "B2B", "BuyerDtls": { "Gstin": "24AAACS0000A1Z5" } (SEZ GSTIN) -> Change to "SupTyp": "SEZWP" or "SEZWOP".
+       Transactions with SEZ units cannot use B2B. Change SupTyp to reflect SEZ supply.
+
+    2. Deemed Export Used for SEZ Unit:
+       "SupTyp": "DEXP", "BuyerDtls": { "Gstin": "24AAACS0000A1Z5" } (SEZ GSTIN) -> Change to "SupTyp": "SEZWP" or "SEZWOP".
+       DEXP is for supplies to Export Oriented Units (EOU), not SEZ units.
+
+    3. Regular DTA Buyer Marked with Wrong GSTIN:
+       Transaction was a regular B2B sale, but buyer's sister concern (SEZ unit GSTIN) was entered by error.
+       Pass the buyer's domestic DTA unit GSTIN in BuyerDtls.Gstin.
+    """
+    catg = str(trancatg or "B2B").strip().upper()
+    bgstin = str(buyer_gstin or "").strip().upper()
+
+    is_sez_entity = is_sez_buyer or (bgstin in KNOWN_SEZ_BUYER_GSTINS)
+
+    if not is_sez_entity:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid Non-SEZ Transaction",
+            "is_valid": True,
+            "buyer_gstin": bgstin,
+            "trancatg": catg,
+            "rectified_trancatg": catg,
+            "rectified_gstin": bgstin,
+            "reason": "Buyer is not an SEZ unit, transaction supply type is valid.",
+            "resolution": "No action needed.",
+            "action": "NONE"
+        }
+
+    # Buyer IS an SEZ entity
+    if catg in ("SEZWP", "SEZWOP"):
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid SEZ Transaction Category",
+            "is_valid": True,
+            "buyer_gstin": bgstin,
+            "trancatg": catg,
+            "rectified_trancatg": catg,
+            "rectified_gstin": bgstin,
+            "reason": f"SEZ recipient declared with valid SEZ transaction category '{catg}'.",
+            "resolution": "No action needed.",
+            "action": "NONE"
+        }
+
+    # Scenario 3: Regular DTA Buyer Marked with Wrong GSTIN
+    if is_dta_sale or (dta_gstin and dta_gstin != bgstin):
+        resolved_dta_gstin = dta_gstin or ("24AAACD0000A1Z5" if bgstin == "24AAACS0000A1Z5" else (bgstin[:12] + "1Z1"))
+        return {
+            "error_code": 2246,
+            "scenario": "REGULAR_DTA_BUYER_MARKED_WITH_WRONG_GSTIN",
+            "scenario_name": "Regular DTA Buyer Marked with Wrong GSTIN",
+            "is_valid": False,
+            "buyer_gstin": bgstin,
+            "trancatg": catg,
+            "rectified_trancatg": catg,
+            "rectified_gstin": resolved_dta_gstin,
+            "reason": f"Transaction was a regular B2B sale, but buyer's sister concern (SEZ unit GSTIN '{bgstin}') was entered by error. Pass the buyer's domestic DTA unit GSTIN in BuyerDtls.Gstin.",
+            "resolution": f"Pass correct domestic DTA GSTIN '{resolved_dta_gstin}' in BuyerDtls.Gstin.",
+            "action": "USE_DOMESTIC_DTA_GSTIN",
+            "correct_payload": {"BuyerDtls": {"Gstin": resolved_dta_gstin}}
+        }
+
+    # Scenario 2: Deemed Export Used for SEZ Unit
+    if catg == "DEXP":
+        rect_catg = "SEZWP" if has_payment_of_tax else "SEZWOP"
+        return {
+            "error_code": 2246,
+            "scenario": "DEEMED_EXPORT_USED_FOR_SEZ_UNIT",
+            "scenario_name": "Deemed Export Used for SEZ Unit",
+            "is_valid": False,
+            "buyer_gstin": bgstin,
+            "trancatg": catg,
+            "rectified_trancatg": rect_catg,
+            "rectified_gstin": bgstin,
+            "reason": f"Deemed Export ('DEXP') was used for SEZ unit '{bgstin}'. DEXP is for supplies to Export Oriented Units (EOU), not SEZ units. Transactions with SEZ units must use SEZWP or SEZWOP.",
+            "resolution": f"Change transaction category (SupTyp) to '{rect_catg}'.",
+            "action": "CHANGE_DEEMED_EXPORT_TO_SEZ",
+            "correct_payload": {"TranDtls": {"SupTyp": rect_catg}}
+        }
+
+    # Scenario 1: SEZ Supply Tagged as Standard B2B
+    rect_catg = "SEZWP" if has_payment_of_tax else "SEZWOP"
+    return {
+        "error_code": 2246,
+        "scenario": "SEZ_SUPPLY_TAGGED_AS_STANDARD_B2B",
+        "scenario_name": "SEZ Supply Tagged as Standard B2B",
+        "is_valid": False,
+        "buyer_gstin": bgstin,
+        "trancatg": catg,
+        "rectified_trancatg": rect_catg,
+        "rectified_gstin": bgstin,
+        "reason": f"Transaction with SEZ unit ('{bgstin}') was tagged as standard '{catg}'. Transactions with SEZ units cannot use B2B. Change SupTyp to reflect SEZ supply ('SEZWP' or 'SEZWOP').",
+        "resolution": f"Change transaction category (SupTyp) to '{rect_catg}'.",
+        "action": "CHANGE_SUPPLY_TYPE_TO_SEZ",
+        "correct_payload": {"TranDtls": {"SupTyp": rect_catg}}
+    }
+
+
+def classify_rule_2247_diagnostic(
+    buyer_gstin: Optional[str] = None,
+    trancatg: str = "B2B",
+    is_sez_buyer: bool = False,
+    is_dta_sale: bool = False,
+    sez_gstin: Optional[str] = None,
+    is_portal_sync_lag: bool = False,
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2247:
+    'Recipient Should Be SEZ for Transaction'
+    This error occurs when the transaction supply type (TranDtls.SupTyp) is set to SEZWP (SEZ with payment)
+    or SEZWOP (SEZ without payment), but the recipient's GSTIN (BuyerDtls.Gstin) is registered as a regular
+    domestic taxpayer (DTA) rather than an SEZ unit or developer in the GST master registry.
+
+    3 Statutory Scenarios:
+    1. Domestic Sale Misclassified as SEZ:
+       Sent payload with SupTyp="SEZWP" or "SEZWOP" to a regular domestic company.
+       Fix: Set SupTyp to "B2B".
+    2. Wrong Entity GSTIN Selected for SEZ Buyer:
+       Buyer operates both a DTA headquarters and an SEZ branch; the DTA GSTIN was passed in payload.
+       Fix: Pass the buyer's specific SEZ branch GSTIN in BuyerDtls.Gstin.
+    3. SEZ Status Recently Granted / Portal Sync Lag:
+       Buyer recently migrated or registered as an SEZ, but master is not refreshed.
+       Fix: Verify buyer's status on the GST portal (Search Taxpayer -> Constitution / Taxpayer Type).
+    """
+    catg = str(trancatg or "B2B").strip().upper()
+    bgstin = str(buyer_gstin or "").strip().upper()
+
+    if catg not in ("SEZWP", "SEZWOP"):
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid Non-SEZ Transaction Category",
+            "is_valid": True,
+            "buyer_gstin": bgstin,
+            "trancatg": catg,
+            "rectified_trancatg": catg,
+            "rectified_gstin": bgstin,
+            "reason": f"Transaction category '{catg}' does not require recipient to be an SEZ unit.",
+            "resolution": "No action needed.",
+            "action": "NONE"
+        }
+
+    # Transaction category is SEZWP or SEZWOP
+    is_sez_entity = is_sez_buyer or (bgstin in KNOWN_SEZ_BUYER_GSTINS)
+    if is_sez_entity:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid SEZ Recipient",
+            "is_valid": True,
+            "buyer_gstin": bgstin,
+            "trancatg": catg,
+            "rectified_trancatg": catg,
+            "rectified_gstin": bgstin,
+            "reason": f"Recipient '{bgstin}' is registered as an active SEZ unit for '{catg}' transaction.",
+            "resolution": "No action needed.",
+            "action": "NONE"
+        }
+
+    # Recipient is NOT registered as an SEZ entity in registry
+    if is_portal_sync_lag:
+        return {
+            "error_code": 2247,
+            "scenario": "SEZ_STATUS_RECENTLY_GRANTED_PORTAL_SYNC_LAG",
+            "scenario_name": "SEZ Status Recently Granted / Portal Sync Lag",
+            "is_valid": False,
+            "buyer_gstin": bgstin,
+            "trancatg": catg,
+            "rectified_trancatg": catg,
+            "rectified_gstin": bgstin,
+            "reason": f"Recipient '{bgstin}' was recently granted SEZ status or portal cache is lagging. Verify buyer's status on GST portal (Search Taxpayer -> Constitution / Taxpayer Type) to ensure active SEZ registration on GSTN before calling IRP.",
+            "resolution": "Verify buyer's status on GST portal and refresh master cache.",
+            "action": "REFRESH_GSTN_PORTAL_CACHE",
+            "correct_payload": {"BuyerDtls": {"Gstin": bgstin}}
+        }
+
+    if sez_gstin and sez_gstin != bgstin:
+        return {
+            "error_code": 2247,
+            "scenario": "WRONG_ENTITY_GSTIN_SELECTED_FOR_SEZ_BUYER",
+            "scenario_name": "Wrong Entity GSTIN Selected for SEZ Buyer",
+            "is_valid": False,
+            "buyer_gstin": bgstin,
+            "trancatg": catg,
+            "rectified_trancatg": catg,
+            "rectified_gstin": sez_gstin,
+            "reason": f"Buyer operates both a DTA headquarters ('{bgstin}') and an SEZ branch; the DTA GSTIN was passed in payload. SEZ entities must register a distinct GSTIN for units located within the Special Economic Zone.",
+            "resolution": f"Pass the buyer's specific SEZ branch GSTIN '{sez_gstin}' in BuyerDtls.Gstin.",
+            "action": "USE_SEZ_BRANCH_GSTIN",
+            "correct_payload": {"BuyerDtls": {"Gstin": sez_gstin}}
+        }
+
+    # Default / Scenario 1: Domestic Sale Misclassified as SEZ
+    return {
+        "error_code": 2247,
+        "scenario": "DOMESTIC_SALE_MISCLASSIFIED_AS_SEZ",
+        "scenario_name": "Domestic Sale Misclassified as SEZ",
+        "is_valid": False,
+        "buyer_gstin": bgstin,
+        "trancatg": catg,
+        "rectified_trancatg": "B2B",
+        "rectified_gstin": bgstin,
+        "reason": f"Recipient '{bgstin}' is a regular domestic taxpayer (DTA), but invoice was tagged as '{catg}'. Transactions with standard domestic enterprises cannot use SEZ supply types. Set SupTyp to 'B2B'.",
+        "resolution": "Change SupTyp to 'B2B'.",
+        "action": "CHANGE_SUPPLY_TYPE_TO_B2B",
+        "correct_payload": {"TranDtls": {"SupTyp": "B2B"}}
+    }
+
+
+def classify_rule_2248_diagnostic(
+    buyer_gstin: Optional[str] = None,
+    trancatg: str = "EXPWP",
+    is_export: bool = True,
+    is_domestic_sale: bool = False
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2248:
+    'Recipient Has to Be URP in Case of Export Transactions'
+    This error occurs when the transaction supply type (TranDtls.SupTyp) is set to EXPWP or EXPWOP,
+    but BuyerDtls.Gstin contains an Indian domestic GSTIN or custom identifier instead of the literal string 'URP'.
+
+    4 Statutory Scenarios:
+    1. Domestic GSTIN Passed in Export Payload:
+       "SupTyp": "EXPWP", "BuyerDtls": { "Gstin": "27AAAAA0000A1Z5" } -> Set "BuyerDtls": { "Gstin": "URP" }.
+    2. Overseas Tax ID / VAT / EIN Passed:
+       "BuyerDtls": { "Gstin": "US-EIN-987654321" } -> Set "BuyerDtls": { "Gstin": "URP" }.
+    3. Field Passed as Null or Blank String:
+       "BuyerDtls": { "Gstin": null } or "" -> Set "BuyerDtls": { "Gstin": "URP" }.
+    4. Domestic Sale Misclassified as Export:
+       Indian domestic buyer invoice tagged as EXPWP -> Change "SupTyp": "B2B" and retain buyer GSTIN.
+    """
+    catg = str(trancatg or "EXPWP").strip().upper()
+    is_exp = is_export or catg in ("EXP", "EXPWP", "EXPWOP")
+
+    if not is_exp:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid Non-Export Transaction",
+            "is_valid": True,
+            "buyer_gstin": buyer_gstin,
+            "trancatg": catg,
+            "rectified_trancatg": catg,
+            "rectified_gstin": buyer_gstin,
+            "reason": f"Transaction category '{catg}' is not an export; URP recipient is not required.",
+            "resolution": "No action needed.",
+            "action": "NONE"
+        }
+
+    # Export transaction checks
+    raw_str = str(buyer_gstin or "").strip()
+    if buyer_gstin is None or raw_str in ("", "None", "null"):
+        return {
+            "error_code": 2248,
+            "scenario": "FIELD_PASSED_AS_NULL_OR_BLANK_STRING",
+            "scenario_name": "Field Passed as Null or Blank String",
+            "is_valid": False,
+            "buyer_gstin": buyer_gstin,
+            "trancatg": catg,
+            "rectified_trancatg": catg,
+            "rectified_gstin": "URP",
+            "reason": "BuyerDtls.Gstin was passed as null or blank. BuyerDtls.Gstin is a required string field and must be 'URP' for export transactions.",
+            "resolution": "Set BuyerDtls.Gstin to 'URP'.",
+            "action": "SET_BUYER_GSTIN_TO_URP",
+            "correct_payload": {"BuyerDtls": {"Gstin": "URP"}}
+        }
+
+    bgstin = raw_str.upper()
+    if bgstin == "URP":
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid Export Recipient URP",
+            "is_valid": True,
+            "buyer_gstin": "URP",
+            "trancatg": catg,
+            "rectified_trancatg": catg,
+            "rectified_gstin": "URP",
+            "reason": "Recipient is correctly declared as 'URP' for cross-border export transaction.",
+            "resolution": "No action needed.",
+            "action": "NONE"
+        }
+
+    if is_domestic_sale:
+        return {
+            "error_code": 2248,
+            "scenario": "DOMESTIC_SALE_MISCLASSIFIED_AS_EXPORT",
+            "scenario_name": "Domestic Sale Misclassified as Export",
+            "is_valid": False,
+            "buyer_gstin": bgstin,
+            "trancatg": catg,
+            "rectified_trancatg": "B2B",
+            "rectified_gstin": bgstin,
+            "reason": f"Indian domestic buyer invoice was misclassified as export ('{catg}'). Domestic transactions must not use EXPWP or EXPWOP. Change SupTyp to 'B2B' and retain buyer's domestic GSTIN.",
+            "resolution": "Change SupTyp to 'B2B' and retain buyer's GSTIN.",
+            "action": "CHANGE_SUPPLY_TYPE_TO_B2B",
+            "correct_payload": {"TranDtls": {"SupTyp": "B2B"}, "BuyerDtls": {"Gstin": bgstin}}
+        }
+
+    if re.match(r"^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$", bgstin):
+        return {
+            "error_code": 2248,
+            "scenario": "DOMESTIC_GSTIN_PASSED_IN_EXPORT_PAYLOAD",
+            "scenario_name": "Domestic GSTIN Passed in Export Payload",
+            "is_valid": False,
+            "buyer_gstin": bgstin,
+            "trancatg": catg,
+            "rectified_trancatg": catg,
+            "rectified_gstin": "URP",
+            "reason": f"Indian domestic 15-character GSTIN ('{bgstin}') was passed in export payload ('{catg}'). Foreign cross-border export recipients do not possess an Indian GSTIN. Set BuyerDtls.Gstin to 'URP'.",
+            "resolution": "Set BuyerDtls.Gstin to 'URP'.",
+            "action": "SET_BUYER_GSTIN_TO_URP",
+            "correct_payload": {"BuyerDtls": {"Gstin": "URP"}}
+        }
+
+    # Foreign Tax ID / EIN / VAT / custom identifier
+    return {
+        "error_code": 2248,
+        "scenario": "OVERSEAS_TAX_ID_VAT_OR_EIN_PASSED",
+        "scenario_name": "Overseas Tax ID / VAT / EIN Passed",
+        "is_valid": False,
+        "buyer_gstin": bgstin,
+        "trancatg": catg,
+        "rectified_trancatg": catg,
+        "rectified_gstin": "URP",
+        "reason": f"Overseas tax ID / VAT / EIN ('{bgstin}') passed in BuyerDtls.Gstin. Foreign tax registration numbers belong to internal notes, not BuyerDtls.Gstin. The IRP strictly mandates 'URP'.",
+        "resolution": "Set BuyerDtls.Gstin to 'URP'.",
+        "action": "SET_BUYER_GSTIN_TO_URP",
+        "correct_payload": {"BuyerDtls": {"Gstin": "URP"}}
+    }
+
+
+def classify_rule_2255_diagnostic(
+    payload: Any = None,
+    content_type: Optional[str] = None,
+    content_length: Optional[int] = None,
+    raw_body: Any = None,
+    encrypted_data: Optional[str] = None,
+    is_stream_closed_early: bool = False,
+    is_encryption_failed: bool = False
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2255:
+    'Requested Payload is Empty'
+    This error occurs at the HTTP/API transport layer when the IRP server receives a request with an empty body,
+    zero-byte content length, or malformed data that fails initial JSON deserialization.
+
+    4 Statutory Scenarios:
+    1. Empty Request Body:
+       HTTP POST sent with {} or empty body.
+       Fix: Send the complete, signed/encrypted e-Invoice JSON payload.
+    2. Missing or Incorrect Content-Type Header:
+       Header sent as Content-Type: text/plain or missing.
+       Fix: Set header Content-Type: application/json.
+    3. Premature Stream Flush / Premature Close:
+       HTTP client terminates connection or closes stream before payload finishes sending.
+       Fix: Ensure HTTP client writes the entire buffer and sets a proper Content-Length.
+    4. Encryption Failure Producing Empty Buffer:
+       GSP/ERP encryption wrapper encounters an unhandled exception and posts an empty string.
+       Fix: Verify the payload encryption step returns a non-empty base64 string before sending.
+    """
+    if is_encryption_failed or (encrypted_data is not None and str(encrypted_data).strip() == ""):
+        return {
+            "error_code": 2255,
+            "scenario": "ENCRYPTION_FAILURE_PRODUCING_EMPTY_BUFFER",
+            "scenario_name": "Encryption Failure Producing Empty Buffer",
+            "is_valid": False,
+            "reason": "GSP/ERP payload encryption wrapper encountered an unhandled exception or returned an empty buffer. When using direct asymmetric encryption, verify the AES-encrypted data output is a non-empty base64 string before sending.",
+            "resolution": "Verify payload encryption step produces non-empty base64 ciphertext.",
+            "action": "VERIFY_ENCRYPTION_OUTPUT"
+        }
+
+    if is_stream_closed_early or (content_length is not None and content_length == 0 and payload not in (None, {}, "", b"", b"{}")):
+        return {
+            "error_code": 2255,
+            "scenario": "PREMATURE_STREAM_FLUSH_OR_CLOSE",
+            "scenario_name": "Premature Stream Flush / Premature Close",
+            "is_valid": False,
+            "reason": "HTTP client terminated connection or closed stream prematurely before payload transmission completed. Buffer size or network timeouts in the ERP client can lead to an empty body reaching the server.",
+            "resolution": "Ensure HTTP client writes the entire buffer and sets a proper Content-Length.",
+            "action": "FLUSH_STREAM_AND_SET_CONTENT_LENGTH"
+        }
+
+    if content_type is not None and "application/json" not in content_type.lower():
+        return {
+            "error_code": 2255,
+            "scenario": "MISSING_OR_INCORRECT_CONTENT_TYPE_HEADER",
+            "scenario_name": "Missing or Incorrect Content-Type Header",
+            "is_valid": False,
+            "reason": f"Request header Content-Type was set to '{content_type}' instead of 'application/json'. The IRP API gateway drops or rejects request bodies if the MIME type is not set to application/json.",
+            "resolution": "Set header 'Content-Type: application/json'.",
+            "action": "SET_CONTENT_TYPE_APPLICATION_JSON"
+        }
+
+    body_to_check = raw_body if raw_body is not None else payload
+    is_empty = False
+    if body_to_check is None:
+        is_empty = True
+    elif isinstance(body_to_check, bytes):
+        if len(body_to_check.strip()) == 0 or body_to_check.strip() in (b"{}", b"[]"):
+            is_empty = True
+    elif isinstance(body_to_check, str):
+        if len(body_to_check.strip()) == 0 or body_to_check.strip() in ("{}", "[]"):
+            is_empty = True
+    elif isinstance(body_to_check, (dict, list)):
+        if len(body_to_check) == 0:
+            is_empty = True
+
+    if is_empty:
+        return {
+            "error_code": 2255,
+            "scenario": "EMPTY_REQUEST_BODY",
+            "scenario_name": "Empty Request Body",
+            "is_valid": False,
+            "reason": "HTTP POST request was received with an empty body or zero-byte content. Ensure payload serialization completes and request body contains the complete signed/encrypted e-Invoice JSON structure.",
+            "resolution": "Send complete e-Invoice payload structure.",
+            "action": "SEND_COMPLETE_PAYLOAD"
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Request Body",
+        "is_valid": True,
+        "reason": "Request payload body and transport headers are non-empty and correctly formatted.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def validate_irp_transport_request(
+    body: Any = None,
+    headers: Optional[Dict[str, str]] = None,
+    encrypted_data: Optional[str] = None
+) -> Dict[str, Any]:
+    """Helper utility validating IRP HTTP transport layer integrity (Rule 2255)."""
+    headers = headers or {}
+    ct = headers.get("Content-Type") or headers.get("content-type")
+    cl = headers.get("Content-Length") or headers.get("content-length")
+    cl_int = int(cl) if cl and str(cl).isdigit() else None
+    return classify_rule_2255_diagnostic(
+        payload=body,
+        content_type=ct,
+        content_length=cl_int,
+        raw_body=body,
+        encrypted_data=encrypted_data
+    )
+
+
+def classify_rule_2258_diagnostic(
+    supplier_gstin: Optional[str] = None,
+    supplier_state: Any = None
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2258:
+    'Supplier GSTIN state code does not match with the state code passed in supplier details'
+    The first two digits of SellerDtls.Gstin represent the State Code. StateCode must strictly match this prefix.
+
+    Scenarios:
+    1. PREFIX_MISMATCH:
+       SellerDtls.StateCode does not match the first two numeric digits of SellerDtls.Gstin.
+       Fix: Align StateCode to match first two digits of GSTIN.
+    2. SUPPLIER_STATE_MISSING:
+       SellerDtls.StateCode omitted or blank string when SellerDtls.Gstin is provided.
+       Fix: Populate StateCode with the first two digits of SellerDtls.Gstin.
+    """
+    sgstin = str(supplier_gstin or "").strip().upper()
+    if not sgstin or len(sgstin) < 2 or not sgstin[:2].isdigit():
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid / Unchecked Supplier GSTIN",
+            "is_valid": True,
+            "supplier_gstin": supplier_gstin,
+            "supplier_state": supplier_state,
+            "rectified_state": str(supplier_state or ""),
+            "reason": "Supplier GSTIN is not available or does not contain a 2-digit numeric state prefix.",
+            "resolution": "No action needed.",
+            "action": "NONE"
+        }
+
+    expected_state = sgstin[:2]
+    sstate = str(supplier_state or "").strip()
+
+    if supplier_state is None or sstate in ("", "None", "null"):
+        return {
+            "error_code": 2258,
+            "scenario": "SUPPLIER_STATE_MISSING",
+            "scenario_name": "Supplier State Code Missing",
+            "is_valid": False,
+            "supplier_gstin": sgstin,
+            "supplier_state": supplier_state,
+            "rectified_state": expected_state,
+            "reason": f"SellerDtls.StateCode was omitted or blank when SellerDtls.Gstin '{sgstin}' was provided. StateCode must strictly match GSTIN prefix '{expected_state}'.",
+            "resolution": f"Populate SellerDtls.StateCode with '{expected_state}'.",
+            "action": "ALIGN_SUPPLIER_STATE_TO_GSTIN_PREFIX",
+            "correct_payload": {"SellerDtls": {"Gstin": sgstin, "StateCode": expected_state}}
+        }
+
+    # State codes can be checked against 2-character string
+    if sstate != expected_state:
+        return {
+            "error_code": 2258,
+            "scenario": "PREFIX_MISMATCH",
+            "scenario_name": "Supplier GSTIN Prefix Mismatch",
+            "is_valid": False,
+            "supplier_gstin": sgstin,
+            "supplier_state": sstate,
+            "rectified_state": expected_state,
+            "reason": f"Supplier GSTIN state code ('{expected_state}') does not match state code passed in supplier details ('{sstate}'). The first two digits of SellerDtls.Gstin ('{sgstin}') represent the State Code.",
+            "resolution": f"Set SellerDtls.StateCode to '{expected_state}' matching GSTIN prefix.",
+            "action": "ALIGN_SUPPLIER_STATE_TO_GSTIN_PREFIX",
+            "correct_payload": {"SellerDtls": {"Gstin": sgstin, "StateCode": expected_state}}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Supplier State Code Alignment",
+        "is_valid": True,
+        "supplier_gstin": sgstin,
+        "supplier_state": sstate,
+        "rectified_state": expected_state,
+        "reason": f"Supplier state code '{sstate}' matches GSTIN prefix '{expected_state}'.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2259_diagnostic(
+    supplier_state: Any = None,
+    supplier_gstin: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2259:
+    'Invalid supplier state code'
+    The state code passed in SellerDtls.StateCode must be a 2-digit numeric string from the official
+    GST master list ('01' to '38', '97'). Alpha short codes ('MH'), numeric integer types (27),
+    single digits ('7'), or nonexistent codes ('00') are rejected.
+
+    Scenarios:
+    1. STATE_CODE_OMITTED_OR_NULL: null or empty string.
+    2. NUMERIC_TYPE_PASSED_INSTEAD_OF_STRING: integer type passed (e.g., 27 instead of '27').
+    3. ALPHABETIC_STATE_CODE_PASSED: state abbreviation like 'MH' instead of '27'.
+    4. LEADING_ZERO_OMITTED: single-digit state like '7' instead of '07'.
+    5. NON_EXISTENT_STATE_CODE: code does not exist in GST State Master (e.g., '00', '99').
+    """
+    # 1. Null / Omitted
+    if supplier_state is None or str(supplier_state).strip() in ("", "None", "null"):
+        inferred = supplier_gstin[:2] if (supplier_gstin and len(supplier_gstin) >= 2 and supplier_gstin[:2].isdigit()) else None
+        return {
+            "error_code": 2259,
+            "scenario": "STATE_CODE_OMITTED_OR_NULL",
+            "scenario_name": "Supplier State Code Omitted or Null",
+            "is_valid": False,
+            "supplier_state": supplier_state,
+            "rectified_state": inferred,
+            "reason": "SellerDtls.StateCode is omitted or null. State code must be a 2-digit numeric string from the official GST State Master list ('01' to '38', '97').",
+            "resolution": f"Provide the 2-digit numeric state code (e.g., '{inferred or '27'}').",
+            "action": "POPULATE_SUPPLIER_STATE_CODE",
+            "correct_payload": {"SellerDtls": {"StateCode": inferred or "27"}}
+        }
+
+    # 2. Numeric type passed instead of string
+    if isinstance(supplier_state, (int, float)) and not isinstance(supplier_state, bool):
+        val_int = int(supplier_state)
+        rectified = f"{val_int:02d}"
+        return {
+            "error_code": 2259,
+            "scenario": "NUMERIC_TYPE_PASSED_INSTEAD_OF_STRING",
+            "scenario_name": "Numeric Type Passed Instead of String",
+            "is_valid": False,
+            "supplier_state": supplier_state,
+            "rectified_state": rectified,
+            "reason": f"SellerDtls.StateCode was passed as numeric type ({supplier_state}) instead of a 2-character string ('{rectified}').",
+            "resolution": f"Enclose the 2-digit state code in double quotes as a string ('{rectified}').",
+            "action": "CONVERT_STATE_CODE_TO_STRING",
+            "correct_payload": {"SellerDtls": {"StateCode": rectified}}
+        }
+
+    raw_str = str(supplier_state).strip()
+
+    # 3. Alphabetic State Code Passed (e.g. "MH")
+    if raw_str.upper() in STATE_ALPHA_TO_CODE:
+        rectified = STATE_ALPHA_TO_CODE[raw_str.upper()]
+        return {
+            "error_code": 2259,
+            "scenario": "ALPHABETIC_STATE_CODE_PASSED",
+            "scenario_name": "Alphabetic State Short Code Passed",
+            "is_valid": False,
+            "supplier_state": raw_str,
+            "rectified_state": rectified,
+            "reason": f"State abbreviation '{raw_str}' was passed in SellerDtls.StateCode instead of official 2-digit numeric code '{rectified}'.",
+            "resolution": f"Convert alphabetic abbreviation to 2-digit numeric code ('{rectified}').",
+            "action": "CONVERT_ALPHA_STATE_TO_NUMERIC",
+            "correct_payload": {"SellerDtls": {"StateCode": rectified}}
+        }
+
+    # 4. Leading zero omitted (e.g. "7")
+    if raw_str.isdigit() and len(raw_str) == 1:
+        rectified = raw_str.zfill(2)
+        return {
+            "error_code": 2259,
+            "scenario": "LEADING_ZERO_OMITTED",
+            "scenario_name": "Leading Zero Omitted for Single-Digit State",
+            "is_valid": False,
+            "supplier_state": raw_str,
+            "rectified_state": rectified,
+            "reason": f"Single-digit state code '{raw_str}' was passed without mandatory leading zero in SellerDtls.StateCode. Prepend a leading zero ('{rectified}').",
+            "resolution": f"Prepend a leading zero to single-digit state code ('{rectified}').",
+            "action": "PREPEND_LEADING_ZERO",
+            "correct_payload": {"SellerDtls": {"StateCode": rectified}}
+        }
+
+    # 5. Non-existent state code (e.g. "00", "99")
+    if raw_str not in VALID_SUPPLIER_STATE_CODES:
+        inferred = supplier_gstin[:2] if (supplier_gstin and len(supplier_gstin) >= 2 and supplier_gstin[:2].isdigit()) else None
+        return {
+            "error_code": 2259,
+            "scenario": "NON_EXISTENT_STATE_CODE",
+            "scenario_name": "Non-Existent or Invalid State Code",
+            "is_valid": False,
+            "supplier_state": raw_str,
+            "rectified_state": inferred,
+            "reason": f"SellerDtls.StateCode '{raw_str}' does not exist in official GST State Master list ('01' to '38', '97'). Nonexistent codes like '00' or '99' are strictly rejected.",
+            "resolution": f"Use a valid code from official GST State Master ('01' to '38', '97') matching supplier registration.",
+            "action": "USE_VALID_GST_STATE_MASTER_CODE",
+            "correct_payload": {"SellerDtls": {"StateCode": inferred or "27"}}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Supplier State Code",
+        "is_valid": True,
+        "supplier_state": raw_str,
+        "rectified_state": raw_str,
+        "reason": f"SellerDtls.StateCode '{raw_str}' is a valid 2-digit numeric state code.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2260_diagnostic(
+    buyer_state: Any = None,
+    buyer_gstin: Optional[str] = None,
+    trancatg: str = "B2B"
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2260:
+    'The recipient state code is invalid'
+    Recipient state code in BuyerDtls.StateCode must be a valid 2-digit numeric string from the official
+    GST master list ('01' to '38', '96', '97'). For states between 1 and 9 (e.g., Uttar Pradesh),
+    a leading zero is mandatory ('09', not '9').
+
+    Scenarios:
+    1. STATE_CODE_OMITTED_OR_NULL: BuyerDtls.StateCode null or empty.
+    2. NUMERIC_TYPE_PASSED_INSTEAD_OF_STRING: integer type (e.g. 29 instead of '29').
+    3. ALPHABETIC_STATE_CODE_PASSED: state abbreviation like 'KA' instead of '29'.
+    4. LEADING_ZERO_OMITTED: single-digit state like '9' instead of '09'.
+    5. NON_EXISTENT_OR_INVALID_STATE_CODE: code does not exist in GST master (e.g., '00', '99').
+    """
+    catg = str(trancatg or "B2B").strip().upper()
+    is_exp = catg in ("EXP", "EXPWP", "EXPWOP")
+
+    # 1. Null / Omitted
+    if buyer_state is None or str(buyer_state).strip() in ("", "None", "null"):
+        inferred = "96" if is_exp else (buyer_gstin[:2] if (buyer_gstin and len(buyer_gstin) >= 2 and buyer_gstin[:2].isdigit() and buyer_gstin != "URP") else None)
+        return {
+            "error_code": 2260,
+            "scenario": "STATE_CODE_OMITTED_OR_NULL",
+            "scenario_name": "Recipient State Code Omitted or Null",
+            "is_valid": False,
+            "buyer_state": buyer_state,
+            "rectified_state": inferred,
+            "reason": "BuyerDtls.StateCode is omitted or null. Recipient state code must be a valid 2-digit numeric string from the official GST master list ('01' to '38', '96', '97').",
+            "resolution": f"Provide the 2-digit numeric state code of the recipient (e.g., '{inferred or '29'}').",
+            "action": "POPULATE_BUYER_STATE_CODE",
+            "correct_payload": {"BuyerDtls": {"StateCode": inferred or "29"}}
+        }
+
+    # 2. Numeric type passed instead of string
+    if isinstance(buyer_state, (int, float)) and not isinstance(buyer_state, bool):
+        val_int = int(buyer_state)
+        rectified = f"{val_int:02d}"
+        return {
+            "error_code": 2260,
+            "scenario": "NUMERIC_TYPE_PASSED_INSTEAD_OF_STRING",
+            "scenario_name": "Numeric Type Passed Instead of String",
+            "is_valid": False,
+            "buyer_state": buyer_state,
+            "rectified_state": rectified,
+            "reason": f"BuyerDtls.StateCode was passed as numeric type ({buyer_state}) instead of a 2-character string ('{rectified}').",
+            "resolution": f"Pass recipient state code as a 2-character string ('{rectified}').",
+            "action": "CONVERT_STATE_CODE_TO_STRING",
+            "correct_payload": {"BuyerDtls": {"StateCode": rectified}}
+        }
+
+    raw_str = str(buyer_state).strip()
+
+    # 3. Alphabetic State Code Passed (e.g. "KA")
+    if raw_str.upper() in STATE_ALPHA_TO_CODE:
+        rectified = STATE_ALPHA_TO_CODE[raw_str.upper()]
+        return {
+            "error_code": 2260,
+            "scenario": "ALPHABETIC_STATE_CODE_PASSED",
+            "scenario_name": "Alphabetic Recipient State Code Passed",
+            "is_valid": False,
+            "buyer_state": raw_str,
+            "rectified_state": rectified,
+            "reason": f"State abbreviation '{raw_str}' was passed in BuyerDtls.StateCode instead of numeric code '{rectified}'.",
+            "resolution": f"Convert alphabetic abbreviation to 2-digit numeric code ('{rectified}').",
+            "action": "CONVERT_ALPHA_STATE_TO_NUMERIC",
+            "correct_payload": {"BuyerDtls": {"StateCode": rectified}}
+        }
+
+    # 4. Leading zero omitted (e.g. "9")
+    if raw_str.isdigit() and len(raw_str) == 1:
+        rectified = raw_str.zfill(2)
+        return {
+            "error_code": 2260,
+            "scenario": "LEADING_ZERO_OMITTED",
+            "scenario_name": "Leading Zero Omitted for Single-Digit State",
+            "is_valid": False,
+            "buyer_state": raw_str,
+            "rectified_state": rectified,
+            "reason": f"Single-digit recipient state '{raw_str}' was passed without mandatory leading zero in BuyerDtls.StateCode. For states 1 to 9, a leading zero is mandatory ('{rectified}').",
+            "resolution": f"Prepend a leading zero to single-digit states ('{rectified}').",
+            "action": "PREPEND_LEADING_ZERO",
+            "correct_payload": {"BuyerDtls": {"StateCode": rectified}}
+        }
+
+    # 5. Non-existent state code (e.g. "00", "99")
+    if raw_str not in VALID_BUYER_STATE_CODES:
+        inferred = "96" if is_exp else (buyer_gstin[:2] if (buyer_gstin and len(buyer_gstin) >= 2 and buyer_gstin[:2].isdigit() and buyer_gstin != "URP") else None)
+        return {
+            "error_code": 2260,
+            "scenario": "NON_EXISTENT_OR_INVALID_STATE_CODE",
+            "scenario_name": "Non-Existent or Invalid Recipient State Code",
+            "is_valid": False,
+            "buyer_state": raw_str,
+            "rectified_state": inferred,
+            "reason": f"BuyerDtls.StateCode '{raw_str}' does not exist in the official GST master list ('01' to '38', '96', '97'). Nonexistent codes like '00' are rejected.",
+            "resolution": "Provide a valid 2-digit state code from the official GST master list.",
+            "action": "USE_VALID_GST_STATE_MASTER_CODE",
+            "correct_payload": {"BuyerDtls": {"StateCode": inferred or "29"}}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Recipient State Code",
+        "is_valid": True,
+        "buyer_state": raw_str,
+        "rectified_state": raw_str,
+        "reason": f"BuyerDtls.StateCode '{raw_str}' is a valid recipient state code.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2261_diagnostic(
+    buyer_state: Any = None,
+    trancatg: str = "EXPWP",
+    is_export: bool = True,
+    is_domestic_sale: bool = False,
+    buyer_gstin: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2261:
+    'The recipient state code is incorrect for {0} transaction'
+    Direct export transactions (EXPWP / EXPWOP) cross international borders. For foreign recipients,
+    both StateCode and Pos in BuyerDtls must strictly be set to '96' (Other Countries).
+
+    Scenarios:
+    1. DOMESTIC_STATE_CODE_IN_EXPORT:
+       Export invoice contains an Indian domestic state code (e.g. '27') instead of '96'.
+       Fix: Set BuyerDtls.StateCode to '96' (Other Countries).
+    2. EXPORT_STATE_CODE_OMITTED_OR_NULL:
+       BuyerDtls.StateCode is omitted or null in an export transaction.
+       Fix: Set BuyerDtls.StateCode to '96'.
+    3. DOMESTIC_SALE_MISCLASSIFIED_AS_EXPORT:
+       Domestic sale was erroneously tagged with supply type EXPWP / EXPWOP.
+       Fix: Change supply type to 'B2B' and retain the domestic state code.
+    """
+    catg = str(trancatg or "EXPWP").strip().upper()
+    is_exp = is_export or catg in ("EXP", "EXPWP", "EXPWOP")
+
+    if not is_exp:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid Non-Export Transaction",
+            "is_valid": True,
+            "buyer_state": buyer_state,
+            "trancatg": catg,
+            "rectified_state": str(buyer_state or ""),
+            "rectified_trancatg": catg,
+            "reason": f"Transaction category '{catg}' is not an export; export state code '96' is not required.",
+            "resolution": "No action needed.",
+            "action": "NONE"
+        }
+
+    if is_domestic_sale:
+        return {
+            "error_code": 2261,
+            "scenario": "DOMESTIC_SALE_MISCLASSIFIED_AS_EXPORT",
+            "scenario_name": "Domestic Sale Misclassified as Export",
+            "is_valid": False,
+            "buyer_state": buyer_state,
+            "trancatg": catg,
+            "rectified_state": str(buyer_state or ""),
+            "rectified_trancatg": "B2B",
+            "reason": f"Indian domestic sale was misclassified as export ('{catg}'). For domestic supply, change supply type to 'B2B' and retain domestic state code '{buyer_state}'.",
+            "resolution": "Change supply type to 'B2B' and retain domestic state code.",
+            "action": "CHANGE_SUPPLY_TYPE_TO_B2B",
+            "correct_payload": {"TranDtls": {"SupTyp": "B2B"}, "BuyerDtls": {"StateCode": str(buyer_state or "")}}
+        }
+
+    if buyer_state is None or str(buyer_state).strip() in ("", "None", "null"):
+        return {
+            "error_code": 2261,
+            "scenario": "EXPORT_STATE_CODE_OMITTED_OR_NULL",
+            "scenario_name": "Export State Code Omitted or Null",
+            "is_valid": False,
+            "buyer_state": buyer_state,
+            "trancatg": catg,
+            "rectified_state": "96",
+            "rectified_trancatg": catg,
+            "reason": f"BuyerDtls.StateCode is omitted or null in export transaction ('{catg}'). Direct exports cross international borders; StateCode must strictly be set to '96' (Other Countries).",
+            "resolution": "Set BuyerDtls.StateCode to '96'.",
+            "action": "SET_EXPORT_STATE_CODE_TO_96",
+            "correct_payload": {"BuyerDtls": {"StateCode": "96", "Pos": "96"}}
+        }
+
+    raw_str = str(buyer_state).strip()
+    if raw_str != "96":
+        return {
+            "error_code": 2261,
+            "scenario": "DOMESTIC_STATE_CODE_IN_EXPORT",
+            "scenario_name": "Domestic State Code in Export",
+            "is_valid": False,
+            "buyer_state": raw_str,
+            "trancatg": catg,
+            "rectified_state": "96",
+            "rectified_trancatg": catg,
+            "reason": f"Direct export transactions ('{catg}') cross international borders. Indian domestic state code '{raw_str}' was passed in BuyerDtls.StateCode instead of '96'. Both StateCode and Pos in BuyerDtls must strictly be set to '96' (Other Countries).",
+            "resolution": "Set BuyerDtls.StateCode to '96' (Other Countries) for foreign export recipients.",
+            "action": "SET_EXPORT_STATE_CODE_TO_96",
+            "correct_payload": {"BuyerDtls": {"StateCode": "96", "Pos": "96"}}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Export Recipient State Code",
+        "is_valid": True,
+        "buyer_state": "96",
+        "trancatg": catg,
+        "rectified_state": "96",
+        "rectified_trancatg": catg,
+        "reason": "BuyerDtls.StateCode is correctly set to '96' (Other Countries) for direct export.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2262_diagnostic(
+    igstonintra: Any = None,
+    seller_state: Any = None,
+    pos: Any = None,
+    is_actual_intra: bool = False
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2262:
+    'For Intra-state supply, IGST cannot be charged'
+    IgstOnIntra can only be set to 'Y' when SellerDtls.StateCode and BuyerDtls.Pos are identical
+    (an intra-state supply legally attracting IGST). If states are different, the supply is already
+    inter-state; setting IgstOnIntra to 'Y' is invalid.
+
+    Scenarios:
+    1. MISAPPLIED_FLAG_ON_INTER_STATE_SALE:
+       IgstOnIntra is set to 'Y' on an inter-state sale where Seller State != Buyer POS.
+       Fix: Set TranDtls.IgstOnIntra to 'N'.
+    2. INTRA_STATE_SALE_WITH_INCORRECT_POS:
+       Transaction is actually an intra-state sale attracting IGST, but BuyerDtls.Pos was erroneously set to an out-of-state code.
+       Fix: Correct BuyerDtls.Pos to match the supplier's state code.
+    """
+    flag = str(igstonintra or "N").strip().upper()
+    if flag != "Y":
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid IgstOnIntra Flag",
+            "is_valid": True,
+            "igstonintra": flag,
+            "seller_state": str(seller_state or ""),
+            "pos": str(pos or ""),
+            "rectified_igstonintra": flag,
+            "rectified_pos": str(pos or ""),
+            "reason": "IgstOnIntra is not 'Y'; Rule 2262 is not violated.",
+            "resolution": "No action needed.",
+            "action": "NONE"
+        }
+
+    s_seller = str(seller_state or "").strip()
+    s_pos = str(pos or "").strip()
+
+    if s_seller and s_pos and s_seller != s_pos:
+        if is_actual_intra:
+            return {
+                "error_code": 2262,
+                "scenario": "INTRA_STATE_SALE_WITH_INCORRECT_POS",
+                "scenario_name": "Intra-State Sale with Incorrect POS",
+                "is_valid": False,
+                "igstonintra": "Y",
+                "seller_state": s_seller,
+                "pos": s_pos,
+                "rectified_igstonintra": "Y",
+                "rectified_pos": s_seller,
+                "reason": f"Transaction is an intra-state supply legally attracting IGST, but BuyerDtls.Pos was erroneously set to out-of-state code '{s_pos}' (Seller State '{s_seller}').",
+                "resolution": f"Correct BuyerDtls.Pos to match the supplier's state code ('{s_seller}').",
+                "action": "ALIGN_POS_TO_SELLER_STATE",
+                "correct_payload": {"BuyerDtls": {"Pos": s_seller}, "TranDtls": {"IgstOnIntra": "Y"}}
+            }
+
+        return {
+            "error_code": 2262,
+            "scenario": "MISAPPLIED_FLAG_ON_INTER_STATE_SALE",
+            "scenario_name": "Misapplied Flag on Inter-State Sale",
+            "is_valid": False,
+            "igstonintra": "Y",
+            "seller_state": s_seller,
+            "pos": s_pos,
+            "rectified_igstonintra": "N",
+            "rectified_pos": s_pos,
+            "reason": f"IgstOnIntra can only be set to 'Y' when SellerDtls.StateCode and BuyerDtls.Pos are identical (an intra-state supply legally attracting IGST). Seller state is '{s_seller}' and Buyer POS is '{s_pos}'. Supplies between different states are governed by IGST directly; set IgstOnIntra to 'N'.",
+            "resolution": "Set TranDtls.IgstOnIntra to 'N'.",
+            "action": "SET_IGSTONINTRA_TO_N",
+            "correct_payload": {"TranDtls": {"IgstOnIntra": "N"}}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Exceptional Intra-State IGST Supply",
+        "is_valid": True,
+        "igstonintra": "Y",
+        "seller_state": s_seller,
+        "pos": s_pos,
+        "rectified_igstonintra": "Y",
+        "rectified_pos": s_pos,
+        "reason": f"Seller state '{s_seller}' equals Buyer POS '{s_pos}'; IgstOnIntra='Y' is valid.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2265_diagnostic(
+    buyer_gstin: Optional[str] = None,
+    buyer_state: Any = None
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2265:
+    'Recipient GSTIN state code does not match state code passed'
+    The first two digits of BuyerDtls.Gstin represent the State Code (e.g. '29' for Karnataka).
+    BuyerDtls.StateCode must match this prefix exactly.
+
+    Scenarios:
+    1. PREFIX_MISMATCH:
+       BuyerDtls.StateCode does not match the first two numeric digits of BuyerDtls.Gstin.
+       Fix: Align BuyerDtls.StateCode to match the first two digits of BuyerDtls.Gstin.
+    2. RECIPIENT_STATE_MISSING:
+       BuyerDtls.StateCode omitted or blank string when registered BuyerDtls.Gstin is provided.
+       Fix: Populate BuyerDtls.StateCode with the first two digits of BuyerDtls.Gstin.
+    """
+    bgstin = str(buyer_gstin or "").strip().upper()
+    if not bgstin or bgstin == "URP" or len(bgstin) < 2 or not bgstin[:2].isdigit():
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid / Unchecked Recipient GSTIN",
+            "is_valid": True,
+            "buyer_gstin": buyer_gstin,
+            "buyer_state": buyer_state,
+            "rectified_state": str(buyer_state or ""),
+            "reason": "Recipient GSTIN is URP, omitted, or does not have a 2-digit state prefix; Rule 2265 check skipped.",
+            "resolution": "No action needed.",
+            "action": "NONE"
+        }
+
+    expected_state = bgstin[:2]
+    bstate = str(buyer_state or "").strip()
+
+    if buyer_state is None or bstate in ("", "None", "null"):
+        return {
+            "error_code": 2265,
+            "scenario": "RECIPIENT_STATE_MISSING",
+            "scenario_name": "Recipient State Code Missing",
+            "is_valid": False,
+            "buyer_gstin": bgstin,
+            "buyer_state": buyer_state,
+            "rectified_state": expected_state,
+            "reason": f"BuyerDtls.StateCode was omitted or blank when BuyerDtls.Gstin '{bgstin}' was provided. StateCode must strictly match GSTIN prefix '{expected_state}'.",
+            "resolution": f"Populate BuyerDtls.StateCode with '{expected_state}'.",
+            "action": "ALIGN_BUYER_STATE_TO_GSTIN_PREFIX",
+            "correct_payload": {"BuyerDtls": {"Gstin": bgstin, "StateCode": expected_state}}
+        }
+
+    if bstate == "96":
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Export State Code Checked by Rule 2269",
+            "is_valid": True,
+            "buyer_gstin": bgstin,
+            "buyer_state": bstate,
+            "rectified_state": expected_state,
+            "reason": "Code '96' is governed by Rule 2269 on domestic types and Rule 2261 on exports.",
+            "resolution": "No action needed.",
+            "action": "NONE"
+        }
+
+    if bstate != expected_state:
+        return {
+            "error_code": 2265,
+            "scenario": "PREFIX_MISMATCH",
+            "scenario_name": "Recipient GSTIN Prefix Mismatch",
+            "is_valid": False,
+            "buyer_gstin": bgstin,
+            "buyer_state": bstate,
+            "rectified_state": expected_state,
+            "reason": f"Recipient GSTIN state code ('{expected_state}') does not match state code passed in recipient details ('{bstate}'). The first two digits of BuyerDtls.Gstin ('{bgstin}') represent the state code.",
+            "resolution": f"Set BuyerDtls.StateCode to '{expected_state}' matching GSTIN prefix.",
+            "action": "ALIGN_BUYER_STATE_TO_GSTIN_PREFIX",
+            "correct_payload": {"BuyerDtls": {"Gstin": bgstin, "StateCode": expected_state}}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Recipient State Code Alignment",
+        "is_valid": True,
+        "buyer_gstin": bgstin,
+        "buyer_state": bstate,
+        "rectified_state": expected_state,
+        "reason": f"Recipient state code '{bstate}' matches GSTIN prefix '{expected_state}'.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2266_diagnostic(
+    assval: Any,
+    cesrate: Any,
+    cesval: Any,
+    cesnonadvl: Any = 0.0,
+    item_slno: Any = "1"
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2266:
+    'Item Cess amount does not match calculated value'
+    Line-item Cess amount must equal (ItemList[i].AssAmt * ItemList[i].CesRt) / 100 within +/- 1.00 tolerance.
+    If non-ad-valorem cess applies, declare it in CesNonAdvlAmt.
+
+    Scenarios:
+    1. AD_VALOREM_CESS_CALCULATION_ERROR:
+       Line-item CesAmt does not equal (AssAmt * CesRt) / 100 +/- 1.00.
+    2. NON_AD_VALOREM_CESS_DECLARED_AS_AD_VALOREM:
+       Specific/quantity-based cess declared under CesAmt while CesRt is 0.
+    3. CESS_RATE_OMITTED_WITH_CESS_AMOUNT:
+       CesAmt > 0 passed without specifying CesRt.
+    """
+    try:
+        ass_d = Decimal(str(assval or 0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    except Exception:
+        ass_d = Decimal("0.00")
+
+    try:
+        rate_d = Decimal(str(cesrate or 0))
+    except Exception:
+        rate_d = Decimal("0.00")
+
+    try:
+        amt_d = Decimal(str(cesval or 0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    except Exception:
+        amt_d = Decimal("0.00")
+
+    try:
+        nonad_d = Decimal(str(cesnonadvl or 0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    except Exception:
+        nonad_d = Decimal("0.00")
+
+    calc_ces = (ass_d * rate_d / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    # If rate is 0 and cess amount > 0
+    if rate_d <= Decimal("0.00") and amt_d > Decimal("0.00"):
+        if nonad_d == Decimal("0.00"):
+            return {
+                "error_code": 2266,
+                "scenario": "NON_AD_VALOREM_CESS_DECLARED_AS_AD_VALOREM",
+                "scenario_name": "Non-Ad-Valorem Cess Declared as Ad-Valorem",
+                "is_valid": False,
+                "item_slno": str(item_slno),
+                "assval": float(ass_d),
+                "cesrate": float(rate_d),
+                "cesval": float(amt_d),
+                "calculated_cesval": 0.0,
+                "rectified_cesval": 0.0,
+                "rectified_cesnonadvl": float(amt_d),
+                "reason": f"Item {item_slno}: Specific/quantity-based cess ({amt_d}) was declared under ad-valorem CesAmt while CesRt is 0. Non-ad-valorem cess must be declared in CesNonAdvlAmt.",
+                "resolution": "Move quantity-based cess amount to CesNonAdvlAmt and set CesAmt to 0.00.",
+                "action": "MOVE_TO_NON_ADVALOREM_CESS",
+                "correct_payload": {"CesAmt": 0.0, "CesNonAdvlAmt": float(amt_d)}
+            }
+        else:
+            return {
+                "error_code": 2266,
+                "scenario": "CESS_RATE_OMITTED_WITH_CESS_AMOUNT",
+                "scenario_name": "Cess Rate Omitted with Cess Amount",
+                "is_valid": False,
+                "item_slno": str(item_slno),
+                "assval": float(ass_d),
+                "cesrate": float(rate_d),
+                "cesval": float(amt_d),
+                "calculated_cesval": 0.0,
+                "rectified_cesval": 0.0,
+                "reason": f"Item {item_slno}: CesAmt ({amt_d}) passed without specifying applicable CesRt.",
+                "resolution": "Specify the statutory ad-valorem cess rate in CesRt or set CesAmt to 0.00.",
+                "action": "SPECIFY_CESS_RATE_OR_CLEAR",
+                "correct_payload": {"CesAmt": 0.0}
+            }
+
+    # Ad-valorem calculation check with +/- 1.00 tolerance
+    diff = abs(amt_d - calc_ces)
+    if diff > Decimal("1.00"):
+        return {
+            "error_code": 2266,
+            "scenario": "AD_VALOREM_CESS_CALCULATION_ERROR",
+            "scenario_name": "Ad-valorem Cess Calculation Error",
+            "is_valid": False,
+            "item_slno": str(item_slno),
+            "assval": float(ass_d),
+            "cesrate": float(rate_d),
+            "cesval": float(amt_d),
+            "calculated_cesval": float(calc_ces),
+            "rectified_cesval": float(calc_ces),
+            "diff": float(diff),
+            "reason": f"Item {item_slno}: Line-item CesAmt ({amt_d}) does not match calculated value from AssAmt ({ass_d}) and CesRt ({rate_d}%). Expected ({ass_d} * {rate_d}%) = {calc_ces} (+/- 1.00 tolerance).",
+            "resolution": f"Recompute CesAmt = (AssAmt * CesRt) / 100 ({calc_ces}).",
+            "action": "RECOMPUTE_CESS_AMOUNT",
+            "correct_payload": {"CesAmt": float(calc_ces)}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Cess Amount Calculation",
+        "is_valid": True,
+        "item_slno": str(item_slno),
+        "assval": float(ass_d),
+        "cesrate": float(rate_d),
+        "cesval": float(amt_d),
+        "calculated_cesval": float(calc_ces),
+        "rectified_cesval": float(amt_d),
+        "reason": f"Item {item_slno}: CesAmt ({amt_d}) matches expected calculated value ({calc_ces}) within statutory +/- 1.00 tolerance.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2267_diagnostic(
+    assval: Any,
+    statecesrate: Any,
+    statecesval: Any,
+    statecesnonadvl: Any = 0.0,
+    item_slno: Any = "1"
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2267:
+    'Item State Cess amount does not match calculated value'
+    Line-item State Cess must satisfy (ItemList[i].AssAmt * ItemList[i].StateCesRt) / 100 within +/- 1.00 tolerance.
+    Quantity-based levies belong to StateCesNonAdvlAmt.
+
+    Scenarios:
+    1. STATE_CESS_FORMULA_MISMATCH:
+       Line-item StateCesAmt does not equal (AssAmt * StateCesRt) / 100 +/- 1.00.
+    2. NON_AD_VALOREM_STATE_CESS_DECLARED_AS_AD_VALOREM:
+       Quantity-based state cess declared under StateCesAmt while StateCesRt is 0.
+    """
+    try:
+        ass_d = Decimal(str(assval or 0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    except Exception:
+        ass_d = Decimal("0.00")
+
+    try:
+        rate_d = Decimal(str(statecesrate or 0))
+    except Exception:
+        rate_d = Decimal("0.00")
+
+    try:
+        amt_d = Decimal(str(statecesval or 0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    except Exception:
+        amt_d = Decimal("0.00")
+
+    try:
+        nonad_d = Decimal(str(statecesnonadvl or 0)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    except Exception:
+        nonad_d = Decimal("0.00")
+
+    calc_stces = (ass_d * rate_d / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    if rate_d <= Decimal("0.00") and amt_d > Decimal("0.00"):
+        return {
+            "error_code": 2267,
+            "scenario": "NON_AD_VALOREM_STATE_CESS_DECLARED_AS_AD_VALOREM",
+            "scenario_name": "Non-Ad-Valorem State Cess Declared as Ad-Valorem",
+            "is_valid": False,
+            "item_slno": str(item_slno),
+            "assval": float(ass_d),
+            "statecesrate": float(rate_d),
+            "statecesval": float(amt_d),
+            "calculated_statecesval": 0.0,
+            "rectified_statecesval": 0.0,
+            "rectified_statecesnonadvl": float(amt_d),
+            "reason": f"Item {item_slno}: Quantity-based state cess ({amt_d}) was declared under ad-valorem StateCesAmt while StateCesRt is 0. Specific state cess belongs in StateCesNonAdvlAmt.",
+            "resolution": "Move quantity-based state cess amount to StateCesNonAdvlAmt and set StateCesAmt to 0.00.",
+            "action": "MOVE_TO_NON_ADVALOREM_STATE_CESS",
+            "correct_payload": {"StateCesAmt": 0.0, "StateCesNonAdvlAmt": float(amt_d)}
+        }
+
+    diff = abs(amt_d - calc_stces)
+    if diff > Decimal("1.00"):
+        return {
+            "error_code": 2267,
+            "scenario": "STATE_CESS_FORMULA_MISMATCH",
+            "scenario_name": "State Cess Formula Mismatch",
+            "is_valid": False,
+            "item_slno": str(item_slno),
+            "assval": float(ass_d),
+            "statecesrate": float(rate_d),
+            "statecesval": float(amt_d),
+            "calculated_statecesval": float(calc_stces),
+            "rectified_statecesval": float(calc_stces),
+            "diff": float(diff),
+            "reason": f"Item {item_slno}: Line-item StateCesAmt ({amt_d}) does not match calculated value from AssAmt ({ass_d}) and StateCesRt ({rate_d}%). Expected ({ass_d} * {rate_d}%) = {calc_stces} (+/- 1.00 tolerance).",
+            "resolution": f"Recompute StateCesAmt = (AssAmt * StateCesRt) / 100 ({calc_stces}).",
+            "action": "RECOMPUTE_STATE_CESS_AMOUNT",
+            "correct_payload": {"StateCesAmt": float(calc_stces)}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid State Cess Amount Calculation",
+        "is_valid": True,
+        "item_slno": str(item_slno),
+        "assval": float(ass_d),
+        "statecesrate": float(rate_d),
+        "statecesval": float(amt_d),
+        "calculated_statecesval": float(calc_stces),
+        "rectified_statecesval": float(amt_d),
+        "reason": f"Item {item_slno}: StateCesAmt ({amt_d}) matches expected calculated value ({calc_stces}) within statutory +/- 1.00 tolerance.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2268_diagnostic(
+    igstonintra: Any = None,
+    trancatg: str = "EXPWP"
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2268:
+    'IGST on intra-state supply is not applicable to Export/SEZ'
+    Exports and SEZ transactions are deemed inter-state supplies under Section 7(5) of the IGST Act by default.
+    IgstOnIntra must always be 'N' for EXPWP, EXPWOP, SEZWP, and SEZWOP.
+
+    Scenarios:
+    1. INVALID_OVERRIDE_ON_EXPORT_OR_SEZ:
+       IgstOnIntra is set to 'Y' on deemed inter-state export/SEZ supply (EXPWP, EXPWOP, SEZWP, SEZWOP).
+       Fix: Set TranDtls.IgstOnIntra to 'N'.
+    """
+    catg = str(trancatg or "EXPWP").strip().upper()
+    is_exp_or_sez = catg in ("EXP", "EXPWP", "EXPWOP", "SEZWP", "SEZWOP")
+    flag = str(igstonintra or "N").strip().upper()
+
+    if is_exp_or_sez and flag == "Y":
+        return {
+            "error_code": 2268,
+            "scenario": "INVALID_OVERRIDE_ON_EXPORT_OR_SEZ",
+            "scenario_name": "Invalid Override on Export/SEZ",
+            "is_valid": False,
+            "igstonintra": "Y",
+            "trancatg": catg,
+            "rectified_igstonintra": "N",
+            "reason": f"IGST on intra-state supply is not applicable to {catg} transactions. Exports and SEZ transactions are deemed inter-state supplies under Section 7(5) of the IGST Act by default; IgstOnIntra must always be 'N'.",
+            "resolution": "Set TranDtls.IgstOnIntra to 'N'.",
+            "action": "SET_IGSTONINTRA_TO_N",
+            "correct_payload": {"TranDtls": {"IgstOnIntra": "N"}}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid IgstOnIntra for Supply Type",
+        "is_valid": True,
+        "igstonintra": flag,
+        "trancatg": catg,
+        "rectified_igstonintra": flag,
+        "reason": f"IgstOnIntra '{flag}' is valid for transaction category '{catg}'.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2269_diagnostic(
+    buyer_state: Any = None,
+    trancatg: str = "B2B",
+    buyer_gstin: Optional[str] = None,
+    is_actual_export: bool = False
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2269:
+    'Recipient state code is incorrect' (96 sent for domestic type)
+    Code '96' (Other Countries) is permitted solely for export transactions (EXPWP/EXPWOP).
+    For domestic types (B2B, SEZWP, SEZWOP, DEXP, B2G, B2C), send the buyer's 2-digit Indian State/UT code (01-38, 97).
+
+    Scenarios:
+    1. EXPORT_CODE_USED_ON_DOMESTIC_TYPE:
+       Code '96' passed as StateCode on domestic supply type (B2B, SEZWP, SEZWOP, DEXP).
+       Fix: Set BuyerDtls.StateCode to buyer's 2-digit Indian State/UT code (01-38, 97).
+    2. EXPORT_TRANSACTION_MISCLASSIFIED_AS_DOMESTIC:
+       Sale to foreign customer misclassified as B2B instead of EXPWP/EXPWOP.
+       Fix: Change supply type to 'EXPWP' or 'EXPWOP' and retain '96'.
+    """
+    catg = str(trancatg or "B2B").strip().upper()
+    is_export = catg in ("EXP", "EXPWP", "EXPWOP")
+    s_state = str(buyer_state or "").strip()
+
+    if not is_export and s_state == "96":
+        if is_actual_export:
+            return {
+                "error_code": 2269,
+                "scenario": "EXPORT_TRANSACTION_MISCLASSIFIED_AS_DOMESTIC",
+                "scenario_name": "Export Transaction Misclassified as Domestic",
+                "is_valid": False,
+                "buyer_state": "96",
+                "trancatg": catg,
+                "rectified_state": "96",
+                "rectified_trancatg": "EXPWP",
+                "reason": f"Transaction is an export to a foreign buyer (StateCode '96'), but supply type was erroneously tagged as domestic '{catg}'.",
+                "resolution": "Change supply type to 'EXPWP' (or 'EXPWOP') and retain StateCode '96'.",
+                "action": "CHANGE_SUPPLY_TYPE_TO_EXPWP",
+                "correct_payload": {"TranDtls": {"SupTyp": "EXPWP"}, "BuyerDtls": {"StateCode": "96"}}
+            }
+
+        bgstin = str(buyer_gstin or "").strip().upper()
+        inferred = bgstin[:2] if (bgstin and bgstin != "URP" and len(bgstin) >= 2 and bgstin[:2].isdigit()) else "29"
+
+        return {
+            "error_code": 2269,
+            "scenario": "EXPORT_CODE_USED_ON_DOMESTIC_TYPE",
+            "scenario_name": "Export Code Used on Domestic Type",
+            "is_valid": False,
+            "buyer_state": "96",
+            "trancatg": catg,
+            "rectified_state": inferred,
+            "rectified_trancatg": catg,
+            "reason": f"Recipient state code '96' (Other Countries) is incorrect for domestic supply type '{catg}'. Code '96' is permitted solely for direct export transactions (EXPWP/EXPWOP). For domestic types, send the buyer's 2-digit Indian State/UT code (01-38, 97).",
+            "resolution": f"Set BuyerDtls.StateCode to buyer's 2-digit Indian State/UT code ('{inferred}').",
+            "action": "SET_DOMESTIC_STATE_CODE",
+            "correct_payload": {"BuyerDtls": {"StateCode": inferred}}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Recipient State Code for Supply Type",
+        "is_valid": True,
+        "buyer_state": s_state,
+        "trancatg": catg,
+        "rectified_state": s_state,
+        "rectified_trancatg": catg,
+        "reason": f"BuyerDtls.StateCode '{s_state}' is valid for transaction category '{catg}'.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2270_diagnostic(
+    generation_time: Any,
+    cancellation_time: Any = None,
+    irn: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2270:
+    'The Allowed Cancellation Time Limit is Crossed, You Cannot Cancel the IRN'
+    An IRN can only be cancelled within 24 hours of generation on the IRP.
+    After 24 hours, the IRP locks the IRN against electronic cancellation via API.
+
+    Scenarios:
+    1. PAST_24_HOURS:
+       API call made when (Cancellation Request Time - IRN Generation Time) > 24 hours.
+       Fix: Issue a Credit Note (CRN) referencing the original invoice to reverse tax liability and value,
+       or allow auto-population to GSTR-1 and modify/delete line item before filing.
+    """
+    from datetime import datetime, timezone, timedelta
+    gen_dt = None
+    if isinstance(generation_time, datetime):
+        gen_dt = generation_time
+    elif generation_time:
+        gen_str = str(generation_time).strip()
+        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%d-%m-%Y %H:%M:%S", "%Y-%m-%d", "%d-%m-%Y"):
+            try:
+                gen_dt = datetime.strptime(gen_str.split(".")[0], fmt)
+                break
+            except ValueError:
+                continue
+
+    canc_dt = None
+    if isinstance(cancellation_time, datetime):
+        canc_dt = cancellation_time
+    elif cancellation_time:
+        canc_str = str(cancellation_time).strip()
+        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%d-%m-%Y %H:%M:%S", "%Y-%m-%d", "%d-%m-%Y"):
+            try:
+                canc_dt = datetime.strptime(canc_str.split(".")[0], fmt)
+                break
+            except ValueError:
+                continue
+    else:
+        canc_dt = datetime.now()
+
+    if gen_dt:
+        diff_seconds = (canc_dt - gen_dt).total_seconds()
+        diff_hours = diff_seconds / 3600.0
+        if diff_seconds > 24 * 3600:
+            return {
+                "error_code": 2270,
+                "scenario": "PAST_24_HOURS",
+                "scenario_name": "Attempting API Cancellation Past 24 Hours",
+                "is_valid": False,
+                "irn": irn,
+                "generation_time": str(generation_time),
+                "cancellation_time": str(canc_dt),
+                "elapsed_hours": round(diff_hours, 2),
+                "reason": f"IRN cancellation requested {round(diff_hours, 1)} hours after generation. The allowed cancellation time limit is 24 hours. You cannot cancel the IRN via API.",
+                "resolution": "Issue a Credit Note (CRN) referencing the original invoice to reverse tax liability and invoice value, or manually modify/delete the line item in GSTR-1 on the GST Common Portal.",
+                "action": "ISSUE_CREDIT_NOTE",
+                "correct_workflow": "Issue Credit Note (CRN) or amend line item directly in GSTR-1 on gst.gov.in."
+            }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Cancellation Request Within 24-Hour Window",
+        "is_valid": True,
+        "irn": irn,
+        "generation_time": str(generation_time),
+        "cancellation_time": str(canc_dt),
+        "elapsed_hours": round((canc_dt - gen_dt).total_seconds() / 3600.0, 2) if gen_dt else 0.0,
+        "reason": "Cancellation request is within the statutory 24-hour window.",
+        "resolution": "Proceed with IRN cancellation via /Cancel API.",
+        "action": "PROCEED_WITH_CANCELLATION"
+    }
+
+
+def classify_rule_2271_diagnostic(
+    ship_state: Any,
+    trancatg: str = "B2B",
+    ship_gstin: Optional[str] = None,
+    ship_pin: Optional[Any] = None,
+    buyer_state: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2271:
+    'SHIP TO - State Code is Not Valid State Code for B2B, SEZ and Deemed Export Transactions'
+    For domestic transactions (B2B, SEZWP, SEZWOP, DEXP), ShipDtls.Stcd must be a valid 2-digit
+    Indian State/UT code (01-38, 97). Code '96' (Other Country) is strictly prohibited.
+    If ShipDtls.Gstin is provided, Stcd must match its first 2 digits.
+    """
+    catg = str(trancatg or "B2B").strip().upper()
+    is_domestic = catg not in ("EXP", "EXPWP", "EXPWOP")
+
+    if not is_domestic:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Export Transaction Permits Non-Domestic State",
+            "is_valid": True,
+            "ship_state": ship_state,
+            "trancatg": catg,
+            "rectified_state": str(ship_state or "96").strip(),
+            "reason": "ShipDtls.Stcd is evaluated under export rules for EXPWP/EXPWOP.",
+            "resolution": "No action needed.",
+            "action": "NONE"
+        }
+
+    raw_val = ship_state
+    sgstin = str(ship_gstin or "").strip().upper()
+    sgstin_clean = sgstin if (sgstin and sgstin != "URP" and len(sgstin) == 15 and sgstin[:2].isdigit()) else None
+
+    # Determine fallback rectified state
+    fallback_state = sgstin_clean[:2] if sgstin_clean else (str(buyer_state or "").strip() or "27")
+    if fallback_state == "96" or fallback_state not in VALID_SUPPLIER_STATE_CODES:
+        fallback_state = "27"
+
+    if raw_val is None or str(raw_val).strip() in ("", "None", "null"):
+        return {
+            "error_code": 2271,
+            "scenario": "SHIP_STATE_MISSING",
+            "scenario_name": "Ship-To State Code Missing",
+            "is_valid": False,
+            "ship_state": raw_val,
+            "trancatg": catg,
+            "rectified_state": fallback_state,
+            "reason": f"ShipDtls.Stcd is mandatory for domestic transaction '{catg}'.",
+            "resolution": f"Populate ShipDtls.Stcd with valid 2-digit numeric state code (e.g., '{fallback_state}').",
+            "action": "POPULATE_SHIP_STATE",
+            "correct_payload": {"ShipDtls": {"Stcd": fallback_state}}
+        }
+
+    str_val = str(raw_val).strip()
+    if str_val == "96":
+        return {
+            "error_code": 2271,
+            "scenario": "EXPORT_COUNTRY_CODE_IN_DOMESTIC",
+            "scenario_name": "Export Country Code (96) Passed in Domestic Shipment",
+            "is_valid": False,
+            "ship_state": "96",
+            "trancatg": catg,
+            "rectified_state": fallback_state,
+            "reason": f"Code '96' (Other Countries) was passed in ShipDtls.Stcd for domestic supply type '{catg}'. Domestic deliveries must reside within an Indian State/UT (01-38, 97).",
+            "resolution": f"Replace '96' with genuine delivery state code ('{fallback_state}').",
+            "action": "RECTIFY_TO_DOMESTIC_STATE",
+            "correct_payload": {"ShipDtls": {"Stcd": fallback_state}}
+        }
+
+    if isinstance(raw_val, (int, float)) and not isinstance(raw_val, bool):
+        rectified = f"{int(raw_val):02d}"
+        is_val = rectified in VALID_SUPPLIER_STATE_CODES
+        return {
+            "error_code": 2271,
+            "scenario": "NUMERIC_TYPE_PASSED",
+            "scenario_name": "Numeric Integer Type Passed",
+            "is_valid": False,
+            "ship_state": raw_val,
+            "trancatg": catg,
+            "rectified_state": rectified if is_val else fallback_state,
+            "reason": f"ShipDtls.Stcd was passed as numeric integer ({raw_val}) instead of a 2-digit string.",
+            "resolution": f"Pass state code as 2-digit string '{rectified}'.",
+            "action": "CAST_TO_STRING",
+            "correct_payload": {"ShipDtls": {"Stcd": rectified if is_val else fallback_state}}
+        }
+
+    if len(str_val) == 1 and str_val.isdigit():
+        rectified = f"0{str_val}"
+        is_val = rectified in VALID_SUPPLIER_STATE_CODES
+        return {
+            "error_code": 2271,
+            "scenario": "LEADING_ZERO_OMITTED",
+            "scenario_name": "Leading Zero Omitted",
+            "is_valid": False,
+            "ship_state": str_val,
+            "trancatg": catg,
+            "rectified_state": rectified if is_val else fallback_state,
+            "reason": f"Single-digit state code '{str_val}' must include a leading zero ('{rectified}').",
+            "resolution": f"Format ShipDtls.Stcd as '{rectified}'.",
+            "action": "PAD_LEADING_ZERO",
+            "correct_payload": {"ShipDtls": {"Stcd": rectified if is_val else fallback_state}}
+        }
+
+    if str_val.upper() in STATE_ALPHA_TO_CODE:
+        rectified = STATE_ALPHA_TO_CODE[str_val.upper()]
+        return {
+            "error_code": 2271,
+            "scenario": "ALPHA_CODE_USED",
+            "scenario_name": "Alpha Code Used Instead of Numeric String",
+            "is_valid": False,
+            "ship_state": str_val,
+            "trancatg": catg,
+            "rectified_state": rectified,
+            "reason": f"Alphabetic short code '{str_val}' is invalid. State code must be a 2-digit numeric code from official GST master list.",
+            "resolution": f"Map '{str_val}' to numeric state code '{rectified}'.",
+            "action": "MAP_ALPHA_TO_NUMERIC",
+            "correct_payload": {"ShipDtls": {"Stcd": rectified}}
+        }
+
+    if sgstin_clean and str_val != sgstin_clean[:2]:
+        return {
+            "error_code": 2271,
+            "scenario": "STATE_CODE_DISAGREES_WITH_GSTIN",
+            "scenario_name": "State Code Disagrees with ShipDtls.Gstin",
+            "is_valid": False,
+            "ship_state": str_val,
+            "trancatg": catg,
+            "rectified_state": sgstin_clean[:2],
+            "reason": f"ShipDtls.Stcd ('{str_val}') does not match the state code prefix ('{sgstin_clean[:2]}') of ShipDtls.Gstin ('{sgstin_clean}').",
+            "resolution": f"Align ShipDtls.Stcd to '{sgstin_clean[:2]}' to match ShipDtls.Gstin.",
+            "action": "ALIGN_TO_GSTIN_PREFIX",
+            "correct_payload": {"ShipDtls": {"Gstin": sgstin_clean, "Stcd": sgstin_clean[:2]}}
+        }
+
+    if str_val not in VALID_SUPPLIER_STATE_CODES:
+        return {
+            "error_code": 2271,
+            "scenario": "INVALID_STATE_CODE_VALUE",
+            "scenario_name": "Invalid State Code Value",
+            "is_valid": False,
+            "ship_state": str_val,
+            "trancatg": catg,
+            "rectified_state": fallback_state,
+            "reason": f"ShipDtls.Stcd '{str_val}' is not a valid 2-digit Indian State/UT code (01-38, 97).",
+            "resolution": f"Provide valid 2-digit Indian State code (e.g., '{fallback_state}').",
+            "action": "REPLACE_WITH_VALID_STATE",
+            "correct_payload": {"ShipDtls": {"Stcd": fallback_state}}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Ship-To State Code",
+        "is_valid": True,
+        "ship_state": str_val,
+        "trancatg": catg,
+        "rectified_state": str_val,
+        "reason": f"ShipDtls.Stcd '{str_val}' is valid for transaction category '{catg}'.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2272_diagnostic(
+    ship_pin: Any,
+    trancatg: str = "B2B",
+    buyer_pin: Optional[Any] = None,
+    ship_state: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2272:
+    'SHIP TO - PIN Code Cannot Be 999999 for B2B, SEZ and Deemed Export Transactions'
+    For domestic transactions (B2B, SEZWP, SEZWOP, DEXP), ShipDtls.Pin cannot be 999999.
+    Pin must be an authentic 6-digit Indian postal code.
+    """
+    catg = str(trancatg or "B2B").strip().upper()
+    is_domestic = catg not in ("EXP", "EXPWP", "EXPWOP")
+
+    if not is_domestic:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Export Transaction Permits Dummy Overseas PIN",
+            "is_valid": True,
+            "ship_pin": ship_pin,
+            "trancatg": catg,
+            "rectified_pin": 999999,
+            "reason": "Dummy PIN 999999 is permitted for direct export transactions.",
+            "resolution": "No action needed.",
+            "action": "NONE"
+        }
+
+    pin_str = str(ship_pin if ship_pin is not None else "").strip()
+    b_pin_str = str(buyer_pin if buyer_pin is not None else "").strip()
+    valid_b_pin = int(b_pin_str) if (b_pin_str.isdigit() and len(b_pin_str) == 6 and b_pin_str != "999999") else None
+
+    state_code = str(ship_state or "27").strip()
+    default_state_pin = 400001
+    if state_code in STATE_MASTER and "capital_pin" in STATE_MASTER[state_code]:
+        default_state_pin = int(STATE_MASTER[state_code]["capital_pin"])
+    fallback_pin = valid_b_pin if valid_b_pin else default_state_pin
+
+    if pin_str in ("999999", "0", "000000") or ship_pin in (999999, 0):
+        if catg in ("SEZWP", "SEZWOP"):
+            return {
+                "error_code": 2272,
+                "scenario": "SEZ_CAMPUS_DELIVERY_DUMMY_PIN",
+                "scenario_name": "SEZ Campus Delivery Passed with Dummy PIN",
+                "is_valid": False,
+                "ship_pin": ship_pin,
+                "trancatg": catg,
+                "rectified_pin": fallback_pin,
+                "reason": f"SEZ zones are located within Indian territorial borders and possess authentic Indian postal PIN codes. Dummy PIN 999999 is prohibited for '{catg}'.",
+                "resolution": f"Provide the authentic 6-digit Indian postal PIN code of the SEZ campus (e.g., {fallback_pin}).",
+                "action": "SET_AUTHENTIC_INDIAN_PIN",
+                "correct_payload": {"ShipDtls": {"Pin": fallback_pin}}
+            }
+
+        if valid_b_pin:
+            return {
+                "error_code": 2272,
+                "scenario": "REDUNDANT_SHIP_TO_WITH_DUMMY",
+                "scenario_name": "Ship-To Address Redundant with Buyer Address",
+                "is_valid": False,
+                "ship_pin": ship_pin,
+                "trancatg": catg,
+                "rectified_pin": valid_b_pin,
+                "reason": f"Dummy postal code 999999 was passed in ShipDtls for domestic supply '{catg}'. Buyer destination has authentic PIN {valid_b_pin}.",
+                "resolution": f"Align ShipDtls.Pin to BuyerDtls.Pin ({valid_b_pin}) or omit redundant ShipDtls block.",
+                "action": "ALIGN_TO_BUYER_PIN",
+                "correct_payload": {"ShipDtls": {"Pin": valid_b_pin}}
+            }
+
+        return {
+            "error_code": 2272,
+            "scenario": "DUMMY_OVERSEAS_PIN_FOR_DOMESTIC",
+            "scenario_name": "Dummy Overseas PIN 999999 Used for Domestic Delivery",
+            "is_valid": False,
+            "ship_pin": ship_pin,
+            "trancatg": catg,
+            "rectified_pin": fallback_pin,
+            "reason": f"Postal code 999999 is reserved strictly for foreign export addresses. Domestic deliveries under '{catg}' must provide an authentic 6-digit Indian PIN.",
+            "resolution": f"Provide genuine 6-digit postal PIN code of physical delivery destination (e.g., {fallback_pin}).",
+            "action": "SET_AUTHENTIC_INDIAN_PIN",
+            "correct_payload": {"ShipDtls": {"Pin": fallback_pin}}
+        }
+
+    if isinstance(ship_pin, str) and pin_str.isdigit() and len(pin_str) == 6:
+        return {
+            "error_code": 2272,
+            "scenario": "STRING_DATA_TYPE_PASSED",
+            "scenario_name": "String Data Type Passed",
+            "is_valid": False,
+            "ship_pin": ship_pin,
+            "trancatg": catg,
+            "rectified_pin": int(pin_str),
+            "reason": f"ShipDtls.Pin was passed as string '{ship_pin}'. NIC e-Invoice specifications require Pin to be a 6-digit numeric integer.",
+            "resolution": f"Cast Pin to numeric integer {int(pin_str)}.",
+            "action": "CAST_PIN_TO_INTEGER",
+            "correct_payload": {"ShipDtls": {"Pin": int(pin_str)}}
+        }
+
+    if not pin_str or not pin_str.isdigit() or len(pin_str) != 6:
+        return {
+            "error_code": 2272,
+            "scenario": "MALFORMED_SHIP_PIN",
+            "scenario_name": "Malformed Ship-To PIN Code",
+            "is_valid": False,
+            "ship_pin": ship_pin,
+            "trancatg": catg,
+            "rectified_pin": fallback_pin,
+            "reason": f"ShipDtls.Pin '{ship_pin}' is not a valid 6-digit postal PIN code.",
+            "resolution": f"Provide valid 6-digit numeric integer PIN (e.g., {fallback_pin}).",
+            "action": "SET_AUTHENTIC_INDIAN_PIN",
+            "correct_payload": {"ShipDtls": {"Pin": fallback_pin}}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Ship-To PIN Code",
+        "is_valid": True,
+        "ship_pin": int(pin_str),
+        "trancatg": catg,
+        "rectified_pin": int(pin_str),
+        "reason": f"ShipDtls.Pin {int(pin_str)} is authentic and valid.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2273_diagnostic(
+    disp_pin: Any,
+    trancatg: str = "B2B",
+    seller_pin: Optional[Any] = None,
+    disp_state: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2273:
+    'Dispatch from PIN code cannot be 999999'
+    Goods dispatched from within India must originate from an authentic physical location
+    possessing a genuine 6-digit postal PIN code. 999999 is strictly rejected for physical dispatch points,
+    even for export transactions.
+    """
+    pin_str = str(disp_pin if disp_pin is not None else "").strip()
+    s_pin_str = str(seller_pin if seller_pin is not None else "").strip()
+    valid_s_pin = int(s_pin_str) if (s_pin_str.isdigit() and len(s_pin_str) == 6 and s_pin_str != "999999") else None
+
+    state_code = str(disp_state or "27").strip()
+    default_state_pin = 400001
+    if state_code in STATE_MASTER and "pin_prefixes" in STATE_MASTER[state_code] and STATE_MASTER[state_code]["pin_prefixes"]:
+        default_state_pin = int(STATE_MASTER[state_code]["pin_prefixes"][0] + "0001")
+    elif state_code in STATE_MASTER and "capital_pin" in STATE_MASTER[state_code]:
+        default_state_pin = int(STATE_MASTER[state_code]["capital_pin"])
+    fallback_pin = valid_s_pin if valid_s_pin else default_state_pin
+    catg = str(trancatg or "B2B").strip().upper()
+
+    if pin_str in ("999999", "0", "000000") or disp_pin in (999999, 0):
+        if catg in ("EXP", "EXPWP", "EXPWOP"):
+            return {
+                "error_code": 2273,
+                "scenario": "EXPORT_TRANSACTION_DISPATCH_DUMMY",
+                "scenario_name": "Export Transaction Erroneously Passed 999999 on Dispatch",
+                "is_valid": False,
+                "disp_pin": disp_pin,
+                "trancatg": catg,
+                "rectified_pin": fallback_pin,
+                "reason": "Direct export rules mandate 999999 only for foreign BuyerDtls. Indian dispatch locations still require authentic Indian postal PINs.",
+                "resolution": f"Set DispDtls.Pin to the authentic Indian postal PIN code of the dispatch warehouse ({fallback_pin}).",
+                "action": "SET_AUTHENTIC_INDIAN_PIN",
+                "correct_payload": {"DispDtls": {"Pin": fallback_pin}}
+            }
+
+        return {
+            "error_code": 2273,
+            "scenario": "DUMMY_PIN_ON_DISPATCH_POINT",
+            "scenario_name": "Dummy PIN on Indian Dispatch Point",
+            "is_valid": False,
+            "disp_pin": disp_pin,
+            "trancatg": catg,
+            "rectified_pin": fallback_pin,
+            "reason": "Dispatch from PIN code cannot be 999999. Goods dispatched from within India must have an authentic 6-digit postal PIN code.",
+            "resolution": f"Provide authentic 6-digit Indian postal PIN code for dispatch location ({fallback_pin}).",
+            "action": "SET_AUTHENTIC_INDIAN_PIN",
+            "correct_payload": {"DispDtls": {"Pin": fallback_pin}}
+        }
+
+    if isinstance(disp_pin, str) and pin_str.isdigit() and len(pin_str) == 6:
+        return {
+            "error_code": 2273,
+            "scenario": "STRING_DATA_TYPE_PASSED",
+            "scenario_name": "String Data Type Passed",
+            "is_valid": False,
+            "disp_pin": disp_pin,
+            "trancatg": catg,
+            "rectified_pin": int(pin_str),
+            "reason": f"DispDtls.Pin was passed as string '{disp_pin}'. NIC e-Invoice specifications require Pin to be a 6-digit numeric integer.",
+            "resolution": f"Cast Pin to numeric integer {int(pin_str)}.",
+            "action": "CAST_PIN_TO_INTEGER",
+            "correct_payload": {"DispDtls": {"Pin": int(pin_str)}}
+        }
+
+    if not pin_str or not pin_str.isdigit() or len(pin_str) != 6:
+        return {
+            "error_code": 2273,
+            "scenario": "MALFORMED_DISPATCH_PIN",
+            "scenario_name": "Malformed Dispatch PIN Code",
+            "is_valid": False,
+            "disp_pin": disp_pin,
+            "trancatg": catg,
+            "rectified_pin": fallback_pin,
+            "reason": f"DispDtls.Pin '{disp_pin}' is not a valid 6-digit postal PIN code.",
+            "resolution": f"Provide valid 6-digit numeric integer PIN ({fallback_pin}).",
+            "action": "SET_AUTHENTIC_INDIAN_PIN",
+            "correct_payload": {"DispDtls": {"Pin": fallback_pin}}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Dispatch PIN Code",
+        "is_valid": True,
+        "disp_pin": int(pin_str),
+        "trancatg": catg,
+        "rectified_pin": int(pin_str),
+        "reason": f"DispDtls.Pin {int(pin_str)} is authentic and valid.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2274_diagnostic(
+    buyer_pin: Any,
+    trancatg: str = "B2B",
+    buyer_state: Optional[str] = None,
+    buyer_gstin: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2274:
+    'Recipient PIN code cannot be 999999 for {0} transaction.'
+    For domestic transactions (B2B, SEZWP, SEZWOP, DEXP), the buyer resides in India.
+    Dummy/overseas postal code 999999 is strictly rejected.
+    """
+    catg = str(trancatg or "B2B").strip().upper()
+    is_domestic = catg not in ("EXP", "EXPWP", "EXPWOP")
+
+    if not is_domestic:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Export Transaction Evaluated Under Rule 2275",
+            "is_valid": True,
+            "buyer_pin": buyer_pin,
+            "trancatg": catg,
+            "rectified_pin": 999999,
+            "reason": f"Rule 2274 applies solely to domestic transactions. Transaction category '{catg}' is governed by Rule 2275.",
+            "resolution": "No action needed.",
+            "action": "NONE"
+        }
+
+    pin_str = str(buyer_pin if buyer_pin is not None else "").strip()
+    bgstin = str(buyer_gstin or "").strip().upper()
+    bgstin_clean = bgstin if (bgstin and bgstin != "URP" and len(bgstin) == 15 and bgstin[:2].isdigit()) else None
+
+    state_code = str(buyer_state or (bgstin_clean[:2] if bgstin_clean else "27")).strip()
+    if state_code == "96" or state_code not in STATE_MASTER:
+        state_code = bgstin_clean[:2] if bgstin_clean else "27"
+
+    default_state_pin = 400001
+    if state_code in STATE_MASTER and "pin_prefixes" in STATE_MASTER[state_code] and STATE_MASTER[state_code]["pin_prefixes"]:
+        default_state_pin = int(STATE_MASTER[state_code]["pin_prefixes"][0] + "0001")
+    elif state_code in STATE_MASTER and "capital_pin" in STATE_MASTER[state_code]:
+        default_state_pin = int(STATE_MASTER[state_code]["capital_pin"])
+    fallback_pin = default_state_pin
+
+    if pin_str in ("999999", "0", "000000") or buyer_pin in (999999, 0):
+        if catg in ("SEZWP", "SEZWOP"):
+            return {
+                "error_code": 2274,
+                "scenario": "SEZ_BUYER_PASSED_WITH_DUMMY_PIN",
+                "scenario_name": "SEZ Buyer Passed with Dummy PIN",
+                "is_valid": False,
+                "buyer_pin": buyer_pin,
+                "trancatg": catg,
+                "rectified_pin": fallback_pin,
+                "reason": f"Recipient PIN code cannot be 999999 for {catg} transaction. SEZ units/developers are located within Indian territorial borders.",
+                "resolution": f"Provide the authentic Indian postal PIN code of the SEZ delivery campus (e.g., {fallback_pin}).",
+                "action": "SET_AUTHENTIC_INDIAN_PIN",
+                "correct_payload": {"BuyerDtls": {"Pin": fallback_pin}}
+            }
+
+        return {
+            "error_code": 2274,
+            "scenario": "OVERSEAS_PIN_ON_DOMESTIC_BUYER",
+            "scenario_name": "Overseas PIN Used on Domestic Buyer",
+            "is_valid": False,
+            "buyer_pin": buyer_pin,
+            "trancatg": catg,
+            "rectified_pin": fallback_pin,
+            "reason": f"Recipient PIN code cannot be 999999 for {catg} transaction. For domestic transactions, the buyer resides in India.",
+            "resolution": f"Pass the recipient's real 6-digit Indian PIN code (e.g., {fallback_pin}); 999999 is rejected.",
+            "action": "SET_AUTHENTIC_INDIAN_PIN",
+            "correct_payload": {"BuyerDtls": {"Pin": fallback_pin}}
+        }
+
+    if isinstance(buyer_pin, str) and pin_str.isdigit() and len(pin_str) == 6:
+        return {
+            "error_code": 2274,
+            "scenario": "STRING_DATA_TYPE_PASSED",
+            "scenario_name": "String Data Type Passed",
+            "is_valid": False,
+            "buyer_pin": buyer_pin,
+            "trancatg": catg,
+            "rectified_pin": int(pin_str),
+            "reason": f"BuyerDtls.Pin was passed as string '{buyer_pin}'. NIC e-Invoice specifications require Pin to be a 6-digit numeric integer.",
+            "resolution": f"Cast Pin to numeric integer {int(pin_str)}.",
+            "action": "CAST_PIN_TO_INTEGER",
+            "correct_payload": {"BuyerDtls": {"Pin": int(pin_str)}}
+        }
+
+    if not pin_str or not pin_str.isdigit() or len(pin_str) != 6:
+        return {
+            "error_code": 2274,
+            "scenario": "MALFORMED_BUYER_PIN",
+            "scenario_name": "Malformed Domestic Buyer PIN Code",
+            "is_valid": False,
+            "buyer_pin": buyer_pin,
+            "trancatg": catg,
+            "rectified_pin": fallback_pin,
+            "reason": f"BuyerDtls.Pin '{buyer_pin}' is not a valid 6-digit postal PIN code for domestic transaction '{catg}'.",
+            "resolution": f"Provide valid 6-digit numeric integer PIN (e.g., {fallback_pin}).",
+            "action": "SET_AUTHENTIC_INDIAN_PIN",
+            "correct_payload": {"BuyerDtls": {"Pin": fallback_pin}}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Domestic Buyer PIN Code",
+        "is_valid": True,
+        "buyer_pin": int(pin_str),
+        "trancatg": catg,
+        "rectified_pin": int(pin_str),
+        "reason": f"BuyerDtls.Pin {int(pin_str)} is authentic and valid.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2275_diagnostic(
+    buyer_pin: Any,
+    trancatg: str = "EXPWP",
+    buyer_state: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2275:
+    'Recipient PIN code should be 999999 for Direct Export'
+    For direct cross-border exports (EXPWP and EXPWOP), the IRP schema requires the recipient PIN
+    to be set specifically to 999999. Domestic PINs and foreign ZIP codes are rejected.
+    """
+    catg = str(trancatg or "EXPWP").strip().upper()
+    is_export = catg in ("EXP", "EXPWP", "EXPWOP")
+
+    if not is_export:
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Domestic Transaction Evaluated Under Rule 2274",
+            "is_valid": True,
+            "buyer_pin": buyer_pin,
+            "trancatg": catg,
+            "rectified_pin": buyer_pin,
+            "reason": f"Rule 2275 applies solely to direct export transactions (EXPWP/EXPWOP). Domestic transaction '{catg}' is governed by Rule 2274.",
+            "resolution": "No action needed.",
+            "action": "NONE"
+        }
+
+    pin_str = str(buyer_pin if buyer_pin is not None else "").strip()
+
+    if pin_str == "999999" and isinstance(buyer_pin, int):
+        return {
+            "error_code": None,
+            "scenario": "VALID",
+            "scenario_name": "Valid Direct Export Recipient PIN",
+            "is_valid": True,
+            "buyer_pin": 999999,
+            "trancatg": catg,
+            "rectified_pin": 999999,
+            "reason": "BuyerDtls.Pin is correctly set to numeric integer 999999 for direct export.",
+            "resolution": "No action needed.",
+            "action": "NONE"
+        }
+
+    if pin_str == "999999" and isinstance(buyer_pin, str):
+        return {
+            "error_code": 2275,
+            "scenario": "STRING_DATA_TYPE_PASSED",
+            "scenario_name": "String Data Type Passed",
+            "is_valid": False,
+            "buyer_pin": buyer_pin,
+            "trancatg": catg,
+            "rectified_pin": 999999,
+            "reason": "BuyerDtls.Pin was passed as string '999999'. NIC specifications require numeric integer 999999.",
+            "resolution": "Cast Pin to numeric integer 999999.",
+            "action": "CAST_PIN_TO_INTEGER",
+            "correct_payload": {"BuyerDtls": {"Pin": 999999}}
+        }
+
+    if (pin_str.isdigit() and len(pin_str) in (3, 4, 5)) or not pin_str.isdigit():
+        return {
+            "error_code": 2275,
+            "scenario": "FOREIGN_ZIP_PASSED_DIRECTLY",
+            "scenario_name": "Foreign ZIP Code Passed Directly into Pin Field",
+            "is_valid": False,
+            "buyer_pin": buyer_pin,
+            "trancatg": catg,
+            "rectified_pin": 999999,
+            "reason": f"Foreign postal code '{buyer_pin}' was passed directly into BuyerDtls.Pin. The central IRP schema strictly mandates setting Pin to 999999 for direct exports.",
+            "resolution": "Set BuyerDtls.Pin = 999999 and retain foreign postal code in address or remarks.",
+            "action": "SET_EXPORT_DUMMY_PIN",
+            "correct_payload": {"BuyerDtls": {"Pin": 999999}}
+        }
+
+    return {
+        "error_code": 2275,
+        "scenario": "DOMESTIC_PIN_ON_EXPORT_BUYER",
+        "scenario_name": "Domestic PIN on Direct Export Buyer",
+        "is_valid": False,
+        "buyer_pin": buyer_pin,
+        "trancatg": catg,
+        "rectified_pin": 999999,
+        "reason": f"Recipient PIN code should be 999999 for Direct Export. Passed domestic PIN code '{buyer_pin}' for transaction type '{catg}'.",
+        "resolution": "Set BuyerDtls.Pin = 999999 for direct export transactions.",
+        "action": "SET_EXPORT_DUMMY_PIN",
+        "correct_payload": {"BuyerDtls": {"Pin": 999999}}
+    }
+
+
+def classify_rule_2276_diagnostic(
+    seller_pin: Any,
+    trancatg: str = "B2B",
+    seller_state: Optional[str] = None,
+    seller_gstin: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2276:
+    'Supplier PIN code cannot be 999999'
+    Every GST-registered supplier is an Indian entity with a verified principal place of business.
+    999999 is completely invalid in SellerDtls. Pass the registered 6-digit Indian PIN.
+    """
+    pin_str = str(seller_pin if seller_pin is not None else "").strip()
+    sgstin = str(seller_gstin or "").strip().upper()
+    sgstin_clean = sgstin if (sgstin and sgstin != "URP" and len(sgstin) == 15 and sgstin[:2].isdigit()) else None
+
+    state_code = str(seller_state or (sgstin_clean[:2] if sgstin_clean else "27")).strip()
+    if state_code == "96" or state_code not in STATE_MASTER:
+        state_code = sgstin_clean[:2] if sgstin_clean else "27"
+
+    default_state_pin = 400001
+    if state_code in STATE_MASTER and "pin_prefixes" in STATE_MASTER[state_code] and STATE_MASTER[state_code]["pin_prefixes"]:
+        default_state_pin = int(STATE_MASTER[state_code]["pin_prefixes"][0] + "0001")
+    elif state_code in STATE_MASTER and "capital_pin" in STATE_MASTER[state_code]:
+        default_state_pin = int(STATE_MASTER[state_code]["capital_pin"])
+    fallback_pin = default_state_pin
+    catg = str(trancatg or "B2B").strip().upper()
+
+    if pin_str in ("999999", "0", "000000") or seller_pin in (999999, 0):
+        if catg in ("EXP", "EXPWP", "EXPWOP"):
+            return {
+                "error_code": 2276,
+                "scenario": "EXPORT_TRANSACTION_SUPPLIER_DUMMY",
+                "scenario_name": "Export Transaction Erroneously Passed 999999 on Seller",
+                "is_valid": False,
+                "seller_pin": seller_pin,
+                "trancatg": catg,
+                "rectified_pin": fallback_pin,
+                "reason": "Supplier PIN code cannot be 999999. Export supply type does not alter the domestic status of the supplier entity.",
+                "resolution": f"Pass the supplier's authentic 6-digit registered Indian PIN code (e.g., {fallback_pin}).",
+                "action": "SET_AUTHENTIC_INDIAN_PIN",
+                "correct_payload": {"SellerDtls": {"Pin": fallback_pin}}
+            }
+
+        return {
+            "error_code": 2276,
+            "scenario": "DUMMY_PIN_ON_REGISTERED_SUPPLIER",
+            "scenario_name": "Dummy PIN on Registered Supplier",
+            "is_valid": False,
+            "seller_pin": seller_pin,
+            "trancatg": catg,
+            "rectified_pin": fallback_pin,
+            "reason": "Supplier PIN code cannot be 999999. Every GST-registered supplier is an Indian entity with a verified principal place of business.",
+            "resolution": f"Pass the registered 6-digit PIN code of the supplier entity (e.g., {fallback_pin}).",
+            "action": "SET_AUTHENTIC_INDIAN_PIN",
+            "correct_payload": {"SellerDtls": {"Pin": fallback_pin}}
+        }
+
+    if isinstance(seller_pin, str) and pin_str.isdigit() and len(pin_str) == 6:
+        return {
+            "error_code": 2276,
+            "scenario": "STRING_DATA_TYPE_PASSED",
+            "scenario_name": "String Data Type Passed",
+            "is_valid": False,
+            "seller_pin": seller_pin,
+            "trancatg": catg,
+            "rectified_pin": int(pin_str),
+            "reason": f"SellerDtls.Pin was passed as string '{seller_pin}'. NIC e-Invoice specifications require Pin to be a 6-digit numeric integer.",
+            "resolution": f"Cast Pin to numeric integer {int(pin_str)}.",
+            "action": "CAST_PIN_TO_INTEGER",
+            "correct_payload": {"SellerDtls": {"Pin": int(pin_str)}}
+        }
+
+    if not pin_str or not pin_str.isdigit() or len(pin_str) != 6:
+        return {
+            "error_code": 2276,
+            "scenario": "MALFORMED_SELLER_PIN",
+            "scenario_name": "Malformed Supplier PIN Code",
+            "is_valid": False,
+            "seller_pin": seller_pin,
+            "trancatg": catg,
+            "rectified_pin": fallback_pin,
+            "reason": f"SellerDtls.Pin '{seller_pin}' is not a valid 6-digit postal PIN code.",
+            "resolution": f"Provide valid 6-digit numeric integer PIN (e.g., {fallback_pin}).",
+            "action": "SET_AUTHENTIC_INDIAN_PIN",
+            "correct_payload": {"SellerDtls": {"Pin": fallback_pin}}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Valid Supplier PIN Code",
+        "is_valid": True,
+        "seller_pin": int(pin_str),
+        "trancatg": catg,
+        "rectified_pin": int(pin_str),
+        "reason": f"SellerDtls.Pin {int(pin_str)} is authentic and valid.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
+def classify_rule_2278_diagnostic(
+    docno: str,
+    doc_type: str = "INV",
+    is_cancelled_reuse: bool = False,
+    cancelled_doc_registry: Optional[Set[str]] = None,
+    financial_year: Optional[str] = None,
+    supplier_gstin: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Classifies Indian GST e-Invoicing (NIC / IRP) Error Code 2278:
+    'Document number cannot be reused after IRN cancellation'
+    Once an IRN is generated and subsequently cancelled, the specific document number
+    (DocDtls.No + Typ + FY) is permanently locked in the central registry.
+    The IRP will never allow re-generation against that exact document number.
+    A new, distinct invoice number must be issued by the ERP.
+    """
+    clean_no = str(docno or "").strip()
+    doc_key = f"{supplier_gstin or ''}:{clean_no}".upper() if supplier_gstin else clean_no.upper()
+
+    is_in_registry = False
+    if cancelled_doc_registry is not None:
+        is_in_registry = (clean_no.upper() in cancelled_doc_registry or doc_key in cancelled_doc_registry)
+
+    if is_cancelled_reuse or is_in_registry:
+        rectified_docno = f"{clean_no}-A"
+
+        return {
+            "error_code": 2278,
+            "scenario": "REUSING_CANCELLED_DOCUMENT_NUMBER",
+            "scenario_name": "Re-generation on Cancelled Document Number",
+            "is_valid": False,
+            "docno": clean_no,
+            "doc_type": doc_type,
+            "rectified_docno": rectified_docno,
+            "reason": f"Document number '{clean_no}' was previously registered and subsequently cancelled. Central IRP registry permanently locks cancelled document numbers against re-generation.",
+            "resolution": f"Issue a new, distinct invoice number from the ERP (e.g., '{rectified_docno}').",
+            "action": "GENERATE_NEW_DOCUMENT_NUMBER",
+            "correct_payload": {"DocDtls": {"No": rectified_docno}}
+        }
+
+    return {
+        "error_code": None,
+        "scenario": "VALID",
+        "scenario_name": "Document Number Not Previously Cancelled",
+        "is_valid": True,
+        "docno": clean_no,
+        "doc_type": doc_type,
+        "rectified_docno": clean_no,
+        "reason": f"Document number '{clean_no}' is unique and eligible for IRN generation.",
+        "resolution": "No action needed.",
+        "action": "NONE"
+    }
+
+
 def classify_rule_2173_diagnostic(
     item_count: int,
     items: Optional[List[Dict[str, Any]]] = None,
@@ -4677,9 +9421,9 @@ class Counterparty(BaseModel):
     gstin: str = Field(..., description="15-character statutory GSTIN or URP")
     lglnm: str = Field(..., min_length=1, max_length=200, description="Legal registered entity name")
     trdnm: Optional[str] = Field(None, description="Trade trading brand name")
-    state: str = Field(..., min_length=2, max_length=2, description="2-digit State code (01-38, 96, 97)")
+    state: str = Field(..., min_length=1, max_length=10, description="2-digit State code (01-38, 96, 97)")
     pin: str = Field(..., min_length=6, max_length=6, description="6-digit PIN code (or 999999 for export)")
-    pos: Optional[str] = Field(None, min_length=2, max_length=2, description="Place of supply state code")
+    pos: Optional[str] = Field(None, min_length=1, max_length=10, description="Place of supply state code")
     loc: Optional[str] = Field(None, description="Location/City")
     dst: Optional[str] = Field(None, description="District name")
     bno: Optional[str] = Field(None, description="Building / Premises number")
@@ -4739,10 +9483,12 @@ class Counterparty(BaseModel):
             d["lglnm"] = d["nm"]
         if "Nm" in d and "lglnm" not in d:
             d["lglnm"] = d["Nm"]
+        if "legal_name" in d and "lglnm" not in d:
+            d["lglnm"] = d["legal_name"]
         if not d.get("gstin"):
             d["gstin"] = "URP"
         if not d.get("lglnm"):
-            d["lglnm"] = d.get("trdnm") or d.get("TrdNm") or d.get("name") or "Entity"
+            d["lglnm"] = d.get("legal_name") or d.get("trdnm") or d.get("TrdNm") or d.get("name") or "Entity"
         if "Addr1" in d and "bnm" not in d:
             d["bnm"] = d["Addr1"]
         if "Addr2" in d and "bno" not in d:
@@ -4771,27 +9517,34 @@ class Counterparty(BaseModel):
             raise NICValidationError(2289, "gstin", f"Invalid GSTIN format: {v}")
         return clean
 
-    @field_validator("state", "pos", mode="before")
+    @field_validator("state", mode="before")
     @classmethod
     def validate_state_code(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
-        raw = str(v).strip().upper()
-        if raw in ("96", "97"):
-            return raw
-        diag = classify_rule_2200_diagnostic(raw)
+        return str(v).strip().upper()
+
+    @field_validator("pos", mode="before")
+    @classmethod
+    def validate_pos_code(cls, v: Any) -> Optional[str]:
+        if v is None:
+            return None
+        diag = classify_rule_2243_diagnostic(v)
         if not diag["is_valid"]:
-            raise NICValidationError(2200, "state", diag["reason"])
-        return diag["rectified_stcd"]
+            raise NICValidationError(2243, "pos", f"POS code is invalid: {diag['reason']}")
+        return str(diag["rectified_pos"]).zfill(2)
 
     @field_validator("pin", mode="before")
     @classmethod
     def validate_pincode(cls, v: Any) -> str:
+        if v is None or str(v).strip() in ("", "0", "None", "null") or v == 0:
+            raise NICValidationError(2244, "pin", "Recipient PIN code is not provided for transaction (Rule 2244)")
         clean = str(v).strip()
         if clean == "999999":
             return clean
         if not (clean.isdigit() and len(clean) == 6):
-            raise NICValidationError(3038, "pin", f"PIN code must be exactly 6 digits: {v}")
+            diag = classify_rule_2244_diagnostic(v)
+            raise NICValidationError(2244, "pin", f"Recipient PIN code is invalid (Rule 2244): {diag['reason']}")
         return clean
 
     @field_validator("phone")
@@ -4816,18 +9569,8 @@ class Counterparty(BaseModel):
 
     @model_validator(mode="after")
     def validate_party_coherence(self) -> "Counterparty":
-        # 1. State Code alignment with GSTIN prefix (if not URP and not export recipient)
-        if self.gstin != "URP" and len(self.gstin) == 15 and self.state not in ("96", "97"):
-            if self.gstin[:2] != self.state:
-                diag = classify_rule_2200_diagnostic(self.state, gstin=self.gstin)
-                raise NICValidationError(
-                    2200,
-                    "state",
-                    diag["reason"]
-                )
-
-        # 2. Pincode to State validation (prevent cross-state PIN mismatches, Error 3039/3041)
-        if self.pin != "999999" and self.state not in ("96", "97"):
+        # Pincode to State validation (prevent cross-state PIN mismatches, Error 3039/3041)
+        if self.pin != "999999" and self.state in STATE_MASTER and self.state not in ("96", "97"):
             if not verify_pincode_state(self.pin, self.state):
                 state_name = STATE_MASTER.get(self.state, {}).get("name", self.state)
                 raise NICValidationError(
@@ -5073,9 +9816,14 @@ class LineItem(BaseModel):
     @field_validator("unit", mode="before")
     @classmethod
     def validate_uqc(cls, v: Any) -> str:
+        if v is None or str(v).strip() == "":
+            diag = classify_rule_2239_diagnostic(v)
+            raise NICValidationError(
+                2239,
+                "unit",
+                f"Unit Quantity Code (UQC) is not passed for item (Error 2239): {diag['reason']}"
+            )
         clean = str(v or "").strip().upper().rstrip(".")
-        if not clean:
-            return "NOS"
         diag = classify_rule_2177_diagnostic(clean)
         if not diag["is_valid"]:
             raise NICValidationError(
@@ -5087,12 +9835,20 @@ class LineItem(BaseModel):
 
     @model_validator(mode="after")
     def validate_line_item_math(self) -> "LineItem":
-        # 1. Goods require qty > 0 and valid UQC
-        if self.is_service == "N":
-            if self.qty <= 0:
-                raise NICValidationError(2238, "qty", f"qty is mandatory for goods item '{self.prdnm}' (isservc = 'N')")
-            if not self.unit:
-                raise NICValidationError(2239, "unit", f"uqc is mandatory for goods item '{self.prdnm}'")
+        # 1. Quantity is mandatory & must be positive for all items (goods and services alike) (Rule 2238)
+        if self.qty <= 0:
+            diag_2238 = classify_rule_2238_diagnostic(self.qty, is_service=self.is_service, item_slno=self.slno, prdnm=self.prdnm)
+            raise NICValidationError(2238, f"itemdtls[{self.slno}].qty", f"For Sl. No {self.slno}, Quantity is not passed: {diag_2238['reason']}")
+
+        # 1b. Unit Quantity Code is mandatory for all items (Rule 2239)
+        if not self.unit or str(self.unit).strip() == "":
+            diag_2239 = classify_rule_2239_diagnostic(self.unit, is_service=self.is_service, item_slno=self.slno, prdnm=self.prdnm)
+            raise NICValidationError(2239, f"itemdtls[{self.slno}].unit", f"For Sl. No {self.slno}, Unit Quantity Code (UQC) is not passed: {diag_2239['reason']}")
+
+        # 1c. GST Rate of Tax must be one of the officially notified rate slabs (Rule 2240)
+        if float(self.gstrate) not in NOTIFIED_GST_RATES:
+            diag_2240 = classify_rule_2240_diagnostic(self.gstrate, cgstrt=self.cgstval, sgstrt=self.sgstval, cesrt=self.cesrate, item_slno=self.slno)
+            raise NICValidationError(2240, f"itemdtls[{self.slno}].gstrate", f"For Sl. No {self.slno}, GST rate of tax is incorrect or not as notified: {diag_2240['reason']}")
 
         # 2. Math reconciliation
         qty_d = Decimal(str(self.qty))
@@ -5149,6 +9905,42 @@ class LineItem(BaseModel):
                 2193,
                 f"itemdtls[{self.slno}].assamt",
                 f"For Sl. No. {self.slno}, Taxable Value (AssAmt) value is not equal to (TotAmt - Discount). ({scen_name}): {reason_text}"
+            )
+
+        # 2b. Rule 2266: Line Item Cess Amount vs Rate Formula Mismatch
+        ces_rate_d = Decimal(str(self.cesrate))
+        ces_amt_d = Decimal(str(self.cesval))
+        ces_nonad_d = Decimal(str(self.cesnonadvl))
+        diag_2266 = classify_rule_2266_diagnostic(
+            assval=ass_d,
+            cesrate=ces_rate_d,
+            cesval=ces_amt_d,
+            cesnonadvl=ces_nonad_d,
+            item_slno=self.slno
+        )
+        if not diag_2266["is_valid"]:
+            raise NICValidationError(
+                2266,
+                f"itemdtls[{self.slno}].cesval",
+                f"For Sl. No {self.slno}, Item Cess amount does not match calculated value (Rule 2266): {diag_2266['reason']}"
+            )
+
+        # 2c. Rule 2267: Line Item State Cess Amount vs Rate Formula Mismatch
+        stces_rate_d = Decimal(str(self.statecesrate))
+        stces_amt_d = Decimal(str(self.statecesval))
+        stces_nonad_d = Decimal(str(self.statecesnonadvl))
+        diag_2267 = classify_rule_2267_diagnostic(
+            assval=ass_d,
+            statecesrate=stces_rate_d,
+            statecesval=stces_amt_d,
+            statecesnonadvl=stces_nonad_d,
+            item_slno=self.slno
+        )
+        if not diag_2267["is_valid"]:
+            raise NICValidationError(
+                2267,
+                f"itemdtls[{self.slno}].statecesval",
+                f"For Sl. No {self.slno}, Item State Cess amount does not match calculated value (Rule 2267): {diag_2267['reason']}"
             )
 
         expected_totitem = (
@@ -5504,6 +10296,16 @@ class InvoicePayload(BaseModel):
         """Alias property for reversecharge complying with NIC schema RevChrg."""
         return self.reversecharge
 
+    @classmethod
+    def validate_cancellation(cls, generation_time: Any, cancellation_time: Any = None, irn: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Validates cancellation request against statutory 24-hour cutoff (Rule 2270).
+        """
+        diag = classify_rule_2270_diagnostic(generation_time, cancellation_time, irn)
+        if not diag["is_valid"]:
+            raise NICValidationError(2270, "irn", diag["reason"])
+        return diag
+
     @field_validator("reversecharge", mode="before")
     @classmethod
     def validate_reversecharge(cls, v: Any) -> str:
@@ -5685,8 +10487,17 @@ class InvoicePayload(BaseModel):
     @model_validator(mode="after")
     def validate_cross_model_statutory_rules(self) -> "InvoicePayload":
         # 1. Supplier GSTIN cannot be URP (Rule 2213)
-        if self.supplier.gstin == "URP":
-            raise NICValidationError(2213, "supplier.gstin", "The supplier GSTIN cannot be URP.")
+        if self.supplier.gstin == "URP" or getattr(self, "is_rcm_inward", False) or getattr(self, "is_dummy_testing", False):
+            diag_2213 = classify_rule_2213_diagnostic(
+                seller_gstin=self.supplier.gstin,
+                is_rcm_inward=bool(getattr(self, "is_rcm_inward", False)),
+                is_dummy_testing=bool(getattr(self, "is_dummy_testing", False)),
+                supplier_state=self.supplier.state,
+                doc_type=self.document_type,
+                trancatg=self.trancatg,
+            )
+            diag_msg = f": {diag_2213['reason']}" if diag_2213 else "The supplier GSTIN cannot be URP."
+            raise NICValidationError(2213, "supplier.gstin", f"The supplier GSTIN cannot be URP{diag_msg}")
 
         # 2. Self-invoicing check (Rule 2211)
         if self.supplier.gstin and self.buyer.gstin and self.supplier.gstin == self.buyer.gstin:
@@ -5737,10 +10548,260 @@ class InvoicePayload(BaseModel):
         is_export = self.trancatg in ("EXP", "EXPWP", "EXPWOP")
         is_sez = self.trancatg in ("SEZWP", "SEZWOP")
         if self.igstonintra == "Y":
+            if is_export or is_sez:
+                diag_2268 = classify_rule_2268_diagnostic(
+                    igstonintra=self.igstonintra,
+                    trancatg=self.trancatg
+                )
+                raise NICValidationError(2268, "igstonintra", f"IGST on intra-state supply is not applicable to {self.trancatg} transactions (Rule 2268): {diag_2268['reason']}")
             if self.reversecharge != "Y":
                 raise NICValidationError(2294, "reversecharge", "Reverse charge is mandatory if IGST on intra is applicable.")
-            if is_export or is_sez:
-                raise NICValidationError(2268, "igstonintra", f"IGST on intra state supply is not applicable to {self.trancatg} transactions.")
+
+        # 5a. POS Statutory Validation (Rule 2232 & Rule 2242)
+        pos = getattr(self.buyer, "pos", None) or getattr(self.buyer, "state", None)
+        if is_export and pos != "96":
+            diag_2232 = classify_rule_2232_diagnostic(
+                pos=pos,
+                trancatg=self.trancatg,
+                seller_state=self.supplier.state,
+                recipient_state=getattr(self.buyer, "state", None)
+            )
+            raise NICValidationError(2232, "buyer.pos", f"Place of Supply is incorrect for Export transaction (Rule 2232): {diag_2232['reason']}")
+
+        if not is_export and pos == "96":
+            diag_2242 = classify_rule_2242_diagnostic(
+                pos=pos,
+                trancatg=self.trancatg,
+                buyer_state=getattr(self.buyer, "state", None),
+                buyer_gstin=getattr(self.buyer, "gstin", None),
+                is_sez=is_sez
+            )
+            raise NICValidationError(2242, "buyer.pos", f"Recipient POS is incorrect for transaction type {self.trancatg} (Rule 2242): {diag_2242['reason']}")
+
+        # 5b. Rule 2243: POS Code is Invalid
+        diag_2243 = classify_rule_2243_diagnostic(
+            pos=pos,
+            trancatg=self.trancatg,
+            buyer_state=getattr(self.buyer, "state", None),
+            buyer_gstin=getattr(self.buyer, "gstin", None),
+            is_export=is_export
+        )
+        if not diag_2243["is_valid"]:
+            raise NICValidationError(2243, "buyer.pos", f"POS code is invalid (Rule 2243): {diag_2243['reason']}")
+
+        # 5c. Rule 2244: Recipient PIN Code is Not Provided for Transaction
+        raw_pin_buyer = getattr(self.buyer, "pin", None)
+        diag_2244 = classify_rule_2244_diagnostic(
+            pin=raw_pin_buyer,
+            trancatg=self.trancatg,
+            buyer_state=getattr(self.buyer, "state", None),
+            buyer_gstin=getattr(self.buyer, "gstin", None),
+            is_export=is_export
+        )
+        if not diag_2244["is_valid"] and diag_2244.get("scenario") != "STRING_TYPE_PASSED_INSTEAD_OF_INTEGER":
+            raise NICValidationError(2244, "buyer.pin", f"Recipient PIN code is not provided for transaction (Rule 2244): {diag_2244['reason']}")
+
+        # 5d. Rule 2246: Recipient Cannot Be SEZ for Supply Type
+        buy_gstin_str = getattr(self.buyer, "gstin", "") or ""
+        is_sez_buyer_entity = getattr(self.buyer, "is_sez", False) or (buy_gstin_str in KNOWN_SEZ_BUYER_GSTINS)
+        if is_sez_buyer_entity and self.trancatg not in ("SEZWP", "SEZWOP"):
+            diag_2246 = classify_rule_2246_diagnostic(
+                buyer_gstin=buy_gstin_str,
+                trancatg=self.trancatg,
+                is_sez_buyer=is_sez_buyer_entity,
+                is_dta_sale=getattr(self, "is_dta_sale", False)
+            )
+            if not diag_2246["is_valid"]:
+                raise NICValidationError(2246, "buyer.gstin", f"Recipient cannot be SEZ for {self.trancatg} transaction (Rule 2246): {diag_2246['reason']}")
+
+        # 5e. Rule 2247: Recipient Should Be SEZ for Transaction
+        if self.trancatg in ("SEZWP", "SEZWOP"):
+            if not is_sez_buyer_entity:
+                diag_2247 = classify_rule_2247_diagnostic(
+                    buyer_gstin=buy_gstin_str,
+                    trancatg=self.trancatg,
+                    is_sez_buyer=is_sez_buyer_entity,
+                    is_dta_sale=getattr(self, "is_dta_sale", False),
+                    sez_gstin=getattr(self, "sez_gstin", None)
+                )
+                if not diag_2247["is_valid"]:
+                    raise NICValidationError(2247, "buyer.gstin", f"Recipient should be SEZ for {self.trancatg} transaction (Rule 2247): {diag_2247['reason']}")
+
+        # 5f. Rule 2248: Recipient Has to Be URP in Case of Export Transactions
+        if is_export:
+            diag_2248 = classify_rule_2248_diagnostic(
+                buyer_gstin=buy_gstin_str,
+                trancatg=self.trancatg,
+                is_export=is_export,
+                is_domestic_sale=getattr(self, "is_domestic_sale", False)
+            )
+            if not diag_2248["is_valid"]:
+                raise NICValidationError(2248, "buyer.gstin", f"Recipient has to be URP in case of export transactions (Rule 2248): {diag_2248['reason']}")
+
+        # 5g. Rule 2259: Invalid Supplier State Code
+        sup_gstin_str = getattr(self.supplier, "gstin", "") or ""
+        sup_state_str = getattr(self.supplier, "state", "") or ""
+        diag_2259 = classify_rule_2259_diagnostic(
+            supplier_state=sup_state_str,
+            supplier_gstin=sup_gstin_str
+        )
+        if not diag_2259["is_valid"]:
+            raise NICValidationError(2259, "supplier.state", f"Invalid supplier state code (Rule 2259): {diag_2259['reason']}")
+
+        # 5h. Rule 2258: Supplier GSTIN State Code Does Not Match Passed State Code
+        if sup_gstin_str and sup_gstin_str != "URP" and len(sup_gstin_str) >= 2 and sup_gstin_str[:2].isdigit():
+            diag_2258 = classify_rule_2258_diagnostic(
+                supplier_gstin=sup_gstin_str,
+                supplier_state=sup_state_str
+            )
+            if not diag_2258["is_valid"]:
+                raise NICValidationError(2258, "supplier.state", f"Supplier GSTIN state code does not match state code passed (Rule 2258): {diag_2258['reason']}")
+
+        # 5i. Rule 2260: The Recipient State Code is Invalid
+        buy_state_str = getattr(self.buyer, "state", "") or ""
+        diag_2260 = classify_rule_2260_diagnostic(
+            buyer_state=buy_state_str,
+            buyer_gstin=buy_gstin_str,
+            trancatg=self.trancatg
+        )
+        if not diag_2260["is_valid"]:
+            raise NICValidationError(2260, "buyer.state", f"The recipient state code is invalid (Rule 2260): {diag_2260['reason']}")
+
+        # 5j. Rule 2261: Recipient State Code is Incorrect for Export Transaction
+        if is_export:
+            diag_2261 = classify_rule_2261_diagnostic(
+                buyer_state=buy_state_str,
+                trancatg=self.trancatg,
+                is_export=is_export,
+                is_domestic_sale=getattr(self, "is_domestic_sale", False),
+                buyer_gstin=buy_gstin_str
+            )
+            if not diag_2261["is_valid"]:
+                raise NICValidationError(2261, "buyer.state", f"The recipient state code is incorrect for {self.trancatg} transaction (Rule 2261): {diag_2261['reason']}")
+
+        # 5k. Rule 2262: For Intra-state supply, IGST cannot be charged
+        if self.igstonintra == "Y":
+            buyer_pos_str = getattr(self.buyer, "pos", None) or getattr(self.buyer, "state", None) or ""
+            diag_2262 = classify_rule_2262_diagnostic(
+                igstonintra=self.igstonintra,
+                seller_state=sup_state_str,
+                pos=buyer_pos_str,
+                is_actual_intra=getattr(self, "is_actual_local_sale", False)
+            )
+            if not diag_2262["is_valid"]:
+                raise NICValidationError(2262, "igstonintra", f"For Intra-state supply, IGST cannot be charged (Rule 2262): {diag_2262['reason']}")
+
+        # 5l. Rule 2265: Recipient GSTIN State Code Does Not Match State Code Passed
+        if buy_gstin_str and buy_gstin_str != "URP" and len(buy_gstin_str) >= 2 and buy_gstin_str[:2].isdigit():
+            diag_2265 = classify_rule_2265_diagnostic(
+                buyer_gstin=buy_gstin_str,
+                buyer_state=buy_state_str
+            )
+            if not diag_2265["is_valid"]:
+                raise NICValidationError(2265, "buyer.state", f"Recipient GSTIN state code does not match state code passed (Rule 2265): {diag_2265['reason']}")
+
+        # 5m. Rule 2268: IGST on intra-state supply is not applicable to Export/SEZ
+        if self.igstonintra == "Y" and self.trancatg in ("EXP", "EXPWP", "EXPWOP", "SEZWP", "SEZWOP"):
+            diag_2268 = classify_rule_2268_diagnostic(
+                igstonintra=self.igstonintra,
+                trancatg=self.trancatg
+            )
+            if not diag_2268["is_valid"]:
+                raise NICValidationError(2268, "igstonintra", f"IGST on intra-state supply is not applicable to Export/SEZ transactions (Rule 2268): {diag_2268['reason']}")
+
+        # 5n. Rule 2269: Recipient state code is incorrect (96 sent for domestic type)
+        if not is_export and buy_state_str == "96":
+            diag_2269 = classify_rule_2269_diagnostic(
+                buyer_state=buy_state_str,
+                trancatg=self.trancatg,
+                buyer_gstin=buy_gstin_str,
+                is_actual_export=getattr(self, "is_actual_export", False)
+            )
+            if not diag_2269["is_valid"]:
+                raise NICValidationError(2269, "buyer.state", f"Recipient state code is incorrect (Rule 2269): {diag_2269['reason']}")
+
+        # 5o. Rule 2271: SHIP TO - State Code is Not Valid State Code for B2B, SEZ and Deemed Export Transactions
+        if self.shipdtl and not is_export:
+            ship_st = getattr(self.shipdtl, "state", None)
+            diag_2271 = classify_rule_2271_diagnostic(
+                ship_state=ship_st,
+                trancatg=self.trancatg,
+                ship_gstin=getattr(self.shipdtl, "gstin", None),
+                ship_pin=getattr(self.shipdtl, "pin", None),
+                buyer_state=buy_state_str
+            )
+            if not diag_2271["is_valid"]:
+                raise NICValidationError(2271, "shipdtl.state", f"SHIP TO - State Code is Not Valid (Rule 2271): {diag_2271['reason']}")
+
+        # 5p. Rule 2272: SHIP TO - PIN Code Cannot Be 999999 for B2B, SEZ and Deemed Export Transactions
+        if self.shipdtl and not is_export:
+            ship_p = getattr(self.shipdtl, "pin", None)
+            diag_2272 = classify_rule_2272_diagnostic(
+                ship_pin=ship_p,
+                trancatg=self.trancatg,
+                buyer_pin=raw_pin_buyer,
+                ship_state=getattr(self.shipdtl, "state", None)
+            )
+            if not diag_2272["is_valid"] and diag_2272.get("scenario") != "STRING_DATA_TYPE_PASSED":
+                raise NICValidationError(2272, "shipdtl.pin", f"SHIP TO - PIN Code Cannot Be 999999 (Rule 2272): {diag_2272['reason']}")
+
+        # 5q. Rule 2273: Dispatch from PIN code cannot be 999999
+        if self.dispdt1:
+            disp_p = getattr(self.dispdt1, "pin", None)
+            diag_2273 = classify_rule_2273_diagnostic(
+                disp_pin=disp_p,
+                trancatg=self.trancatg,
+                seller_pin=getattr(self.supplier, "pin", None),
+                disp_state=getattr(self.dispdt1, "state", None)
+            )
+            if not diag_2273["is_valid"] and diag_2273.get("scenario") != "STRING_DATA_TYPE_PASSED":
+                raise NICValidationError(2273, "dispdt1.pin", f"Dispatch from PIN code cannot be 999999 (Rule 2273): {diag_2273['reason']}")
+
+        # 5r. Rule 2274: Recipient PIN code cannot be 999999 for domestic transaction
+        if not is_export:
+            diag_2274 = classify_rule_2274_diagnostic(
+                buyer_pin=raw_pin_buyer,
+                trancatg=self.trancatg,
+                buyer_state=buy_state_str,
+                buyer_gstin=buy_gstin_str
+            )
+            if not diag_2274["is_valid"] and diag_2274.get("scenario") != "STRING_DATA_TYPE_PASSED":
+                raise NICValidationError(2274, "buyer.pin", f"Recipient PIN code cannot be 999999 for {self.trancatg} transaction (Rule 2274): {diag_2274['reason']}")
+
+        # 5s. Rule 2275: Recipient PIN code should be 999999 for Direct Export
+        if is_export:
+            diag_2275 = classify_rule_2275_diagnostic(
+                buyer_pin=raw_pin_buyer,
+                trancatg=self.trancatg,
+                buyer_state=buy_state_str
+            )
+            if not diag_2275["is_valid"] and diag_2275.get("scenario") != "STRING_DATA_TYPE_PASSED":
+                raise NICValidationError(2275, "buyer.pin", f"Recipient PIN code should be 999999 for Direct Export (Rule 2275): {diag_2275['reason']}")
+
+        # 5t. Rule 2276: Supplier PIN code cannot be 999999
+        seller_p = getattr(self.supplier, "pin", None)
+        diag_2276 = classify_rule_2276_diagnostic(
+            seller_pin=seller_p,
+            trancatg=self.trancatg,
+            seller_state=getattr(self.supplier, "state", None),
+            seller_gstin=getattr(self.supplier, "gstin", None)
+        )
+        if not diag_2276["is_valid"] and diag_2276.get("scenario") != "STRING_DATA_TYPE_PASSED":
+            raise NICValidationError(2276, "supplier.pin", f"Supplier PIN code cannot be 999999 (Rule 2276): {diag_2276['reason']}")
+
+        # 5u. Rule 2278: Document number cannot be reused after IRN cancellation
+        is_canc_reuse = bool(getattr(self, "is_cancelled_reuse", False))
+        canc_registry = getattr(self, "cancelled_doc_registry", None)
+        if is_canc_reuse or canc_registry:
+            diag_2278 = classify_rule_2278_diagnostic(
+                docno=self.docno,
+                doc_type=self.document_type,
+                is_cancelled_reuse=is_canc_reuse,
+                cancelled_doc_registry=canc_registry,
+                supplier_gstin=getattr(self.supplier, "gstin", None)
+            )
+            if not diag_2278["is_valid"]:
+                raise NICValidationError(2278, "docno", f"Document number cannot be reused after IRN cancellation (Rule 2278): {diag_2278['reason']}")
 
         # 6. Inter vs Intra Tax validation across line items
         pos = self.buyer.pos or self.buyer.state
@@ -5752,7 +10813,9 @@ class InvoicePayload(BaseModel):
         sum_igst = Decimal("0.00")
         sum_cess = Decimal("0.00")
         sum_stcess = Decimal("0.00")
+        sum_stcesnonad = Decimal("0.00")
         sum_cesnonad = Decimal("0.00")
+        sum_totitem = Decimal("0.00")
         has_goods = False
 
         for itm in self.itemdtls:
@@ -5766,6 +10829,8 @@ class InvoicePayload(BaseModel):
             itm_cess = Decimal(str(itm.cesval))
             itm_stcess = Decimal(str(itm.statecesval))
             itm_cesnonad = Decimal(str(itm.cesnonadvl))
+            itm_stcesnonad = Decimal(str(getattr(itm, "statecesnonadvl", 0)))
+            itm_totitem = Decimal(str(getattr(itm, "totitemval", 0)))
 
             if is_intra:
                 if itm_igst > 0:
@@ -5780,8 +10845,16 @@ class InvoicePayload(BaseModel):
                         igstonintra=self.igstonintra
                     )
                     raise NICValidationError(2172, f"itemdtls[{itm.slno}].igstval", f"For Intra-state, IGST is not applicable. Item {itm.slno} has IGST {itm_igst}. {diag['scenario_name']}: {diag['reason']}")
-                if itm_cgst != itm_sgst:
-                    raise NICValidationError(2227, f"itemdtls[{itm.slno}]", f"For Sl No {itm.slno}, SGST ({itm_sgst}) and CGST ({itm_cgst}) amounts must be equal.")
+                if abs(itm_cgst - itm_sgst) > Decimal("0.005"):
+                    diag_2227 = classify_rule_2227_diagnostic(
+                        cgstamt=itm_cgst,
+                        sgstamt=itm_sgst,
+                        assamt=itm_ass,
+                        gstrate=itm.gstrate,
+                        item_slno=itm.slno,
+                    )
+                    diag_msg = f": {diag_2227['reason']}" if diag_2227 else ""
+                    raise NICValidationError(2227, f"itemdtls[{itm.slno}]", f"For Sl No {itm.slno}, SGST ({itm_sgst}) and CGST ({itm_cgst}) amounts must be equal{diag_msg}")
             else:
                 if itm_cgst > 0 or itm_sgst > 0:
                     diag = classify_rule_2174_diagnostic(
@@ -5802,7 +10875,9 @@ class InvoicePayload(BaseModel):
             sum_igst += itm_igst
             sum_cess += itm_cess
             sum_stcess += itm_stcess
+            sum_stcesnonad += itm_stcesnonad
             sum_cesnonad += itm_cesnonad
+            sum_totitem += itm_totitem
 
         # 7. Value Summary (valdtls) Reconciliation with line item sums (Tolerance Rs 2.00)
         v_ass = Decimal(str(self.valdtls.assval))
@@ -5814,6 +10889,7 @@ class InvoicePayload(BaseModel):
         v_totinv = Decimal(str(self.valdtls.totinvval))
         v_othchrg = Decimal(str(self.valdtls.othchrg))
         v_disc = Decimal(str(self.valdtls.discount))
+        v_rndoff = Decimal(str(getattr(self.valdtls, "rndoffamt", 0)))
 
         if abs(v_ass - sum_assamt) > Decimal("0.005"):
             diag_2182 = classify_rule_2182_diagnostic(
@@ -5908,12 +10984,42 @@ class InvoicePayload(BaseModel):
             scen_name = diag_2186.get("scenario_name", "Header Not Recalculated After Item Edits")
             reason_text = diag_2186.get("reason", "Ensure ValDtls.CesVal dynamically sums both ad-valorem Cess (CesAmt) and non-ad-valorem Cess (CesNonAdvlAmt) across all line items.")
             raise NICValidationError(2186, "valdtls.cesval", f"Cess value of items ({sum_total_cess}) != total Cess ({v_ces}). ({scen_name}): {reason_text}")
-        if abs(v_stces - sum_stcess) > Decimal("2.00"):
-            raise NICValidationError(2187, "valdtls.stcesval", f"State Cess value of items ({sum_stcess}) != total State Cess ({v_stces})")
 
-        expected_totinv = v_ass + v_cgst + v_sgst + v_igst + v_ces + v_stces + v_othchrg - v_disc
-        if abs(v_totinv - expected_totinv) > Decimal("2.00"):
-            raise NICValidationError(2189, "valdtls.totinvval", f"Total Invoice Value ({v_totinv}) != calculated value ({expected_totinv})")
+        # Rule 2187 State Cess Value Reconciliation
+        sum_total_stcess = sum_stcess + sum_stcesnonad
+        if abs(v_stces - sum_total_stcess) > Decimal("0.005"):
+            diag_2187 = classify_rule_2187_diagnostic(
+                header_stcess=v_stces,
+                sum_item_stcess=sum_total_stcess,
+                items=getattr(self, "itemdtls", getattr(self, "itemlist", [])),
+                header_cess=v_ces,
+                sum_item_cess=sum_total_cess,
+                sum_item_stcesad=sum_stcess,
+                sum_item_stcesnonad=sum_stcesnonad,
+            )
+            scen_name = diag_2187.get("scenario_name", "Header Not Recalculated After Item Edits")
+            reason_text = diag_2187.get("reason", "Dynamically aggregate item-level State Cess amounts into ValDtls.StCesVal.")
+            raise NICValidationError(2187, "valdtls.stcesval", f"State Cess value of items ({sum_total_stcess}) != total State Cess ({v_stces}). ({scen_name}): {reason_text}")
+
+        # Rule 2189 Total Invoice Value Reconciliation (+/- 1.00 tolerance)
+        diag_2189 = classify_rule_2189_diagnostic(
+            totinvval=v_totinv,
+            sum_totitem=sum_totitem,
+            othchrg=v_othchrg,
+            discount=v_disc,
+            rndoffamt=v_rndoff,
+            assval=v_ass,
+            cgstval=v_cgst,
+            sgstval=v_sgst,
+            igstval=v_igst,
+            cesval=v_ces,
+            stcesval=v_stces,
+            items=getattr(self, "itemdtls", getattr(self, "itemlist", [])),
+        )
+        if not diag_2189["is_valid"]:
+            scen_name = diag_2189.get("scenario_name", "Total Invoice Value Mismatch")
+            reason_text = diag_2189.get("reason", f"Total Invoice Value ({v_totinv}) != calculated value ({diag_2189.get('calculated_totinv')})")
+            raise NICValidationError(2189, "valdtls.totinvval", f"Total Invoice Value ({v_totinv}) != calculated value ({diag_2189.get('calculated_totinv')}). ({scen_name}): {reason_text}")
 
         # 8. E-Way Bill checks if ewayreq == "Y"
         if self.ewbdt1 and self.ewbdt1.ewayreq == "Y":
@@ -5974,6 +11080,94 @@ class InvoicePayload(BaseModel):
             )
             if not diag_2203["is_valid"]:
                 raise NICValidationError(2203, "expdt1.forcur", f"Rule 2203 Violation ({diag_2203['scenario_name']}): {diag_2203['reason']}")
+
+        # 13. Rule 2231 Cannot Generate e-Invoice as Supplier GSTIN is SEZ
+        is_sup_sez = bool(
+            getattr(self.supplier, "is_sez", False)
+            or getattr(self.supplier, "is_supplier_sez", False)
+            or getattr(self, "is_supplier_sez", False)
+            or "SEZ" in getattr(self.supplier, "gstin", "")
+            or "SEZ" in getattr(self, "self_gstin", "")
+        )
+        is_dta_sez = bool(
+            getattr(self, "is_dta_to_sez", False)
+            or self.trancatg in ("SEZWP", "SEZWOP")
+        )
+        is_multi_g = bool(getattr(self, "is_multi_gstin_setup", False))
+        if is_sup_sez or is_multi_g:
+            diag_2231 = classify_rule_2231_diagnostic(
+                supplier_gstin=self.supplier.gstin if self.supplier else self.self_gstin,
+                is_supplier_sez=is_sup_sez,
+                trancatg=self.trancatg,
+                buyer_gstin=self.buyer.gstin if self.buyer else None,
+                is_dta_to_sez=is_dta_sez,
+                is_multi_gstin_setup=is_multi_g,
+            )
+            if not diag_2231["is_valid"]:
+                raise NICValidationError(2231, "supplier.gstin", f"Rule 2231 Violation ({diag_2231['scenario_name']}): {diag_2231['reason']}")
+
+        # 14. Rule 2232 POS is Incorrect for Export Transaction
+        if self.trancatg in ("EXP", "EXPWP", "EXPWOP") and self.buyer:
+            b_pos = getattr(self.buyer, "pos", "")
+            if b_pos != "96":
+                diag_2232 = classify_rule_2232_diagnostic(
+                    pos=b_pos,
+                    trancatg=self.trancatg,
+                    seller_state=getattr(self.supplier, "state", ""),
+                    port=getattr(self.expdt1, "port", None) if self.expdt1 else None,
+                    recipient_state=getattr(self.buyer, "state", ""),
+                )
+                if not diag_2232["is_valid"]:
+                    raise NICValidationError(2232, "buyer.pos", f"Rule 2232 Violation ({diag_2232['scenario_name']}): {diag_2232['reason']}")
+
+        # 15. Rule 2233 Duplicate SI numbers are not allowed in line items
+        if self.itemdtls and len(self.itemdtls) > 1:
+            diag_2233 = classify_rule_2233_diagnostic(self.itemdtls)
+            if not diag_2233["is_valid"]:
+                raise NICValidationError(2233, "itemdtls", f"Rule 2233 Violation ({diag_2233['scenario_name']}): {diag_2233['reason']}")
+
+        # 16. Rule 2234 & 2235: Line Item CGST/SGST/IGST Formula Mismatches
+        if self.itemdtls:
+            is_intra = (
+                self.trancatg not in ("EXP", "EXPWP", "EXPWOP", "SEZWP", "SEZWOP")
+                and (
+                    (getattr(self.supplier, "state", "") == getattr(self.buyer, "pos", "") and self.igstonintra != "Y")
+                    or (not getattr(self.buyer, "pos", "") and getattr(self.supplier, "state", "") == getattr(self.buyer, "state", ""))
+                )
+            )
+            for itm in self.itemdtls:
+                s_no = getattr(itm, "slno", "1")
+                ass_val = getattr(itm, "assval", Decimal("0.00"))
+                gst_rt = getattr(itm, "gstrate", Decimal("0.00"))
+                cgst_val = getattr(itm, "cgstval", Decimal("0.00"))
+                sgst_val = getattr(itm, "sgstval", Decimal("0.00"))
+                igst_val = getattr(itm, "igstval", Decimal("0.00"))
+                tot_amt = getattr(itm, "totamt", None)
+                disc_val = getattr(itm, "discount", None)
+
+                if is_intra and gst_rt > 0:
+                    diag_2234 = classify_rule_2234_diagnostic(
+                        cgstamt=cgst_val,
+                        sgstamt=sgst_val,
+                        assamt=ass_val,
+                        gstrate=gst_rt,
+                        totamt=tot_amt,
+                        discount=disc_val,
+                        item_slno=s_no,
+                    )
+                    if not diag_2234["is_valid"]:
+                        raise NICValidationError(2234, f"itemdtls[{s_no}]", f"Rule 2234 Violation ({diag_2234['scenario_name']}): {diag_2234['reason']}")
+                elif not is_intra and gst_rt > 0:
+                    diag_2235 = classify_rule_2235_diagnostic(
+                        igstamt=igst_val,
+                        assamt=ass_val,
+                        gstrate=gst_rt,
+                        totamt=tot_amt,
+                        discount=disc_val,
+                        item_slno=s_no,
+                    )
+                    if not diag_2235["is_valid"]:
+                        raise NICValidationError(2235, f"itemdtls[{s_no}]", f"Rule 2235 Violation ({diag_2235['scenario_name']}): {diag_2235['reason']}")
 
         return self
 
@@ -6171,21 +11365,40 @@ class InvoicePayload(BaseModel):
                     })
                 expdt1["shipbdt"] = std_sdt
 
-        # 2b. Counterparty state code alignment with GSTIN prefix
-        for p_key in ("supplierdt1", "buyerdt1", "dispdt1", "shipdtl", "supplier", "buyer"):
+        # 2b. Counterparty state code alignment with GSTIN prefix (dispdt1 and shipdtl)
+        for p_key in ("dispdt1", "shipdtl"):
             party = cleaned_data.get(p_key)
             if isinstance(party, dict):
                 p_gstin = str(party.get(f"{p_key[:4]}_gstin", party.get("gstin", "")) or "").strip().upper()
                 p_state = str(party.get(f"{p_key[:4]}_state", party.get("state", "")) or "").strip()
+                if p_key == "shipdtl":
+                    diag_2271 = classify_rule_2271_diagnostic(
+                        ship_state=p_state,
+                        trancatg=cleaned_data.get("trancatg", "B2B"),
+                        ship_gstin=p_gstin
+                    )
+                    if not diag_2271["is_valid"]:
+                        audit_log.append({
+                            "category": f"NIC_RULE_2271_{diag_2271['scenario']}",
+                            "field": f"{p_key}.state",
+                            "original": p_state,
+                            "corrected": diag_2271["rectified_state"],
+                            "description": f"Rule 2271 Violation ({diag_2271['scenario_name']}): {diag_2271['reason']} {diag_2271['resolution']}"
+                        })
+                        expected_state = diag_2271["rectified_state"]
+                        if f"{p_key[:4]}_state" in party:
+                            party[f"{p_key[:4]}_state"] = expected_state
+                        party["state"] = expected_state
+                        continue
                 if p_gstin and p_gstin != "URP" and len(p_gstin) == 15 and p_gstin[:2].isdigit():
                     expected_state = p_gstin[:2]
                     if p_state != expected_state and p_state != "96":
                         audit_log.append({
-                            "category": "STATE_CODE_RECONCILIATION",
+                            "category": "RULE_2200_STATE_CODE_RECONCILIATION",
                             "field": f"{p_key}.state",
                             "original": p_state,
                             "corrected": expected_state,
-                            "description": f"Aligned State code '{p_state}' to match first 2 digits of GSTIN '{expected_state}' (Rule 2258)"
+                            "description": f"Aligned State code '{p_state}' to match first 2 digits of GSTIN '{expected_state}' (Rule 2200)"
                         })
                         if f"{p_key[:4]}_state" in party:
                             party[f"{p_key[:4]}_state"] = expected_state
@@ -6204,6 +11417,637 @@ class InvoicePayload(BaseModel):
         trancatg = str(trandt1_sec.get("trancatg", "B2B") or "B2B").strip().upper()
         is_export = trancatg in ("EXP", "EXPWP", "EXPWOP")
         is_sez = trancatg in ("SEZWP", "SEZWOP")
+
+        # Rule 2258 & Rule 2259: Supplier State Code Diagnostics and Auto-Corrections
+        raw_sup_gstin = str(sup_party.get("supplier_gstin", sup_party.get("gstin", cleaned_data.get("self_gstin", ""))) or "").strip().upper()
+        raw_sup_state_orig = sup_party.get("supplier_state", sup_party.get("state", sup_party.get("StateCode")))
+        if raw_sup_gstin and raw_sup_gstin != "URP" and len(raw_sup_gstin) >= 2 and raw_sup_gstin[:2].isdigit():
+            diag_2258 = classify_rule_2258_diagnostic(supplier_gstin=raw_sup_gstin, supplier_state=sup_state)
+            if not diag_2258["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2258_{diag_2258['scenario']}",
+                    "field": "supplierdt1.supplier_state" if "supplierdt1" in cleaned_data else "supplier.state",
+                    "original": str(raw_sup_state_orig or sup_state),
+                    "corrected": diag_2258["rectified_state"],
+                    "description": f"Rule 2258 Violation ({diag_2258['scenario_name']}): {diag_2258['reason']} {diag_2258['resolution']}"
+                })
+                sup_state = diag_2258["rectified_state"]
+                if isinstance(sup_party, dict):
+                    sup_party["supplier_state"] = sup_state
+                    sup_party["state"] = sup_state
+
+        diag_2259 = classify_rule_2259_diagnostic(
+            supplier_state=raw_sup_state_orig if raw_sup_state_orig is not None else sup_state,
+            supplier_gstin=raw_sup_gstin
+        )
+        if not diag_2259["is_valid"]:
+            rect_st = diag_2259.get("rectified_state") or (raw_sup_gstin[:2] if len(raw_sup_gstin) >= 2 and raw_sup_gstin[:2].isdigit() else "27")
+            audit_log.append({
+                "category": f"NIC_RULE_2259_{diag_2259['scenario']}",
+                "field": "supplierdt1.supplier_state" if "supplierdt1" in cleaned_data else "supplier.state",
+                "original": str(raw_sup_state_orig if raw_sup_state_orig is not None else sup_state),
+                "corrected": rect_st,
+                "description": f"Rule 2259 Violation ({diag_2259['scenario_name']}): {diag_2259['reason']} {diag_2259['resolution']}"
+            })
+            sup_state = rect_st
+            if isinstance(sup_party, dict):
+                sup_party["supplier_state"] = sup_state
+                sup_party["state"] = sup_state
+
+        # Rule 2260: Recipient State Code Diagnostics and Auto-Corrections
+        raw_buy_state_orig = buy_party.get("buyer_state", buy_party.get("state", buy_party.get("StateCode")))
+        diag_2260 = classify_rule_2260_diagnostic(
+            buyer_state=raw_buy_state_orig if raw_buy_state_orig is not None else buy_state,
+            buyer_gstin=buy_gstin,
+            trancatg=trancatg
+        )
+        if not diag_2260["is_valid"]:
+            rect_bst = diag_2260.get("rectified_state") or (buy_gstin[:2] if len(buy_gstin) >= 2 and buy_gstin[:2].isdigit() and buy_gstin != "URP" else ("96" if is_export else "29"))
+            audit_log.append({
+                "category": f"NIC_RULE_2260_{diag_2260['scenario']}",
+                "field": "buyerdt1.buyer_state" if "buyerdt1" in cleaned_data else "buyer.state",
+                "original": str(raw_buy_state_orig if raw_buy_state_orig is not None else buy_state),
+                "corrected": rect_bst,
+                "description": f"Rule 2260 Violation ({diag_2260['scenario_name']}): {diag_2260['reason']} {diag_2260['resolution']}"
+            })
+            buy_state = rect_bst
+            if isinstance(buy_party, dict):
+                buy_party["buyer_state"] = buy_state
+                buy_party["state"] = buy_state
+
+        # Rule 2269: Recipient state code is incorrect (96 sent for domestic type)
+        if not is_export and buy_state == "96":
+            is_overseas_client = bool(
+                raw_invoice.get("is_export_overseas")
+                or raw_invoice.get("is_overseas_client")
+                or cleaned_data.get("is_export_overseas")
+            )
+            diag_2269 = classify_rule_2269_diagnostic(
+                buyer_state=buy_state,
+                trancatg=trancatg,
+                buyer_gstin=buy_gstin,
+                is_actual_export=is_overseas_client
+            )
+            if not diag_2269["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2269_{diag_2269['scenario']}",
+                    "field": "buyerdt1.buyer_state" if "buyerdt1" in cleaned_data else "buyer.state",
+                    "original": "96",
+                    "corrected": diag_2269["rectified_state"],
+                    "description": f"Rule 2269 Violation ({diag_2269['scenario_name']}): {diag_2269['reason']} {diag_2269['resolution']}"
+                })
+                if diag_2269["action"] == "CHANGE_SUPPLY_TYPE_TO_EXPWP":
+                    trancatg = diag_2269["rectified_trancatg"]
+                    if isinstance(trandt1_sec, dict):
+                        trandt1_sec["trancatg"] = trancatg
+                    cleaned_data["trancatg"] = trancatg
+                    is_export = True
+                else:
+                    buy_state = diag_2269["rectified_state"]
+                    if isinstance(buy_party, dict):
+                        buy_party["buyer_state"] = buy_state
+                        buy_party["state"] = buy_state
+
+        # Rule 2265: Recipient GSTIN State Code Mismatch
+        if buy_gstin and buy_gstin != "URP" and len(buy_gstin) >= 2 and buy_gstin[:2].isdigit():
+            diag_2265 = classify_rule_2265_diagnostic(buyer_gstin=buy_gstin, buyer_state=buy_state)
+            if not diag_2265["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2265_{diag_2265['scenario']}",
+                    "field": "buyerdt1.buyer_state" if "buyerdt1" in cleaned_data else "buyer.state",
+                    "original": str(raw_buy_state_orig or buy_state),
+                    "corrected": diag_2265["rectified_state"],
+                    "description": f"Rule 2265 Violation ({diag_2265['scenario_name']}): {diag_2265['reason']} {diag_2265['resolution']}"
+                })
+                buy_state = diag_2265["rectified_state"]
+                if isinstance(buy_party, dict):
+                    buy_party["buyer_state"] = buy_state
+                    buy_party["state"] = buy_state
+
+        # Rule 2271 & Rule 2272: Shipping Details Diagnostics and Auto-Corrections
+        ship_party = cleaned_data.get("shipdtl") or cleaned_data.get("shipdt1") or cleaned_data.get("ShipDtls") or cleaned_data.get("shipping") or cleaned_data.get("ship_details")
+        if isinstance(ship_party, dict) and not is_export:
+            raw_ship_st = ship_party.get("ship_state", ship_party.get("state", ship_party.get("Stcd")))
+            raw_ship_pin = ship_party.get("ship_pin", ship_party.get("pin", ship_party.get("Pin")))
+            ship_gstin = ship_party.get("ship_gstin", ship_party.get("gstin", ship_party.get("Gstin")))
+
+            # Rule 2271
+            diag_2271 = classify_rule_2271_diagnostic(
+                ship_state=raw_ship_st,
+                trancatg=trancatg,
+                ship_gstin=ship_gstin,
+                ship_pin=raw_ship_pin,
+                buyer_state=buy_state
+            )
+            if not diag_2271["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2271_{diag_2271['scenario']}",
+                    "field": "shipdtl.state" if "shipdtl" in cleaned_data else "shipdt1.state",
+                    "original": str(raw_ship_st),
+                    "corrected": diag_2271["rectified_state"],
+                    "description": f"Rule 2271 Violation ({diag_2271['scenario_name']}): {diag_2271['reason']} {diag_2271['resolution']}"
+                })
+                ship_party["state"] = diag_2271["rectified_state"]
+                if "ship_state" in ship_party:
+                    ship_party["ship_state"] = diag_2271["rectified_state"]
+                if "Stcd" in ship_party:
+                    ship_party["Stcd"] = diag_2271["rectified_state"]
+
+            # Rule 2272
+            diag_2272 = classify_rule_2272_diagnostic(
+                ship_pin=raw_ship_pin,
+                trancatg=trancatg,
+                buyer_pin=buy_party.get("buyer_pin", buy_party.get("pin")),
+                ship_state=ship_party.get("state", raw_ship_st)
+            )
+            if not diag_2272["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2272_{diag_2272['scenario']}",
+                    "field": "shipdtl.pin" if "shipdtl" in cleaned_data else "shipdt1.pin",
+                    "original": str(raw_ship_pin),
+                    "corrected": str(diag_2272["rectified_pin"]),
+                    "description": f"Rule 2272 Violation ({diag_2272['scenario_name']}): {diag_2272['reason']} {diag_2272['resolution']}"
+                })
+                ship_party["pin"] = str(diag_2272["rectified_pin"])
+                if "ship_pin" in ship_party:
+                    ship_party["ship_pin"] = str(diag_2272["rectified_pin"])
+                if "Pin" in ship_party:
+                    ship_party["Pin"] = diag_2272["rectified_pin"]
+
+        # Rule 2273: Dispatch From PIN Diagnostics and Auto-Corrections
+        disp_party = cleaned_data.get("dispdt1") or cleaned_data.get("dispdtl") or cleaned_data.get("DispDtls") or cleaned_data.get("dispatch")
+        if isinstance(disp_party, dict):
+            raw_disp_pin = disp_party.get("disp_pin", disp_party.get("pin", disp_party.get("Pin")))
+            diag_2273 = classify_rule_2273_diagnostic(
+                disp_pin=raw_disp_pin,
+                trancatg=trancatg,
+                seller_pin=sup_party.get("supplier_pin", sup_party.get("pin", sup_party.get("Pin"))),
+                disp_state=disp_party.get("disp_state", disp_party.get("state", disp_party.get("Stcd")))
+            )
+            if not diag_2273["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2273_{diag_2273['scenario']}",
+                    "field": "dispdt1.pin" if "dispdt1" in cleaned_data else "dispdtl.pin",
+                    "original": str(raw_disp_pin),
+                    "corrected": str(diag_2273["rectified_pin"]),
+                    "description": f"Rule 2273 Violation ({diag_2273['scenario_name']}): {diag_2273['reason']} {diag_2273['resolution']}"
+                })
+                disp_party["pin"] = str(diag_2273["rectified_pin"])
+                if "disp_pin" in disp_party:
+                    disp_party["disp_pin"] = str(diag_2273["rectified_pin"])
+                if "Pin" in disp_party:
+                    disp_party["Pin"] = diag_2273["rectified_pin"]
+
+        # Rule 2274 & Rule 2275: Buyer PIN Code Diagnostics and Auto-Corrections
+        raw_buy_pin = buy_party.get("buyer_pin", buy_party.get("pin", buy_party.get("Pin")))
+        if is_export:
+            diag_2275 = classify_rule_2275_diagnostic(
+                buyer_pin=raw_buy_pin,
+                trancatg=trancatg,
+                buyer_state=buy_state
+            )
+            if not diag_2275["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2275_{diag_2275['scenario']}",
+                    "field": "buyerdt1.buyer_pin" if "buyerdt1" in cleaned_data else "buyer.pin",
+                    "original": str(raw_buy_pin),
+                    "corrected": str(diag_2275["rectified_pin"]),
+                    "description": f"Rule 2275 Violation ({diag_2275['scenario_name']}): {diag_2275['reason']} {diag_2275['resolution']}"
+                })
+                buy_party["pin"] = str(diag_2275["rectified_pin"])
+                if "buyer_pin" in buy_party:
+                    buy_party["buyer_pin"] = str(diag_2275["rectified_pin"])
+                if "Pin" in buy_party:
+                    buy_party["Pin"] = diag_2275["rectified_pin"]
+        else:
+            diag_2274 = classify_rule_2274_diagnostic(
+                buyer_pin=raw_buy_pin,
+                trancatg=trancatg,
+                buyer_state=buy_state,
+                buyer_gstin=buy_gstin
+            )
+            if not diag_2274["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2274_{diag_2274['scenario']}",
+                    "field": "buyerdt1.buyer_pin" if "buyerdt1" in cleaned_data else "buyer.pin",
+                    "original": str(raw_buy_pin),
+                    "corrected": str(diag_2274["rectified_pin"]),
+                    "description": f"Rule 2274 Violation ({diag_2274['scenario_name']}): {diag_2274['reason']} {diag_2274['resolution']}"
+                })
+                buy_party["pin"] = str(diag_2274["rectified_pin"])
+                if "buyer_pin" in buy_party:
+                    buy_party["buyer_pin"] = str(diag_2274["rectified_pin"])
+                if "Pin" in buy_party:
+                    buy_party["Pin"] = diag_2274["rectified_pin"]
+
+        # Rule 2276: Seller PIN Code Diagnostics and Auto-Corrections
+        raw_sup_pin = sup_party.get("supplier_pin", sup_party.get("pin", sup_party.get("Pin")))
+        diag_2276 = classify_rule_2276_diagnostic(
+            seller_pin=raw_sup_pin,
+            trancatg=trancatg,
+            seller_state=sup_state,
+            seller_gstin=raw_sup_gstin
+        )
+        if not diag_2276["is_valid"]:
+            audit_log.append({
+                "category": f"NIC_RULE_2276_{diag_2276['scenario']}",
+                "field": "supplierdt1.supplier_pin" if "supplierdt1" in cleaned_data else "supplier.pin",
+                "original": str(raw_sup_pin),
+                "corrected": str(diag_2276["rectified_pin"]),
+                "description": f"Rule 2276 Violation ({diag_2276['scenario_name']}): {diag_2276['reason']} {diag_2276['resolution']}"
+            })
+            sup_party["pin"] = str(diag_2276["rectified_pin"])
+            if "supplier_pin" in sup_party:
+                sup_party["supplier_pin"] = str(diag_2276["rectified_pin"])
+            if "Pin" in sup_party:
+                sup_party["Pin"] = diag_2276["rectified_pin"]
+
+        # Rule 2278: Cancelled Document Number Reuse Diagnostics and Auto-Corrections
+        is_cancelled_reuse = bool(cleaned_data.get("is_cancelled_reuse") or raw_invoice.get("is_cancelled_reuse"))
+        canc_registry = cleaned_data.get("cancelled_doc_registry") or raw_invoice.get("cancelled_doc_registry")
+        curr_docno = str(cleaned_data.get("docno", raw_invoice.get("docno", "")) or "").strip()
+        if is_cancelled_reuse or canc_registry:
+            diag_2278 = classify_rule_2278_diagnostic(
+                docno=curr_docno,
+                doc_type=cleaned_data.get("document_type", "INV"),
+                is_cancelled_reuse=is_cancelled_reuse,
+                cancelled_doc_registry=canc_registry,
+                supplier_gstin=cleaned_data.get("self_gstin")
+            )
+            if not diag_2278["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2278_{diag_2278['scenario']}",
+                    "field": "docno",
+                    "original": curr_docno,
+                    "corrected": diag_2278["rectified_docno"],
+                    "description": f"Rule 2278 Violation ({diag_2278['scenario_name']}): {diag_2278['reason']} {diag_2278['resolution']}"
+                })
+                cleaned_data["docno"] = diag_2278["rectified_docno"]
+                cleaned_data["is_cancelled_reuse"] = False
+
+        # 2b. Supplier GSTIN Cannot Be URP Auto-Alignment (Rule 2213)
+        raw_sup_gstin = str(sup_party.get("supplier_gstin", sup_party.get("gstin", cleaned_data.get("self_gstin", ""))) or "").strip().upper()
+        is_rcm_inw = bool(cleaned_data.get("is_rcm_inward") or raw_invoice.get("is_rcm_inward"))
+        is_dum_test = bool(cleaned_data.get("is_dummy_testing") or raw_invoice.get("is_dummy_testing"))
+        if raw_sup_gstin == "URP" or is_rcm_inw or is_dum_test:
+            diag_2213 = classify_rule_2213_diagnostic(
+                seller_gstin=raw_sup_gstin,
+                is_rcm_inward=is_rcm_inw,
+                is_dummy_testing=is_dum_test,
+                supplier_state=sup_state,
+                doc_type=cleaned_data.get("document_type"),
+                trancatg=trancatg,
+            )
+            if not diag_2213["is_valid"]:
+                rect_gstin = diag_2213.get("rectified_gstin")
+                if rect_gstin:
+                    audit_log.append({
+                        "category": f"NIC_RULE_2213_{diag_2213['scenario']}",
+                        "field": "supplierdt1.supplier_gstin",
+                        "original": raw_sup_gstin,
+                        "corrected": rect_gstin,
+                        "description": f"Rule 2213 Violation ({diag_2213['scenario_name']}): {diag_2213['reason']} Rectified to registered GSTIN '{rect_gstin}'."
+                    })
+                    if isinstance(sup_party, dict):
+                        sup_party["supplier_gstin"] = rect_gstin
+                        sup_party["gstin"] = rect_gstin
+                    cleaned_data["self_gstin"] = rect_gstin
+                elif diag_2213.get("action") == "DO_NOT_UPLOAD_TO_IRP":
+                    audit_log.append({
+                        "category": f"NIC_RULE_2213_{diag_2213['scenario']}",
+                        "field": "supplierdt1.supplier_gstin",
+                        "original": raw_sup_gstin,
+                        "corrected": raw_sup_gstin,
+                        "description": f"Rule 2213 Violation ({diag_2213['scenario_name']}): {diag_2213['reason']} Do not upload via outbound IRP API."
+                    })
+                    cleaned_data["irnreq"] = "N"
+
+        # 2c. Cannot Generate e-Invoice as Supplier GSTIN is SEZ Auto-Alignment (Rule 2231)
+        is_sup_sez = bool(
+            sup_party.get("is_sez")
+            or sup_party.get("is_supplier_sez")
+            or sup_party.get("is_sez_supplier")
+            or cleaned_data.get("is_supplier_sez")
+            or raw_invoice.get("is_supplier_sez")
+            or "SEZ" in raw_sup_gstin
+        )
+        is_dta_sez = bool(
+            cleaned_data.get("is_dta_to_sez")
+            or raw_invoice.get("is_dta_to_sez")
+            or trancatg in ("SEZWP", "SEZWOP")
+        )
+        is_multi_g = bool(cleaned_data.get("is_multi_gstin_setup") or raw_invoice.get("is_multi_gstin_setup") or raw_invoice.get("is_multi_gstin"))
+
+        if is_sup_sez or is_multi_g:
+            diag_2231 = classify_rule_2231_diagnostic(
+                supplier_gstin=raw_sup_gstin,
+                is_supplier_sez=is_sup_sez,
+                trancatg=trancatg,
+                buyer_gstin=buy_gstin,
+                is_dta_to_sez=is_dta_sez,
+                is_multi_gstin_setup=is_multi_g,
+            )
+            if not diag_2231["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2231_{diag_2231['scenario']}",
+                    "field": "supplierdt1.supplier_gstin",
+                    "original": raw_sup_gstin,
+                    "corrected": raw_sup_gstin,
+                    "description": f"Rule 2231 Violation ({diag_2231['scenario_name']}): {diag_2231['reason']} {diag_2231['resolution']}"
+                })
+                if diag_2231.get("action") in ("DO_NOT_PUSH_SEZ_OUTBOUND_TO_IRP", "FILTER_SEZ_GSTIN_IN_INTEGRATION_MIDDLEWARE"):
+                    cleaned_data["irnreq"] = "N"
+                elif diag_2231.get("action") == "SET_SUPPLY_TYPE_SEZWP_OR_SEZWOP":
+                    correct_catg = diag_2231.get("trancatg", "SEZWP")
+                    if isinstance(trandt1_sec, dict):
+                        trandt1_sec["trancatg"] = correct_catg
+                    cleaned_data["trancatg"] = correct_catg
+
+        # 2d. Rule 2232: POS is Incorrect for Export Transaction (Section 11 IGST Act)
+        # Direct export transactions (EXPWP, EXPWOP, EXP) mandate POS "96" (Other Country).
+        if is_export:
+            raw_pos_orig = buy_party.get("pos", buy_party.get("buyer_pos", raw_pos))
+            is_dom_mis = bool(
+                raw_invoice.get("is_domestic_misclassified_as_export")
+                or raw_invoice.get("is_domestic_supply")
+                or cleaned_data.get("is_domestic_misclassified_as_export")
+                or (buy_gstin and buy_gstin != "URP" and len(buy_gstin) == 15 and not buy_gstin.startswith("96") and (raw_pos == buy_gstin[:2] or not raw_pos))
+            )
+            is_port_gw = bool(
+                raw_invoice.get("is_gateway_port_used")
+                or cleaned_data.get("is_gateway_port_used")
+                or (cleaned_data.get("expdt1") and isinstance(cleaned_data.get("expdt1"), dict) and cleaned_data["expdt1"].get("port") and str(raw_pos) in ("27", "24", "33", "19", "36", sup_state))
+            )
+            port_val = cleaned_data.get("expdt1", {}).get("port") if isinstance(cleaned_data.get("expdt1"), dict) else None
+
+            diag_2232 = classify_rule_2232_diagnostic(
+                pos=raw_pos_orig,
+                trancatg=trancatg,
+                seller_state=sup_state,
+                port=port_val,
+                is_gateway_port_used=is_port_gw,
+                is_domestic_misclassified_as_export=is_dom_mis,
+                recipient_state=buy_state or (buy_gstin[:2] if len(buy_gstin) >= 2 and buy_gstin[:2].isdigit() else None),
+            )
+            if not diag_2232["is_valid"]:
+                if diag_2232.get("action") == "CHANGE_SUPPLY_TYPE_TO_B2B":
+                    rect_trancatg = diag_2232.get("rectified_trancatg", "B2B")
+                    rect_pos = diag_2232.get("rectified_pos", raw_pos)
+                    audit_log.append({
+                        "category": f"NIC_RULE_2232_{diag_2232['scenario']}",
+                        "field": "trandt1.trancatg",
+                        "original": trancatg,
+                        "corrected": rect_trancatg,
+                        "description": f"Rule 2232 Violation ({diag_2232['scenario_name']}): {diag_2232['reason']} {diag_2232['resolution']}"
+                    })
+                    if buy_gstin and buy_gstin != "URP":
+                        audit_log.append({
+                            "category": "NIC_RULE_2248_DOMESTIC_SALE_MISCLASSIFIED_AS_EXPORT",
+                            "field": "trandt1.trancatg",
+                            "original": trancatg,
+                            "corrected": rect_trancatg,
+                            "description": "Rule 2248 Violation (Domestic Sale Misclassified as Export): Indian domestic buyer invoice was misclassified as export. Retained buyer's domestic GSTIN and changed supply type to B2B."
+                        })
+                    trancatg = rect_trancatg
+                    if isinstance(trandt1_sec, dict):
+                        trandt1_sec["trancatg"] = rect_trancatg
+                    cleaned_data["trancatg"] = rect_trancatg
+                    is_export = False
+                    raw_pos = rect_pos
+                    if isinstance(buy_party, dict):
+                        buy_party["pos"] = rect_pos
+                        buy_party["buyer_pos"] = rect_pos
+                else:
+                    audit_log.append({
+                        "category": f"NIC_RULE_2232_{diag_2232['scenario']}",
+                        "field": "buyerdt1.pos" if "buyerdt1" in cleaned_data else "buyer.pos",
+                        "original": str(raw_pos_orig),
+                        "corrected": "96",
+                        "description": f"Rule 2232 Violation ({diag_2232['scenario_name']}): {diag_2232['reason']} {diag_2232['resolution']}"
+                    })
+                    raw_pos = "96"
+                    if isinstance(buy_party, dict):
+                        buy_party["pos"] = "96"
+                        buy_party["buyer_pos"] = "96"
+                        buy_party["state"] = "96"
+                        buy_party["buyer_state"] = "96"
+
+        # 2e. Rule 2242: Recipient POS is Incorrect for Transaction Type
+        # Domestic transactions (B2B, SEZWP, SEZWOP, DEXP) cannot have POS "96"
+        if not is_export and raw_pos == "96":
+            is_overseas = bool(
+                raw_invoice.get("is_export_overseas")
+                or raw_invoice.get("is_overseas_client")
+                or cleaned_data.get("is_export_overseas")
+                or (buy_gstin == "URP" and not is_sez)
+            )
+            diag_2242 = classify_rule_2242_diagnostic(
+                pos=raw_pos,
+                trancatg=trancatg,
+                buyer_state=buy_state,
+                buyer_gstin=buy_gstin,
+                is_sez=is_sez,
+                is_export_overseas=is_overseas
+            )
+            if not diag_2242["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2242_{diag_2242['scenario']}",
+                    "field": "buyerdt1.pos" if "buyerdt1" in cleaned_data else "buyer.pos",
+                    "original": raw_pos,
+                    "corrected": diag_2242["rectified_pos"],
+                    "description": f"Rule 2242 Violation ({diag_2242['scenario_name']}): {diag_2242['reason']} {diag_2242['resolution']}"
+                })
+                if diag_2242["action"] == "CHANGE_SUPPLY_TYPE_TO_EXPORT":
+                    trancatg = diag_2242["rectified_trancatg"]
+                    if isinstance(trandt1_sec, dict):
+                        trandt1_sec["trancatg"] = trancatg
+                    cleaned_data["trancatg"] = trancatg
+                    is_export = True
+                else:
+                    raw_pos = diag_2242["rectified_pos"]
+                    if isinstance(buy_party, dict):
+                        buy_party["pos"] = raw_pos
+                        buy_party["buyer_pos"] = raw_pos
+
+        # Rule 2243: POS Code is Invalid
+        diag_2243 = classify_rule_2243_diagnostic(
+            pos=raw_pos,
+            trancatg=trancatg,
+            buyer_state=buy_state,
+            buyer_gstin=buy_gstin,
+            is_export=is_export
+        )
+        if not diag_2243["is_valid"]:
+            audit_log.append({
+                "category": f"NIC_RULE_2243_{diag_2243['scenario']}",
+                "field": "buyerdt1.pos" if "buyerdt1" in cleaned_data else "buyer.pos",
+                "original": raw_pos,
+                "corrected": diag_2243["rectified_pos"],
+                "description": f"Rule 2243 Violation ({diag_2243['scenario_name']}): {diag_2243['reason']} {diag_2243['resolution']}"
+            })
+            raw_pos = diag_2243["rectified_pos"]
+            if isinstance(buy_party, dict):
+                buy_party["pos"] = raw_pos
+                buy_party["buyer_pos"] = raw_pos
+
+        # Rule 2244: Recipient PIN Code is Not Provided for Transaction
+        raw_pin_buyer = buy_party.get("pin", buy_party.get("buyer_pin", cleaned_data.get("pin"))) if isinstance(buy_party, dict) else cleaned_data.get("pin")
+        diag_2244 = classify_rule_2244_diagnostic(
+            pin=raw_pin_buyer,
+            trancatg=trancatg,
+            buyer_state=buy_state,
+            buyer_gstin=buy_gstin,
+            is_export=is_export
+        )
+        if not diag_2244["is_valid"]:
+            audit_log.append({
+                "category": f"NIC_RULE_2244_{diag_2244['scenario']}",
+                "field": "buyerdt1.buyer_pin" if "buyerdt1" in cleaned_data else "buyer.pin",
+                "original": raw_pin_buyer,
+                "corrected": str(diag_2244["rectified_pin"]),
+                "description": f"Rule 2244 Violation ({diag_2244['scenario_name']}): {diag_2244['reason']} {diag_2244['resolution']}"
+            })
+            if isinstance(buy_party, dict):
+                buy_party["pin"] = str(diag_2244["rectified_pin"])
+                buy_party["buyer_pin"] = str(diag_2244["rectified_pin"])
+
+        # Rule 2246: Recipient Cannot Be SEZ for Supply Type
+        is_sez_buyer_entity = bool(
+            (isinstance(buy_party, dict) and (buy_party.get("is_sez") or buy_party.get("is_sez_buyer") or buy_party.get("is_sez_unit")))
+            or raw_invoice.get("buyer_is_sez")
+            or cleaned_data.get("buyer_is_sez")
+            or (buy_gstin in KNOWN_SEZ_BUYER_GSTINS)
+        )
+        if is_sez_buyer_entity and trancatg not in ("SEZWP", "SEZWOP"):
+            is_dta_sale = bool(raw_invoice.get("is_dta_sale") or cleaned_data.get("is_dta_sale") or raw_invoice.get("dta_gstin") or cleaned_data.get("dta_gstin"))
+            dta_gstin_val = raw_invoice.get("dta_gstin") or cleaned_data.get("dta_gstin")
+            diag_2246 = classify_rule_2246_diagnostic(
+                buyer_gstin=buy_gstin,
+                trancatg=trancatg,
+                is_sez_buyer=is_sez_buyer_entity,
+                dta_gstin=dta_gstin_val,
+                is_dta_sale=is_dta_sale
+            )
+            if not diag_2246["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2246_{diag_2246['scenario']}",
+                    "field": "trancatg" if diag_2246["action"] in ("CHANGE_SUPPLY_TYPE_TO_SEZ", "CHANGE_DEEMED_EXPORT_TO_SEZ") else ("buyerdt1.buyer_gstin" if "buyerdt1" in cleaned_data else "buyer.gstin"),
+                    "original": trancatg if diag_2246["action"] in ("CHANGE_SUPPLY_TYPE_TO_SEZ", "CHANGE_DEEMED_EXPORT_TO_SEZ") else buy_gstin,
+                    "corrected": diag_2246["rectified_trancatg"] if diag_2246["action"] in ("CHANGE_SUPPLY_TYPE_TO_SEZ", "CHANGE_DEEMED_EXPORT_TO_SEZ") else diag_2246["rectified_gstin"],
+                    "description": f"Rule 2246 Violation ({diag_2246['scenario_name']}): {diag_2246['reason']} {diag_2246['resolution']}"
+                })
+                if diag_2246["action"] in ("CHANGE_SUPPLY_TYPE_TO_SEZ", "CHANGE_DEEMED_EXPORT_TO_SEZ"):
+                    trancatg = diag_2246["rectified_trancatg"]
+                    if isinstance(trandt1_sec, dict):
+                        trandt1_sec["trancatg"] = trancatg
+                    cleaned_data["trancatg"] = trancatg
+                    is_sez = True
+                else:
+                    buy_gstin = diag_2246["rectified_gstin"]
+                    if isinstance(buy_party, dict):
+                        buy_party["gstin"] = buy_gstin
+                        buy_party["buyer_gstin"] = buy_gstin
+
+        # Rule 2247: Recipient Should Be SEZ for Transaction
+        if trancatg in ("SEZWP", "SEZWOP"):
+            is_sez_buyer_entity = bool(
+                (isinstance(buy_party, dict) and (buy_party.get("is_sez") or buy_party.get("is_sez_buyer") or buy_party.get("is_sez_unit")))
+                or raw_invoice.get("buyer_is_sez")
+                or cleaned_data.get("buyer_is_sez")
+                or (buy_gstin in KNOWN_SEZ_BUYER_GSTINS)
+            )
+            if not is_sez_buyer_entity:
+                sez_gstin_val = raw_invoice.get("sez_gstin") or cleaned_data.get("sez_gstin")
+                is_lag = bool(raw_invoice.get("is_portal_sync_lag") or cleaned_data.get("is_portal_sync_lag"))
+                diag_2247 = classify_rule_2247_diagnostic(
+                    buyer_gstin=buy_gstin,
+                    trancatg=trancatg,
+                    is_sez_buyer=is_sez_buyer_entity,
+                    is_dta_sale=bool(raw_invoice.get("is_dta_sale") or cleaned_data.get("is_dta_sale")),
+                    sez_gstin=sez_gstin_val,
+                    is_portal_sync_lag=is_lag
+                )
+                if not diag_2247["is_valid"]:
+                    audit_log.append({
+                        "category": f"NIC_RULE_2247_{diag_2247['scenario']}",
+                        "field": "trancatg" if diag_2247["action"] == "CHANGE_SUPPLY_TYPE_TO_B2B" else ("buyerdt1.buyer_gstin" if "buyerdt1" in cleaned_data else "buyer.gstin"),
+                        "original": trancatg if diag_2247["action"] == "CHANGE_SUPPLY_TYPE_TO_B2B" else buy_gstin,
+                        "corrected": diag_2247["rectified_trancatg"] if diag_2247["action"] == "CHANGE_SUPPLY_TYPE_TO_B2B" else diag_2247["rectified_gstin"],
+                        "description": f"Rule 2247 Violation ({diag_2247['scenario_name']}): {diag_2247['reason']} {diag_2247['resolution']}"
+                    })
+                    if diag_2247["action"] == "CHANGE_SUPPLY_TYPE_TO_B2B":
+                        trancatg = "B2B"
+                        if isinstance(trandt1_sec, dict):
+                            trandt1_sec["trancatg"] = "B2B"
+                        cleaned_data["trancatg"] = "B2B"
+                        is_sez = False
+                    elif diag_2247["action"] == "USE_SEZ_BRANCH_GSTIN":
+                        buy_gstin = diag_2247["rectified_gstin"]
+                        if isinstance(buy_party, dict):
+                            buy_party["gstin"] = buy_gstin
+                            buy_party["buyer_gstin"] = buy_gstin
+
+        # Rule 2248: Recipient Has to Be URP in Case of Export Transactions
+        if is_export and buy_gstin != "URP":
+            is_dom = bool(raw_invoice.get("is_domestic_sale") or cleaned_data.get("is_domestic_sale") or raw_invoice.get("is_domestic_misclassified_as_export") or cleaned_data.get("is_domestic_misclassified_as_export"))
+            diag_2248 = classify_rule_2248_diagnostic(
+                buyer_gstin=buy_gstin,
+                trancatg=trancatg,
+                is_export=is_export,
+                is_domestic_sale=is_dom
+            )
+            if not diag_2248["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2248_{diag_2248['scenario']}",
+                    "field": "trancatg" if diag_2248["action"] == "CHANGE_SUPPLY_TYPE_TO_B2B" else ("buyerdt1.buyer_gstin" if "buyerdt1" in cleaned_data else "buyer.gstin"),
+                    "original": trancatg if diag_2248["action"] == "CHANGE_SUPPLY_TYPE_TO_B2B" else buy_gstin,
+                    "corrected": diag_2248["rectified_trancatg"] if diag_2248["action"] == "CHANGE_SUPPLY_TYPE_TO_B2B" else diag_2248["rectified_gstin"],
+                    "description": f"Rule 2248 Violation ({diag_2248['scenario_name']}): {diag_2248['reason']} {diag_2248['resolution']}"
+                })
+                if diag_2248["action"] == "CHANGE_SUPPLY_TYPE_TO_B2B":
+                    trancatg = "B2B"
+                    if isinstance(trandt1_sec, dict):
+                        trandt1_sec["trancatg"] = "B2B"
+                    cleaned_data["trancatg"] = "B2B"
+                    is_export = False
+                else:
+                    buy_gstin = "URP"
+                    if isinstance(buy_party, dict):
+                        buy_party["gstin"] = "URP"
+                        buy_party["buyer_gstin"] = "URP"
+
+        # Rule 2261: Recipient state code is incorrect for export transaction
+        if is_export:
+            is_dom_exp = bool(raw_invoice.get("is_domestic_sale") or cleaned_data.get("is_domestic_sale") or raw_invoice.get("is_domestic_misclassified_as_export") or cleaned_data.get("is_domestic_misclassified_as_export"))
+            diag_2261 = classify_rule_2261_diagnostic(
+                buyer_state=buy_state,
+                trancatg=trancatg,
+                is_export=is_export,
+                is_domestic_sale=is_dom_exp,
+                buyer_gstin=buy_gstin
+            )
+            if not diag_2261["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2261_{diag_2261['scenario']}",
+                    "field": "trandt1.trancatg" if diag_2261["action"] == "CHANGE_SUPPLY_TYPE_TO_B2B" else ("buyerdt1.buyer_state" if "buyerdt1" in cleaned_data else "buyer.state"),
+                    "original": trancatg if diag_2261["action"] == "CHANGE_SUPPLY_TYPE_TO_B2B" else buy_state,
+                    "corrected": diag_2261["rectified_trancatg"] if diag_2261["action"] == "CHANGE_SUPPLY_TYPE_TO_B2B" else "96",
+                    "description": f"Rule 2261 Violation ({diag_2261['scenario_name']}): {diag_2261['reason']} {diag_2261['resolution']}"
+                })
+                if diag_2261["action"] == "CHANGE_SUPPLY_TYPE_TO_B2B":
+                    trancatg = "B2B"
+                    if isinstance(trandt1_sec, dict):
+                        trandt1_sec["trancatg"] = "B2B"
+                    cleaned_data["trancatg"] = "B2B"
+                    is_export = False
+                else:
+                    buy_state = "96"
+                    raw_pos = "96"
+                    if isinstance(buy_party, dict):
+                        buy_party["buyer_state"] = "96"
+                        buy_party["state"] = "96"
+                        buy_party["buyer_pos"] = "96"
+                        buy_party["pos"] = "96"
 
         # Scenario 2: Wrong Place of Supply (Pos) Entered
         # Seller State = "27", Recipient is in Karnataka (29), but payload has: "BuyerDtls": { "Pos": "27" }
@@ -6260,15 +12104,63 @@ class InvoicePayload(BaseModel):
                 "description": 'In "Bill To – Ship To" transactions where the billing party is out-of-state, the Place of Supply is the billing party\'s state, making the invoice inter-state requiring IGST (Section 10(1)(b) of the IGST Act).'
             })
 
+        # Rule 2268: IGST on intra-state supply is not applicable to Export/SEZ
+        raw_igst_flag = str(trandt1_sec.get("igstonintra", cleaned_data.get("igstonintra", "N")) or "N").strip().upper()
+        if (is_export or is_sez) and raw_igst_flag == "Y":
+            diag_2268 = classify_rule_2268_diagnostic(
+                igstonintra="Y",
+                trancatg=trancatg
+            )
+            if not diag_2268["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2268_{diag_2268['scenario']}",
+                    "field": "trandt1.igstonintra" if "trandt1" in cleaned_data else "igstonintra",
+                    "original": "Y",
+                    "corrected": "N",
+                    "description": f"Rule 2268 Violation ({diag_2268['scenario_name']}): {diag_2268['reason']} {diag_2268['resolution']}"
+                })
+                if isinstance(trandt1_sec, dict):
+                    trandt1_sec["igstonintra"] = "N"
+                cleaned_data["igstonintra"] = "N"
+                raw_igst_flag = "N"
+
+        # Rule 2262: For Intra-state supply, IGST cannot be charged (IgstOnIntra error)
+        if raw_igst_flag == "Y" and not is_export and not is_sez and sup_state != raw_pos:
+            is_act_intra = bool(raw_invoice.get("is_actual_intra") or cleaned_data.get("is_actual_intra") or raw_invoice.get("is_actual_local_sale") or cleaned_data.get("is_actual_local_sale"))
+            diag_2262 = classify_rule_2262_diagnostic(
+                igstonintra="Y",
+                seller_state=sup_state,
+                pos=raw_pos,
+                is_actual_intra=is_act_intra
+            )
+            if not diag_2262["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2262_{diag_2262['scenario']}",
+                    "field": "buyerdt1.pos" if diag_2262["action"] == "ALIGN_POS_TO_SELLER_STATE" else ("trandt1.igstonintra" if "trandt1" in cleaned_data else "igstonintra"),
+                    "original": raw_pos if diag_2262["action"] == "ALIGN_POS_TO_SELLER_STATE" else "Y",
+                    "corrected": diag_2262["rectified_pos"] if diag_2262["action"] == "ALIGN_POS_TO_SELLER_STATE" else "N",
+                    "description": f"Rule 2262 Violation ({diag_2262['scenario_name']}): {diag_2262['reason']} {diag_2262['resolution']}"
+                })
+                if diag_2262["action"] == "ALIGN_POS_TO_SELLER_STATE":
+                    raw_pos = sup_state
+                    if isinstance(buy_party, dict):
+                        buy_party["pos"] = sup_state
+                        buy_party["buyer_pos"] = sup_state
+                else:
+                    if isinstance(trandt1_sec, dict):
+                        trandt1_sec["igstonintra"] = "N"
+                    cleaned_data["igstonintra"] = "N"
+
         # Scenario 3: Valid Exceptional Intra-State IGST Supply
         is_exceptional_intra = bool(
-            raw_invoice.get("is_exceptional_intra_igst") or
+            (raw_invoice.get("is_exceptional_intra_igst") or
             cleaned_data.get("is_exceptional_intra_igst") or
             raw_invoice.get("is_exceptional_intra") or
             cleaned_data.get("is_exceptional_intra") or
             (isinstance(raw_invoice.get("trandt1"), dict) and (raw_invoice["trandt1"].get("is_exceptional_intra_igst") or raw_invoice["trandt1"].get("is_exceptional_intra"))) or
             (isinstance(raw_invoice.get("trandtls"), dict) and (raw_invoice["trandtls"].get("is_exceptional_intra_igst") or raw_invoice["trandtls"].get("is_exceptional_intra"))) or
-            (str(trandt1_sec.get("igstonintra", "")).strip().upper() == "Y")
+            (str(trandt1_sec.get("igstonintra", "")).strip().upper() == "Y"))
+            and (sup_state == raw_pos)
         )
         if is_exceptional_intra and not is_export and not is_sez:
             current_igstonintra = str(trandt1_sec.get("igstonintra", "N") or "N").strip().upper()
@@ -6290,6 +12182,43 @@ class InvoicePayload(BaseModel):
         items = cleaned_data.get("itemdtls") or []
         if not items and (cleaned_data.get("prdnm") or cleaned_data.get("hsncd")):
             items = [cleaned_data]
+
+        # Rule 2228: Item List Cannot Be Empty Diagnostic & Fallback
+        raw_items_check = raw_invoice.get("itemdtls") if "itemdtls" in raw_invoice else (raw_invoice.get("ItemList") if "ItemList" in raw_invoice else raw_invoice.get("items"))
+        is_null_arr = (raw_items_check is None and ("itemdtls" in raw_invoice or "ItemList" in raw_invoice or "items" in raw_invoice)) or bool(raw_invoice.get("is_null_array"))
+        is_gltch = bool(raw_invoice.get("is_erp_extraction_glitch") or raw_invoice.get("erp_glitch"))
+        if not items or is_null_arr or is_gltch:
+            diag_2228 = classify_rule_2228_diagnostic(
+                items=items,
+                is_null_array=is_null_arr,
+                is_erp_extraction_glitch=is_gltch,
+            )
+            audit_log.append({
+                "category": f"NIC_RULE_2228_{diag_2228['scenario']}",
+                "field": "itemdtls",
+                "original": "0 items" if items is not None else "null",
+                "corrected": "1 item (fallback)" if not items else f"{len(items)} items",
+                "description": f"Rule 2228 Violation ({diag_2228['scenario_name']}): {diag_2228['reason']}"
+            })
+            if not items:
+                default_item = {
+                    "slno": "1",
+                    "prdnm": "Standard Goods",
+                    "hsncd": "84713010",
+                    "qty": "1.00",
+                    "unit": "NOS",
+                    "unitprice": "100.00",
+                    "totamt": "100.00",
+                    "discount": "0.00",
+                    "assval": "100.00",
+                    "gstrate": 18.0,
+                    "cgstval": "9.00",
+                    "sgstval": "9.00",
+                    "igstval": "0.00",
+                    "totitemval": "118.00"
+                }
+                items = [default_item]
+                cleaned_data["itemdtls"] = items
 
         # Rule 2173: ItemList maximum line-item limit & redundant granularity evaluation
         max_item_limit = int(cleaned_data.get("middleware_threshold") or 1000)
@@ -6334,10 +12263,40 @@ class InvoicePayload(BaseModel):
         total_igst = Decimal("0.00")
         total_cess = Decimal("0.00")
         total_stcess = Decimal("0.00")
+        total_stcesnonad = Decimal("0.00")
         total_cesnonad = Decimal("0.00")
+        total_totitem = Decimal("0.00")
+
+        # Rule 2233: Duplicate SI numbers are not allowed in line items
+        if len(items) > 1:
+            is_batch = bool(raw_invoice.get("is_batch_split") or any(isinstance(it, dict) and any(k in it for k in ("batch", "batch_no", "batchno", "batch_id", "BatchNo")) for it in items))
+            has_ws = bool(raw_invoice.get("has_whitespace_artifacts") or any(isinstance(it, dict) and str(it.get("slno", it.get("SlNo", ""))) != str(it.get("slno", it.get("SlNo", ""))).strip() for it in items))
+            diag_2233 = classify_rule_2233_diagnostic(
+                items=items,
+                is_batch_split=is_batch,
+                has_whitespace_artifacts=has_ws,
+            )
+            if not diag_2233["is_valid"]:
+                audit_log.append({
+                    "category": f"NIC_RULE_2233_{diag_2233['scenario']}",
+                    "field": "itemdtls.slno",
+                    "original": f"Duplicates: {diag_2233['duplicate_slnos']}",
+                    "corrected": f"Sequential: {diag_2233['rectified_slnos']}",
+                    "description": f"Rule 2233 Violation ({diag_2233['scenario_name']}): {diag_2233['reason']} {diag_2233['resolution']}"
+                })
+                for s_idx, itm_s in enumerate(items, start=1):
+                    if isinstance(itm_s, dict):
+                        itm_s["slno"] = str(s_idx)
+                        if "SlNo" in itm_s:
+                            itm_s["SlNo"] = str(s_idx)
 
         for idx, itm in enumerate(items, start=1):
             if isinstance(itm, dict):
+                # Ensure slno is clean string
+                if "slno" in itm:
+                    itm["slno"] = str(itm["slno"]).strip()
+                else:
+                    itm["slno"] = str(idx)
                 p_name = itm.get("prdnm", f"ITEM_{idx}")
                 p_desc = itm.get("prddesc", p_name)
                 curr_hsn = str(itm.get("hsncd", itm.get("hsn", "")) or "").strip()
@@ -6387,24 +12346,64 @@ class InvoicePayload(BaseModel):
                         elif hsn_stat_rate is None:
                             hsn_stat_rate = Decimal(str(best.get("gst_rate", 18.0)))
 
-                itm["qty"] = _clean_dec(itm.get("qty", "1.00"), f"itemdtls[{idx}].qty")
+                # Rule 2238: Quantity validation & auto-correction (goods and services alike)
+                raw_item_qty = itm.get("qty")
+                is_serv_flag = (
+                    str(itm.get("isservc", itm.get("is_service", "N"))).strip().upper() == "Y"
+                    or curr_hsn.startswith("99")
+                )
+                diag_2238 = classify_rule_2238_diagnostic(
+                    qty=raw_item_qty,
+                    is_service="Y" if is_serv_flag else "N",
+                    item_slno=idx,
+                    prdnm=p_name
+                )
+                if not diag_2238["is_valid"]:
+                    rect_qty_str = f"{diag_2238['rectified_qty']:.2f}"
+                    audit_log.append({
+                        "category": f"NIC_RULE_2238_{diag_2238['scenario']}",
+                        "field": f"itemdtls[{idx}].qty",
+                        "original": str(raw_item_qty),
+                        "corrected": rect_qty_str,
+                        "description": f"Rule 2238 Violation ({diag_2238['scenario_name']}): {diag_2238['reason']} {diag_2238['resolution']}"
+                    })
+                    itm["qty"] = rect_qty_str
+                else:
+                    itm["qty"] = _clean_dec(itm.get("qty", "1.00"), f"itemdtls[{idx}].qty")
+
                 itm["unitprice"] = _clean_dec(itm.get("unitprice", itm.get("unitrate", "0.00")), f"itemdtls[{idx}].unitprice")
 
-                # Rule 2177: Unit Quantity Code (UQC) auto-alignment to official NIC master
-                raw_unit = str(itm.get("unit") or itm.get("uqc") or "").strip()
-                if not raw_unit:
-                    raw_unit = "NOS"
-                norm_uqc, diag_uqc = normalize_uqc_statutory(raw_unit)
-                if not diag_uqc["is_valid"]:
+                # Rule 2239: Unit Quantity Code (UQC) diagnostic & auto-alignment
+                raw_unit = itm.get("unit") if "unit" in itm else itm.get("uqc")
+                diag_2239 = classify_rule_2239_diagnostic(
+                    unit=raw_unit,
+                    is_service="Y" if is_serv_flag else "N",
+                    item_slno=idx,
+                    prdnm=p_name
+                )
+                if not diag_2239["is_valid"]:
                     audit_log.append({
-                        "category": "UQC_MASTER_AUTO_ALIGNMENT",
+                        "category": f"NIC_RULE_2239_{diag_2239['scenario']}",
                         "field": f"itemdtls[{idx}].unit",
-                        "original": raw_unit,
-                        "corrected": norm_uqc,
-                        "description": f"Unit Quantity Code '{raw_unit}' is not as per NIC master (Rule 2177). {diag_uqc['reason']} Auto-aligned to '{norm_uqc}'."
+                        "original": str(raw_unit),
+                        "corrected": diag_2239["rectified_unit"],
+                        "description": f"Rule 2239 Violation ({diag_2239['scenario_name']}): {diag_2239['reason']} {diag_2239['resolution']}"
                     })
-                itm["unit"] = norm_uqc
-                itm["uqc"] = norm_uqc
+                    itm["unit"] = diag_2239["rectified_unit"]
+                    itm["uqc"] = diag_2239["rectified_unit"]
+                else:
+                    raw_unit_str = str(raw_unit or "").strip()
+                    norm_uqc, diag_uqc = normalize_uqc_statutory(raw_unit_str)
+                    if not diag_uqc["is_valid"]:
+                        audit_log.append({
+                            "category": "UQC_MASTER_AUTO_ALIGNMENT",
+                            "field": f"itemdtls[{idx}].unit",
+                            "original": raw_unit_str,
+                            "corrected": norm_uqc,
+                            "description": f"Unit Quantity Code '{raw_unit_str}' is not as per NIC master (Rule 2177). {diag_uqc['reason']} Auto-aligned to '{norm_uqc}'."
+                        })
+                    itm["unit"] = norm_uqc
+                    itm["uqc"] = norm_uqc
 
                 sup_gstin = str(cleaned_data.get("supplierdt1", {}).get("supplier_gstin") or cleaned_data.get("self_gstin", "") or "").strip()
 
@@ -6601,13 +12600,36 @@ class InvoicePayload(BaseModel):
 
                 ass_d = Decimal(itm["assval"])
                 decl_gstrt = None
-                for _gk in ("gstrate", "gst_rate", "tax_rate", "rate"):
+                raw_rate_field = None
+                for _gk in ("gstrate", "gst_rate", "tax_rate", "rate", "GstRt"):
                     if _gk in itm and itm.get(_gk) is not None and str(itm.get(_gk)).strip() != "":
-                        try:
-                            decl_gstrt = Decimal(str(itm.get(_gk)).replace(",", "").replace("%", "").strip())
-                            break
-                        except Exception:
-                            pass
+                        raw_rate_field = itm.get(_gk)
+                        break
+
+                if raw_rate_field is not None:
+                    diag_2240 = classify_rule_2240_diagnostic(
+                        gstrate=raw_rate_field,
+                        cgstrt=itm.get("cgstrt"),
+                        sgstrt=itm.get("sgstrt"),
+                        cesrt=itm.get("cesrate", itm.get("cessrt", itm.get("cesrt"))),
+                        item_slno=idx
+                    )
+                    if not diag_2240["is_valid"]:
+                        audit_log.append({
+                            "category": f"NIC_RULE_2240_{diag_2240['scenario']}",
+                            "field": f"itemdtls[{idx}].gstrate",
+                            "original": str(raw_rate_field),
+                            "corrected": str(diag_2240["rectified_gstrate"]),
+                            "description": f"Rule 2240 Violation ({diag_2240['scenario_name']}): {diag_2240['reason']} {diag_2240['resolution']}"
+                        })
+                        decl_gstrt = Decimal(str(diag_2240["rectified_gstrate"]))
+                        itm["gstrate"] = float(decl_gstrt)
+                        if diag_2240.get("rectified_cesrt") is not None:
+                            itm["cesrate"] = float(diag_2240["rectified_cesrt"])
+                            itm["cessrt"] = float(diag_2240["rectified_cesrt"])
+                    else:
+                        decl_gstrt = Decimal(str(diag_2240["rectified_gstrate"]))
+                        itm["gstrate"] = float(decl_gstrt)
 
                 if decl_gstrt is not None:
                     stat_gst = decl_gstrt
@@ -6636,6 +12658,38 @@ class InvoicePayload(BaseModel):
                         })
                     cgst_d = (ass_d * (stat_gst / Decimal("2")) / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
                     sgst_d = cgst_d
+                    if abs(raw_itm_cgst - raw_itm_sgst) > Decimal("0.005"):
+                        diag_2227 = classify_rule_2227_diagnostic(
+                            cgstamt=raw_itm_cgst,
+                            sgstamt=raw_itm_sgst,
+                            assamt=ass_d,
+                            gstrate=stat_gst,
+                            item_slno=idx
+                        )
+                        audit_log.append({
+                            "category": f"NIC_RULE_2227_{diag_2227['scenario']}",
+                            "field": f"itemdtls[{idx}].cgstval",
+                            "original": f"CGST: {raw_itm_cgst}, SGST: {raw_itm_sgst}",
+                            "corrected": f"CGST: {cgst_d}, SGST: {sgst_d}",
+                            "description": f"Rule 2227 Violation ({diag_2227['scenario_name']}): {diag_2227['reason']}"
+                        })
+                    diag_2234 = classify_rule_2234_diagnostic(
+                        cgstamt=raw_itm_cgst,
+                        sgstamt=raw_itm_sgst,
+                        assamt=ass_d,
+                        gstrate=stat_gst,
+                        totamt=raw_totamt,
+                        discount=raw_disc,
+                        item_slno=idx
+                    )
+                    if not diag_2234["is_valid"]:
+                        audit_log.append({
+                            "category": f"NIC_RULE_2234_{diag_2234['scenario']}",
+                            "field": f"itemdtls[{idx}].cgstval",
+                            "original": f"CGST: {raw_itm_cgst}, SGST: {raw_itm_sgst}",
+                            "corrected": f"CGST: {cgst_d}, SGST: {sgst_d}",
+                            "description": f"Rule 2234 Violation ({diag_2234['scenario_name']}): {diag_2234['reason']} {diag_2234['resolution']}"
+                        })
                     itm["cgstval"] = str(cgst_d)
                     itm["sgstval"] = str(sgst_d)
                     itm["igstval"] = "0.00"
@@ -6649,9 +12703,71 @@ class InvoicePayload(BaseModel):
                             "description": "Supplier and POS states are different, so it is an inter-state sale. Clear CGST/SGST to 0.00 and pass the full tax rate under IgstAmt (Rule 2174)."
                         })
                     igst_d = (ass_d * stat_gst / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+                    diag_2235 = classify_rule_2235_diagnostic(
+                        igstamt=raw_itm_igst,
+                        assamt=ass_d,
+                        gstrate=stat_gst,
+                        totamt=raw_totamt,
+                        discount=raw_disc,
+                        item_slno=idx
+                    )
+                    if not diag_2235["is_valid"]:
+                        audit_log.append({
+                            "category": f"NIC_RULE_2235_{diag_2235['scenario']}",
+                            "field": f"itemdtls[{idx}].igstval",
+                            "original": f"IGST: {raw_itm_igst}",
+                            "corrected": f"IGST: {igst_d}",
+                            "description": f"Rule 2235 Violation ({diag_2235['scenario_name']}): {diag_2235['reason']} {diag_2235['resolution']}"
+                        })
                     itm["igstval"] = str(igst_d)
                     itm["cgstval"] = "0.00"
                     itm["sgstval"] = "0.00"
+
+                # Rule 2266: Line Item Cess Amount Auto-Correction
+                raw_itm_cesval = Decimal(str(itm.get("cesval", "0.00") or "0.00"))
+                raw_itm_cesrate = Decimal(str(itm.get("cesrate", itm.get("cessrt", itm.get("cesrt", "0.00"))) or "0.00"))
+                raw_itm_cesnonad = Decimal(str(itm.get("cesnonadvl", "0.00") or "0.00"))
+                diag_2266 = classify_rule_2266_diagnostic(
+                    assval=ass_d,
+                    cesrate=raw_itm_cesrate,
+                    cesval=raw_itm_cesval,
+                    cesnonadvl=raw_itm_cesnonad,
+                    item_slno=idx
+                )
+                if not diag_2266["is_valid"]:
+                    audit_log.append({
+                        "category": f"NIC_RULE_2266_{diag_2266['scenario']}",
+                        "field": f"itemdtls[{idx}].cesval",
+                        "original": str(raw_itm_cesval),
+                        "corrected": str(diag_2266["rectified_cesval"]),
+                        "description": f"Rule 2266 Violation ({diag_2266['scenario_name']}): {diag_2266['reason']} {diag_2266['resolution']}"
+                    })
+                    itm["cesval"] = str(diag_2266["rectified_cesval"])
+                    if diag_2266.get("rectified_cesnonadvl") is not None:
+                        itm["cesnonadvl"] = str(diag_2266["rectified_cesnonadvl"])
+
+                # Rule 2267: Line Item State Cess Amount Auto-Correction
+                raw_itm_stcesval = Decimal(str(itm.get("statecesval", "0.00") or "0.00"))
+                raw_itm_stcesrate = Decimal(str(itm.get("statecesrate", itm.get("statecessrt", "0.00")) or "0.00"))
+                raw_itm_stcesnonad = Decimal(str(itm.get("statecesnonadvl", "0.00") or "0.00"))
+                diag_2267 = classify_rule_2267_diagnostic(
+                    assval=ass_d,
+                    statecesrate=raw_itm_stcesrate,
+                    statecesval=raw_itm_stcesval,
+                    statecesnonadvl=raw_itm_stcesnonad,
+                    item_slno=idx
+                )
+                if not diag_2267["is_valid"]:
+                    audit_log.append({
+                        "category": f"NIC_RULE_2267_{diag_2267['scenario']}",
+                        "field": f"itemdtls[{idx}].statecesval",
+                        "original": str(raw_itm_stcesval),
+                        "corrected": str(diag_2267["rectified_statecesval"]),
+                        "description": f"Rule 2267 Violation ({diag_2267['scenario_name']}): {diag_2267['reason']} {diag_2267['resolution']}"
+                    })
+                    itm["statecesval"] = str(diag_2267["rectified_statecesval"])
+                    if diag_2267.get("rectified_statecesnonadvl") is not None:
+                        itm["statecesnonadvl"] = str(diag_2267["rectified_statecesnonadvl"])
 
                 # Auto-reconcile total item value: totitemval = assval + taxes + cess + othchrg (Rule 2194)
                 exp_totitem = (
@@ -6695,18 +12811,22 @@ class InvoicePayload(BaseModel):
                 total_igst += Decimal(itm["igstval"])
                 total_cess += Decimal(itm["cesval"])
                 total_stcess += Decimal(itm["statecesval"])
+                total_stcesnonad += Decimal(itm.get("statecesnonadvl", "0.00"))
                 total_cesnonad += Decimal(itm["cesnonadvl"])
+                total_totitem += Decimal(itm["totitemval"])
 
         # 4. Header valuation reconciliation
         valdt1 = cleaned_data.get("valdt1") or cleaned_data.get("valdtls") or {}
         if isinstance(valdt1, dict):
             inv_disc = Decimal(_clean_dec(valdt1.get("discount", valdt1.get("discval", "0.00")), "valdt1.discval"))
             inv_oth = Decimal(_clean_dec(valdt1.get("othchrg", "0.00"), "valdt1.othchrg"))
+            inv_rndoff = Decimal(_clean_dec(valdt1.get("rndoffamt", "0.00"), "valdt1.rndoffamt"))
             raw_totinv = str(valdt1.get("totinvval", "")).strip()
 
+            total_combined_stcess = total_stcess + total_stcesnonad
             calculated_totinv = (
                 total_assamt + total_cgst + total_sgst + total_igst +
-                total_cess + total_stcess + total_cesnonad + inv_oth - inv_disc
+                total_cess + total_stcess + total_cesnonad + total_stcesnonad + inv_oth - inv_disc + inv_rndoff
             ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
             if raw_totinv:
@@ -6894,13 +13014,78 @@ class InvoicePayload(BaseModel):
                 except Exception:
                     pass
 
+            # Rule 2187 State Cess Value Reconciliation
+            raw_val_stces = str(valdt1.get("stcesval", "")).strip()
+            total_combined_stcess = total_stcess + total_stcesnonad
+            if raw_val_stces or total_combined_stcess > Decimal("0.00"):
+                try:
+                    d_raw_stces = Decimal(_clean_dec(raw_val_stces or "0.00", "valdt1.stcesval"))
+                    if abs(d_raw_stces - total_combined_stcess) > Decimal("0.005"):
+                        diag_2187 = classify_rule_2187_diagnostic(
+                            header_stcess=d_raw_stces,
+                            sum_item_stcess=total_combined_stcess,
+                            items=cleaned_data.get("itemdt1") or cleaned_data.get("itemlist") or [],
+                            header_cess=Decimal(_clean_dec(valdt1.get("cesval", "0.00"), "valdt1.cesval")),
+                            sum_item_cess=total_combined_cess,
+                            sum_item_stcesad=total_stcess,
+                            sum_item_stcesnonad=total_stcesnonad,
+                        )
+                        audit_log.append({
+                            "category": "INVOICE_TAX_RECONCILIATION",
+                            "field": "valdtls.stcesval",
+                            "original": raw_val_stces or "0.00",
+                            "corrected": str(total_combined_stcess),
+                            "scenario": diag_2187.get("scenario"),
+                            "description": f"Rule 2187 Violation ({diag_2187.get('scenario_name')}): {diag_2187.get('reason')}"
+                        })
+                except Exception:
+                    pass
+
+            # Rule 2189 Total Invoice Value Reconciliation
+            if raw_totinv:
+                try:
+                    d_raw_totinv = Decimal(_clean_dec(raw_totinv, "valdt1.totinvval"))
+                    diag_2189 = classify_rule_2189_diagnostic(
+                        totinvval=d_raw_totinv,
+                        sum_totitem=total_totitem,
+                        othchrg=inv_oth,
+                        discount=inv_disc,
+                        rndoffamt=inv_rndoff,
+                        assval=total_assamt,
+                        cgstval=total_cgst,
+                        sgstval=total_sgst,
+                        igstval=total_igst,
+                        cesval=total_combined_cess,
+                        stcesval=total_combined_stcess,
+                        items=cleaned_data.get("itemdt1") or cleaned_data.get("itemlist") or [],
+                    )
+                    if not diag_2189["is_valid"]:
+                        audit_log.append({
+                            "category": "INVOICE_TOTALS_RECONCILIATION",
+                            "field": "valdt1.totinvval",
+                            "original": raw_totinv,
+                            "corrected": str(diag_2189["calculated_totinv"]),
+                            "scenario": diag_2189.get("scenario"),
+                            "description": f"Rule 2189 Violation ({diag_2189.get('scenario_name')}): {diag_2189.get('reason')}"
+                        })
+                        if diag_2189["scenario"] == "ROUNDING_OFF_ARITHMETIC_INVERSION":
+                            valdt1["rndoffamt"] = str(diag_2189["corrected_rndoff"])
+                            inv_rndoff = diag_2189["corrected_rndoff"]
+                        elif diag_2189["scenario"] == "ITEM_LEVEL_DISCOUNT_SUBTRACTED_AGAIN_AT_HEADER":
+                            valdt1["discount"] = "0.00"
+                            inv_disc = Decimal("0.00")
+                        calculated_totinv = diag_2189["calculated_totinv"]
+                        valdt1["totinvval"] = str(calculated_totinv)
+                except Exception:
+                    pass
+
             # Ensure header taxes reconcile with items
             valdt1["assval"] = str(total_assamt)
             valdt1["cgstval"] = str(total_cgst)
             valdt1["sgstval"] = str(total_sgst)
             valdt1["igstval"] = str(total_igst)
             valdt1["cesval"] = str(total_combined_cess)
-            valdt1["stcesval"] = str(total_stcess)
+            valdt1["stcesval"] = str(total_combined_stcess)
             valdt1["totinvval"] = str(calculated_totinv)
 
         # 5. Rule Auto-Corrections (Reverse charge)

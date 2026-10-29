@@ -1,18 +1,25 @@
 {
   "total_invoices": 5,
-  "valid_invoices": 2,
-  "failed_invoices": 3,
+  "valid_invoices": 0,
+  "failed_invoices": 5,
   "results": [
     {
       "invoice_number": "INV-2026-001",
       "status": "INVALID",
-      "error_count": 1,
+      "error_count": 2,
       "errors": [
+        {
+          "error_code": 4009,
+          "field": "ewbdt1",
+          "message": "E Way Bill can be generated provided at least HSN of one item belongs to goods.",
+          "reason": "",
+          "resolution": ""
+        },
         {
           "error_code": 2176,
           "field": "itemdtls[1].hsncd",
           "message": "HSN Misclassification Screened: Declared HSN '85011013' flagged by Module 2 Sentinel.",
-          "reason": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '85011013' flagged with P(Error) = 92.2% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 85 (Electrical Machinery), but semantic text matches Chapter 62 (Articles of Apparel, Not Knitted) with 85.4% similarity., Vendor historical risk: Supplier has a 5.0% historical misclassification rate across prior filings.. Auto-rectified to Counterfactual HSN '62052000' (Post-Intervention P(Error) = 9.0%, -83.2% risk drop) with statutory 5.0% GST before transmission to NIC portal.",
+          "reason": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '85011013' flagged with P(Error) = 85.5% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 85 (Electrical Machinery), but semantic text matches Chapter 62 (Articles of Apparel, Not Knitted) with 97.4% similarity., Ambiguous classification: Top match 62052000 barely leads alternative 62063000 by a margin of 0.036., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '62052000' (Post-Intervention P(Error) = 4.4%, -81.2% risk drop) with statutory 5.0% GST before transmission to NIC portal.",
           "resolution": "Confirm and apply Recommended HSN '62052000' to unlock Stage 2 IRN generation."
         }
       ],
@@ -49,7 +56,7 @@
           }
         ]
       },
-      "corrections_applied_count": 34,
+      "corrections_applied_count": 36,
       "corrections_applied": [
         {
           "category": "KEY_NAME_NORMALIZATION",
@@ -271,16 +278,30 @@
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-25",
-          "corrected": "25-10-2026",
-          "description": "Standardized date format from '2026-10-25' to '25-10-2026'"
+          "original": "2026-10-27",
+          "corrected": "27-10-2026",
+          "description": "Standardized date format from '2026-10-27' to '27-10-2026'"
+        },
+        {
+          "category": "HSN_TARIFF_SCHEDULE_LOOKUP",
+          "field": "itemdtls[1].hsncd",
+          "original": "85011013",
+          "corrected": "85011013",
+          "description": "\u26a0\ufe0f NIC Rule 2176 Violation: HSN code(s)-85011013 is invalid. Wrong HSN code is being passed. Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side. Based on Statutory Tariff Master & ML HSN Intelligence, the correct official HSN is '85011013' (MENS OR BOYS SHIRTS - OF COTTON...) with statutory 5.0% GST. Auto-corrected to ensure NIC IRN compliance."
+        },
+        {
+          "category": "WRONG_HSN_CODE_DETECTED",
+          "field": "itemdtls[1].hsncd",
+          "original": "85011013",
+          "corrected": "85011013",
+          "description": "\u26a0\ufe0f NIC Rule 2176 Violation: HSN code(s)-85011013 is invalid. Wrong HSN code is being passed. Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side. Based on Statutory Tariff Master & ML HSN Intelligence, the correct official HSN is '85011013' (MENS OR BOYS SHIRTS - OF COTTON...) with statutory 5.0% GST. Auto-corrected to ensure NIC IRN compliance."
         },
         {
           "category": "MODULE_2_SENTINEL_HSN_RECTIFICATION",
           "field": "itemdtls[1].hsncd",
           "original": "85011013",
           "corrected": "62052000",
-          "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '85011013' flagged with P(Error) = 92.2% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 85 (Electrical Machinery), but semantic text matches Chapter 62 (Articles of Apparel, Not Knitted) with 85.4% similarity., Vendor historical risk: Supplier has a 5.0% historical misclassification rate across prior filings.. Auto-rectified to Counterfactual HSN '62052000' (Post-Intervention P(Error) = 9.0%, -83.2% risk drop) with statutory 5.0% GST before transmission to NIC portal."
+          "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '85011013' flagged with P(Error) = 85.5% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 85 (Electrical Machinery), but semantic text matches Chapter 62 (Articles of Apparel, Not Knitted) with 97.4% similarity., Ambiguous classification: Top match 62052000 barely leads alternative 62063000 by a margin of 0.036., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '62052000' (Post-Intervention P(Error) = 4.4%, -81.2% risk drop) with statutory 5.0% GST before transmission to NIC portal."
         },
         {
           "category": "PRICE_UNIT_RATE_ANOMALY",
@@ -315,14 +336,21 @@
         "status": "FLAGGED",
         "declared_hsn": "85011013",
         "recommended_hsn": "62052000",
-        "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '85011013' flagged with P(Error) = 92.2% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 85 (Electrical Machinery), but semantic text matches Chapter 62 (Articles of Apparel, Not Knitted) with 85.4% similarity., Vendor historical risk: Supplier has a 5.0% historical misclassification rate across prior filings.. Auto-rectified to Counterfactual HSN '62052000' (Post-Intervention P(Error) = 9.0%, -83.2% risk drop) with statutory 5.0% GST before transmission to NIC portal."
+        "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '85011013' flagged with P(Error) = 85.5% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 85 (Electrical Machinery), but semantic text matches Chapter 62 (Articles of Apparel, Not Knitted) with 97.4% similarity., Ambiguous classification: Top match 62052000 barely leads alternative 62063000 by a margin of 0.036., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '62052000' (Post-Intervention P(Error) = 4.4%, -81.2% risk drop) with statutory 5.0% GST before transmission to NIC portal."
       }
     },
     {
       "invoice_number": "INV-2026-002",
       "status": "INVALID",
-      "error_count": 2,
+      "error_count": 3,
       "errors": [
+        {
+          "error_code": 4009,
+          "field": "ewbdt1",
+          "message": "E Way Bill can be generated provided at least HSN of one item belongs to goods.",
+          "reason": "",
+          "resolution": ""
+        },
         {
           "error_code": 4021,
           "field": "ewbdt1.transporter_doc_date",
@@ -332,10 +360,10 @@
         },
         {
           "error_code": 2176,
-          "field": "itemdtls[1].hsncd",
-          "message": "HSN Misclassification Screened: Declared HSN '520522' flagged by Module 2 Sentinel.",
-          "reason": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '520522' flagged with P(Error) = 96.2% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 52 (Cotton and Cotton Fabrics), but semantic text matches Chapter 50 (Silk and Silk Yarn) with 82.1% similarity., Low semantic match confidence: Retrieval similarity score (82.1%) is insufficient to guarantee correct classification.. Auto-rectified to Counterfactual HSN '50031010' (Post-Intervention P(Error) = 27.4%, -68.8% risk drop) with statutory 5.0% GST before transmission to NIC portal.",
-          "resolution": "Confirm and apply Recommended HSN '50031010' to unlock Stage 2 IRN generation."
+          "field": "itemdtls[2].hsncd",
+          "message": "HSN Misclassification Screened: Declared HSN '850440' flagged by Module 2 Sentinel.",
+          "reason": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '850440' flagged with P(Error) = 42.9% (MEDIUM risk). SHAP Root Causes: Low semantic match confidence: Retrieval similarity score (49.3%) is insufficient to guarantee correct classification., Unit price of \u20b9260.00 deviates significantly (20.1x) from statutory median price (\u20b95,229.06) for HSN 850440., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '85423300' (Post-Intervention P(Error) = 26.2%, -16.7% risk drop) with statutory 18.0% GST before transmission to NIC portal.",
+          "resolution": "Confirm and apply Recommended HSN '85423300' to unlock Stage 2 IRN generation."
         }
       ],
       "price_anomaly_report": {
@@ -351,7 +379,7 @@
           {
             "item_index": 1,
             "prdnm": "COTTON-YARN",
-            "hsncd": "50031010",
+            "hsncd": "520522",
             "uqc": "KGS",
             "unitrate": 280.0,
             "qty": 100.0,
@@ -360,19 +388,19 @@
             "anomaly_type": "NORMAL",
             "severity": "NONE",
             "risk_score": 0,
-            "benchmark_min": 180.0,
-            "benchmark_max": 420.0,
-            "benchmark_median": 280.0,
-            "ratio_to_median": 1.0,
+            "benchmark_min": 220.0,
+            "benchmark_max": 380.0,
+            "benchmark_median": 300.0,
+            "ratio_to_median": 0.93,
             "suggested_rate": null,
             "reason": "Unit rate is within normal statutory benchmark range.",
             "statutory_risk": "",
-            "benchmark_source": "Keyword:cotton"
+            "benchmark_source": "HSN:520522"
           },
           {
             "item_index": 2,
             "prdnm": "LED-DRIVER",
-            "hsncd": "850440",
+            "hsncd": "85423300",
             "uqc": "NOS",
             "unitrate": 260.0,
             "qty": 50.0,
@@ -388,7 +416,7 @@
             "suggested_rate": null,
             "reason": "Unit rate is within normal statutory benchmark range.",
             "statutory_risk": "",
-            "benchmark_source": "HSN:850440"
+            "benchmark_source": "Keyword:driver"
           }
         ]
       },
@@ -425,16 +453,9 @@
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-25",
-          "corrected": "25-10-2026",
-          "description": "Standardized date format from '2026-10-25' to '25-10-2026'"
-        },
-        {
-          "category": "MODULE_2_SENTINEL_HSN_RECTIFICATION",
-          "field": "itemdtls[1].hsncd",
-          "original": "520522",
-          "corrected": "50031010",
-          "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '520522' flagged with P(Error) = 96.2% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 52 (Cotton and Cotton Fabrics), but semantic text matches Chapter 50 (Silk and Silk Yarn) with 82.1% similarity., Low semantic match confidence: Retrieval similarity score (82.1%) is insufficient to guarantee correct classification.. Auto-rectified to Counterfactual HSN '50031010' (Post-Intervention P(Error) = 27.4%, -68.8% risk drop) with statutory 5.0% GST before transmission to NIC portal."
+          "original": "2026-10-27",
+          "corrected": "27-10-2026",
+          "description": "Standardized date format from '2026-10-27' to '27-10-2026'"
         },
         {
           "category": "FORMAT_NORMALIZATION",
@@ -442,6 +463,13 @@
           "original": "28000,00",
           "corrected": "28000.00",
           "description": "Replaced comma decimal separator '28000,00' with standard point notation '28000.00'"
+        },
+        {
+          "category": "MODULE_2_SENTINEL_HSN_RECTIFICATION",
+          "field": "itemdtls[2].hsncd",
+          "original": "850440",
+          "corrected": "85423300",
+          "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '850440' flagged with P(Error) = 42.9% (MEDIUM risk). SHAP Root Causes: Low semantic match confidence: Retrieval similarity score (49.3%) is insufficient to guarantee correct classification., Unit price of \u20b9260.00 deviates significantly (20.1x) from statutory median price (\u20b95,229.06) for HSN 850440., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '85423300' (Post-Intervention P(Error) = 26.2%, -16.7% risk drop) with statutory 18.0% GST before transmission to NIC portal."
         },
         {
           "category": "INVOICE_TOTALS_RECONCILIATION",
@@ -471,16 +499,24 @@
       },
       "hsn_screening_alert": {
         "status": "FLAGGED",
-        "declared_hsn": "520522",
-        "recommended_hsn": "50031010",
-        "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '520522' flagged with P(Error) = 96.2% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 52 (Cotton and Cotton Fabrics), but semantic text matches Chapter 50 (Silk and Silk Yarn) with 82.1% similarity., Low semantic match confidence: Retrieval similarity score (82.1%) is insufficient to guarantee correct classification.. Auto-rectified to Counterfactual HSN '50031010' (Post-Intervention P(Error) = 27.4%, -68.8% risk drop) with statutory 5.0% GST before transmission to NIC portal."
+        "declared_hsn": "850440",
+        "recommended_hsn": "85423300",
+        "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '850440' flagged with P(Error) = 42.9% (MEDIUM risk). SHAP Root Causes: Low semantic match confidence: Retrieval similarity score (49.3%) is insufficient to guarantee correct classification., Unit price of \u20b9260.00 deviates significantly (20.1x) from statutory median price (\u20b95,229.06) for HSN 850440., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '85423300' (Post-Intervention P(Error) = 26.2%, -16.7% risk drop) with statutory 18.0% GST before transmission to NIC portal."
       }
     },
     {
       "invoice_number": "EXP-2026-003",
-      "status": "VALID",
-      "error_count": 0,
-      "errors": [],
+      "status": "INVALID",
+      "error_count": 1,
+      "errors": [
+        {
+          "error_code": 4009,
+          "field": "ewbdt1",
+          "message": "E Way Bill can be generated provided at least HSN of one item belongs to goods.",
+          "reason": "",
+          "resolution": ""
+        }
+      ],
       "price_anomaly_report": {
         "status": "CLEAN",
         "has_anomalies": false,
@@ -554,9 +590,9 @@
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-25",
-          "corrected": "25-10-2026",
-          "description": "Standardized date format from '2026-10-25' to '25-10-2026'"
+          "original": "2026-10-27",
+          "corrected": "27-10-2026",
+          "description": "Standardized date format from '2026-10-27' to '27-10-2026'"
         },
         {
           "category": "FORMAT_NORMALIZATION",
@@ -592,9 +628,24 @@
     },
     {
       "invoice_number": "SEZ-2026-004",
-      "status": "VALID",
-      "error_count": 0,
-      "errors": [],
+      "status": "INVALID",
+      "error_count": 2,
+      "errors": [
+        {
+          "error_code": 2247,
+          "field": "buyerdt1.buyer_gstin",
+          "message": "Recipient should be SEZ for - SEZWP transaction: Recipient '24TUHCN2957U5ZT' is a regular domestic taxpayer (DTA), but invoice was tagged as 'SEZWP'. Transactions with standard domestic enterprises cannot use SEZ supply types. Set SupTyp to 'B2B'.",
+          "reason": "The transaction supply type (TranDtls.SupTyp) is set to SEZWP or SEZWOP, but the recipient's GSTIN (BuyerDtls.Gstin) is registered as a regular domestic taxpayer (DTA) rather than an SEZ unit or developer in the GST master registry.",
+          "resolution": "Change supply type to B2B for domestic buyers, or pass the buyer's distinct SEZ unit GSTIN."
+        },
+        {
+          "error_code": 4009,
+          "field": "ewbdt1",
+          "message": "E Way Bill can be generated provided at least HSN of one item belongs to goods.",
+          "reason": "",
+          "resolution": ""
+        }
+      ],
       "price_anomaly_report": {
         "status": "CLEAN",
         "has_anomalies": false,
@@ -661,9 +712,9 @@
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-25",
-          "corrected": "25-10-2026",
-          "description": "Standardized date format from '2026-10-25' to '25-10-2026'"
+          "original": "2026-10-27",
+          "corrected": "27-10-2026",
+          "description": "Standardized date format from '2026-10-27' to '27-10-2026'"
         },
         {
           "category": "FORMAT_NORMALIZATION",
@@ -709,14 +760,21 @@
     {
       "invoice_number": "INV-2026-005",
       "status": "INVALID",
-      "error_count": 1,
+      "error_count": 2,
       "errors": [
+        {
+          "error_code": 4009,
+          "field": "ewbdt1",
+          "message": "E Way Bill can be generated provided at least HSN of one item belongs to goods.",
+          "reason": "",
+          "resolution": ""
+        },
         {
           "error_code": 2176,
           "field": "itemdtls[1].hsncd",
           "message": "HSN Misclassification Screened: Declared HSN '760110' flagged by Module 2 Sentinel.",
-          "reason": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '760110' flagged with P(Error) = 97.5% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 76 (Aluminium and Articles Thereof), but semantic text matches Chapter 84 (Machinery) with 71.8% similarity., Low semantic match confidence: Retrieval similarity score (71.8%) is insufficient to guarantee correct classification.. Auto-rectified to Counterfactual HSN '8454' (Post-Intervention P(Error) = 30.7%, -66.8% risk drop) with statutory 18.0% GST before transmission to NIC portal.",
-          "resolution": "Confirm and apply Recommended HSN '8454' to unlock Stage 2 IRN generation."
+          "reason": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '760110' flagged with P(Error) = 81.5% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 76 (Aluminium and Articles Thereof), but semantic text matches Chapter 72 (Iron and Steel) with 96.5% similarity., Vendor historical risk: Supplier has a 5.0% historical misclassification rate across prior filings., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '72061090' (Post-Intervention P(Error) = 4.2%, -77.3% risk drop) with statutory 18.0% GST before transmission to NIC portal.",
+          "resolution": "Confirm and apply Recommended HSN '72061090' to unlock Stage 2 IRN generation."
         }
       ],
       "price_anomaly_report": {
@@ -732,7 +790,7 @@
           {
             "item_index": 1,
             "prdnm": "ALUM-INGOT",
-            "hsncd": "8454",
+            "hsncd": "72061090",
             "uqc": "KGS",
             "unitrate": 210.0,
             "qty": 500.0,
@@ -752,7 +810,7 @@
           }
         ]
       },
-      "corrections_applied_count": 8,
+      "corrections_applied_count": 10,
       "corrections_applied": [
         {
           "category": "KEY_NAME_NORMALIZATION",
@@ -785,16 +843,30 @@
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-25",
-          "corrected": "25-10-2026",
-          "description": "Standardized date format from '2026-10-25' to '25-10-2026'"
+          "original": "2026-10-27",
+          "corrected": "27-10-2026",
+          "description": "Standardized date format from '2026-10-27' to '27-10-2026'"
+        },
+        {
+          "category": "HSN_TARIFF_SCHEDULE_LOOKUP",
+          "field": "itemdtls[1].hsncd",
+          "original": "760110",
+          "corrected": "760110",
+          "description": "\u26a0\ufe0f NIC Rule 2176 Violation: HSN code(s)-760110 is invalid. Wrong HSN code is being passed. Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side. Based on Statutory Tariff Master & ML HSN Intelligence, the correct official HSN is '760110' (IRON AND NON-ALLOY STEEL IN INGOTS OR OTHER PRIMAR...) with statutory 18.0% GST. Auto-corrected to ensure NIC IRN compliance."
+        },
+        {
+          "category": "WRONG_HSN_CODE_DETECTED",
+          "field": "itemdtls[1].hsncd",
+          "original": "760110",
+          "corrected": "760110",
+          "description": "\u26a0\ufe0f NIC Rule 2176 Violation: HSN code(s)-760110 is invalid. Wrong HSN code is being passed. Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side. Based on Statutory Tariff Master & ML HSN Intelligence, the correct official HSN is '760110' (IRON AND NON-ALLOY STEEL IN INGOTS OR OTHER PRIMAR...) with statutory 18.0% GST. Auto-corrected to ensure NIC IRN compliance."
         },
         {
           "category": "MODULE_2_SENTINEL_HSN_RECTIFICATION",
           "field": "itemdtls[1].hsncd",
           "original": "760110",
-          "corrected": "8454",
-          "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '760110' flagged with P(Error) = 97.5% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 76 (Aluminium and Articles Thereof), but semantic text matches Chapter 84 (Machinery) with 71.8% similarity., Low semantic match confidence: Retrieval similarity score (71.8%) is insufficient to guarantee correct classification.. Auto-rectified to Counterfactual HSN '8454' (Post-Intervention P(Error) = 30.7%, -66.8% risk drop) with statutory 18.0% GST before transmission to NIC portal."
+          "corrected": "72061090",
+          "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '760110' flagged with P(Error) = 81.5% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 76 (Aluminium and Articles Thereof), but semantic text matches Chapter 72 (Iron and Steel) with 96.5% similarity., Vendor historical risk: Supplier has a 5.0% historical misclassification rate across prior filings., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '72061090' (Post-Intervention P(Error) = 4.2%, -77.3% risk drop) with statutory 18.0% GST before transmission to NIC portal."
         },
         {
           "category": "FORMAT_NORMALIZATION",
@@ -832,11 +904,11 @@
       "hsn_screening_alert": {
         "status": "FLAGGED",
         "declared_hsn": "760110",
-        "recommended_hsn": "8454",
-        "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '760110' flagged with P(Error) = 97.5% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 76 (Aluminium and Articles Thereof), but semantic text matches Chapter 84 (Machinery) with 71.8% similarity., Low semantic match confidence: Retrieval similarity score (71.8%) is insufficient to guarantee correct classification.. Auto-rectified to Counterfactual HSN '8454' (Post-Intervention P(Error) = 30.7%, -66.8% risk drop) with statutory 18.0% GST before transmission to NIC portal."
+        "recommended_hsn": "72061090",
+        "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '760110' flagged with P(Error) = 81.5% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 76 (Aluminium and Articles Thereof), but semantic text matches Chapter 72 (Iron and Steel) with 96.5% similarity., Vendor historical risk: Supplier has a 5.0% historical misclassification rate across prior filings., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '72061090' (Post-Intervention P(Error) = 4.2%, -77.3% risk drop) with statutory 18.0% GST before transmission to NIC portal."
       }
     }
   ],
   "total_price_anomalies": 1,
-  "compliance_rate": 40.0
+  "compliance_rate": 0.0
 }

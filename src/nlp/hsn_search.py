@@ -8,8 +8,16 @@ Returns top-k candidate HSN codes, official descriptions, tax rates, and confide
 within sub-15ms CPU inference latency.
 """
 
-import math
 import os
+
+# Prevent OpenBLAS thread allocation failure on Windows
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
+
+import math
 import re
 import time
 from collections import defaultdict

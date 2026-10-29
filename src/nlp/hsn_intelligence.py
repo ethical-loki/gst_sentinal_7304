@@ -47,6 +47,16 @@ Processes dynamic, batch, or multi-row invoice streams completely offline using 
 """
 
 import os
+
+# Prevent OpenBLAS thread allocation failure on Windows
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
 import re
 import time
 from enum import Enum
@@ -56,10 +66,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 import torch
-
-# Guarantee offline environment for transformer / huggingface modules
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 TARIFF_PARQUET = ROOT_DIR / "data" / "tariff_master.parquet"

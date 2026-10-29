@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GST Sentinel — Statutory Question Answering Bot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #060911;
+            --bg-card: rgba(13, 20, 38, 0.75);
+            --bg-card-hover: rgba(20, 32, 58, 0.88);
+            --border-glass: rgba(255, 255, 255, 0.10);
+            --border-focus: rgba(99, 102, 241, 0.6);
+            --accent-primary: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.35);
+            --accent-cyan: #38bdf8;
+            --accent-emerald: #10b981;
+            --accent-rose: #f43f5e;
+            --accent-amber: #fbbf24;
+            --accent-purple: #c084fc;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --radius-xl: 20px;
+            --radius-lg: 14px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            background-image: 
+                radial-gradient(circle at 12% 15%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 88% 22%, rgba(56, 189, 248, 0.12) 0%, transparent 45%),
+                radial-gradient(circle at 50% 90%, rgba(16, 185, 129, 0.09) 0%, transparent 50%);
+            background-attachment: fixed;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(56, 189, 248, 0.7) rgba(15, 23, 42, 0.75);
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.75); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #0ea5e9 0%, #6366f1 100%); border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.12); }
+        ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #38bdf8 0%, #818cf8 100%); box-shadow: 0 0 10px rgba(56, 189, 248, 0.8); }
+
+        /* Top Navigation Header */
+        .navbar-custom {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            background: rgba(6, 9, 17, 0.75);
+            border-bottom: 1px solid var(--border-glass);
+            padding: 12px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand-cluster {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+
+        .brand-icon-box {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #6366f1 0%, #38bdf8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 18px rgba(99, 102, 241, 0.45);
+        }
+
+        .brand-icon-box svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        .brand-text-block h1 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+        }
+
+        .brand-text-block span {
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .nav-links-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 4px 6px;
+            border-radius: 30px;
+            border: 1px solid var(--border-glass);
+        }
+
+        .nav-tab-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 16px;
+            border-radius: 20px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-tab-link svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            stroke-width: 2.2;
+        }
+
+        .nav-tab-link:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-tab-link.active {
+            color: #ffffff;
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            box-shadow: 0 2px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .header-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 20px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: #34d399;
+            letter-spacing: 0.3px;
+        }
+
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            background-color: #34d399;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #34d399;
+            animation: pulse-ring 2s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+            100% { transform: scale(0.95); }
+        }
+
+        /* App Layout Container */
+        .qa-container {
+            max-width: 1380px;
+            margin: 0 auto;
+            padding: 24px 28px 60px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Hero Image Banner Card */
+        .qa-hero-banner {
+            position: relative;
+            width: 100%;
+            height: 220px;
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            border: 1px solid var(--border-glass);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            background-color: #0b1120;
+        }
+
+        .qa-hero-banner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            opacity: 0.45;
+            transition: opacity 0.4s ease;
+        }
+
+        .qa-hero-banner:hover img {
+            opacity: 0.55;
+        }
+
+        .qa-hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(6, 9, 17, 0.2) 0%, rgba(6, 9, 17, 0.85) 80%, rgba(6, 9, 17, 0.98) 100%),
+                        linear-gradient(90deg, rgba(6, 9, 17, 0.9) 0%, rgba(6, 9, 17, 0.4) 60%, transparent 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 28px 36px;
+        }
+
+        .qa-hero-badge-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge-chip {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .chip-purple { background: rgba(192, 132, 252, 0.2); color: #e9d5ff; border: 1px solid rgba(192, 132, 252, 0.4); }
+        .chip-cyan { background: rgba(56, 189, 248, 0.2); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.4); }
+        .chip-emerald { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+        .qa-hero-title {
+            font-size: 1.9rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 6px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .qa-hero-desc {
+            font-size: 0.92rem;
+            color: var(--text-muted);
+            max-width: 800px;
+            line-height: 1.45;
+        }
+
+        /* Search Console Card */
+        .qa-console-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .search-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input-icon {
+            position: absolute;
+            left: 18px;
+            width: 20px;
+            height: 20px;
+            color: var(--accent-cyan);
+            pointer-events: none;
+        }
+
+        .search-input-field {
+            width: 100%;
+            height: 56px;
+            background: rgba(8, 13, 26, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: var(--radius-lg);
+            padding: 0 20px 0 52px;
+            color: #ffffff;
+            font-size: 1.02rem;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.25s ease;
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .search-input-field:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.3), inset 0 2px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-ask-submit {
+            height: 56px;
+            padding: 0 28px;
+            border-radius: var(--radius-lg);
+            border: none;
+            background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+            color: #ffffff;
+            font-size: 0.98rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.45);
+            transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+            flex-shrink: 0;
+        }
+
+        .btn-ask-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 28px rgba(79, 70, 229, 0.65);
+        }
+
+        .btn-ask-submit:active {
+            transform: translateY(0);
+        }
+
+        /* Preset Questions & Filter Bar */
+        .quick-samples-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .quick-label {
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-right: 4px;
+        }
+
+        .sample-pill {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 6px 14px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sample-pill:hover {
+            background: rgba(99, 102, 241, 0.18);
+            border-color: rgba(99, 102, 241, 0.4);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        /* Tuning Sliders Strip */
+        .tuning-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .tuning-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .tuning-group label {
+            font-weight: 600;
+            font-size: 0.76rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .tuning-group input[type="range"] {
+            width: 110px;
+            accent-color: var(--accent-cyan);
+            cursor: pointer;
+        }
+
+        .tuning-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            font-size: 0.82rem;
+            min-width: 32px;
+        }
+
+        /* Output View Tabs: Content vs Payload vs Candidates */
+        .qa-view-switch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-glass);
+            padding-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .qa-tabs-list {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 4px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-glass);
+        }
+
+        .qa-tab-btn {
+            background: transparent;
+            border: none;
+            padding: 8px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .qa-tab-btn svg { width: 15px; height: 15px; stroke-width: 2.2; }
+
+        .qa-tab-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .qa-tab-btn.active {
+            color: #ffffff;
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.4);
+        }
+
+        .qa-tab-btn.tab-amber.active {
+            background: linear-gradient(135deg, #b45309 0%, #f59e0b 100%);
+            box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4);
+        }
+
+        .qa-tab-btn.tab-cyan.active {
+            background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+            box-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
+        }
+
+        .tab-telemetry-cluster {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .telemetry-chip {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.74rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #94a3b8;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .telemetry-chip strong {
+            color: var(--accent-cyan);
+        }
+
+        /* Views Layout */
+        .qa-view-pane {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .qa-view-pane.active-pane {
+            display: flex;
+        }
+
+        /* ========================================================
+           TAB 1: EXTRACTED ANSWER & SOURCE CONTENT VIEW
+           ======================================================== */
+        .answer-hero-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-xl);
+            padding: 26px 30px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .answer-hero-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(180deg, #38bdf8 0%, #6366f1 100%);
+        }
+
+        .answer-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .answer-label-title {
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .answer-badges {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge-score {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.76rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: rgba(16, 185, 129, 0.18);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #34d399;
+        }
+
+        .badge-score.low {
+            background: rgba(245, 158, 11, 0.18);
+            border-color: rgba(245, 158, 11, 0.4);
+            color: #fbbf24;
+        }
+
+        .badge-score.none {
+            background: rgba(244, 63, 94, 0.18);
+            border-color: rgba(244, 63, 94, 0.4);
+            color: #fb7185;
+        }
+
+        .answer-text-display {
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.4;
+            letter-spacing: -0.2px;
+            margin-bottom: 14px;
+        }
+
+        .answer-meta-footer {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            flex-wrap: wrap;
+        }
+
+        .answer-meta-footer span strong {
+            color: #cbd5e1;
+        }
+
+        /* Content Source Card (Document Chunk) */
+        .content-source-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .source-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .source-card-title {
+            font-size: 0.84rem;
+            font-weight: 800;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .source-card-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-copy-action {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #cbd5e1;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-copy-action:hover {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: rgba(99, 102, 241, 0.5);
+            color: #ffffff;
+        }
+
+        .content-passage-box {
+            background: #080d1a;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            font-size: 0.92rem;
+            line-height: 1.7;
+            color: #cbd5e1;
+            max-height: 380px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            position: relative;
+        }
+
+        /* Answer Span Glow Highlight */
+        .highlight-span {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.35) 0%, rgba(234, 88, 12, 0.35) 100%);
+            color: #fef08a;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border-bottom: 2px solid #f59e0b;
+            box-shadow: 0 0 14px rgba(245, 158, 11, 0.4);
+            position: relative;
+            cursor: pointer;
+        }
+
+        /* ========================================================
+           TAB 2: SEPARATE JSON PAYLOAD VIEW
+           ======================================================== */
+        .payload-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .payload-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .payload-title-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .payload-title-group h3 {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .payload-code-editor {
+            background: #070b14;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            max-height: 520px;
+            overflow-y: auto;
+        }
+
+        .payload-code-editor pre {
+            margin: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #7dd3fc;
+        }
+
+        /* ========================================================
+           TAB 3: ALL RETRIEVED BM25 PASSAGES
+           ======================================================== */
+        .candidates-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .candidate-passage-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 18px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .candidate-passage-card.selected-winner {
+            border-color: rgba(56, 189, 248, 0.6);
+            background: rgba(14, 28, 54, 0.85);
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.15);
+        }
+
+        .candidate-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .candidate-header strong {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-cyan);
+        }
+
+        .candidate-text-preview {
+            font-size: 0.86rem;
+            color: #cbd5e1;
+            line-height: 1.55;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 12px 14px;
+            border-radius: 6px;
+        }
+
+        /* Empty State */
+        .empty-qa-state {
+            text-align: center;
+            padding: 50px 20px;
+            background: var(--bg-card);
+            border: 1px dashed rgba(255, 255, 255, 0.12);
+            border-radius: var(--radius-xl);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .empty-qa-icon {
+            width: 48px;
+            height: 48px;
+            color: var(--accent-cyan);
+            opacity: 0.8;
+        }
+
+        .empty-qa-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .empty-qa-desc {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            max-width: 500px;
+            line-height: 1.45;
+        }
+
+        /* Toast notification */
+        .toast-notify {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+            color: #ffffff;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 999;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Loading Skeleton Spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sticky Navigation Bar -->
+    <header class="navbar-custom">
+        <a class="brand-cluster" href="/">
+            <div class="brand-icon-box">
+                <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+            </div>
+            <div class="brand-text-block">
+                <h1>GST SENTINEL</h1>
+                <span>Statutory Compliance &amp; Intelligence Suite</span>
+            </div>
+        </a>
+
+        <nav class="nav-links-row">
+            <a href="/" class="nav-tab-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                Overview
+            </a>
+            <a href="/?view=hsn" class="nav-tab-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                HSN Intelligence
+            </a>
+            <a href="/converter" class="nav-tab-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                E-Invoice Converter
+            </a>
+            <a href="/ingestion" class="nav-tab-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                Data Ingestion
+            </a>
+            <a href="/qa" class="nav-tab-link active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                Statutory QA Bot
+            </a>
+        </nav>
+
+        <div class="header-status-pill" id="qaStatusPill">
+            <span class="pulse-dot"></span> Offline Engine • Ready
+        </div>
+    </header>
+
+    <!-- App Container -->
+    <main class="qa-container">
+
+        <!-- Hero Banner with Background Image -->
+        <section class="qa-hero-banner">
+            <img src="/static/images/qa_preview.jpg" alt="QA Engine Preview" onerror="this.src='/frontend/images/qa_preview.jpg'">
+            <div class="qa-hero-overlay">
+                <div class="qa-hero-badge-row">
+                    <span class="badge-chip chip-purple">Module 04: Extractive NLP</span>
+                    <span class="badge-chip chip-cyan">Longformer 4096-Tokens</span>
+                    <span class="badge-chip chip-emerald">SQLite FTS5 BM25</span>
+                </div>
+                <h2 class="qa-hero-title">Statutory Document QA Engine</h2>
+                <p class="qa-hero-desc">
+                    Ask questions across GST Acts, Circulars, E-Way Bill guidelines, and IMS provisions with millisecond BM25 retrieval and exact extractive neural span prediction.
+                </p>
+            </div>
+        </section>
+
+        <!-- Search Console -->
+        <section class="qa-console-card">
+            <div class="search-bar-row">
+                <div class="search-input-wrapper">
+                    <svg class="search-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="qaQuestionInput" class="search-input-field" 
+                           placeholder="Ask any statutory question (e.g. Can a supplier amend an invoice from FCM to RCM?)..." 
+                           autocomplete="off">
+                </div>
+                <button type="button" class="btn-ask-submit" id="btnAsk" onclick="submitQuestion()">
+                    <span id="btnAskText">Ask Sentinel</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </div>
+
+            <!-- Preset Questions -->
+            <div class="quick-samples-row" id="quickSamplesRow">
+                <span class="quick-label">Sample Inquiries:</span>
+                <span class="sample-pill" onclick="pickSample('Can a supplier amend an invoice from FCM to RCM?')">RCM Amendment</span>
+                <span class="sample-pill" onclick="pickSample('In case of export transactions for goods, when is e-way bill required?')">Export E-Way Bill</span>
+                <span class="sample-pill" onclick="pickSample('How to authenticate and get AuthToken to access the API?')">API AuthToken</span>
+                <span class="sample-pill" onclick="pickSample('What actions can recipient taxpayer take on invoices in IMS?')">IMS Recipient Actions</span>
+                <span class="sample-pill" onclick="pickSample('What is the threshold limit for GST registration?')">Registration Threshold</span>
+            </div>
+
+            <!-- Tuning parameters -->
+            <div class="tuning-bar">
+                <div class="tuning-group">
+                    <label>Top-K Retrieval:</label>
+                    <input type="range" id="topKSlider" min="1" max="5" value="3" oninput="document.getElementById('topKVal').innerText = this.value">
+                    <span class="tuning-val" id="topKVal">3</span>
+                </div>
+                <div class="tuning-group">
+                    <label>Score Cutoff Threshold:</label>
+                    <input type="range" id="thresholdSlider" min="0.01" max="0.40" step="0.01" value="0.05" oninput="document.getElementById('threshVal').innerText = parseFloat(this.value).toFixed(2)">
+                    <span class="tuning-val" id="threshVal">0.05</span>
+                </div>
+                <div class="tuning-group">
+                    <span style="font-size:0.75rem; color:var(--text-dim);">Corpus: <strong style="color:#cbd5e1;">data/content.txt</strong></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- View Switcher Tabs -->
+        <div class="qa-view-switch-row" id="viewTabsRow">
+            <div class="qa-tabs-list">
+                <button type="button" class="qa-tab-btn active" id="tabBtnContent" onclick="switchQATab('content')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    Answer &amp; Content Passage
+                </button>
+                <button type="button" class="qa-tab-btn tab-cyan" id="tabBtnPayload" onclick="switchQATab('payload')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                    Structured JSON Payload
+                </button>
+                <button type="button" class="qa-tab-btn tab-amber" id="tabBtnCandidates" onclick="switchQATab('candidates')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                    Candidate BM25 Chunks (<span id="candidateCountLabel">0</span>)
+                </button>
+            </div>
+
+            <div class="tab-telemetry-cluster">
+                <span class="telemetry-chip">Latency: <strong id="latencyDisplay">-- ms</strong></span>
+                <span class="telemetry-chip">Confidence: <strong id="confidenceDisplay">--%</strong></span>
+            </div>
+        </div>
+
+        <!-- Empty State Container -->
+        <div id="qaEmptyState" class="empty-qa-state">
+            <svg class="empty-qa-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <h3 class="empty-qa-title">Ready for Statutory Inquiry</h3>
+            <p class="empty-qa-desc">
+                Type any GST compliance or API query above, or select a sample inquiry pill to see the neural answer span and separated JSON payload.
+            </p>
+        </div>
+
+        <!-- ========================================================
+             TAB 1: EXTRACTED ANSWER & SOURCE CONTENT
+             ======================================================== -->
+        <div id="paneContent" class="qa-view-pane">
+            <!-- Answer Card -->
+            <div class="answer-hero-card">
+                <div class="answer-header-row">
+                    <div class="answer-label-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        Extracted Statutory Answer
+                    </div>
+                    <div class="answer-badges">
+                        <span class="badge-score" id="badgeScorePill">Confidence: 0.0%</span>
+                        <span class="badge-chip chip-cyan" id="badgeChunkPill">Chunk #--</span>
+                    </div>
+                </div>
+                <div class="answer-text-display" id="extractedAnswerText">
+                    --
+                </div>
+                <div class="answer-meta-footer">
+                    <span>Status: <strong id="answerStatusText">Success</strong></span>
+                    <span>Query: <strong id="queryEchoText">--</strong></span>
+                    <span>Model: <strong>Longformer-Squad2 Extractive</strong></span>
+                </div>
+            </div>
+
+            <!-- Content Passage Box with Highlighted Span -->
+            <div class="content-source-card">
+                <div class="source-card-header">
+                    <div class="source-card-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--accent-cyan);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                        Source Document Passage (<span id="sourceChunkId">Chunk #--</span>)
+                    </div>
+                    <div class="source-card-actions">
+                        <button type="button" class="btn-copy-action" onclick="copySourceText()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            Copy Passage
+                        </button>
+                    </div>
+                </div>
+                <div class="content-passage-box" id="contentPassageBox">
+                    Passage content will be displayed here with the predicted answer highlighted.
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================
+             TAB 2: SEPARATED STRUCTURED JSON PAYLOAD
+             ======================================================== -->
+        <div id="panePayload" class="qa-view-pane">
+            <div class="payload-card">
+                <div class="payload-header-row">
+                    <div class="payload-title-group">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--accent-cyan);"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                        <h3>Structured API Response Payload</h3>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" class="btn-copy-action" onclick="copyPayloadJson()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            Copy JSON
+                        </button>
+                        <button type="button" class="btn-copy-action" onclick="downloadPayloadJson()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            Download JSON
+                        </button>
+                    </div>
+                </div>
+                <div class="payload-code-editor">
+                    <pre><code id="payloadJsonCode">{
+  "status": "awaiting_query",
+  "message": "Execute a question query to inspect the complete payload."
+}</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================
+             TAB 3: CANDIDATE BM25 PASSAGES
+             ======================================================== -->
+        <div id="paneCandidates" class="qa-view-pane">
+            <div class="candidates-list" id="candidatesListContainer">
+                <!-- Dynamically populated candidate passage cards -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toastNotify" class="toast-notify">Copied to clipboard!</div>
+
+    <script>
+        let currentResult = null;
+
+        // Initialize status and sample questions on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchSamples();
+            fetchStatus();
+
+            // Enter key trigger
+            document.getElementById('qaQuestionInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    submitQuestion();
+                }
+            });
+        });
+
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/api/qa/status');
+                if (res.ok) {
+                    const data = await res.json();
+                    const pill = document.getElementById('qaStatusPill');
+                    if (data.status === 'ready') {
+                        pill.innerHTML = `<span class="pulse-dot"></span> Offline Engine • ${data.index.total_chunks} Chunks Loaded`;
+                    }
+                }
+            } catch (err) {
+                console.log('Status fetch skipped:', err);
+            }
+        }
+
+        async function fetchSamples() {
+            try {
+                const res = await fetch('/api/qa/samples');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.samples && data.samples.length > 0) {
+                        const row = document.getElementById('quickSamplesRow');
+                        row.innerHTML = `<span class="quick-label">Sample Inquiries:</span>`;
+                        data.samples.forEach(s => {
+                            const pill = document.createElement('span');
+                            pill.className = 'sample-pill';
+                            pill.innerText = s.tag || s.question.substring(0, 24) + '...';
+                            pill.title = s.question;
+                            pill.onclick = () => pickSample(s.question);
+                            row.appendChild(pill);
+                        });
+                    }
+                }
+            } catch (err) {
+                console.log('Samples fetch fallback:', err);
+            }
+        }
+
+        function pickSample(question) {
+            document.getElementById('qaQuestionInput').value = question;
+            submitQuestion();
+        }
+
+        function switchQATab(tab) {
+            document.getElementById('tabBtnContent').classList.remove('active');
+            document.getElementById('tabBtnPayload').classList.remove('active');
+            document.getElementById('tabBtnCandidates').classList.remove('active');
+
+            document.getElementById('paneContent').classList.remove('active-pane');
+            document.getElementById('panePayload').classList.remove('active-pane');
+            document.getElementById('paneCandidates').classList.remove('active-pane');
+
+            if (tab === 'content') {
+                document.getElementById('tabBtnContent').classList.add('active');
+                document.getElementById('paneContent').classList.add('active-pane');
+            } else if (tab === 'payload') {
+                document.getElementById('tabBtnPayload').classList.add('active');
+                document.getElementById('panePayload').classList.add('active-pane');
+            } else if (tab === 'candidates') {
+                document.getElementById('tabBtnCandidates').classList.add('active');
+                document.getElementById('paneCandidates').classList.add('active-pane');
+            }
+        }
+
+        async function submitQuestion() {
+            const input = document.getElementById('qaQuestionInput');
+            const q = input.value.trim();
+            if (!q) {
+                input.focus();
+                return;
+            }
+
+            const topK = parseInt(document.getElementById('topKSlider').value) || 3;
+            const threshold = parseFloat(document.getElementById('thresholdSlider').value) || 0.05;
+
+            const btn = document.getElementById('btnAsk');
+            const btnText = document.getElementById('btnAskText');
+            btn.disabled = true;
+            btnText.innerHTML = `<span class="loading-spinner"></span> Extracting...`;
+
+            try {
+                const response = await fetch('/api/qa/ask', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: q, top_k: topK, threshold: threshold })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server returned HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                currentResult = result;
+                renderResult(result);
+            } catch (err) {
+                alert(`Inference failed: ${err.message}`);
+            } finally {
+                btn.disabled = false;
+                btnText.innerHTML = `Ask Sentinel`;
+            }
+        }
+
+        function renderResult(res) {
+            // Hide empty state
+            document.getElementById('qaEmptyState').style.display = 'none';
+
+            // Telemetry updates
+            document.getElementById('latencyDisplay').innerText = `${res.latency_ms || 0} ms`;
+            document.getElementById('confidenceDisplay').innerText = res.confidence_pct || '0.0%';
+
+            // 1. Extracted Answer Hero
+            const ansTextEl = document.getElementById('extractedAnswerText');
+            ansTextEl.innerText = res.answer || 'not found';
+
+            const scoreBadge = document.getElementById('badgeScorePill');
+            scoreBadge.innerText = `Confidence: ${res.confidence_pct}`;
+            scoreBadge.className = 'badge-score';
+            if (res.score < 0.05 || res.answer === 'not found') {
+                scoreBadge.classList.add('none');
+            } else if (res.score < 0.15) {
+                scoreBadge.classList.add('low');
+            }
+
+            document.getElementById('badgeChunkPill').innerText = res.chunk_id !== null ? `Chunk #${res.chunk_id}` : `No Chunk`;
+            document.getElementById('answerStatusText').innerText = res.status || res.reason || 'Unknown';
+            document.getElementById('queryEchoText').innerText = res.question || '--';
+
+            // 2. Source Content Passage with Highlighted Span
+            const chunkBox = document.getElementById('contentPassageBox');
+            if (res.content && res.content.text) {
+                document.getElementById('sourceChunkId').innerText = `Chunk #${res.content.chunk_id}`;
+                const rawText = res.content.text;
+                const start = res.content.highlight_start;
+                const end = res.content.highlight_end;
+
+                if (start !== null && end !== null && end > start) {
+                    const before = escapeHtml(rawText.substring(0, start));
+                    const highlighted = escapeHtml(rawText.substring(start, end));
+                    const after = escapeHtml(rawText.substring(end));
+                    chunkBox.innerHTML = `${before}<mark class="highlight-span" title="Extracted Answer Span [${start}:${end}]">${highlighted}</mark>${after}`;
+                } else {
+                    chunkBox.innerText = rawText;
+                }
+            } else {
+                document.getElementById('sourceChunkId').innerText = `No Matched Passage`;
+                chunkBox.innerHTML = `<em style="color:#94a3b8;">No matching context passage found for this inquiry.</em>`;
+            }
+
+            // 3. Structured JSON Payload
+            const payloadCode = document.getElementById('payloadJsonCode');
+            payloadCode.innerText = JSON.stringify(res.payload || res, null, 2);
+
+            // 4. Candidate BM25 Passages
+            const candidates = res.retrieved_chunks || [];
+            document.getElementById('candidateCountLabel').innerText = candidates.length;
+            const container = document.getElementById('candidatesListContainer');
+            container.innerHTML = '';
+
+            if (candidates.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:30px; color:#94a3b8;">No candidate chunks retrieved.</div>`;
+            } else {
+                candidates.forEach((c, idx) => {
+                    const card = document.createElement('div');
+                    card.className = `candidate-passage-card ${c.is_selected_answer ? 'selected-winner' : ''}`;
+                    card.innerHTML = `
+                        <div class="candidate-header">
+                            <div>
+                                <span class="badge-chip chip-cyan" style="margin-right:6px;">Rank #${idx + 1}</span>
+                                <strong>Chunk ID: ${c.chunk_id}</strong>
+                                ${c.is_selected_answer ? '<span class="badge-chip chip-emerald" style="margin-left:8px;">Selected Answer Winner</span>' : ''}
+                            </div>
+                            <div>
+                                <span>BM25 Score: <strong>${c.bm25_score}</strong></span>
+                                <span style="margin-left:12px;">Reader Confidence: <strong>${(c.reader_score * 100).toFixed(2)}%</strong></span>
+                            </div>
+                        </div>
+                        <div class="candidate-text-preview">
+                            ${escapeHtml(c.snippet || c.full_content.substring(0, 200))}...
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+
+            // Default to content tab view
+            switchQATab('content');
+        }
+
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toastNotify');
+            t.innerText = msg;
+            t.style.display = 'block';
+            setTimeout(() => { t.style.display = 'none'; }, 2400);
+        }
+
+        function copySourceText() {
+            if (currentResult && currentResult.content && currentResult.content.text) {
+                navigator.clipboard.writeText(currentResult.content.text);
+                showToast("Passage text copied to clipboard!");
+            }
+        }
+
+        function copyPayloadJson() {
+            if (currentResult) {
+                navigator.clipboard.writeText(JSON.stringify(currentResult.payload || currentResult, null, 2));
+                showToast("Payload JSON copied to clipboard!");
+            }
+        }
+
+        function downloadPayloadJson() {
+            if (!currentResult) return;
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentResult.payload || currentResult, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `gst_qa_payload_${Date.now()}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+            showToast("Payload JSON downloaded!");
+        }
+    </script>
+</body>
+</html>

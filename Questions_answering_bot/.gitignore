@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv*/
+venv*/
+env*/
+
+# Model weights (large binary files — download separately via download_model.py)
+models/
+
+# Auto-generated database index (rebuild via build_index.py)
+data/index.db
+
+# Tuning temp databases
+data/temp_index_*.db
+
+# Logs
+docs/offline_test.md
+docs/eval_report.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db

@@ -43,7 +43,7 @@
     "supplier_email": "accounts@bharattech.in"
   },
   "buyer": {
-    "gstin": "URP",
+    "gstin": "29XYZAB5678C1Z2",
     "lglnm": "APEX COMMERCE ENTERPRISES",
     "trdnm": "APEX COMMERCE",
     "state": "29",
@@ -57,7 +57,7 @@
     "phone": null,
     "email": null,
     "cust_cd": null,
-    "buyer_gstin": "URP",
+    "buyer_gstin": "29XYZAB5678C1Z2",
     "buyer_lglnm": "APEX COMMERCE ENTERPRISES",
     "buyer_trdnm": "APEX COMMERCE",
     "buyer_bno": "55",
@@ -167,7 +167,7 @@
     "supplier_email": "accounts@bharattech.in"
   },
   "buyerdt1": {
-    "buyer_gstin": "URP",
+    "buyer_gstin": "29XYZAB5678C1Z2",
     "buyer_lglnm": "APEX COMMERCE ENTERPRISES",
     "buyer_trdnm": "APEX COMMERCE",
     "pos": "29",
