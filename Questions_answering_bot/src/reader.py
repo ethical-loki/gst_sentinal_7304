@@ -99,9 +99,57 @@ class DynamicReader:
         ans = ans.strip(" '\"`()[]{}.,;:")
         return ans
 
+    @staticmethod
+    def _is_definition_query(question: str) -> bool:
+        """Returns True when the question is asking for a definition or explanation."""
+        q = question.lower().strip()
+        triggers = (
+            "what is", "what are", "what does", "define", "explain",
+            "describe", "tell me about", "what do you mean", "meaning of",
+            "full form", "stand for", "abbreviation",
+        )
+        return any(q.startswith(t) or t in q for t in triggers)
+
+    @staticmethod
+    def _expand_to_sentence(text: str, start: int, end: int) -> tuple:
+        """
+        Expand character offsets [start, end] to nearest sentence boundaries
+        so the answer is always a complete, readable sentence.
+        """
+        # Walk backward to find sentence start
+        sent_start = start
+        for i in range(start - 1, max(0, start - 300), -1):
+            if text[i] in (".", "?", "!", "\n") and i < start - 1:
+                sent_start = i + 1
+                break
+        else:
+            sent_start = max(0, start - 300)
+
+        # Walk forward to include the terminal punctuation
+        sent_end = end
+        for i in range(end, min(len(text), end + 500)):
+            if text[i] in (".", "?", "!"):
+                sent_end = i + 1
+                break
+            if text[i] == "\n":
+                sent_end = i
+                break
+        else:
+            sent_end = min(len(text), end + 500)
+
+        snippet = text[sent_start:sent_end].strip()
+        # Safety cap at 600 chars
+        if len(snippet) > 600:
+            snippet = text[start:sent_end].strip()
+        if len(snippet) > 600:
+            snippet = text[start:end].strip()
+        return snippet, sent_start, sent_end
+
     def _predict_extractive(self, question: str, context: str) -> Optional[AnswerSpan]:
         """Runs fast vectorized extractive QA inference with null verification."""
         clean_context = self.strip_document_noise(context)
+        is_def_query = self._is_definition_query(question)
+
         inputs = self.tokenizer(
             question,
             clean_context,
@@ -147,8 +195,10 @@ class DynamicReader:
         max_s_logit = s_ctx.max().item()
         max_e_logit = e_ctx.max().item()
 
+        # For definitional queries allow longer spans (120 tokens); factual queries use 40
+        max_len = min(120 if is_def_query else 40, len(context_indices))
+
         # Vectorized 2D scoring matrix: score[s, e] = s_ctx[s] + e_ctx[e]
-        max_len = min(35, len(context_indices))
         score_matrix = s_ctx.unsqueeze(1) + e_ctx.unsqueeze(0)
         len_c = len(context_indices)
         idx = torch.arange(len_c, device=score_matrix.device)
@@ -173,7 +223,25 @@ class DynamicReader:
         raw_start, _ = offset_mapping[tok_s]
         _, raw_end = offset_mapping[tok_e]
 
-        candidate_text = clean_context[raw_start:raw_end].strip()
+        # --- Sentence-boundary expansion ---
+        # For definitions: always snap to full sentence.
+        # For factual: only expand if the raw span is suspiciously short (<= 6 words).
+        raw_span_text = clean_context[raw_start:raw_end].strip()
+        raw_word_count = len(raw_span_text.split())
+
+        if is_def_query or raw_word_count <= 6:
+            expanded_text, exp_start, exp_end = self._expand_to_sentence(
+                clean_context, raw_start, raw_end
+            )
+            # Only use expanded version if it actually contains the raw span
+            if raw_span_text and raw_span_text in expanded_text:
+                candidate_text = expanded_text
+                raw_start, raw_end = exp_start, exp_end
+            else:
+                candidate_text = raw_span_text
+        else:
+            candidate_text = raw_span_text
+
         cleaned_text = self.clean_answer_text(candidate_text)
 
         if not cleaned_text or len(cleaned_text) < 2:
