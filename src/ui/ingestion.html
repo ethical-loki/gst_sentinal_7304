@@ -7051,14 +7051,17 @@ async function fetchRawFiles() {
                     initialDirtyPayloadStr = dirtyStr;
                     currentLivePayload = result.payload;
                     validateJsonInput();
-                    
-                    // Silent background audit preview to initialize Copilot state
-                    try {
-                        const auditResp = await fetch('/api/ingestion/process', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ payload: result.payload })
-                        });
+
+                    // Hide modal immediately for sub-second UI responsiveness
+                    hideLoading();
+                    showToast(`Generated ${result.count} invoice(s) with dirty field values!`, 'success');
+
+                    // Non-blocking silent background audit preview to initialize Copilot state
+                    fetch('/api/ingestion/process', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ payload: result.payload })
+                    }).then(async auditResp => {
                         if (auditResp.ok) {
                             pipelineData = await auditResp.json();
                             currentValidationReport = pipelineData.validation_report;
@@ -7090,11 +7093,10 @@ async function fetchRawFiles() {
                                 if (typeof blockStage2 === 'function') blockStage2(m);
                             }
                         }
-                    } catch (auditErr) {
+                    }).catch(auditErr => {
                         console.warn('Initial background audit preview:', auditErr);
-                    }
-
-                    showToast(`Generated ${result.count} invoice(s) with dirty field values!`, 'success');
+                    });
+                    return;
                 } else {
                     throw new Error('Invalid response structure from generator API');
                 }
@@ -7120,13 +7122,16 @@ async function fetchRawFiles() {
                     currentLivePayload = data.payload;
                     validateJsonInput();
 
-                    // Silent background audit preview to initialize Copilot state
-                    try {
-                        const auditResp = await fetch('/api/ingestion/process', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ payload: data.payload })
-                        });
+                    // Hide modal immediately for instant UI response
+                    hideLoading();
+                    showToast('Sample dirty payload loaded!', 'success');
+
+                    // Non-blocking silent background audit preview to initialize Copilot state
+                    fetch('/api/ingestion/process', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ payload: data.payload })
+                    }).then(async auditResp => {
                         if (auditResp.ok) {
                             pipelineData = await auditResp.json();
                             currentValidationReport = pipelineData.validation_report;
@@ -7158,11 +7163,10 @@ async function fetchRawFiles() {
                                 if (typeof blockStage2 === 'function') blockStage2(m);
                             }
                         }
-                    } catch (auditErr) {
+                    }).catch(auditErr => {
                         console.warn('Initial background audit preview:', auditErr);
-                    }
-
-                    showToast('Sample dirty payload loaded!', 'success');
+                    });
+                    return;
                 }
             } catch (err) {
                 showToast(`Error loading sample: ${err.message}`, 'error');

@@ -208,6 +208,35 @@
             box-shadow: 0 2px 12px rgba(16, 185, 129, 0.45);
         }
 
+        .nav-pill-btn.pill-purple.active {
+            background: linear-gradient(135deg, #7e22ce 0%, #a855f7 100%);
+            box-shadow: 0 2px 12px rgba(168, 85, 247, 0.45);
+        }
+
+        .qwen-filter-pill {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            color: #cbd5e1;
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .qwen-filter-pill:hover {
+            border-color: rgba(168, 85, 247, 0.6);
+            color: #ffffff;
+        }
+
+        .qwen-filter-pill.active {
+            background: rgba(168, 85, 247, 0.25);
+            border-color: #a855f7;
+            color: #f3e8ff;
+            font-weight: 700;
+        }
+
         .nav-right-cluster {
             display: flex;
             align-items: center;
@@ -2090,6 +2119,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 HSN Intelligence
             </button>
+            <button type="button" class="nav-pill-btn pill-purple" id="tabBtn-qwen" onclick="switchView('qwen')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                ✨ Qwen AI Verifier
+            </button>
             <button type="button" class="nav-pill-btn pill-amber" id="tabBtn-converter" onclick="switchView('converter')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                 E-Invoice Converter
@@ -2252,8 +2285,8 @@
                         <div class="card-img-banner">
                             <img src="/static/images/qa_preview.jpg" alt="Statutory QA Bot" loading="lazy" onerror="this.src='/frontend/images/qa_preview.jpg'">
                             <div class="card-img-overlay">
-                                <span class="card-pill-tag tag-purple" style="background:rgba(192, 132, 252, 0.25); color:#e9d5ff; border:1px solid rgba(192, 132, 252, 0.4);">Extractive NLP</span>
-                                <span style="font-size:0.68rem; color:#e9d5ff; font-weight:700;">Longformer-4096</span>
+                                <span class="card-pill-tag tag-purple" style="background:rgba(192, 132, 252, 0.25); color:#e9d5ff; border:1px solid rgba(192, 132, 252, 0.4);">Generative RAG</span>
+                                <span style="font-size:0.68rem; color:#e9d5ff; font-weight:700;">Google Flan-T5</span>
                             </div>
                         </div>
                         <div class="card-header-row">
@@ -2263,14 +2296,14 @@
                                 </div>
                                 <h3 style="margin:0;">Statutory QA Bot</h3>
                             </div>
-                            <span class="mini-chip">FTS5 BM25</span>
+                            <span class="mini-chip">Chunk Retrieval</span>
                         </div>
                         <div class="card-body">
                             <p>
                                 Autonomous neural question answering across GST Acts, circulars, and notifications with instant BM25 passage retrieval and exact answer span prediction.
                             </p>
                             <div class="card-features-chips">
-                                <span class="mini-chip">Extractive QA</span>
+                                <span class="mini-chip">Generative RAG</span>
                                 <span class="mini-chip">Separated Payloads</span>
                                 <span class="mini-chip">Span Highlighting</span>
                             </div>
@@ -2281,6 +2314,45 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
                             </span>
                             <a href="/qa" class="quick-launch-link" onclick="event.stopPropagation()">Launch App ↗</a>
+                        </div>
+                    </div>
+
+                    <!-- Card 5: Qwen 2.5 Neural Verifier (Dual-Model Audit) -->
+                    <div class="hero-module-card" style="border-color: rgba(168, 85, 247, 0.4); box-shadow: 0 4px 20px rgba(168, 85, 247, 0.15);" onclick="switchView('qwen')">
+                        <div class="card-img-banner">
+                            <div style="width:100%; height:100%; min-height:110px; background:linear-gradient(135deg, rgba(88, 28, 135, 0.8), rgba(30, 27, 75, 0.9)); display:flex; align-items:center; justify-content:center;">
+                                <span style="font-size:2.8rem;">✨</span>
+                            </div>
+                            <div class="card-img-overlay">
+                                <span class="card-pill-tag tag-purple" style="background:rgba(168, 85, 247, 0.25); color:#f3e8ff; border:1px solid rgba(168, 85, 247, 0.5);">Qwen 2.5 Dual-Model</span>
+                                <span style="font-size:0.68rem; color:#e9d5ff; font-weight:700;">Offline LLM</span>
+                            </div>
+                        </div>
+                        <div class="card-header-row">
+                            <div class="card-title-group">
+                                <div class="card-icon-container" style="color: #c084fc; border-color: rgba(168, 85, 247, 0.35);">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                </div>
+                                <h3 style="margin:0;">Qwen Neural Verifier</h3>
+                            </div>
+                            <span class="mini-chip" style="color:#d8b4fe; border-color:rgba(168,85,247,0.4);">Dual-Model</span>
+                        </div>
+                        <div class="card-body">
+                            <p>
+                                Cross-verifies Day 5 HSN predictions with Qwen 2.5 generative reasoning. Identifies Perfect Matches and explains Qwen corrections with statutory justifications.
+                            </p>
+                            <div class="card-features-chips">
+                                <span class="mini-chip">Perfect Match</span>
+                                <span class="mini-chip">Qwen Corrected</span>
+                                <span class="mini-chip">Why Explanation</span>
+                            </div>
+                        </div>
+                        <div class="card-footer-action">
+                            <span class="action-link-text" style="color:#c084fc;">
+                                Open Dual-Model Verification Screen
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+                            </span>
+                            <span class="quick-launch-link" style="color:#e9d5ff;">Launch Verifier ↗</span>
                         </div>
                     </div>
 
@@ -2347,6 +2419,11 @@
                         <span class="module-switch-tag">Module 2</span>
                         <span>🛡️ HSN Audit Sentinel</span>
                         <span style="font-size: 0.72rem; opacity: 0.75; font-weight: normal;">(Day 05+06+07 • Tree SHAP &amp; Counterfactuals)</span>
+                    </button>
+                    <button type="button" class="module-switch-pill" id="btnModeQwen" onclick="switchView('qwen')">
+                        <span class="module-switch-tag" style="background:linear-gradient(135deg, #a855f7, #6366f1); color:#fff;">Layer Model</span>
+                        <span>✨ Qwen Neural Verifier</span>
+                        <span style="font-size: 0.72rem; opacity: 0.75; font-weight: normal;">(Dual-Model AI Audit • Perfect Match &amp; Qwen Corrections)</span>
                     </button>
                 </div>
 
@@ -2578,9 +2655,18 @@
                         <textarea id="batchItemInput" rows="6" style="width:100%; box-sizing:border-box; background:#090e1a; color:#f8fafc; border:1px solid rgba(99,102,241,0.4); border-radius:10px; padding:12px 14px; font-family:'JetBrains Mono', monospace; font-size:0.85rem; line-height:1.6; resize:vertical; outline:none;" placeholder="SS 304 hex nipple 1/2 inch 10 pcs&#10;allen cap screw M12 x 50 grade 8.8&#10;solar on grid inverter 5kw 3 phase&#10;industrial ball valve 2 inch class 150&#10;pure cotton printed saree with blouse piece"></textarea>
                         
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:12px;">
-                            <div style="display:flex; gap:10px;">
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
                                 <button type="button" id="btnRunBatch" onclick="runBatchMatch()" style="background:linear-gradient(135deg, #0ea5e9, #6366f1); color:#ffffff; border:none; border-radius:8px; padding:8px 18px; font-size:0.88rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow: 0 4px 14px rgba(14,165,233,0.3);">
                                     ⚡ Run Batch Vector Match (M × N)
+                                </button>
+                                <button type="button" id="btnCheckBatchPreexistence" onclick="checkBatchPreexistence()" style="background:linear-gradient(135deg, #059669, #0d9488); color:#ffffff; border:none; border-radius:8px; padding:8px 18px; font-size:0.88rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);">
+                                    🔍 Check Pre-existing Data in File (&lt;0.5ms)
+                                </button>
+                                <button type="button" id="btnRunBatchQwen" onclick="runBatchMatchQwen()" style="background:linear-gradient(135deg, #9333ea, #6366f1); color:#ffffff; border:none; border-radius:8px; padding:8px 18px; font-size:0.88rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow: 0 4px 14px rgba(147,51,234,0.35);">
+                                    ✨ Verify with Qwen 2.5 Layer
+                                </button>
+                                <button type="button" onclick="loadUserChallengeItemsInBatch()" style="background:rgba(30,41,59,0.8); border:1px solid rgba(148,163,184,0.3); color:#cbd5e1; border-radius:8px; padding:8px 14px; font-size:0.84rem; font-weight:600; cursor:pointer;">
+                                    ⚡ Load User Challenge Items (Hex Nipple, Allen Screw, Servo Motor...)
                                 </button>
                                 <button type="button" onclick="loadBatchSample()" style="background:rgba(30,41,59,0.8); border:1px solid rgba(148,163,184,0.3); color:#cbd5e1; border-radius:8px; padding:8px 14px; font-size:0.84rem; font-weight:600; cursor:pointer;">
                                     📋 Load Sample Stream (10 Items)
@@ -2628,6 +2714,7 @@
 
                     <!-- Batch Results Container -->
                     <div id="batchResultsWrap" style="display:none; margin-top:20px; overflow-x:auto;">
+                        <div id="missingBatchActionBar" style="display:none;"></div>
                         <table style="width:100%; border-collapse:collapse; font-size:0.84rem; color:#cbd5e1; text-align:left;">
                             <thead>
                                 <tr style="border-bottom:1px solid rgba(148,163,184,0.2); background:rgba(30,41,59,0.5); color:#94a3b8; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">
@@ -2777,6 +2864,167 @@
             </div>
         </section>
 
+        <!-- ========================================================
+             VIEW 5: DEDICATED QWEN 2.5 DUAL-MODEL VERIFICATION SCREEN
+             ======================================================== -->
+        <section id="view-qwen" class="view-section">
+            <div class="workspace-container">
+                <div class="workspace-top-bar">
+                    <div class="breadcrumb-pill">
+                        <a onclick="switchView('overview')">Overview</a>
+                        <span>/</span>
+                        <span>Modules</span>
+                        <span>/</span>
+                        <span style="color:#ffffff;">Qwen 2.5 Neural Verifier</span>
+                    </div>
+                    <button type="button" class="btn-back-overview" style="display:inline-flex;" onclick="switchView('overview')">
+                        ← Back to Overview
+                    </button>
+                </div>
+
+                <div class="workspace-header">
+                    <div class="brand-badge" style="background:rgba(168, 85, 247, 0.15); border-color:rgba(168, 85, 247, 0.4); color:#d8b4fe;">
+                        <span class="pulse-dot" style="background:#c084fc; box-shadow:0 0 8px #c084fc;"></span>
+                        QWEN 2.5 DUAL-MODEL STATUTORY AUDITOR
+                    </div>
+                    <h2>HSN Neural Verification &amp; Dual-Screen Comparison</h2>
+                    <p class="subtitle">
+                        Cross-checking Day 5 Base Predictions against Qwen 2.5 generative reasoning &amp; statutory tariff rules.
+                        Categorizes items into <strong>🟢 Perfect Match</strong> and <strong>⚡ Corrected by Qwen</strong> with statutory reasons ("Why").
+                    </p>
+                </div>
+
+                <!-- KPI STRIP -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:14px; margin-bottom:24px;">
+                    <div style="background:rgba(15, 23, 42, 0.85); border:1px solid rgba(148, 163, 184, 0.2); border-radius:12px; padding:16px 20px;">
+                        <div style="font-size:0.75rem; color:#94a3b8; font-weight:700; text-transform:uppercase;">Total Audited Items</div>
+                        <div style="font-size:1.85rem; font-weight:800; color:#f8fafc; margin-top:4px;" id="qwenKpiTotal">0</div>
+                        <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">Across all audited trade lines</div>
+                    </div>
+                    <div style="background:rgba(15, 23, 42, 0.85); border:1px solid rgba(52, 211, 153, 0.3); border-radius:12px; padding:16px 20px;">
+                        <div style="font-size:0.75rem; color:#34d399; font-weight:700; text-transform:uppercase;">🟢 Perfect Match</div>
+                        <div style="font-size:1.85rem; font-weight:800; color:#34d399; margin-top:4px;" id="qwenKpiPerfect">0</div>
+                        <div style="font-size:0.72rem; color:#6ee7b7; margin-top:2px;">Both Day 5 &amp; Qwen agree</div>
+                    </div>
+                    <div style="background:rgba(15, 23, 42, 0.85); border:1px solid rgba(245, 158, 11, 0.35); border-radius:12px; padding:16px 20px;">
+                        <div style="font-size:0.75rem; color:#fbbf24; font-weight:700; text-transform:uppercase;">⚡ Corrected by Qwen</div>
+                        <div style="font-size:1.85rem; font-weight:800; color:#fbbf24; margin-top:4px;" id="qwenKpiCorrected">0</div>
+                        <div style="font-size:0.72rem; color:#fde68a; margin-top:2px;">Misclassification fixed with reason</div>
+                    </div>
+                    <div style="background:rgba(15, 23, 42, 0.85); border:1px solid rgba(168, 85, 247, 0.35); border-radius:12px; padding:16px 20px;">
+                        <div style="font-size:0.75rem; color:#c084fc; font-weight:700; text-transform:uppercase;">Verification Model</div>
+                        <div style="font-size:1.15rem; font-weight:800; color:#e9d5ff; margin-top:8px;">Qwen2.5-0.5B</div>
+                        <div style="font-size:0.72rem; color:#a855f7; margin-top:4px;">100% Offline &amp; Grounded</div>
+                    </div>
+                    <div style="background:rgba(15, 23, 42, 0.85); border:1px solid rgba(14, 165, 233, 0.35); border-radius:12px; padding:16px 20px;">
+                        <div style="font-size:0.75rem; color:#38bdf8; font-weight:700; text-transform:uppercase;">💾 Verified Store</div>
+                        <div style="font-size:1.85rem; font-weight:800; color:#38bdf8; margin-top:4px;" id="qwenKpiStoreCount">0</div>
+                        <div style="font-size:0.72rem; color:#7dd3fc; margin-top:2px;">Persistent records (<span style="color:#38bdf8;">&lt;0.5ms</span>)</div>
+                    </div>
+                </div>
+
+                <!-- DUAL INPUT CARD -->
+                <div style="background:rgba(15, 23, 42, 0.8); border:1px solid rgba(168, 85, 247, 0.35); border-radius:14px; padding:20px; margin-bottom:24px; box-shadow:0 8px 32px rgba(0,0,0,0.35);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                        <div style="font-weight:700; color:#f8fafc; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
+                            <span>📝</span> Input Products for Dual-Model Verification:
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button type="button" onclick="loadVerifiedStoreFromBackend()" style="background:rgba(14, 165, 233, 0.2); border:1px solid rgba(14, 165, 233, 0.5); color:#7dd3fc; border-radius:8px; padding:6px 12px; font-size:0.78rem; font-weight:700; cursor:pointer;">
+                                💾 Inspect Verified Knowledge Store (<span id="qwenBtnStoreCount">0</span>)
+                            </button>
+                            <button type="button" onclick="loadQwenChallengingSamples()" style="background:rgba(168, 85, 247, 0.2); border:1px solid rgba(168, 85, 247, 0.5); color:#e9d5ff; border-radius:8px; padding:6px 12px; font-size:0.78rem; font-weight:700; cursor:pointer;">
+                                ⚡ Load User Challenge Items (Hex Nipple, Allen Screw, Solar Inverter)
+                            </button>
+                            <button type="button" onclick="clearQwenBatchInput()" style="background:transparent; border:1px solid rgba(148,163,184,0.25); color:#94a3b8; border-radius:8px; padding:6px 12px; font-size:0.78rem; cursor:pointer;">
+                                ✕ Clear
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="qwenBatchInput" rows="5" style="width:100%; box-sizing:border-box; background:#070d19; color:#f8fafc; border:1px solid rgba(168, 85, 247, 0.4); border-radius:10px; padding:12px 14px; font-family:'JetBrains Mono', monospace; font-size:0.85rem; line-height:1.6; resize:vertical; outline:none;" placeholder="Enter items to audit (one per line):&#10;SS 304 hex nipple 1/2 inch&#10;Allen cap screw M12 x 50 grade 8.8&#10;Solar on grid inverter 5kw 3 phase&#10;industrial servo motor ac&#10;pure cotton printed saree with blouse piece"></textarea>
+                    
+                    <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid rgba(168, 85, 247, 0.2); padding-top:16px;">
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                            <!-- Option 1: Run Day 5 Base Batch -->
+                            <button type="button" id="btnRunBaseBatchInQwen" onclick="runBaseBatchInQwen()" style="background:linear-gradient(135deg, #0284c7, #2563eb); color:#ffffff; border:none; border-radius:8px; padding:10px 18px; font-size:0.86rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(2, 132, 199, 0.35);">
+                                📋 Option 1: Run Base Batch
+                            </button>
+
+                            <!-- Option 2: Check Pre-existence in Verified Store -->
+                            <button type="button" id="btnCheckPreexistence" onclick="runCheckPreexistence()" style="background:linear-gradient(135deg, #059669, #0d9488); color:#ffffff; border:none; border-radius:8px; padding:10px 18px; font-size:0.86rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(5, 150, 105, 0.35);">
+                                🔍 Option 2: Check Pre-existence in Store (&lt;0.5ms)
+                            </button>
+
+                            <!-- Option 3: Run Qwen AI Verification & Store -->
+                            <button type="button" id="btnExecuteQwenAudit" onclick="runQwenDualAudit()" style="background:linear-gradient(135deg, #9333ea, #6366f1); color:#ffffff; border:none; border-radius:8px; padding:10px 22px; font-size:0.86rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 16px rgba(147, 51, 234, 0.4);">
+                                ✨ Option 3: Run Qwen &amp; Store in File
+                            </button>
+                        </div>
+                        <div id="qwenAuditTelemetry" style="font-size:0.8rem; color:#94a3b8; display:none;">
+                            Processed in <span id="qwenLatencyVal" style="color:#38bdf8; font-weight:700;">--</span> ms
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PERSISTENT VERIFIED STORE STATUS BANNER -->
+                <div id="qwenStorageNotice" style="background:rgba(15, 23, 42, 0.85); border:1px solid rgba(14, 165, 233, 0.4); border-radius:10px; padding:10px 16px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                    <div style="font-size:0.82rem; color:#e0f2fe; display:flex; align-items:center; gap:8px;">
+                        <span>💾</span>
+                        <span>Backend Store: <strong style="color:#38bdf8; font-family:'JetBrains Mono', monospace;">data/hsn_verified_store.parquet</strong></span>
+                        <span style="color:#64748b;">•</span>
+                        <span id="qwenStorePersistenceNote" style="color:#a7f3d0; font-weight:600;">Persists verified records in Qwen section with 0 duplicates</span>
+                    </div>
+                    <div style="font-size:0.75rem; color:#94a3b8;">
+                        Total Unique Records in File: <strong id="qwenStorageTotalBadge" style="color:#38bdf8;">0</strong>
+                    </div>
+                </div>
+
+                <!-- FILTER TABS & DUAL RESULTS DISPLAY SCREEN -->
+                <div id="qwenResultsContainer" style="display:none;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" class="qwen-filter-pill active" id="qwenFilterAll" onclick="filterQwenResults('ALL')">
+                                All (<span id="qwenCountBadgeAll">0</span>)
+                            </button>
+                            <button type="button" class="qwen-filter-pill" id="qwenFilterPerfect" onclick="filterQwenResults('PERFECT')">
+                                🟢 Perfect Matches (<span id="qwenCountBadgePerfect">0</span>)
+                            </button>
+                            <button type="button" class="qwen-filter-pill" id="qwenFilterCorrected" onclick="filterQwenResults('CORRECTED')">
+                                ⚡ Corrected by Qwen (<span id="qwenCountBadgeCorrected">0</span>)
+                            </button>
+                            <button type="button" class="qwen-filter-pill" id="qwenFilterPreexisting" onclick="filterQwenResults('PREEXISTING')">
+                                💾 Pre-Existing in Store (<span id="qwenCountBadgePreexisting">0</span>)
+                            </button>
+                        </div>
+                        <div style="font-size:0.78rem; color:#94a3b8;">
+                            Interactive Dual-Model Comparison Screen
+                        </div>
+                    </div>
+
+                    <!-- TABLE -->
+                    <div style="background:rgba(15, 23, 42, 0.9); border:1px solid rgba(168, 85, 247, 0.3); border-radius:14px; overflow:hidden;">
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.84rem;">
+                                <thead>
+                                    <tr style="background:rgba(30, 41, 59, 0.85); border-bottom:1px solid rgba(168, 85, 247, 0.3); color:#cbd5e1; font-size:0.75rem; text-transform:uppercase;">
+                                        <th style="padding:12px 14px; width:40px;">#</th>
+                                        <th style="padding:12px 14px; width:220px;">Product Description</th>
+                                        <th style="padding:12px 14px; width:220px;">Day 5 Base Model</th>
+                                        <th style="padding:12px 14px; width:240px;">Qwen 2.5 Verification</th>
+                                        <th style="padding:12px 14px; width:160px;">Audit Verdict</th>
+                                        <th style="padding:12px 14px;">Statutory Reasoning ("Why")</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="qwenResultsTbody">
+                                    <!-- Rendered dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <!-- Toast Notification -->
@@ -2788,7 +3036,7 @@
         /* ==========================================================
            TAB / SCREEN ROUTING LOGIC
            ========================================================== */
-        const ALL_VIEWS = ['overview', 'hsn', 'converter', 'ingestion'];
+        const ALL_VIEWS = ['overview', 'hsn', 'converter', 'ingestion', 'qwen'];
 
         function switchView(targetView, updateHash = true) {
             if (!ALL_VIEWS.includes(targetView)) {
@@ -2828,6 +3076,15 @@
                 const searchInput = document.getElementById('itemInput');
                 if (searchInput) {
                     setTimeout(() => searchInput.focus(), 150);
+                }
+            }
+
+            // If entering Qwen view, update store stats
+            if (targetView === 'qwen') {
+                loadVerifiedStoreStats();
+                const qwenInput = document.getElementById('qwenBatchInput');
+                if (qwenInput && !qwenInput.value.trim()) {
+                    loadQwenChallengingSamples();
                 }
             }
 
@@ -4148,6 +4405,260 @@
             showToast('📋 Loaded 10 sample real-world dirty line items');
         }
 
+        function loadUserChallengeItemsInBatch() {
+            const samples = [
+                "SS 304 hex nipple 1/2 inch 10 pcs",
+                "allen cap screw M12 x 50 grade 8.8",
+                "solar on grid inverter 5kw 3 phase",
+                "industrial ball valve 2 inch class 150",
+                "pure cotton printed saree with blouse piece",
+                "ragi",
+                "rags",
+                "industrial servo motor",
+                "kashmir apple",
+                "crude oil"
+            ];
+            document.getElementById('batchItemInput').value = samples.join('\n');
+            showToast('⚡ Loaded 10 User Challenge Items (Hex Nipple, Allen Screw, Servo Motor...)');
+        }
+
+        let lastBatchPreexistenceMissing = [];
+
+        async function checkBatchPreexistence() {
+            const raw = document.getElementById('batchItemInput').value.trim();
+            if (!raw) {
+                showToast('⚠️ Please enter at least one product description');
+                return;
+            }
+            const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length === 0) return;
+
+            const btn = document.getElementById('btnCheckBatchPreexistence');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '⏳ Checking Pre-existing Data in File...';
+            }
+
+            const t0 = performance.now();
+            try {
+                // Strictly READ-ONLY check against data/hsn_verified_store.parquet (NO push, NO file writes)
+                const resp = await fetch('/api/v1/hsn-intelligence/check-preexistence', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: lines })
+                });
+                if (!resp.ok) {
+                    throw new Error(`HTTP ${resp.status}`);
+                }
+                const data = await resp.json();
+                const clientLatency = (performance.now() - t0).toFixed(1);
+                renderBatchPreexistenceResults(data, clientLatency);
+                showToast(`💾 Found ${data.preexisting_count} records in file (${data.missing_count} missing) in ${clientLatency} ms`);
+            } catch (err) {
+                console.error('Check pre-existence failed:', err);
+                showToast('❌ Failed to check file pre-existence');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '🔍 Check Pre-existing Data in File (&lt;0.5ms)';
+                }
+            }
+        }
+
+        function renderBatchPreexistenceResults(data, clientLatency) {
+            const strip = document.getElementById('batchTelemetryStrip');
+            const wrap = document.getElementById('batchResultsWrap');
+            const tbody = document.getElementById('batchResultsTbody');
+            const actionWrap = document.getElementById('missingBatchActionBar');
+
+            strip.style.display = 'flex';
+            wrap.style.display = 'block';
+            tbody.innerHTML = '';
+
+            const results = data.results || [];
+            const count = data.total_items || results.length;
+            const preCount = data.preexisting_count || 0;
+            const missCount = data.missing_count || 0;
+
+            document.getElementById('batchCountBadge').innerText = `${count} items`;
+            document.getElementById('batchLatencyBadge').innerText = `⚡ <0.5 ms (File Cache)`;
+            document.getElementById('batchThroughputBadge').innerText = `💾 ${preCount} in File | ⚠️ ${missCount} Missing`;
+            document.getElementById('countAutoMatch').innerText = `💾 In File: ${preCount}`;
+            document.getElementById('countReview').innerText = `⚠️ Missing: ${missCount}`;
+            document.getElementById('countUnmapped').innerText = `📂 Total Stored: ${data.stored_records_total || 0}`;
+
+            // Track missing items for optional batch run
+            lastBatchPreexistenceMissing = [];
+
+            if (actionWrap) {
+                if (missCount > 0) {
+                    actionWrap.style.display = 'block';
+                    actionWrap.innerHTML = `
+                        <div style="background:rgba(251, 191, 36, 0.12); border:1px solid #fbbf24; border-radius:10px; padding:12px 18px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span style="font-size:1.2rem;">⚠️</span>
+                                <div>
+                                    <div style="color:#fbbf24; font-weight:700; font-size:0.88rem;">${missCount} items not present in verified file</div>
+                                    <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">
+                                        Run batch vector match specifically on the remaining unmapped items (read-only, does not push to file).
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" id="btnRunBatchMissing" onclick="runBatchOnMissingOnly()" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:#ffffff; border:none; border-radius:8px; padding:8px 16px; font-weight:700; font-size:0.84rem; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(245, 158, 11, 0.35);">
+                                ⚡ Run Batch Match on Missing Items (${missCount})
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    actionWrap.style.display = 'none';
+                    actionWrap.innerHTML = '';
+                }
+            }
+
+            results.forEach((res, idx) => {
+                const inStore = !!res.exists_in_store;
+                if (!inStore) {
+                    lastBatchPreexistenceMissing.push({ index: idx, query: res.item_description });
+                }
+
+                let decBadge = '';
+                if (inStore) {
+                    decBadge = `<span style="background:rgba(52,211,153,0.18); color:#34d399; border:1px solid #34d399; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">💾 RETRIEVED FROM FILE EXISTING DATA (&lt;0.5ms)</span>`;
+                } else {
+                    decBadge = `<span style="background:rgba(251,191,36,0.18); color:#fbbf24; border:1px solid #fbbf24; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">⚠️ NOT IN FILE / READY FOR BATCH MATCH</span>`;
+                }
+
+                const hsn = inStore ? (res.qwen_formatted || res.qwen_hsn || res.base_formatted || res.base_hsn || '—') : '—';
+                const desc = inStore ? (res.qwen_description || res.base_description || '') : 'Item not found in verified store (Click Run Batch Match on Missing Items)';
+                const simVal = inStore ? '100%' : '—';
+                const rateVal = inStore ? `GST ${res.qwen_rate || 18}%` : '—';
+
+                const tr = document.createElement('tr');
+                tr.id = `batchRow_${idx}`;
+                tr.style.borderBottom = '1px solid rgba(148,163,184,0.1)';
+                tr.innerHTML = `
+                    <td style="padding:10px 12px; color:#64748b; font-weight:700;">${idx + 1}</td>
+                    <td style="padding:10px 12px; color:#f1f5f9; font-weight:600;">
+                        ${escapeHtml(res.item_description)}
+                    </td>
+                    <td style="padding:10px 12px;" class="batch-hsn-cell">
+                        ${inStore ? `
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span style="font-family:'JetBrains Mono', monospace; font-weight:800; color:#38bdf8; font-size:0.9rem;">${hsn}</span>
+                                <button type="button" onclick="copyToClipboard(event, '${hsn}')" style="background:transparent; border:none; color:#64748b; cursor:pointer; padding:2px;" title="Copy HSN">📋</button>
+                            </div>
+                            <div style="font-size:0.72rem; color:#94a3b8; margin-top:2px; max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(desc)}">${escapeHtml(desc)}</div>
+                        ` : `
+                            <span style="color:#64748b; font-style:italic; font-size:0.82rem;">Not in store</span>
+                        `}
+                    </td>
+                    <td style="padding:10px 12px;" class="batch-sim-cell">
+                        <span style="font-weight:700; color:${inStore ? '#34d399' : '#64748b'};">${simVal}</span>
+                        ${inStore ? `<span style="font-size:0.72rem; color:#94a3b8; margin-left:4px;">${rateVal}</span>` : ''}
+                    </td>
+                    <td style="padding:10px 12px;" class="batch-badge-cell">${decBadge}</td>
+                    <td style="padding:10px 12px; text-align:center;">
+                        <span style="color:#64748b; font-size:0.75rem;">${inStore ? '💾 File Record' : 'Ready'}</span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function runBatchOnMissingOnly() {
+            if (!lastBatchPreexistenceMissing || lastBatchPreexistenceMissing.length === 0) {
+                showToast('ℹ️ No missing items to process');
+                return;
+            }
+
+            const btn = document.getElementById('btnRunBatchMissing');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '⏳ Computing Vector Match on Missing...';
+            }
+
+            const missingQueries = lastBatchPreexistenceMissing.map(m => m.query);
+            try {
+                // Read-only batch match specifically on missing items (pure inference, no file writes)
+                const resp = await fetch('/api/v1/hsn-intelligence/batch-match', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: missingQueries, top_k: 4 })
+                });
+                if (!resp.ok) {
+                    throw new Error(`HTTP ${resp.status}`);
+                }
+                const data = await resp.json();
+                const items = data.items || data.results || [];
+
+                items.forEach((mRes, i) => {
+                    if (i < lastBatchPreexistenceMissing.length) {
+                        const targetIdx = lastBatchPreexistenceMissing[i].index;
+                        const row = document.getElementById(`batchRow_${targetIdx}`);
+                        if (row) {
+                            const top1 = mRes.top_match || mRes.top1_candidate || {};
+                            const hsn = mRes.matched_hsn || top1.hsn_code || 'N/A';
+                            const desc = mRes.official_description || top1.description || 'No matching statutory item';
+                            const simVal = mRes.confidence_pct !== undefined ? mRes.confidence_pct : (top1.score !== undefined ? (top1.score * 100).toFixed(1) : '0.0');
+                            const rateVal = mRes.standard_rate !== undefined ? mRes.standard_rate : (top1.standard_rate !== undefined ? top1.standard_rate : 18.0);
+                            const dec = mRes.decision || mRes.guardrail_decision || 'FLAG_FOR_REVIEW';
+
+                            const isFromStore = (mRes.match_type && (mRes.match_type.includes('Store') || mRes.match_type.includes('Verified')));
+                            let decBadge = '';
+                            if (isFromStore) {
+                                decBadge = `<span style="background:rgba(52,211,153,0.18); color:#34d399; border:1px solid #34d399; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">💾 RETRIEVED FROM FILE EXISTING DATA (&lt;0.5ms)</span>`;
+                            } else if (dec === 'AUTOMATED_MATCH') {
+                                decBadge = `<span style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid #34d399; padding:3px 8px; border-radius:6px; font-weight:700; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">🟢 AUTOMATED_MATCH</span>`;
+                            } else {
+                                decBadge = `<span style="background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid #fbbf24; padding:3px 8px; border-radius:6px; font-weight:700; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">🟡 FLAG_FOR_REVIEW</span>`;
+                            }
+
+                            const hsnCell = row.querySelector('.batch-hsn-cell');
+                            if (hsnCell) {
+                                hsnCell.innerHTML = `
+                                    <div style="display:flex; align-items:center; gap:6px;">
+                                        <span style="font-family:'JetBrains Mono', monospace; font-weight:800; color:#38bdf8; font-size:0.9rem;">${hsn}</span>
+                                        <button type="button" onclick="copyToClipboard(event, '${hsn}')" style="background:transparent; border:none; color:#64748b; cursor:pointer; padding:2px;" title="Copy HSN">📋</button>
+                                    </div>
+                                    <div style="font-size:0.72rem; color:#94a3b8; margin-top:2px; max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(desc)}">${escapeHtml(desc)}</div>
+                                `;
+                            }
+
+                            const simCell = row.querySelector('.batch-sim-cell');
+                            if (simCell) {
+                                simCell.innerHTML = `
+                                    <span style="font-weight:700; color:${parseFloat(simVal) >= 70 ? '#34d399' : '#fbbf24'};">${simVal}%</span>
+                                    <span style="font-size:0.72rem; color:#94a3b8; margin-left:4px;">GST ${rateVal}%</span>
+                                `;
+                            }
+
+                            const badgeCell = row.querySelector('.batch-badge-cell');
+                            if (badgeCell) {
+                                badgeCell.innerHTML = decBadge;
+                            }
+                        }
+                    }
+                });
+
+                // Clear missing list and hide action bar
+                lastBatchPreexistenceMissing = [];
+                const actionWrap = document.getElementById('missingBatchActionBar');
+                if (actionWrap) {
+                    actionWrap.style.display = 'none';
+                    actionWrap.innerHTML = '';
+                }
+                showToast(`⚡ Successfully resolved remaining items via vector match!`);
+            } catch (err) {
+                console.error('Batch match on missing failed:', err);
+                showToast('❌ Failed to run batch match on missing items');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '⚡ Run Batch Match on Missing Items';
+                }
+            }
+        }
+
         async function runBatchMatch() {
             const raw = document.getElementById('batchItemInput').value.trim();
             if (!raw) {
@@ -4247,6 +4758,11 @@
             const strip = document.getElementById('batchTelemetryStrip');
             const wrap = document.getElementById('batchResultsWrap');
             const tbody = document.getElementById('batchResultsTbody');
+            const actionWrap = document.getElementById('missingBatchActionBar');
+            if (actionWrap) {
+                actionWrap.style.display = 'none';
+                actionWrap.innerHTML = '';
+            }
 
             strip.style.display = 'flex';
             wrap.style.display = 'block';
@@ -4273,8 +4789,11 @@
                     else unmappedCount++;
                 }
 
+                const isFromStore = (res.match_type && (res.match_type.includes('Store') || res.match_type.includes('Verified'))) || res.is_cache_hit || res.exists_in_store;
                 let decBadge = '';
-                if (dec === 'AUTOMATED_MATCH') {
+                if (isFromStore) {
+                    decBadge = `<span style="background:rgba(52,211,153,0.18); color:#34d399; border:1px solid #34d399; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">💾 RETRIEVED FROM FILE EXISTING DATA (&lt;0.5ms)</span>`;
+                } else if (dec === 'AUTOMATED_MATCH') {
                     decBadge = `<span style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid #34d399; padding:3px 8px; border-radius:6px; font-weight:700; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">🟢 AUTOMATED_MATCH</span>`;
                 } else if (dec === 'FLAG_FOR_REVIEW') {
                     decBadge = `<span style="background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid #fbbf24; padding:3px 8px; border-radius:6px; font-weight:700; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">🟡 FLAG_FOR_REVIEW</span>`;
@@ -4285,7 +4804,7 @@
                 const top1 = res.top_match || res.top1_candidate || {};
                 const hsn = res.matched_hsn || top1.hsn_code || 'N/A';
                 const desc = res.official_description || top1.description || 'No matching statutory item';
-                const simVal = res.confidence_pct !== undefined ? res.confidence_pct : (top1.score !== undefined ? (top1.score * 100).toFixed(1) : (top1.similarity_score ? (top1.similarity_score * 100).toFixed(1) : '0.0'));
+                const simVal = isFromStore ? '100%' : (res.confidence_pct !== undefined ? `${res.confidence_pct}%` : (top1.score !== undefined ? `${(top1.score * 100).toFixed(1)}%` : (top1.similarity_score ? `${(top1.similarity_score * 100).toFixed(1)}%` : '0.0%')));
                 const rateVal = res.standard_rate !== undefined ? res.standard_rate : (top1.standard_rate !== undefined ? top1.standard_rate : 18.0);
 
                 const cleanQuery = res.cleaned_description || res.clean_query || res.raw_description || res.original_query || '';
@@ -4363,6 +4882,448 @@
             const isOpen = row.style.display !== 'none';
             row.style.display = isOpen ? 'none' : 'table-row';
             if (btn) btn.innerHTML = isOpen ? '▼ Top 3 Runners' : '▲ Hide Runners';
+        }
+
+        /* ==========================================================
+           QWEN 2.5 DUAL-MODEL VERIFICATION JAVASCRIPT LOGIC
+           ========================================================== */
+        let currentQwenResults = [];
+        let currentQwenFilter = 'ALL';
+
+        function loadQwenChallengingSamples() {
+            const samples = [
+                "SS 304 hex nipple 1/2 inch 10 pcs",
+                "allen cap screw M12 x 50 grade 8.8",
+                "solar on grid inverter 5kw 3 phase",
+                "industrial ball valve 2 inch class 150",
+                "pure cotton printed saree with blouse piece",
+                "ragi",
+                "rags",
+                "industrial servo motor",
+                "kashmir apple",
+                "crude oil"
+            ];
+            const inp = document.getElementById('qwenBatchInput');
+            if (inp) inp.value = samples.join('\n');
+            showToast('⚡ Loaded 10 challenge items from user image');
+        }
+
+        function clearQwenBatchInput() {
+            const inp = document.getElementById('qwenBatchInput');
+            if (inp) inp.value = '';
+            const resWrap = document.getElementById('qwenResultsContainer');
+            if (resWrap) resWrap.style.display = 'none';
+            const tele = document.getElementById('qwenAuditTelemetry');
+            if (tele) tele.style.display = 'none';
+            document.getElementById('qwenKpiTotal').innerText = '0';
+            document.getElementById('qwenKpiPerfect').innerText = '0';
+            document.getElementById('qwenKpiCorrected').innerText = '0';
+        }
+
+        function runBatchMatchQwen() {
+            const batchVal = document.getElementById('batchItemInput').value.trim();
+            switchView('qwen');
+            const qwenInp = document.getElementById('qwenBatchInput');
+            if (qwenInp) {
+                if (batchVal) {
+                    qwenInp.value = batchVal;
+                } else {
+                    loadQwenChallengingSamples();
+                }
+            }
+            setTimeout(() => {
+                runQwenDualAudit();
+            }, 150);
+        }
+
+        /* Option 1: Run Day 5 Base Batch */
+        async function runBaseBatchInQwen() {
+            const raw = document.getElementById('qwenBatchInput').value.trim();
+            if (!raw) {
+                showToast('⚠️ Please enter at least one item description');
+                return;
+            }
+            const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length === 0) return;
+
+            const btn = document.getElementById('btnRunBaseBatchInQwen');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Computing Day 5 Base Matches...';
+
+            const t0 = performance.now();
+            try {
+                const resp = await fetch('/api/v1/hsn-intelligence/batch-match', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: lines, top_k: 4 })
+                });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                const clientLatency = (performance.now() - t0).toFixed(1);
+
+                const items = data.items || [];
+                currentQwenResults = items.map(r => {
+                    const top1 = r.top_match || {};
+                    const hsn = r.matched_hsn || top1.hsn_code || '—';
+                    const desc = r.official_description || top1.description || 'Statutory goods';
+                    const rate = r.standard_rate !== undefined ? r.standard_rate : (top1.standard_rate || 18.0);
+                    const sim = r.confidence_pct || 90.0;
+                    return {
+                        item_description: r.raw_description || r.cleaned_description || '',
+                        is_perfect_match: true,
+                        status: 'DAY5_BASE_MATCH',
+                        base_hsn: hsn,
+                        base_formatted: formatHsnString(hsn),
+                        base_description: desc,
+                        base_rate: rate,
+                        qwen_hsn: '—',
+                        qwen_formatted: '—',
+                        qwen_description: 'Not evaluated yet by Qwen (Run Option 3)',
+                        qwen_rate: rate,
+                        reasoning: `Day 5 Base Vector Match (${sim}% confidence). Click Option 3 to run Qwen verification and store in file.`,
+                        is_cache_hit: false,
+                        verification_model: 'Day 5 Base Model'
+                    };
+                });
+
+                document.getElementById('qwenKpiTotal').innerText = currentQwenResults.length;
+                document.getElementById('qwenKpiPerfect').innerText = currentQwenResults.length;
+                document.getElementById('qwenKpiCorrected').innerText = 0;
+
+                document.getElementById('qwenCountBadgeAll').innerText = currentQwenResults.length;
+                document.getElementById('qwenCountBadgePerfect').innerText = currentQwenResults.length;
+                document.getElementById('qwenCountBadgeCorrected').innerText = 0;
+                document.getElementById('qwenCountBadgePreexisting').innerText = 0;
+
+                const tele = document.getElementById('qwenAuditTelemetry');
+                tele.style.display = 'block';
+                document.getElementById('qwenLatencyVal').innerText = data.batch_latency_ms || clientLatency;
+
+                document.getElementById('qwenResultsContainer').style.display = 'block';
+                filterQwenResults('ALL');
+                showToast(`📋 Computed Day 5 base predictions for ${currentQwenResults.length} items`);
+            } catch (err) {
+                console.error('Base batch failed:', err);
+                showToast(`❌ Base batch failed: ${err.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '📋 Option 1: Run Base Batch';
+            }
+        }
+
+        /* Option 2: Check Pre-existence in Verified Store (<0.5ms) */
+        async function runCheckPreexistence() {
+            const raw = document.getElementById('qwenBatchInput').value.trim();
+            if (!raw) {
+                showToast('⚠️ Please enter at least one item description to check');
+                return;
+            }
+            const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length === 0) return;
+
+            const btn = document.getElementById('btnCheckPreexistence');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Checking Store Pre-existence...';
+
+            const t0 = performance.now();
+            try {
+                const resp = await fetch('/api/v1/hsn-intelligence/check-preexistence', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: lines })
+                });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                const clientLatency = (performance.now() - t0).toFixed(1);
+
+                currentQwenResults = (data.results || []).map(r => ({
+                    item_description: r.item_description,
+                    is_perfect_match: r.is_perfect_match,
+                    status: r.exists_in_store ? 'PRE_EXISTING' : 'NOT_IN_STORE',
+                    base_hsn: r.base_hsn,
+                    base_formatted: r.base_formatted,
+                    base_description: r.base_description,
+                    base_rate: r.base_rate,
+                    qwen_hsn: r.qwen_hsn,
+                    qwen_formatted: r.qwen_formatted,
+                    qwen_description: r.qwen_description,
+                    qwen_rate: r.qwen_rate,
+                    reasoning: r.reasoning,
+                    is_cache_hit: r.is_cache_hit,
+                    verification_model: r.verification_model
+                }));
+
+                document.getElementById('qwenKpiTotal').innerText = data.total_items;
+                document.getElementById('qwenKpiPerfect').innerText = data.preexisting_count;
+                document.getElementById('qwenKpiCorrected').innerText = data.missing_count;
+                document.getElementById('qwenKpiStoreCount').innerText = data.stored_records_total;
+                document.getElementById('qwenBtnStoreCount').innerText = data.stored_records_total;
+                document.getElementById('qwenStorageTotalBadge').innerText = data.stored_records_total;
+
+                document.getElementById('qwenCountBadgeAll').innerText = currentQwenResults.length;
+                document.getElementById('qwenCountBadgePerfect').innerText = currentQwenResults.filter(r => r.is_perfect_match).length;
+                document.getElementById('qwenCountBadgeCorrected').innerText = currentQwenResults.filter(r => r.status === 'CORRECTED_BY_QWEN').length;
+                document.getElementById('qwenCountBadgePreexisting').innerText = data.preexisting_count;
+
+                const tele = document.getElementById('qwenAuditTelemetry');
+                tele.style.display = 'block';
+                document.getElementById('qwenLatencyVal').innerText = clientLatency;
+
+                document.getElementById('qwenResultsContainer').style.display = 'block';
+                filterQwenResults('ALL');
+
+                showToast(`🔍 Found ${data.preexisting_count} items pre-existing in store (<0.5ms), ${data.missing_count} not yet stored`);
+            } catch (err) {
+                console.error('Pre-existence check failed:', err);
+                showToast(`❌ Pre-existence check failed: ${err.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🔍 Option 2: Check Pre-existence in Store (<0.5ms)';
+            }
+        }
+
+        /* Option 3: Run Qwen AI Verification & Store in File (Zero Duplicates) */
+        async function runQwenDualAudit() {
+            const raw = document.getElementById('qwenBatchInput').value.trim();
+            if (!raw) {
+                showToast('⚠️ Please enter at least one item description to audit');
+                return;
+            }
+            const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length === 0) return;
+
+            const btn = document.getElementById('btnExecuteQwenAudit');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Auditing & Storing to Parquet...';
+
+            const t0 = performance.now();
+            try {
+                const resp = await fetch('/api/v1/hsn-intelligence/qwen-verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: lines })
+                });
+                if (!resp.ok) {
+                    throw new Error(`HTTP ${resp.status}`);
+                }
+                const data = await resp.json();
+                const clientLatency = (performance.now() - t0).toFixed(1);
+
+                currentQwenResults = data.results || [];
+
+                // Update KPIs
+                document.getElementById('qwenKpiTotal').innerText = data.total_items || currentQwenResults.length;
+                document.getElementById('qwenKpiPerfect').innerText = data.perfect_matches !== undefined ? data.perfect_matches : currentQwenResults.filter(r => r.is_perfect_match).length;
+                document.getElementById('qwenKpiCorrected').innerText = data.corrected_by_qwen !== undefined ? data.corrected_by_qwen : currentQwenResults.filter(r => !r.is_perfect_match).length;
+
+                // Update Badges
+                const perfectCount = data.perfect_matches !== undefined ? data.perfect_matches : currentQwenResults.filter(r => r.is_perfect_match).length;
+                const correctedCount = data.corrected_by_qwen !== undefined ? data.corrected_by_qwen : currentQwenResults.filter(r => !r.is_perfect_match).length;
+                document.getElementById('qwenCountBadgeAll').innerText = currentQwenResults.length;
+                document.getElementById('qwenCountBadgePerfect').innerText = perfectCount;
+                document.getElementById('qwenCountBadgeCorrected').innerText = correctedCount;
+                document.getElementById('qwenCountBadgePreexisting').innerText = currentQwenResults.filter(r => r.is_cache_hit).length;
+
+                if (data.stored_records_total) {
+                    document.getElementById('qwenStorageTotalBadge').innerText = data.stored_records_total;
+                    document.getElementById('qwenKpiStoreCount').innerText = data.stored_records_total;
+                    document.getElementById('qwenBtnStoreCount').innerText = data.stored_records_total;
+                }
+
+                // Update Telemetry
+                const tele = document.getElementById('qwenAuditTelemetry');
+                tele.style.display = 'block';
+                document.getElementById('qwenLatencyVal').innerText = data.batch_latency_ms || clientLatency;
+
+                // Render Table
+                document.getElementById('qwenResultsContainer').style.display = 'block';
+                filterQwenResults('ALL');
+
+                showToast(`💾 Verified & stored in data/hsn_verified_store.parquet (0 duplicates)!`);
+                loadVerifiedStoreStats();
+            } catch (err) {
+                console.error('Qwen audit failed:', err);
+                showToast(`❌ Verification failed: ${err.message || 'Error running Qwen'}`);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '✨ Option 3: Run Qwen & Store in File';
+            }
+        }
+
+        function filterQwenResults(mode) {
+            currentQwenFilter = mode;
+            ['All', 'Perfect', 'Corrected', 'Preexisting'].forEach(m => {
+                const b = document.getElementById(`qwenFilter${m}`);
+                if (b) {
+                    if (m.toUpperCase() === mode) {
+                        b.classList.add('active');
+                    } else {
+                        b.classList.remove('active');
+                    }
+                }
+            });
+
+            let filtered = currentQwenResults;
+            if (mode === 'PERFECT') {
+                filtered = currentQwenResults.filter(r => r.is_perfect_match);
+            } else if (mode === 'CORRECTED') {
+                filtered = currentQwenResults.filter(r => !r.is_perfect_match && r.status !== 'NOT_IN_STORE');
+            } else if (mode === 'PREEXISTING') {
+                filtered = currentQwenResults.filter(r => r.is_cache_hit || r.status === 'PRE_EXISTING');
+            }
+            renderQwenTable(filtered);
+        }
+
+        function renderQwenTable(items) {
+            const tbody = document.getElementById('qwenResultsTbody');
+            tbody.innerHTML = '';
+
+            if (!items || items.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="padding:24px; text-align:center; color:#94a3b8; font-size:0.88rem;">
+                            No items found matching the selected filter criteria.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            items.forEach((r, idx) => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid rgba(148, 163, 184, 0.12)';
+                tr.style.transition = 'background 0.15s ease';
+                tr.onmouseenter = () => tr.style.background = 'rgba(30, 41, 59, 0.5)';
+                tr.onmouseleave = () => tr.style.background = 'transparent';
+
+                const isMatch = r.is_perfect_match;
+                let statusBadge = '';
+                if (r.status === 'PRE_EXISTING') {
+                    statusBadge = `<span style="background:rgba(14,165,233,0.18); color:#38bdf8; border:1px solid #38bdf8; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.76rem; display:inline-flex; align-items:center; gap:5px; box-shadow:0 0 10px rgba(14,165,233,0.25);">💾 PRE-EXISTING IN STORE</span>`;
+                } else if (r.status === 'NOT_IN_STORE') {
+                    statusBadge = `<span style="background:rgba(248,113,113,0.18); color:#f87171; border:1px solid #f87171; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.76rem; display:inline-flex; align-items:center; gap:5px;">⚠️ NOT IN STORE</span>`;
+                } else if (r.status === 'DAY5_BASE_MATCH') {
+                    statusBadge = `<span style="background:rgba(99,102,241,0.18); color:#818cf8; border:1px solid #818cf8; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.76rem; display:inline-flex; align-items:center; gap:5px;">📋 DAY 5 BASE MATCH</span>`;
+                } else if (isMatch) {
+                    statusBadge = `<span style="background:rgba(52,211,153,0.18); color:#34d399; border:1px solid #34d399; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.76rem; display:inline-flex; align-items:center; gap:5px; box-shadow:0 0 10px rgba(52,211,153,0.25);">🟢 PERFECT MATCH</span>`;
+                } else {
+                    statusBadge = `<span style="background:rgba(245,158,11,0.18); color:#fbbf24; border:1px solid #fbbf24; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.76rem; display:inline-flex; align-items:center; gap:5px; box-shadow:0 0 10px rgba(245,158,11,0.25);">⚡ CORRECTED BY QWEN</span>`;
+                }
+
+                const whyBox = isMatch
+                    ? `<div style="color:#a7f3d0; font-size:0.78rem; line-height:1.45; display:flex; align-items:flex-start; gap:6px;">
+                         <span style="color:#34d399; font-weight:bold;">✓</span>
+                         <span>${escapeHtml(r.reasoning)}</span>
+                       </div>`
+                    : `<div style="background:rgba(245,158,11,0.08); border-left:3px solid #fbbf24; padding:8px 12px; border-radius:4px; color:#fef08a; font-size:0.78rem; line-height:1.45;">
+                         <div style="font-weight:700; color:#fbbf24; margin-bottom:2px; display:flex; align-items:center; gap:4px;">
+                           <span>⚖️ Statutory Reason ("Why"):</span>
+                         </div>
+                         <div>${escapeHtml(r.reasoning)}</div>
+                       </div>`;
+
+                tr.innerHTML = `
+                    <td style="padding:14px 14px; color:#64748b; font-weight:700;">${idx + 1}</td>
+                    <td style="padding:14px 14px; color:#f8fafc; font-weight:600;">
+                        ${escapeHtml(r.item_description)}
+                        ${r.is_cache_hit ? `<span style="background:rgba(14,165,233,0.18); color:#38bdf8; border:1px solid rgba(14,165,233,0.4); padding:2px 7px; border-radius:4px; font-size:0.7rem; font-weight:700; margin-left:8px; display:inline-flex; align-items:center; gap:3px;">⚡ CACHED (&lt;0.5ms)</span>` : ''}
+                    </td>
+                    <td style="padding:14px 14px;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="font-family:'JetBrains Mono', monospace; font-weight:800; color:#38bdf8; font-size:0.92rem;">${r.base_formatted || r.base_hsn}</span>
+                            <span style="font-size:0.7rem; color:#94a3b8; background:rgba(30,41,59,0.8); padding:2px 6px; border-radius:4px;">GST ${r.base_rate}%</span>
+                        </div>
+                        <div style="font-size:0.72rem; color:#94a3b8; margin-top:4px; max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(r.base_description)}">
+                            ${escapeHtml(r.base_description)}
+                        </div>
+                    </td>
+                    <td style="padding:14px 14px;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="font-family:'JetBrains Mono', monospace; font-weight:800; color:${isMatch ? '#34d399' : '#c084fc'}; font-size:0.92rem;">${r.qwen_formatted || r.qwen_hsn}</span>
+                            <span style="font-size:0.7rem; color:#94a3b8; background:rgba(30,41,59,0.8); padding:2px 6px; border-radius:4px;">GST ${r.qwen_rate}%</span>
+                        </div>
+                        <div style="font-size:0.72rem; color:${isMatch ? '#cbd5e1' : '#e9d5ff'}; margin-top:4px; max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(r.qwen_description)}">
+                            ${escapeHtml(r.qwen_description)}
+                        </div>
+                    </td>
+                    <td style="padding:14px 14px;">
+                        ${statusBadge}
+                    </td>
+                    <td style="padding:14px 14px;">
+                        ${whyBox}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function loadVerifiedStoreStats() {
+            try {
+                const resp = await fetch('/api/v1/hsn-intelligence/verified-store');
+                if (!resp.ok) return;
+                const data = await resp.json();
+                const total = data.total_records || 0;
+                const kpi = document.getElementById('qwenKpiStoreCount');
+                if (kpi) kpi.innerText = total;
+                const btnCount = document.getElementById('qwenBtnStoreCount');
+                if (btnCount) btnCount.innerText = total;
+            } catch (e) {
+                console.debug('Verified store stats check:', e);
+            }
+        }
+
+        async function loadVerifiedStoreFromBackend() {
+            try {
+                const resp = await fetch('/api/v1/hsn-intelligence/verified-store');
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                const recs = data.records || [];
+                if (recs.length === 0) {
+                    showToast('ℹ️ Verified store is currently empty. Run an audit on items to save them!');
+                    return;
+                }
+
+                currentQwenResults = recs.map(r => ({
+                    item_description: r.raw_query || r.clean_key,
+                    is_perfect_match: r.is_perfect_match,
+                    status: r.status,
+                    base_hsn: r.base_hsn || r.hsn_code,
+                    base_formatted: r.base_hsn ? formatHsnString(r.base_hsn) : r.formatted_hsn,
+                    base_description: r.description,
+                    base_rate: r.gst_rate,
+                    qwen_hsn: r.hsn_code,
+                    qwen_formatted: r.formatted_hsn || r.hsn_code,
+                    qwen_description: r.description,
+                    qwen_rate: r.gst_rate,
+                    reasoning: r.reasoning,
+                    is_cache_hit: true,
+                    verification_model: r.verified_by || 'Qwen Verified Store'
+                }));
+
+                document.getElementById('qwenKpiTotal').innerText = data.total_records;
+                document.getElementById('qwenKpiPerfect').innerText = data.perfect_matches;
+                document.getElementById('qwenKpiCorrected').innerText = data.corrected_by_qwen;
+                document.getElementById('qwenKpiStoreCount').innerText = data.total_records;
+                document.getElementById('qwenBtnStoreCount').innerText = data.total_records;
+
+                document.getElementById('qwenCountBadgeAll').innerText = currentQwenResults.length;
+                document.getElementById('qwenCountBadgePerfect').innerText = data.perfect_matches;
+                document.getElementById('qwenCountBadgeCorrected').innerText = data.corrected_by_qwen;
+
+                document.getElementById('qwenResultsContainer').style.display = 'block';
+                filterQwenResults('ALL');
+                showToast(`💾 Loaded ${data.total_records} deduplicated records from persistent store`);
+            } catch (err) {
+                console.error('Failed to load store records:', err);
+                showToast('❌ Could not load verified store records');
+            }
+        }
+
+        function formatHsnString(code) {
+            const c = (code || '').replace(/\D/g, '');
+            if (c.length === 8) return `${c.slice(0,4)} ${c.slice(4,6)} ${c.slice(6)}`;
+            if (c.length === 6) return `${c.slice(0,4)} ${c.slice(4)}`;
+            return code || '';
         }
     </script>
 

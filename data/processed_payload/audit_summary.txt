@@ -8,7 +8,7 @@ Non-Compliant (Failed)  : 5
 
 [INVALID] Invoice #1: INV-2026-001
    Status             : INVALID
-   Auto-Corrections   : 36
+   Auto-Corrections   : 34
    Unresolved Errors  : 2
    * Corrections Made (Customer Errors Fixed):
      - [KEY_NAME_NORMALIZATION] system cd: 'system cd' -> 'system_cd'
@@ -73,14 +73,10 @@ Non-Compliant (Failed)  : 5
        Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
      - [KEY_NAME_NORMALIZATION] cesval: 'cesval' -> 'cessamt'
        Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
-     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-27' -> '27-10-2026'
-       Reason: Standardized date format from '2026-10-27' to '27-10-2026'
-     - [HSN_TARIFF_SCHEDULE_LOOKUP] itemdtls[1].hsncd: '85011013' -> '85011013'
-       Reason: ⚠️ NIC Rule 2176 Violation: HSN code(s)-85011013 is invalid. Wrong HSN code is being passed. Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side. Based on Statutory Tariff Master & ML HSN Intelligence, the correct official HSN is '85011013' (MENS OR BOYS SHIRTS - OF COTTON...) with statutory 5.0% GST. Auto-corrected to ensure NIC IRN compliance.
-     - [WRONG_HSN_CODE_DETECTED] itemdtls[1].hsncd: '85011013' -> '85011013'
-       Reason: ⚠️ NIC Rule 2176 Violation: HSN code(s)-85011013 is invalid. Wrong HSN code is being passed. Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side. Based on Statutory Tariff Master & ML HSN Intelligence, the correct official HSN is '85011013' (MENS OR BOYS SHIRTS - OF COTTON...) with statutory 5.0% GST. Auto-corrected to ensure NIC IRN compliance.
+     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-30' -> '30-10-2026'
+       Reason: Standardized date format from '2026-10-30' to '30-10-2026'
      - [MODULE_2_SENTINEL_HSN_RECTIFICATION] itemdtls[1].hsncd: '85011013' -> '62052000'
-       Reason: 🛡️ Module 2 HSN Sentinel Interception: Declared HSN '85011013' flagged with P(Error) = 85.5% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 85 (Electrical Machinery), but semantic text matches Chapter 62 (Articles of Apparel, Not Knitted) with 97.4% similarity., Ambiguous classification: Top match 62052000 barely leads alternative 62063000 by a margin of 0.036., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '62052000' (Post-Intervention P(Error) = 4.4%, -81.2% risk drop) with statutory 5.0% GST before transmission to NIC portal.
+       Reason: 🛡️ Module 2 HSN Sentinel Interception: Declared HSN '85011013' flagged with P(Error) = 85.5% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 85 (Electrical Machinery), but semantic text matches Chapter 62 (Articles of Apparel, Not Knitted) with 97.8% similarity., Vendor historical risk: Supplier has a 5.0% historical misclassification rate across prior filings., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '62052000' (Post-Intervention P(Error) = 2.9%, -82.7% risk drop) with statutory 5.0% GST before transmission to NIC portal.
      - [PRICE_UNIT_RATE_ANOMALY] itemdtls[1].unitrate: '10000.0' -> '10000.0'
        Reason: Severe Over-Invoicing detected: Unit rate ₹10,000.00/NOS is 23.8x higher than market maximum ₹420.00/NOS.
    ! Unresolved NIC Rule Violations:
@@ -101,12 +97,12 @@ Non-Compliant (Failed)  : 5
        Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
      - [KEY_NAME_NORMALIZATION] valdt1.cesval: 'cesval' -> 'cessamt'
        Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
-     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-27' -> '27-10-2026'
-       Reason: Standardized date format from '2026-10-27' to '27-10-2026'
+     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-30' -> '30-10-2026'
+       Reason: Standardized date format from '2026-10-30' to '30-10-2026'
      - [FORMAT_NORMALIZATION] itemdtls[1].grossamt: '28000,00' -> '28000.00'
        Reason: Replaced comma decimal separator '28000,00' with standard point notation '28000.00'
      - [MODULE_2_SENTINEL_HSN_RECTIFICATION] itemdtls[2].hsncd: '850440' -> '85423300'
-       Reason: 🛡️ Module 2 HSN Sentinel Interception: Declared HSN '850440' flagged with P(Error) = 42.9% (MEDIUM risk). SHAP Root Causes: Low semantic match confidence: Retrieval similarity score (49.3%) is insufficient to guarantee correct classification., Unit price of ₹260.00 deviates significantly (20.1x) from statutory median price (₹5,229.06) for HSN 850440., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '85423300' (Post-Intervention P(Error) = 26.2%, -16.7% risk drop) with statutory 18.0% GST before transmission to NIC portal.
+       Reason: 🛡️ Module 2 HSN Sentinel Interception: Declared HSN '850440' flagged with P(Error) = 45.2% (MEDIUM risk). SHAP Root Causes: Low semantic match confidence: Retrieval similarity score (49.0%) is insufficient to guarantee correct classification., Unit price of ₹260.00 deviates significantly (20.1x) from statutory median price (₹5,229.06) for HSN 850440., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '85423300' (Post-Intervention P(Error) = 26.2%, -18.9% risk drop) with statutory 18.0% GST before transmission to NIC portal.
      - [INVOICE_TOTALS_RECONCILIATION] valdt1.totinvval: '44741.20' -> '44740.00'
        Reason: Reconciled Total Invoice Value with sum of items, taxes, other charges minus discounts (Rule 2189)
    ! Unresolved NIC Rule Violations:
@@ -130,8 +126,8 @@ Non-Compliant (Failed)  : 5
        Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
      - [DATE_FORMAT_NORMALIZATION] expdt1.shipbdt: '25/08/2026' -> '25-08-2026'
        Reason: Standardized date format from '25/08/2026' to '25-08-2026'
-     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-27' -> '27-10-2026'
-       Reason: Standardized date format from '2026-10-27' to '27-10-2026'
+     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-30' -> '30-10-2026'
+       Reason: Standardized date format from '2026-10-30' to '30-10-2026'
      - [FORMAT_NORMALIZATION] itemdtls[1].grossamt: '1040000,00' -> '1040000.00'
        Reason: Replaced comma decimal separator '1040000,00' with standard point notation '1040000.00'
      - [FORMAT_NORMALIZATION] itemdtls[1].totitemval: '1227200,00' -> '1227200.00'
@@ -152,8 +148,8 @@ Non-Compliant (Failed)  : 5
        Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
      - [KEY_NAME_NORMALIZATION] valdt1.cesval: 'cesval' -> 'cessamt'
        Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
-     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-27' -> '27-10-2026'
-       Reason: Standardized date format from '2026-10-27' to '27-10-2026'
+     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-30' -> '30-10-2026'
+       Reason: Standardized date format from '2026-10-30' to '30-10-2026'
      - [FORMAT_NORMALIZATION] itemdtls[1].grossamt: '10000,00' -> '10000.00'
        Reason: Replaced comma decimal separator '10000,00' with standard point notation '10000.00'
      - [FORMAT_NORMALIZATION] itemdtls[1].assamt: '10000,00' -> '10000.00'
@@ -167,7 +163,7 @@ Non-Compliant (Failed)  : 5
 ---------------------------------------------------------------------------
 [INVALID] Invoice #5: INV-2026-005
    Status             : INVALID
-   Auto-Corrections   : 10
+   Auto-Corrections   : 8
    Unresolved Errors  : 2
    * Corrections Made (Customer Errors Fixed):
      - [KEY_NAME_NORMALIZATION] valdt1.cgstval: 'cgstval' -> 'cgstamt'
@@ -178,14 +174,10 @@ Non-Compliant (Failed)  : 5
        Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
      - [KEY_NAME_NORMALIZATION] valdt1.cesval: 'cesval' -> 'cessamt'
        Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
-     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-27' -> '27-10-2026'
-       Reason: Standardized date format from '2026-10-27' to '27-10-2026'
-     - [HSN_TARIFF_SCHEDULE_LOOKUP] itemdtls[1].hsncd: '760110' -> '760110'
-       Reason: ⚠️ NIC Rule 2176 Violation: HSN code(s)-760110 is invalid. Wrong HSN code is being passed. Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side. Based on Statutory Tariff Master & ML HSN Intelligence, the correct official HSN is '760110' (IRON AND NON-ALLOY STEEL IN INGOTS OR OTHER PRIMAR...) with statutory 18.0% GST. Auto-corrected to ensure NIC IRN compliance.
-     - [WRONG_HSN_CODE_DETECTED] itemdtls[1].hsncd: '760110' -> '760110'
-       Reason: ⚠️ NIC Rule 2176 Violation: HSN code(s)-760110 is invalid. Wrong HSN code is being passed. Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side. Based on Statutory Tariff Master & ML HSN Intelligence, the correct official HSN is '760110' (IRON AND NON-ALLOY STEEL IN INGOTS OR OTHER PRIMAR...) with statutory 18.0% GST. Auto-corrected to ensure NIC IRN compliance.
-     - [MODULE_2_SENTINEL_HSN_RECTIFICATION] itemdtls[1].hsncd: '760110' -> '72061090'
-       Reason: 🛡️ Module 2 HSN Sentinel Interception: Declared HSN '760110' flagged with P(Error) = 81.5% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 76 (Aluminium and Articles Thereof), but semantic text matches Chapter 72 (Iron and Steel) with 96.5% similarity., Vendor historical risk: Supplier has a 5.0% historical misclassification rate across prior filings., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '72061090' (Post-Intervention P(Error) = 4.2%, -77.3% risk drop) with statutory 18.0% GST before transmission to NIC portal.
+     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-30' -> '30-10-2026'
+       Reason: Standardized date format from '2026-10-30' to '30-10-2026'
+     - [MODULE_2_SENTINEL_HSN_RECTIFICATION] itemdtls[1].hsncd: '760110' -> '72181000'
+       Reason: 🛡️ Module 2 HSN Sentinel Interception: Declared HSN '760110' flagged with P(Error) = 86.3% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 76 (Aluminium and Articles Thereof), but semantic text matches Chapter 72 (Iron and Steel) with 90.6% similarity., Unit price of ₹210.00 deviates significantly (9.5x) from statutory median price (₹1,997.38) for HSN 760110., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '72181000' (Post-Intervention P(Error) = 16.1%, -70.2% risk drop) with statutory 18.0% GST before transmission to NIC portal.
      - [FORMAT_NORMALIZATION] itemdtls[1].grossamt: '105000,00' -> '105000.00'
        Reason: Replaced comma decimal separator '105000,00' with standard point notation '105000.00'
      - [FORMAT_NORMALIZATION] itemdtls[1].totitemval: '123900,00' -> '123900.00'
@@ -193,5 +185,5 @@ Non-Compliant (Failed)  : 5
    ! Unresolved NIC Rule Violations:
      - [Code 4009] ewbdt1: E Way Bill can be generated provided at least HSN of one item belongs to goods.
      - [Code 2176] itemdtls[1].hsncd: HSN Misclassification Screened: Declared HSN '760110' flagged by Module 2 Sentinel.
-       Resolution: Confirm and apply Recommended HSN '72061090' to unlock Stage 2 IRN generation.
+       Resolution: Confirm and apply Recommended HSN '72181000' to unlock Stage 2 IRN generation.
 ---------------------------------------------------------------------------

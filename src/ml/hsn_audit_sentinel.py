@@ -127,9 +127,10 @@ class HSNAuditSentinel:
 
     @property
     def intelligence_engine(self) -> HSNIntelligenceEngine:
-        """Lazy loader for Day 05 HSN Intelligence Engine."""
+        """Lazy loader for Day 05 HSN Intelligence Engine (reusing singleton)."""
         if self._intelligence_engine is None:
-            self._intelligence_engine = HSNIntelligenceEngine()
+            from src.nlp.hsn_intelligence import get_hsn_intelligence_engine
+            self._intelligence_engine = get_hsn_intelligence_engine()
         return self._intelligence_engine
 
     def audit_item(

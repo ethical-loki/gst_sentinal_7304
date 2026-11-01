@@ -1,0 +1,266 @@
+# E-Invoice System Regulatory Documentation, Technical Architecture & API Guidelines
+## 1. Applicability, Definition, Legal Framework & Exclusions
+- Definition & Meaning: E-Invoicing (Electronic Invoicing) is the electronic reporting, registration, and authentication of standard B2B invoices and legal documents on the government Invoice Registration Portal (IRP). It does not mean generating the invoice on the portal; rather, the invoice is generated in the taxpayer's own ERP/accounting software and registered with the IRP, which validates the schema and issues a unique 64-character Invoice Reference Number (IRN) and digitally signed QR code.
+- Statutory mandate: Governed under Rule 48(4) of the CGST Rules, 2017. E-invoicing is mandatory for registered taxpayers whose Aggregate Annual Turnover (AATO) in any preceding financial year from 2017-18 onwards exceeds ₹5 Crore.
+
+Eligible document types:
+
+Tax Invoices
+
+Credit Notes (CDN)
+
+Debit Notes (DBN)
+
+Eligible supply types:
+
+Business-to-Business (B2B)
+
+Supplies to Special Economic Zones (SEZ Developer / SEZ Unit — with or without payment of tax: SEZWP, SEZWOP)
+
+Direct Exports (EXPWP, EXPWOP)
+
+Deemed Exports (DEXP)
+
+Exempted entities (regardless of turnover):
+
+Special Economic Zone (SEZ) Units (developers are not exempt).
+
+Insurers, Banking companies, and Financial Institutions, including NBFCs.
+
+Goods Transport Agencies (GTAs) supplying road transport services.
+
+Suppliers of passenger transportation services.
+
+Multiplex movie theatre admission services.
+
+Government Departments and Local Authorities.
+
+Persons registered as Online Information Database Access and Retrieval (OIDAR) service providers.
+
+Non-eligible documents & transactions:
+
+Business-to-Consumer (B2C) transactions.
+
+Bill of Supply (exempt/nil-rated supplies).
+
+Delivery Challans (job work, supply on approval, etc.).
+
+Inward supplies liable to reverse charge from unregistered suppliers under Section 9(4).
+
+2. Standard Schema & HSN Rules
+Schema standard: Standardized electronic format based on GST INV-01 (mandatory schema version 1.1).
+
+HSN code requirements:
+
+Taxpayers with AATO > ₹5 Crore must report a minimum 6-digit HSN code for goods and services.
+
+Specified chemical chapter headings mandate an 8-digit HSN code.
+
+Mandatory payload limits:
+
+Maximum payload size: 2 MB.
+
+Line items: Minimum 1 item, maximum 1,000 items per invoice payload.
+
+3. Multi-Party & Address Handling (Bill-to / Ship-to)
+Supplier vs. Dispatch:
+
+Supplier Details: Legal entity address linked to the supplier's GSTIN.
+
+Dispatch Details: Warehouse, factory, or 3PL location from where the consignment actually departs.
+
+Buyer vs. Ship-to:
+
+Buyer Details: Entity billed (recipient GSTIN and legal address).
+
+Ship-to Details: Physical destination where goods are delivered.
+
+Tax type determination: CGST/SGST vs. IGST is strictly determined by the supplier's location and the Place of Supply (POS), regardless of dispatch or ship-to locations.
+
+4. Direct Onboarding, Security & Encryption
+Integration modes:
+
+Direct API integration (for large taxpayers meeting turnover/IP requirements).
+
+GSP (GST Suvidha Provider) integration.
+
+ERP-native automated connectors (SAP, Oracle, Tally, Zoho, etc.).
+
+IP whitelisting & rate limits:
+
+Production API access mandates whitelisting of static production public IPs (up to 4 IPs per entity).
+
+Rate-limiting thresholds apply per minute and per hour per GSTIN.
+
+Symmetric Key Encryption (SEK) architecture:
+
+Client sends an AppKey encrypted using the IRP's public RSA key to the Authentication endpoint.
+
+The IRP generates a Session Encryption Key (SEK) and returns it encrypted with the client's AppKey.
+
+The client decrypts the SEK and uses this 256-bit AES symmetric key to encrypt outgoing payload data and decrypt server responses.
+
+## 5. API Session & Token Lifecycle
+- Auth token validity:
+  - Production: The AuthToken is valid for 360 minutes (6 hours) from generation.
+  - Sandbox: Valid for 60 minutes (1 hour).
+- Token persistence: Calling the Authentication API again during active validity returns the identical active token without extending or resetting the countdown timer.
+
+Force refresh mechanism: Setting ForceRefreshAccessToken to True generates a new token only when requested within the last 10 minutes of active validity.
+
+Expired token handling: Using an expired token yields an Invalid Auth Token error, requiring an explicit re-authentication call.
+
+6. Validation Rules, Minimum Requirements & Data Integrity for IRN Generation
+Minimum validation requirements: An e-invoice request must satisfy the following minimum mandatory requirements before an IRN can be generated:
+Document numbering:
+
+Max length: 16 alphanumeric characters.
+
+Prohibited initial characters: Cannot begin with 0 (zero), / (forward slash), or - (hyphen). Allowed special characters: / and - only within the string.
+
+Uniqueness: Must be unique per document type within the supplier's financial year (1 April to 31 March).
+
+Date parameters:
+
+Document date cannot be earlier than the system floor threshold (01/04/2025 onwards).
+
+Future dating is disallowed beyond normal timezone tolerances.
+
+GSTIN & State validation:
+
+Supplier GSTIN must be active.
+
+Recipient GSTIN must be active or suspended on the document date.
+
+Cancelled recipient GSTINs are valid only if the document date falls between their registration and de-registration dates.
+
+The first two digits of supplier and recipient GSTINs must strictly reconcile with the corresponding state codes passed. For direct exports, recipient state code is fixed at 96 (Other Countries).
+
+Mathematical reconciliation & tolerances:
+
+Gross Amount = Quantity × Unit Price.
+
+Taxable Value = Gross Amount − Item Discount + Other Charges.
+
+CGST + SGST applied for intra-state supplies; IGST applied for inter-state supplies.
+
+Total invoice value tolerance: From Rupee part of calculated value − ₹1 to Calculated value rounded up to next rupee + ₹1.
+
+7. Time Limit for Reporting
+30-day reporting window: Taxpayers with an Annual Aggregate Turnover (AATO) of ₹10 Crore and above cannot report invoices, credit notes, or debit notes older than 30 days from the document date.
+
+Documents reported after 30 calendar days are rejected at the IRP validation layer.
+
+8. IRN, Signed QR Code, & Digital Signature
+System-generated IRN:
+
+A 64-character alphanumeric hash generated via SHA-256 algorithm combining: Supplier GSTIN + Fin Year + Doc Type + Doc Number.
+
+The IRN must never be passed in the request payload; it is generated and returned by the IRP.
+
+IRP Digital Signature: The IRP cryptographically signs the uploaded JSON invoice data using its own private key.
+
+Signed QR Code:
+
+Response contains a compact Base64-encoded, digitally signed QR string.
+
+Mandatory fields inside the QR code: Supplier GSTIN, Recipient GSTIN, Invoice Number, Invoice Date, Invoice Value, Number of line items, HSN of main item, and IRN.
+
+Printing rule: The QR code must be printed prominently on the final physical or PDF invoice delivered to the recipient. A tax invoice lacking the IRP-signed QR code is legally invalid under Rule 48(5).
+
+9. IRN Cancellation & Amendment Protocols
+24-hour rule: An IRN can be cancelled on the IRP only within 24 hours of generation.
+
+Prerequisites for cancellation:
+
+Cannot be cancelled if a valid or active E-Way Bill is associated with it. The E-Way Bill must be cancelled first.
+
+Cancellation reason codes:
+
+1: Duplicate
+
+2: Data entry mistake
+
+3: Order cancelled
+
+4: Others (remarks required, up to 100 characters).
+
+Irreversibility:
+
+Once cancelled, that specific IRN cannot be re-activated.
+
+The underlying document number cannot be reused for a new IRN within the same financial year.
+
+Post-24 hour rectification:
+
+After 24 hours, the IRN cannot be cancelled on the IRP.
+
+Any adjustments or cancellations must be executed through a standard GST Credit Note / Debit Note registered on the IRP, or manually amended in GSTR-1.
+
+10. Data Retrieval & Archival Constraints
+IRP data retention: The IRP acts as a validation portal, not a data repository.
+
+Get API limitations:
+
+Get IRN Details (via IRN) and Get IRN by Doc Details (via Doc Type, Doc Number, and Date) remain accessible on the IRP for only 3 days (72 hours) post-generation.
+
+Long-term storage: Taxpayers are legally obligated to store the returned signed JSON and QR code in their local ERP or archive for the statutory retention period (72 months).
+
+11. Integrated E-Way Bill (EWB) Generation
+Single-step generation: Taxpayers can generate an IRN and an E-Way Bill concurrently in a single API call by passing valid EwbDet parameters (Transport Mode, Distance, Transporter ID/Name, Vehicle Number, Doc Number).
+
+Decoupled generation:
+
+Part-A of the E-Way Bill auto-populates upon IRN creation.
+
+Part-B (vehicle details) can be updated downstream using the separate E-Way Bill API or portal referencing the IRN.
+
+Dependency rule: Cancelling an IRN invalidates its linked E-Way Bill workflow; active transit cannot proceed under an invalidated IRN.
+
+12. Downstream Auto-Population (GSTR-1 & GSTR-2B)
+GSTR-1 auto-population: All successfully generated IRNs automatically flow into the supplier’s GSTR-1 / GSTR-1A tables (Table 4A for B2B, Table 6B for SEZ, Table 6A for Exports, Table 9B for Credit/Debit Notes).
+
+Buyer visibility (GSTR-2B): Flow-through ensures legitimate Input Tax Credit (ITC) reflects in the buyer's auto-drafted GSTR-2B statement under Section 16(2)(aa).
+
+Auto-population sync lag: Auto-population is asynchronous, typically synchronizing within a few hours up to T+2 days.
+
+13. Reverse Charge Mechanism (RCM) Specifics
+Applicable transactions: Reverse Charge flag (ReverseCharge = "Y") is permissible only for B2B and SEZ supplies.
+
+Supplier obligation: In RCM supplies where the supplier is a registered entity under the e-invoicing mandate, the supplier remains legally responsible for generating the IRN (not the recipient).
+
+RCM Imports (Services): For import of services under RCM, the supplier state code must be marked as 99 (Outside India), and the recipient GSTIN must be passed.
+
+14. Verification & Offline Bulk Tools
+Mobile App Verification: GSTN/NIC provides an official e-Invoice QR Code Verifier App (Android/iOS) to verify the digital signature offline against the IRP public key.
+
+Online Portal Verification: Public "Search IRN" tool on the IRP website verifies generation timestamp and active status using document details or IRN.
+
+Bulk Generation: Taxpayers without direct API access can use the official Excel-based offline utility to generate bulk JSON batches for direct portal upload and download signed JSON responses.
+
+15. Dynamic QR Code for B2C Invoices (Distinction)
+B2C Exclusion: B2C transactions are strictly prohibited from generating an IRN on the IRP.
+
+Dynamic UPI QR Code Requirement:
+
+Large taxpayers with AATO > ₹500 Crore must print a self-generated Dynamic UPI QR Code on B2C invoices (under Section 31 read with relevant notifications).
+
+This is an internal payment QR code for digital collections, completely separate from the IRP/IRN ecosystem.
+
+16. Core API Endpoints Reference
+Endpoint / Action	Purpose
+POST /eivital/v1.04/auth	Authenticates credentials; yields AuthToken and encrypted SEK.
+POST /eivital/v1.04/Invoice	Generates 64-character IRN, signed JSON, and signed QR string.
+POST /eivital/v1.04/Invoice/Cancel	Cancels an active IRN within the 24-hour permissible window.
+GET /eivital/v1.04/Invoice/irn/{irn}	Retrieves generated invoice metadata (available up to 3 days / 72 hours).
+GET /eivital/v1.04/Invoice/Docdetails	Retrieves IRN details using Doc Type, Doc Number, and Doc Date.
+POST /eivital/v1.04/Invoice/Ewaybill	Generates E-Way Bill Part-A and Part-B linked to an active IRN.
+GET /eivital/v1.04/Invoice/Sync	Fetches taxpayer master status and e-invoice enablement records.
+17. Penalties & Legal Non-Compliance Consequences
+Non-generation penalty (Supplier): Section 122(1) penalty of 100% of the tax due or ₹10,000, whichever is higher, per invoice.
+
+Incorrect/Defective invoice penalty: Section 122(3) penalty of up to ₹25,000 for issuing an invoice without following the prescribed format.
+
+Loss of Input Tax Credit (Recipient): Under Rule 48(5), an invoice issued without an IRN and signed QR code is legally invalid; the recipient is barred from claiming Input Tax Credit under Section 16 of the CGST Act.
+
+Goods detention in transit: Consignments moving without a valid IRN/QR code (or corresponding E-Way Bill) are liable to interception and detention under Section 129, attracting a 200% penalty on the applicable tax value.

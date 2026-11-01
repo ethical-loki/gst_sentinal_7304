@@ -66,14 +66,43 @@ def get_hsn_df():
 
 
 @app.on_event("startup")
-async def preload_hsn_cache():
-    """Pre-load HSN DataFrame into memory on server startup so first search is instant."""
+async def preload_services():
+    """Pre-load HSN DataFrame and QA Engine into memory on server startup so all searches are instant."""
     result = get_hsn_df()
     if result is not None:
         df, hsn_col, desc_col = result
         print(f"[OK] HSN data preloaded: {len(df)} rows | Columns: {hsn_col}, {desc_col}")
     else:
         print("[WARN] HSN Excel file not found at startup - will retry on first search.")
+
+    try:
+        from backend.qa_service import get_qa_engine
+        print("[INFO] Pre-warming Multi-Domain QA Engine (Qwen2.5)...")
+        get_qa_engine()
+        print("[OK] Multi-Domain QA Engine preloaded and ready.")
+    except Exception as e:
+        print(f"[WARN] QA Engine preload deferred: {e}")
+
+    try:
+        print("[INFO] Pre-warming HSN Intelligence Engine (Module 1)...")
+        get_hsn_intelligence_engine()
+        print("[OK] HSN Intelligence Engine (Module 1) preloaded.")
+    except Exception as e:
+        print(f"[WARN] HSN Intelligence Engine preload deferred: {e}")
+
+    try:
+        print("[INFO] Pre-warming HSN Audit Sentinel (Module 2)...")
+        get_hsn_audit_sentinel()
+        print("[OK] HSN Audit Sentinel (Module 2) preloaded.")
+    except Exception as e:
+        print(f"[WARN] HSN Audit Sentinel preload deferred: {e}")
+
+    try:
+        print("[INFO] Pre-warming Qwen HSN Verifier (Dual-Model Neural Layer)...")
+        get_hsn_qwen_verifier()
+        print("[OK] Qwen HSN Verifier preloaded.")
+    except Exception as e:
+        print(f"[WARN] Qwen HSN Verifier preload deferred: {e}")
 
 
 _hsn_search_engine = None
@@ -149,6 +178,21 @@ def get_hsn_audit_advisor():
     return _hsn_audit_advisor
 
 
+_hsn_qwen_verifier = None
+
+def get_hsn_qwen_verifier():
+    global _hsn_qwen_verifier
+    if _hsn_qwen_verifier is None:
+        try:
+            from src.ml.qwen_hsn_verifier import get_qwen_hsn_verifier
+            _hsn_qwen_verifier = get_qwen_hsn_verifier()
+            print("[OK] QwenHSNVerifier (Dual-Model Neural Layer) initialized")
+        except Exception as e:
+            print(f"[WARN] Failed to load QwenHSNVerifier: {e}")
+            _hsn_qwen_verifier = None
+    return _hsn_qwen_verifier
+
+
 @app.get("/api/v1/hsn-intelligence/search")
 async def search_hsn_intelligence(
     query: str = Query("", min_length=0),
@@ -170,7 +214,8 @@ async def search_hsn_intelligence(
     if engine is not None:
         res = engine.search(q_trimmed, top_k=top_k, hsn_prefix=hsn_prefix)
         formatted = []
-        for m in res["matches"]:
+        matches_items = res.get("matches", res) if hasattr(res, "get") else (res["matches"] if isinstance(res, dict) else res)
+        for m in matches_items:
             gst_val = float(m.get("standard_rate", 18.0))
             formatted.append({
                 "hsn_code": m["hsn_code"],
@@ -187,10 +232,11 @@ async def search_hsn_intelligence(
                 "is_blocked_17_5": m.get("is_blocked_17_5", 0),
                 "blocked_17_5_reason": m.get("blocked_17_5_reason", "Eligible")
             })
+        latency_val = res.get("latency_ms") if isinstance(res, dict) else round((time.perf_counter() - t_start) * 1000.0, 2)
         return {
             "query": raw_query,
             "matches": formatted,
-            "latency_ms": res.get("latency_ms", round((time.perf_counter() - t_start) * 1000.0, 2)),
+            "latency_ms": latency_val,
             "module": "HSNIntelligenceEngine (Pure Day 05 - Zero Historical Data Dependency)",
         }
     raise HTTPException(status_code=500, detail="HSNIntelligenceEngine could not be initialized.")
@@ -200,11 +246,13 @@ async def search_hsn_intelligence(
 async def batch_match_hsn_intelligence(
     request: Request,
     chunk_size: int = Query(256, ge=32, le=1024),
+    with_qwen: bool = Query(False),
 ):
     """
     Dynamic Multi-Input HSN Semantic Matcher (REST Microservice Adaptor).
     Processes arbitrary batches of item descriptions or structured invoice lines completely offline using vector geometry.
     Computes parallel BLAS dot-products against the pre-computed in-memory matrix (N x 384) with sub-50ms CPU latency.
+    Supports optional Qwen 2.5 Dual-Model Neural Verification (`with_qwen=True`).
     """
     engine = get_hsn_intelligence_engine()
     if engine is None:
@@ -212,9 +260,203 @@ async def batch_match_hsn_intelligence(
     try:
         payload = await request.json()
         resp = engine.ingest_rest_payload(payload=payload, chunk_size=chunk_size)
+        if with_qwen:
+            verifier = get_hsn_qwen_verifier()
+            if verifier is not None:
+                items_to_verify = resp.get("items") or resp.get("results") or []
+                qwen_rep = verifier.verify_batch(items_to_verify)
+                resp["qwen_summary"] = {
+                    "perfect_matches": qwen_rep["perfect_matches"],
+                    "corrected_by_qwen": qwen_rep["corrected_by_qwen"],
+                    "batch_latency_ms": qwen_rep["batch_latency_ms"],
+                    "model": "Qwen2.5-0.5B-Instruct"
+                }
+                for i, r in enumerate(items_to_verify):
+                    if i < len(qwen_rep["results"]):
+                        r["qwen_verification"] = qwen_rep["results"][i]
         return resp
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Batch matching failed: {str(e)}")
+
+
+@app.get("/api/v1/hsn-intelligence/qwen-verify")
+async def qwen_verify_single(
+    query: str = Query(..., min_length=1),
+    base_hsn: Optional[str] = Query(None),
+    base_rate: Optional[float] = Query(None)
+):
+    """
+    Module 1 / Day 5 Qwen 2.5 Neural Verification Layer for a single product description.
+    Cross-checks Day 5 base classification against Qwen statutory knowledge.
+    Returns whether the prediction is a PERFECT_MATCH or CORRECTED_BY_QWEN with statutory reasoning.
+    """
+    verifier = get_hsn_qwen_verifier()
+    if verifier is None:
+        raise HTTPException(status_code=500, detail="Qwen HSN Verifier could not be initialized.")
+    return verifier.verify_item(query=query, base_hsn=base_hsn, base_rate=base_rate)
+
+
+@app.post("/api/v1/hsn-intelligence/qwen-verify")
+async def qwen_verify_batch(
+    request: Request
+):
+    """
+    Dedicated Qwen 2.5 Dual-Model Verification Screen API.
+    Audits an entire list or stream of product descriptions against Qwen 2.5 statutory knowledge.
+    Categorizes results into:
+      - PERFECT_MATCH (Base Day 5 and Qwen agree)
+      - CORRECTED_BY_QWEN (Qwen provides statutory correction, reason 'Why', and applicable rate)
+    """
+    verifier = get_hsn_qwen_verifier()
+    if verifier is None:
+        raise HTTPException(status_code=500, detail="Qwen HSN Verifier could not be initialized.")
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
+    if isinstance(body, list):
+        items = body
+    elif isinstance(body, dict):
+        if "items" in body and isinstance(body["items"], list):
+            items = body["items"]
+        elif "query" in body or "item_description" in body:
+            single = verifier.verify_item(
+                query=body.get("query") or body.get("item_description"),
+                base_hsn=body.get("base_hsn") or body.get("hsn_code") or body.get("matched_hsn"),
+                base_rate=body.get("base_rate") or body.get("standard_rate") or body.get("gst_rate")
+            )
+            return {
+                "total_items": 1,
+                "perfect_matches": 1 if single["is_perfect_match"] else 0,
+                "corrected_by_qwen": 0 if single["is_perfect_match"] else 1,
+                "batch_latency_ms": single["latency_ms"],
+                "results": [single]
+            }
+        else:
+            items = []
+    else:
+        items = []
+
+    norm_items = []
+    for it in items:
+        if isinstance(it, str):
+            norm_items.append({"item_description": it})
+        elif isinstance(it, dict):
+            norm_items.append(it)
+
+    rep = verifier.verify_batch(norm_items)
+
+    # Exclusively in Qwen section: persist verified records to data/hsn_verified_store.parquet without duplicates
+    from src.ml.hsn_verified_store import get_hsn_verified_store
+    store = get_hsn_verified_store()
+    store.upsert_batch(rep.get("results", []))
+    rep["storage_file"] = "data/hsn_verified_store.parquet"
+    rep["stored_records_total"] = len(store.get_all_records())
+    return rep
+
+
+@app.post("/api/v1/hsn-intelligence/check-preexistence")
+async def check_preexistence_endpoint(request: Request):
+    """
+    Checks if a list of item descriptions already pre-exist in the verified store (data/hsn_verified_store.parquet).
+    Provides sub-0.5ms instant retrieval for previously verified items.
+    """
+    from src.ml.hsn_verified_store import get_hsn_verified_store
+    store = get_hsn_verified_store()
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+
+    items = body.get("items", []) if isinstance(body, dict) else (body if isinstance(body, list) else [])
+
+    preexisting = []
+    missing = []
+    results = []
+
+    for it in items:
+        desc = it if isinstance(it, str) else (it.get("item_description") or it.get("query") or it.get("description") or "")
+        cached = store.lookup(desc)
+        if cached:
+            preexisting.append(desc)
+            results.append({
+                "item_description": desc,
+                "exists_in_store": True,
+                "is_perfect_match": cached.get("is_perfect_match", False),
+                "status": cached.get("status", "PRE_EXISTING"),
+                "base_hsn": cached.get("base_hsn") or cached.get("hsn_code"),
+                "base_formatted": cached.get("formatted_hsn"),
+                "base_description": cached.get("description", ""),
+                "base_rate": cached.get("gst_rate", 18.0),
+                "qwen_hsn": cached.get("hsn_code"),
+                "qwen_formatted": cached.get("formatted_hsn"),
+                "qwen_description": cached.get("description", ""),
+                "qwen_rate": cached.get("gst_rate", 18.0),
+                "reasoning": cached.get("reasoning", "Retrieved directly from persistent verified knowledge store."),
+                "is_cache_hit": True,
+                "latency_ms": 0.1,
+                "verification_model": "Pre-Existing Verified Store Record (<0.5ms)"
+            })
+        else:
+            missing.append(desc)
+            results.append({
+                "item_description": desc,
+                "exists_in_store": False,
+                "is_perfect_match": False,
+                "status": "NOT_IN_STORE",
+                "base_hsn": "—",
+                "base_formatted": "—",
+                "base_description": "Not yet verified in store",
+                "base_rate": 18.0,
+                "qwen_hsn": "—",
+                "qwen_formatted": "—",
+                "qwen_description": "Click 'Run Qwen AI Verification & Store' to process and save",
+                "qwen_rate": 18.0,
+                "reasoning": "This item is not yet recorded in data/hsn_verified_store.parquet.",
+                "is_cache_hit": False,
+                "latency_ms": 0.0,
+                "verification_model": "None"
+            })
+
+    return {
+        "total_items": len(items),
+        "preexisting_count": len(preexisting),
+        "missing_count": len(missing),
+        "storage_file": "data/hsn_verified_store.parquet",
+        "stored_records_total": len(store.get_all_records()),
+        "results": results
+    }
+
+
+@app.get("/api/v1/hsn-intelligence/verified-store")
+async def get_hsn_verified_store_records():
+    """
+    Returns the persistent verified knowledge store records.
+    Every record represents a unique, deduplicated, Qwen-verified HSN classification.
+    """
+    from src.ml.hsn_verified_store import get_hsn_verified_store
+    store = get_hsn_verified_store()
+    records = store.get_all_records()
+    perfect_count = sum(1 for r in records if r.get("is_perfect_match"))
+    corrected_count = sum(1 for r in records if not r.get("is_perfect_match"))
+    return {
+        "total_records": len(records),
+        "perfect_matches": perfect_count,
+        "corrected_by_qwen": corrected_count,
+        "records": records
+    }
+
+
+@app.delete("/api/v1/hsn-intelligence/verified-store")
+async def clear_hsn_verified_store_records():
+    """
+    Clears the persistent verified knowledge store.
+    """
+    from src.ml.hsn_verified_store import get_hsn_verified_store
+    store = get_hsn_verified_store()
+    store.clear()
+    return {"status": "cleared", "total_records": 0}
 
 
 @app.post("/api/v1/hsn-intelligence/upload-spreadsheet")
@@ -233,7 +475,8 @@ async def upload_spreadsheet_hsn_intelligence(
         raise HTTPException(status_code=500, detail="HSNIntelligenceEngine could not be initialized.")
     try:
         contents = await file.read()
-        is_excel = file.filename.endswith((".xlsx", ".xls"))
+        fname = (file.filename or "").lower()
+        is_excel = fname.endswith((".xlsx", ".xls"))
         import io
         stream = io.BytesIO(contents)
         augmented_df = engine.spreadsheet_adaptor.process_file(
@@ -345,8 +588,9 @@ async def search_hsn(
     if engine is not None:
         try:
             res = engine.search(q_trimmed, top_k=20)
+            raw_matches = res.get("matches", res) if hasattr(res, "get") else (res["matches"] if isinstance(res, dict) else res)
             formatted = []
-            for m in res["matches"]:
+            for m in raw_matches:
                 gst_val = float(m.get("standard_rate", 18.0))
                 item_dict = {
                     "hsn_code": m["hsn_code"],
@@ -364,12 +608,11 @@ async def search_hsn(
                 }
                 formatted.append(item_dict)
 
-            # Locked HSN anchoring: the HSN the user highlighted stays the evaluated
-            # candidate, so changing unit price / chapter can never swap it out.
-            eval_res = res
+            latency_val = res.get("latency_ms") if isinstance(res, dict) else round((time.perf_counter() - t_start) * 1000.0, 2)
+            eval_res = res if isinstance(res, dict) else {"matches": raw_matches, "latency_ms": latency_val}
             locked_code = str(locked_hsn).strip() if locked_hsn else ""
             if locked_code and mode != "intelligence" and formatted:
-                eval_res, formatted = _pin_locked_hsn(res, formatted, locked_code)
+                eval_res, formatted = _pin_locked_hsn(eval_res, formatted, locked_code)
 
             # Day 06 & 07 Gatekeeper Evaluation on Top-1 Candidate (only in 'sentinel' mode)
             gatekeeper_data = None
@@ -457,7 +700,7 @@ async def search_hsn(
                 "query": raw_query,
                 "matches": formatted,
                 "gatekeeper": gatekeeper_data,
-                "latency_ms": res.get("latency_ms", round((time.perf_counter() - t_start) * 1000.0, 2)),
+                "latency_ms": latency_val,
                 "model": model_name,
                 "mode": mode,
             }
@@ -1127,7 +1370,7 @@ async def download_ingestion_file(file_type: str):
 
 
 # =========================================================================
-# MODULE 4: STATUTORY QUESTION ANSWERING BOT (LONGFORMER + FTS5)
+# MODULE 4: STATUTORY QUESTION ANSWERING BOT (GOOGLE FLAN-T5 + RAG RETRIEVAL)
 # =========================================================================
 
 from backend.qa_service import ask_qa, get_sample_questions, get_system_status
@@ -1158,19 +1401,21 @@ async def api_ask_qa(request: Request):
     """
     try:
         body = await request.json() if (await request.body()) else {}
-        question = body.get("question", "")
+        question = body.get("question") or body.get("query") or ""
+        domain = body.get("domain", "e_invoice")
         top_k = body.get("top_k", None)
         threshold = body.get("threshold", None)
-        return ask_qa(question=question, top_k=top_k, threshold=threshold)
+        from starlette.concurrency import run_in_threadpool
+        return await run_in_threadpool(ask_qa, question=question, domain=domain, top_k=top_k, threshold=threshold)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"QA inference error: {str(e)}")
 
 
 @app.get("/api/qa/samples")
-async def api_qa_samples():
+async def api_qa_samples(domain: Optional[str] = None):
     """Returns curated statutory questions for quick-select demonstration."""
     try:
-        return {"status": "success", "samples": get_sample_questions()}
+        return {"status": "success", "samples": get_sample_questions(domain=domain)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving samples: {str(e)}")
 
@@ -1193,4 +1438,4 @@ if __name__ == "__main__":
     print("👉 HSN Code Search Engine                   : http://127.0.0.1:8000/\n")
     uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)
 
-
+

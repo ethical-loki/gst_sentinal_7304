@@ -61,7 +61,7 @@ import re
 import time
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, Set
 
 import numpy as np
 import pandas as pd
@@ -134,6 +134,31 @@ NOISE_PREFIX_PATTERN = re.compile(
 # Punctuation and delimiter junk to clean
 DELIMITER_JUNK_PATTERN = re.compile(r"[\t\r\n\x00-\x1f\x7f-\x9f\u200b-\u200d\ufeff]")
 EXTRA_CHARS_PATTERN = re.compile(r"[#*_~\|\^<>{}\[\]\(\);:]")
+
+# Post-nominal trade specifiers (e.g., 'servo motor ac', 'ball bearing ss', 'valve ci')
+POST_NOMINAL_QUALIFIERS = {
+    "ac", "dc", "ss", "ms", "gi", "pvc", "hdpe", "xlpe", "ci", "di",
+    "ptfe", "fr", "fhp", "hp", "kw", "w", "v", "a", "hz", "rpm",
+    "3phase", "1phase", "2phase", "phase",
+}
+
+
+def stem_trade_word(w: str) -> str:
+    """Morphological stemmer for English trade nouns and plural specifications."""
+    w = w.lower().strip()
+    if len(w) <= 3:
+        return w
+    if w.endswith("ies") and len(w) > 4:
+        return w[:-3] + "y"
+    if w.endswith("es") and len(w) > 4 and w[-3] in "shxz":
+        return w[:-2]
+    if w.endswith("s") and not w.endswith("ss") and len(w) > 3:
+        return w[:-1]
+    return w
+
+
+def stem_word_set(words) -> Set[str]:
+    return {stem_trade_word(w) for w in words if len(w) >= 2}
 
 
 def clean_trade_description(text: object) -> str:
@@ -270,11 +295,17 @@ class TradeDependencyParser:
         if not t_semantic:
             t_semantic = t_full.lower()
 
-        # 7. Extract head noun and modifiers
+        # 7. Extract head noun and modifiers considering post-nominal trade qualifiers
         sem_tokens = t_semantic.split()
         if sem_tokens:
-            head_noun = sem_tokens[-1]
-            modifiers = " ".join(sem_tokens[:-1])
+            sub_noun = sem_tokens[-1]
+            for i in range(len(sem_tokens) - 1, -1, -1):
+                tok_lower = sem_tokens[i].lower()
+                if tok_lower not in POST_NOMINAL_QUALIFIERS and len(tok_lower) > 2:
+                    sub_noun = sem_tokens[i]
+                    break
+            head_noun = sub_noun
+            modifiers = " ".join([t for t in sem_tokens if t != sub_noun])
         else:
             head_noun = t_semantic
             modifiers = ""
@@ -809,8 +840,18 @@ class DynamicHSNSemanticMatcher:
         # Joint Ensemble: 50% calibrated bi-encoder + 50% cross-encoder attention
         raw_combined = 0.50 * cal_bi + 0.50 * ce_probs
 
-        # Step C: GIR 3(a) Residual Downweighting
+        # Step C: GIR 3(a) Residual Downweighting, Subtype Compatibility & Capacity Alignment
         q_words_3 = set(re.findall(r"\b[a-z]{3,}\b", clean_query.lower()))
+        stemmed_q = stem_word_set(q_words_3)
+        q_lower = clean_query.lower()
+
+        # Technology subtype conflict mapping
+        TECH_CONFLICTS = {
+            "servo": {"squirrel cage", "squirrel", "slipring", "traction", "universal"},
+            "stepper": {"squirrel cage", "squirrel", "slipring", "traction", "universal"},
+            "brushless": {"squirrel cage", "squirrel", "slipring", "traction", "universal"},
+            "induction": {"servo", "stepper", "synchronous"},
+        }
 
         def check_real_residual(hier_text: str) -> bool:
             parts = str(hier_text).split(" -> ")
@@ -821,6 +862,8 @@ class DynamicHSNSemanticMatcher:
         for idx in range(n_cands):
             c = candidates[idx]
             h_text = str(c.get("hierarchical_text", c.get("clean_description", c.get("description", ""))))
+            desc_lower = (str(c.get("description", "")) + " " + h_text).lower()
+            code = str(c.get("hsn_code", ""))
             is_res = bool(c.get("is_residual", False)) or check_real_residual(h_text)
 
             raw_dist = c.get("distinctive_tokens", "")
@@ -829,15 +872,49 @@ class DynamicHSNSemanticMatcher:
             else:
                 dist_tokens = set(str(raw_dist).lower().split())
 
-            shares_token = bool(dist_tokens & q_words_3)
+            # Apply morphological stemming to determine shared distinctive tokens under GIR 3(a)
+            shares_token = bool(stem_word_set(dist_tokens) & stemmed_q)
 
+            multiplier = 1.0
             # Apply 0.85x down-weight multiplier for residual branch unless query explicitly shares distinctive token
             if is_res and not shares_token:
-                multiplier = 0.85
-                final_score = raw_combined[idx] * 0.85
-            else:
-                multiplier = 1.0
-                final_score = raw_combined[idx]
+                multiplier *= 0.85
+
+            # Subtype compatibility check:
+            # Penalize candidates with mutually exclusive technology qualifiers (e.g. servo motor vs squirrel cage induction)
+            for tech, conf_types in TECH_CONFLICTS.items():
+                if tech in q_lower:
+                    if any(conf in desc_lower for conf in conf_types):
+                        multiplier *= 0.80
+
+            # Statutory capacity bracket inference (e.g. Heading 8501 multi-phase AC motors):
+            # 8501 51: <= 750 W (fractional / micro / FHP)
+            # 8501 52: > 750 W to <= 75 kW (standard industrial / machinery / commercial)
+            # 8501 53: > 75 kW (heavy utility / traction / high capacity)
+            if code.startswith("85015"):
+                is_industrial = any(w in q_lower for w in ["industrial", "cnc", "machinery", "machine", "robotics", "automation", "drive"])
+                is_fractional = any(w in q_lower for w in ["micro", "mini", "fractional", "toy", "small", "fhp"])
+                is_heavy = any(w in q_lower for w in ["traction", "locomotive", "megawatt", "mw", "heavy utility", "high voltage", "substation"])
+
+                if is_industrial and not is_heavy and not is_fractional:
+                    if code.startswith("850152"):
+                        multiplier *= 1.10
+                    elif code.startswith("850153"):
+                        multiplier *= 0.85
+                    elif code.startswith("850151"):
+                        multiplier *= 0.85
+                elif is_heavy:
+                    if code.startswith("850153"):
+                        multiplier *= 1.10
+                    else:
+                        multiplier *= 0.85
+                elif is_fractional:
+                    if code.startswith("850151"):
+                        multiplier *= 1.10
+                    else:
+                        multiplier *= 0.85
+
+            final_score = raw_combined[idx] * multiplier
 
             cat_idx = candidate_indices[idx] if idx < len(candidate_indices) else -1
             reranked.append({
@@ -949,6 +1026,65 @@ class DynamicHSNSemanticMatcher:
         for i in range(m_count):
             raw_q = raw_descriptions[i]
             clean_q = cleaned_texts[i]
+
+            # Fast check: reject empty or whitespace-only descriptions upfront
+            if not clean_q or not clean_q.strip():
+                results.append(
+                    HSNBatchItemResult(
+                        query_index=i,
+                        raw_description=raw_q,
+                        cleaned_description="",
+                        decision=HSNMatchDecision.UNMAPPED,
+                        confidence_score=0.0,
+                        matched_hsn=None,
+                        matched_hsn_4digit=None,
+                        chapter=None,
+                        official_description="",
+                        standard_rate=18.0,
+                        is_blocked_17_5=0,
+                        blocked_17_5_reason="Unmapped",
+                        top_match={},
+                        runners_up=[],
+                        match_type="Empty Query Rejection",
+                    )
+                )
+                continue
+
+            # Fast check: Read-only lookup in verified store (data/hsn_verified_store.parquet)
+            try:
+                from src.ml.hsn_verified_store import get_hsn_verified_store
+                v_store = get_hsn_verified_store()
+                cached_rec = v_store.lookup(raw_q) or v_store.lookup(clean_q)
+                if cached_rec:
+                    code_val = str(cached_rec.get("hsn_code", ""))
+                    results.append(
+                        HSNBatchItemResult(
+                            query_index=i,
+                            raw_description=raw_q,
+                            cleaned_description=clean_q,
+                            decision=HSNMatchDecision.AUTOMATED_MATCH,
+                            confidence_score=1.0,
+                            matched_hsn=code_val,
+                            matched_hsn_4digit=code_val[:4] if len(code_val) >= 4 else code_val,
+                            chapter=code_val[:2] if len(code_val) >= 2 else "00",
+                            official_description=str(cached_rec.get("description", "")),
+                            standard_rate=float(cached_rec.get("gst_rate", 18.0)),
+                            is_blocked_17_5=0,
+                            blocked_17_5_reason="Eligible: General ITC",
+                            top_match={
+                                "hsn_code": code_val,
+                                "description": str(cached_rec.get("description", "")),
+                                "score": 1.0,
+                                "confidence_pct": 100.0,
+                                "standard_rate": float(cached_rec.get("gst_rate", 18.0)),
+                            },
+                            runners_up=[],
+                            match_type="Verified Qwen Memory Store (<0.5ms)",
+                        )
+                    )
+                    continue
+            except Exception:
+                pass
 
             # Fast check: direct numeric HSN input (e.g. "84818090" or "8481")
             digit_only = re.sub(r"[^0-9]", "", clean_q)
@@ -1223,13 +1359,15 @@ class SpreadsheetIngestionAdaptor:
 
     def detect_description_column(self, df: pd.DataFrame) -> str:
         """Auto-detects the item description column name in arbitrary client spreadsheets."""
-        lower_cols = {c.strip().lower(): c for c in df.columns}
+        if len(df.columns) == 0:
+            return "description"
+        lower_cols = {str(c).strip().lower(): c for c in df.columns}
         for cand in self.CANDIDATE_DESC_COLS:
             if cand in lower_cols:
                 return lower_cols[cand]
         # Fallback to first text column
         for c in df.columns:
-            if df[c].dtype == object:
+            if df[c].dtype == object or str(df[c].dtype).startswith(("str", "object")):
                 return c
         return df.columns[0]
 
@@ -1243,8 +1381,19 @@ class SpreadsheetIngestionAdaptor:
 
         joining result columns.
         """
-        col = description_col or self.detect_description_column(df)
-        items = df[col].fillna("").astype(str).tolist()
+        if len(df.columns) == 0:
+            return df.copy()
+
+        if description_col and description_col in df.columns:
+            col = description_col
+        else:
+            col = self.detect_description_column(df)
+
+        if col not in df.columns:
+            # Create synthetic column if completely missing
+            items = [""] * len(df)
+        else:
+            items = df[col].fillna("").astype(str).tolist()
 
         # Execute vectorized matching in blocks of 256–512 items
         batch_results = self.matcher.match_batch(items, chunk_size=chunk_size)
@@ -1407,6 +1556,7 @@ class HSNIntelligenceEngine(HSNSemanticSearchEngine):
         self.spreadsheet_adaptor = SpreadsheetIngestionAdaptor(self._matcher)
         self.rest_adaptor = RESTMicroserviceAdaptor(self._matcher)
         self.queue_consumer = DatabaseQueueConsumer(self._matcher)
+        self._classify_cache: Dict[Tuple[str, int, Optional[str]], SearchResultList] = {}
 
     @property
     def matcher(self) -> DynamicHSNSemanticMatcher:
@@ -1420,6 +1570,35 @@ class HSNIntelligenceEngine(HSNSemanticSearchEngine):
         hsn_prefix: Optional[str] = None,
     ) -> SearchResultList:
         """Dynamic hybrid retrieval using Two-Tier cascade BGE + Cross-Encoder Reranker + Trade Dependency Parser."""
+        # Step 0: Sub-0.5ms Verified Qwen Memory Store Fast-Path Lookup
+        try:
+            from src.ml.hsn_verified_store import get_hsn_verified_store
+            store = get_hsn_verified_store()
+            cached = store.lookup(query)
+            if cached and (not hsn_prefix or cached.get("hsn_code", "").startswith(hsn_prefix)):
+                c_code = cached["hsn_code"]
+                gst_val = float(cached.get("gst_rate", 18.0))
+                rec = {
+                    "hsn": c_code,
+                    "hsn_code": c_code,
+                    "hsn_4digit": c_code[:4],
+                    "heading": c_code[:4],
+                    "chapter": c_code[:2],
+                    "description": cached.get("description", ""),
+                    "clean_description": query.lower().strip(),
+                    "standard_rate": gst_val,
+                    "gst_rate": gst_val,
+                    "is_blocked_17_5": 0,
+                    "blocked_17_5_reason": "Eligible: General ITC",
+                    "score": 1.0,
+                    "confidence_pct": 100.0,
+                    "match_type": "Verified Qwen Memory Store (<0.5ms)",
+                    "reasoning": cached.get("reasoning", "")
+                }
+                return [rec]
+        except Exception:
+            pass
+
         t0 = time.time()
         if self._matcher is not None:
             try:
@@ -1427,14 +1606,34 @@ class HSNIntelligenceEngine(HSNSemanticSearchEngine):
                 if batch_res and len(batch_res) > 0:
                     top_item = batch_res[0]
                     matches = []
-                    m_hsn = str(top_item.get("matched_hsn", "")).strip()
-                    if m_hsn:
+                    m_raw = top_item.get("matched_hsn")
+                    m_hsn = str(m_raw or "").strip()
+                    if m_hsn in ("None", "none", "nan", "") or not m_hsn.isdigit():
+                        m_h4 = str(top_item.get("matched_hsn_4digit") or "").strip()
+                        if m_h4 and m_h4 not in ("None", "none", "nan") and m_h4.isdigit():
+                            m_hsn = m_h4
+                        else:
+                            import re
+                            m_re = re.search(r'\b(\d{4,8})\b', str(top_item.get("official_description", "")))
+                            if m_re:
+                                m_hsn = m_re.group(1)
+                            else:
+                                m_hsn = ""
+
+                    if m_hsn and m_hsn not in ("None", "none", "nan"):
+                        h4_clean = str(top_item.get("matched_hsn_4digit") or m_hsn[:4]).strip()
+                        if h4_clean in ("None", "none", "nan") or not h4_clean.isdigit():
+                            h4_clean = m_hsn[:4]
+                        chap_clean = str(top_item.get("chapter") or m_hsn[:2]).strip()
+                        if chap_clean in ("None", "none", "nan") or not chap_clean.isdigit():
+                            chap_clean = m_hsn[:2]
+
                         matches.append({
                             "hsn": m_hsn,
                             "hsn_code": m_hsn,
-                            "hsn_4digit": str(top_item.get("matched_hsn_4digit", m_hsn[:4])),
-                            "heading": str(top_item.get("matched_hsn_4digit", m_hsn[:4])),
-                            "chapter": str(top_item.get("chapter", m_hsn[:2])),
+                            "hsn_4digit": h4_clean,
+                            "heading": h4_clean,
+                            "chapter": chap_clean,
                             "description": str(top_item.get("official_description", "")),
                             "clean_description": str(top_item.get("cleaned_description", "")),
                             "standard_rate": float(top_item.get("standard_rate", 18.0)),
@@ -1446,8 +1645,8 @@ class HSNIntelligenceEngine(HSNSemanticSearchEngine):
                             "match_type": str(top_item.get("match_type", "Two-Tier Hierarchical BGE + Cross-Encoder")),
                         })
                     for r in top_item.get("runners_up", []):
-                        r_hsn = str(r.get("hsn_code", "")).strip()
-                        if r_hsn and r_hsn != m_hsn:
+                        r_hsn = str(r.get("hsn_code", "") or "").strip()
+                        if r_hsn and r_hsn not in ("None", "none", "nan") and r_hsn.isdigit() and r_hsn != m_hsn:
                             matches.append({
                                 "hsn": r_hsn,
                                 "hsn_code": r_hsn,
@@ -1488,7 +1687,16 @@ class HSNIntelligenceEngine(HSNSemanticSearchEngine):
         Returns candidate HSNs, official descriptions, standard GST rates, and similarity confidence.
         (100% backwards compatible with Day 05 callers).
         """
-        return self.search(query=trade_description, top_k=top_k, hsn_prefix=hsn_prefix)
+        cache_key = (str(trade_description).strip(), int(top_k), str(hsn_prefix).strip() if hsn_prefix else None)
+        if hasattr(self, "_classify_cache") and cache_key in self._classify_cache:
+            return self._classify_cache[cache_key]
+
+        res = self.search(query=trade_description, top_k=top_k, hsn_prefix=hsn_prefix)
+        if not hasattr(self, "_classify_cache"):
+            self._classify_cache = {}
+        if len(self._classify_cache) < 2048:
+            self._classify_cache[cache_key] = res
+        return res
 
     def match_batch(
         self,

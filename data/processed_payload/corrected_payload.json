@@ -18,10 +18,10 @@
       "docdt1": {
         "document_type": "INV",
         "docno": "INV-2026-001",
-        "docdt": "27-10-2026"
+        "docdt": "30-10-2026"
       },
-      "docdt": "27-10-2026",
-      "Dt": "27/10/2026",
+      "docdt": "30-10-2026",
+      "Dt": "30/10/2026",
       "supplierdt1": {
         "supplier_gstin": "29AAACR4849R1ZH",
         "supplier_lglnm": "ZENITH   ENTERPRISES PVT LTD",
@@ -85,21 +85,21 @@
             "rectified_hsn": "62052000",
             "statutory_rate": 5.0,
             "error_probability": 0.8555,
-            "post_intervention_risk": 0.044,
-            "risk_drop": 0.8115,
+            "post_intervention_risk": 0.0286,
+            "risk_drop": 0.8269,
             "risk_level": "HIGH",
             "reasons": [
-              "Declared HSN belongs to Chapter 85 (Electrical Machinery), but semantic text matches Chapter 62 (Articles of Apparel, Not Knitted) with 97.4% similarity.",
-              "Ambiguous classification: Top match 62052000 barely leads alternative 62063000 by a margin of 0.036.",
+              "Declared HSN belongs to Chapter 85 (Electrical Machinery), but semantic text matches Chapter 62 (Articles of Apparel, Not Knitted) with 97.8% similarity.",
+              "Vendor historical risk: Supplier has a 5.0% historical misclassification rate across prior filings.",
               "Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side."
             ],
             "shap_attributions": {
-              "top1_similarity_score": -0.522,
-              "margin_top1_top2": 0.3028,
-              "chapter_match_flag": 3.3997,
-              "token_entropy": 0.1237,
-              "unit_price_deviation": 0.135,
-              "supplier_prior_error_freq": 0.1733
+              "top1_similarity_score": -0.5467,
+              "margin_top1_top2": 0.0043,
+              "chapter_match_flag": 3.7653,
+              "token_entropy": 0.1063,
+              "unit_price_deviation": 0.1084,
+              "supplier_prior_error_freq": 0.1749
             },
             "status_badge": "FLAGGED_AND_RECTIFIED",
             "error_code": 2176,
@@ -150,10 +150,10 @@
       "docdt1": {
         "document_type": "INV",
         "docno": "INV-2026-002",
-        "docdt": "27-10-2026"
+        "docdt": "30-10-2026"
       },
-      "docdt": "27-10-2026",
-      "Dt": "27/10/2026",
+      "docdt": "30-10-2026",
+      "Dt": "30/10/2026",
       "supplierdt1": {
         "supplier_gstin": "27TUHCN2957U5ZN",
         "supplier_lglnm": "MAHARASHTRA INDUSTRIAL DISTRIBUTORS",
@@ -224,12 +224,12 @@
               "Statutory tariff code '520522' verified compliant with official schedule under Chapter 52."
             ],
             "shap_attributions": {
-              "top1_similarity_score": -0.0785,
+              "top1_similarity_score": -0.0267,
               "margin_top1_top2": -0.2172,
-              "chapter_match_flag": -1.192,
-              "token_entropy": 0.4156,
+              "chapter_match_flag": -1.1866,
+              "token_entropy": 0.3596,
               "unit_price_deviation": 0.1849,
-              "supplier_prior_error_freq": -0.1169
+              "supplier_prior_error_freq": -0.1181
             },
             "status_badge": "AUTO_APPROVED"
           }
@@ -266,22 +266,22 @@
             "original_hsn": "850440",
             "rectified_hsn": "85423300",
             "statutory_rate": 18.0,
-            "error_probability": 0.4294,
+            "error_probability": 0.4516,
             "post_intervention_risk": 0.2623,
-            "risk_drop": 0.1671,
+            "risk_drop": 0.1893,
             "risk_level": "MEDIUM",
             "reasons": [
-              "Low semantic match confidence: Retrieval similarity score (49.3%) is insufficient to guarantee correct classification.",
+              "Low semantic match confidence: Retrieval similarity score (49.0%) is insufficient to guarantee correct classification.",
               "Unit price of \u20b9260.00 deviates significantly (20.1x) from statutory median price (\u20b95,229.06) for HSN 850440.",
               "Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side."
             ],
             "shap_attributions": {
-              "top1_similarity_score": 2.6517,
-              "margin_top1_top2": -0.1213,
-              "chapter_match_flag": -1.0881,
-              "token_entropy": -0.0456,
-              "unit_price_deviation": 0.2307,
-              "supplier_prior_error_freq": 0.0302
+              "top1_similarity_score": 2.6533,
+              "margin_top1_top2": -0.0527,
+              "chapter_match_flag": -1.081,
+              "token_entropy": -0.0482,
+              "unit_price_deviation": 0.2306,
+              "supplier_prior_error_freq": 0.0407
             },
             "status_badge": "FLAGGED_AND_RECTIFIED",
             "error_code": 2176,
@@ -341,10 +341,10 @@
       "docdt1": {
         "document_type": "INV",
         "docno": "EXP-2026-003",
-        "docdt": "27-10-2026"
+        "docdt": "30-10-2026"
       },
-      "docdt": "27-10-2026",
-      "Dt": "27/10/2026",
+      "docdt": "30-10-2026",
+      "Dt": "30/10/2026",
       "supplierdt1": {
         "supplier_gstin": "33AAACR4849R1ZS",
         "supplier_lglnm": "SOUTHERN TEXTILES EXPORTS LTD",
@@ -421,20 +421,20 @@
             "original_hsn": "720839",
             "rectified_hsn": "720839",
             "statutory_rate": 18.0,
-            "error_probability": 0.0327,
-            "post_intervention_risk": 0.0327,
+            "error_probability": 0.0225,
+            "post_intervention_risk": 0.0225,
             "risk_drop": 0.0,
             "risk_level": "LOW",
             "reasons": [
               "Statutory tariff code '720839' verified compliant with official schedule under Chapter 72."
             ],
             "shap_attributions": {
-              "top1_similarity_score": -0.4495,
-              "margin_top1_top2": 0.2302,
-              "chapter_match_flag": -1.1941,
-              "token_entropy": 0.0848,
-              "unit_price_deviation": 0.0972,
-              "supplier_prior_error_freq": -0.0519
+              "top1_similarity_score": -0.0814,
+              "margin_top1_top2": -0.4401,
+              "chapter_match_flag": -1.2971,
+              "token_entropy": 0.0474,
+              "unit_price_deviation": 0.0939,
+              "supplier_prior_error_freq": 0.0276
             },
             "status_badge": "AUTO_APPROVED"
           }
@@ -483,10 +483,10 @@
       "docdt1": {
         "document_type": "INV",
         "docno": "SEZ-2026-004",
-        "docdt": "27-10-2026"
+        "docdt": "30-10-2026"
       },
-      "docdt": "27-10-2026",
-      "Dt": "27/10/2026",
+      "docdt": "30-10-2026",
+      "Dt": "30/10/2026",
       "supplierdt1": {
         "supplier_gstin": "24AAACR4849R1ZR",
         "supplier_lglnm": "GUJARAT POLYMERS & PACKAGING LTD",
@@ -549,20 +549,20 @@
             "original_hsn": "39269069",
             "rectified_hsn": "39269069",
             "statutory_rate": 18.0,
-            "error_probability": 0.0172,
-            "post_intervention_risk": 0.0172,
+            "error_probability": 0.0514,
+            "post_intervention_risk": 0.0514,
             "risk_drop": 0.0,
             "risk_level": "LOW",
             "reasons": [
               "Statutory tariff code '39269069' verified compliant with official schedule under Chapter 39."
             ],
             "shap_attributions": {
-              "top1_similarity_score": 0.2463,
-              "margin_top1_top2": -0.9289,
-              "chapter_match_flag": -1.3908,
-              "token_entropy": 0.0148,
-              "unit_price_deviation": 0.1759,
-              "supplier_prior_error_freq": -0.0222
+              "top1_similarity_score": 1.4042,
+              "margin_top1_top2": -1.0662,
+              "chapter_match_flag": -1.3381,
+              "token_entropy": 0.0537,
+              "unit_price_deviation": 0.1544,
+              "supplier_prior_error_freq": -0.0451
             },
             "status_badge": "AUTO_APPROVED"
           }
@@ -611,10 +611,10 @@
       "docdt1": {
         "document_type": "INV",
         "docno": "INV-2026-005",
-        "docdt": "27-10-2026"
+        "docdt": "30-10-2026"
       },
-      "docdt": "27-10-2026",
-      "Dt": "27/10/2026",
+      "docdt": "30-10-2026",
+      "Dt": "30/10/2026",
       "supplierdt1": {
         "supplier_gstin": "19AAACR4849R1ZI",
         "supplier_lglnm": "EASTERN METALS & ALLOYS CORPORATION",
@@ -649,7 +649,7 @@
           "prdnm": "ALUM-INGOT",
           "prddesc": "Primary Aluminum Ingot 99.7%",
           "isservc": "N",
-          "hsncd": "72061090",
+          "hsncd": "72181000",
           "qty": "500.000",
           "uqc": "KGS",
           "unitrate": "210.00",
@@ -675,24 +675,24 @@
             "is_flagged": true,
             "should_rectify": true,
             "original_hsn": "760110",
-            "rectified_hsn": "72061090",
+            "rectified_hsn": "72181000",
             "statutory_rate": 18.0,
-            "error_probability": 0.8151,
-            "post_intervention_risk": 0.0425,
-            "risk_drop": 0.7726,
+            "error_probability": 0.8626,
+            "post_intervention_risk": 0.161,
+            "risk_drop": 0.7016,
             "risk_level": "HIGH",
             "reasons": [
-              "Declared HSN belongs to Chapter 76 (Aluminium and Articles Thereof), but semantic text matches Chapter 72 (Iron and Steel) with 96.5% similarity.",
-              "Vendor historical risk: Supplier has a 5.0% historical misclassification rate across prior filings.",
+              "Declared HSN belongs to Chapter 76 (Aluminium and Articles Thereof), but semantic text matches Chapter 72 (Iron and Steel) with 90.6% similarity.",
+              "Unit price of \u20b9210.00 deviates significantly (9.5x) from statutory median price (\u20b91,997.38) for HSN 760110.",
               "Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side."
             ],
             "shap_attributions": {
-              "top1_similarity_score": -0.5937,
-              "margin_top1_top2": 0.0583,
-              "chapter_match_flag": 3.4313,
-              "token_entropy": 0.1417,
-              "unit_price_deviation": 0.0992,
-              "supplier_prior_error_freq": 0.1965
+              "top1_similarity_score": -0.2159,
+              "margin_top1_top2": 0.1214,
+              "chapter_match_flag": 3.102,
+              "token_entropy": 0.1451,
+              "unit_price_deviation": 0.2908,
+              "supplier_prior_error_freq": 0.2252
             },
             "status_badge": "FLAGGED_AND_RECTIFIED",
             "error_code": 2176,

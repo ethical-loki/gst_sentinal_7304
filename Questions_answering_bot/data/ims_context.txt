@@ -1,0 +1,84 @@
+# Invoice Management System (IMS) Regulatory Documentation, Architecture & Compliance Guidelines
+
+## 1. Conceptual Framework, Definition, Statutory Mandate, Rollout Timeline & Availability
+- Core objective & Definition: Invoice Management System (IMS) is an interactive pre-accounting and reconciliation facility launched on the GST common portal to enable recipient taxpayers to review inward supplies before Input Tax Credit (ITC) is availed in GSTR-3B.
+- Transition from passive to active verification: Under the traditional GSTR-2B mechanism, records filed by suppliers flowed passively into the recipient's draft return. IMS introduces an upfront recipient validation layer (Accept, Reject, or Keep Pending) that directly controls the auto-population of eligible ITC into GSTR-2B.
+- Statutory underpinning: Aligned with Section 38 of the CGST Act (governing the communication of eligible/ineligible credit) read with Rule 60 (Form GSTR-2B generation) and Rule 67B (supplier liability adjustments resulting from recipient credit note actions).
+- Rollout timeline & availability:
+  - System operational on the GST Portal: IMS was launched on the GST Portal from 1st October 2024.
+  - Recipient actions on inward supplies enabled: Taxpayers can take actions on received invoices and records from 14th October 2024 onwards.
+  - First IMS-driven GSTR-2B generated: 14th November 2024 (for the October 2024 tax period).
+
+## 2. User Access, Portals & Dashboard Interfaces
+- Navigation path: Dashboard > Services > Returns > Invoice Management System (IMS) Dashboard.
+- Eligible taxpayer personas:
+  - Normal registered taxpayers (including SEZ Units and SEZ Developers).
+  - Casual taxable persons.
+- Excluded taxpayer categories: Composition dealers (CMP-08/GSTR-4), Input Service Distributors (GSTR-6), Non-resident taxable persons (GSTR-5), and OIDAR service providers cannot use recipient IMS functionalities.
+- Dual-dashboard view:
+  - Inward Supplies View (Buy-Side): Used by recipient taxpayers to inspect, verify, and take actions on inward invoices, debit notes, credit notes, and amendments.
+  - Outward Supplies View (Supplier View): Accessible from mid-November 2024 onwards, allowing suppliers to monitor the specific actions (Accept / Reject / Pending / No Action) chosen by their buyers on their outward GSTR-1/1A/IFF filings.
+
+## 3. Record Ingestion, Lifecycle & Real-Time Sync
+- Real-time document ingestion: Documents appear in the recipient's IMS dashboard as soon as the supplier saves or files an original record or amendment in GSTR-1, GSTR-1A, or the Invoice Furnishing Facility (IFF).
+- Impact of supplier modifications before filing: If a supplier edits or deletes a saved document in GSTR-1/IFF before final submission, the edited version overrides the previous record in the recipient's IMS. Any previous action taken by the recipient on that draft record is automatically reset to "No Action", requiring re-verification.
+- Document types covered:
+  - Standard B2B Invoices.
+  - Supplies to SEZ units/developers with or without payment of tax (SEZWP, SEZWOP).
+  - Original Debit Notes and Credit Notes.
+  - Amendments to Invoices, Debit Notes, and Credit Notes (B2BA, CDNA, CDNRA).
+
+## 4. Recipient Actions on Records & Mathematical Treatment in GSTR-2B
+Taxpayers have four potential states for any reported inward record in IMS:
+1. Accept (A):
+  - Tax treatment: The record is included in the GSTR-2B calculation, allowing the recipient to avail Input Tax Credit (ITC) on it.
+  - Credit Note acceptance: Reduces eligible ITC in Part-B of GSTR-2B.
+2. Reject (R):
+  - Tax treatment: The record is excluded from the GSTR-2B ITC calculation, so no ITC is available on it. The document appears under the ITC Rejected / Ineligible section of GSTR-2B and does not auto-populate into GSTR-3B.
+  - Use case: Invoices with incorrect GSTIN, duplicate billings, clerical pricing mistakes, or goods/services never received.
+3. Pending (P):
+  - Tax treatment: Deferred credit. The record stays in IMS and rolls over to subsequent tax periods until an action is taken. It is not included in GSTR-2B for the current period.
+  - Use case: Goods still in transit, qualitative inspection underway, or commercial pricing disputes under vendor negotiation.
+4. No Action (Default):
+  - All ingested records default to "No Action".
+  - Deemed acceptance rule: During the generation of the monthly GSTR-2B on the 14th, any record marked as "No Action" is automatically treated as Deemed Accepted and included in available ITC.
+
+## 5. Scenarios Where Pending Action is Not Allowed (Restrictions on "Pending" Status)
+To avoid indefinite deferral of liabilities and distortions in tax accounting, the "Pending" action is legally prohibited in the following scenarios:
+- Original Credit Notes: Recipient cannot mark an original credit note issued by a supplier as Pending. Must either Accept or Reject.
+- Downward Amendments of Credit Notes: Where credit note values are reduced (unless the original credit note was accepted).
+- Upward Amendments of Credit Notes: Where the recipient had previously rejected the original credit note.
+- FCM to RCM Amendments: Invoices amended by the supplier from Forward Charge Mechanism (FCM) to Reverse Charge Mechanism (RCM).
+- Time-Barred Invoices: An invoice cannot remain pending past the statutory deadline under Section 16(4) (i.e., 30th November following the end of the financial year or the date of filing the relevant Annual Return, whichever is earlier). Once this threshold passes, pending records lapse from ITC eligibility.
+
+## 6. Downstream Supplier Tax Liability Impact (Rule 67B)
+Actions taken by recipients in IMS create direct statutory consequences for suppliers' output tax liabilities:
+- Rejection of standard B2B Invoices / Debit Notes:
+  - Rejection denies ITC to the recipient.
+  - Supplier output tax remains unchanged: Rejecting an ordinary invoice does not automatically reduce or cancel the supplier's declared tax liability in GSTR-1/GSTR-3B. The supplier must execute an amendment via GSTR-1A or issue a formal credit note.
+- Rejection of Credit Notes (Crucial Compliance Risk):
+  - When a supplier issues a credit note, they reduce their output tax liability in GSTR-1/GSTR-3B.
+  - Under Rule 67B, if the recipient rejects an original credit note or an upward credit note amendment, the reduction claimed by the supplier is invalidated.
+  - Consequence: The rejected credit note tax amount is automatically added back to the supplier's output tax liability in their GSTR-3B for the subsequent tax period.
+
+## 7. Flow of Documents, GSTR-2B Generation, Recomputation & Filing Cut-Offs
+- Scheduled generation: GSTR-2B is automatically drafted on the 14th of every month based on the state of IMS actions as of midnight on the 13th (subsequent to supplier GSTR-1/IFF filing on the 11th/13th).
+- Action mutability before GSTR-3B filing: Recipient actions are not frozen on the 14th. Taxpayers can continue changing their decisions (Accept ↔ Reject ↔ Pending) up until the actual timestamp of filing GSTR-3B for that period.
+- GSTR-2B recomputation engine: If actions on IMS are modified after the 14th, the taxpayer must click the "Recompute GSTR-2B" button on the common portal. The system recalculates eligible ITC and re-populates Table 4 of Form GSTR-3B.
+- Post-GSTR-3B freezing: Once Form GSTR-3B is officially filed, all actions taken on accepted and rejected records for that tax period are permanently locked and removed from the active IMS dashboard. Only unacted "Pending" records (and future tax-period supplies) roll forward into the active dashboard for subsequent months.
+
+## 8. Records Excluded from IMS (Direct GSTR-2B Flow)
+Certain document classes bypass IMS entirely and flow directly into Form GSTR-2B without allowing recipient Accept/Reject/Pending actions:
+- Input Service Distributor (ISD) credits: Documents distributed through Form GSTR-6.
+- Non-Resident Taxable Persons: Supplies reported in Form GSTR-5.
+- Import of Goods (Customs/ICEGATE): Overseas import entries and inward SEZ supplies via Bills of Entry.
+- Reverse Charge Supplies (RCM): Inward supplies attracting reverse charge under Section 9(3) are excluded from buyer IMS action (liability must be discharged in GSTR-3B by the recipient directly).
+- Ineligible ITC under Section 16(4): Records uploaded by suppliers past the statutory cut-off deadline (30th November of subsequent FY).
+- Place of Supply (POS) violations: Invoices where the credit is legally inadmissible due to Place of Supply rules (e.g., supplier and recipient in State A, but POS in State B).
+- Rule 37A Reversals: Systemic reversals or re-claims resulting from suppliers defaulting on backend GSTR-3B tax payment.
+
+## 9. Operational Best Practices & Vendor Collaboration
+- Periodic reconciliation cadence: Rather than batch-processing on the 13th, procurement teams should reconcile inward IMS streams weekly against Goods Receipt Notes (GRN) and Accounts Payable subledgers.
+- Avoid unintended deemed acceptance: Unreviewed invoices automatically default to "Deemed Accepted" on the 14th. Erroneously accepting invalid invoices exposes the business to interest and penalties under Section 50/122 upon subsequent audit or scrutiny.
+- Pre-rejection communication: Prior to rejecting a supplier credit note on IMS, buyers should coordinate with the vendor's billing team to avoid unintended tax liabilities landing in the supplier's GSTR-3B.
+- Audit trail maintenance: When exercising Reject or Pending actions, utilize the Remarks field (up to standard character limits) on the portal to document discrepancies (e.g., rate dispute, missing transit verification), creating an audit-ready evidentiary trail.

@@ -86,14 +86,19 @@ class HSNCounterfactualGenerator:
 
         for item in raw_list:
             if isinstance(item, str):
+                c_clean = item.strip()
+                if not c_clean or c_clean.lower() in ("none", "nan") or not c_clean.isdigit():
+                    continue
                 candidates.append({
-                    "hsn_code": item.strip(),
-                    "description": f"HSN {item.strip()}",
+                    "hsn_code": c_clean,
+                    "description": f"HSN {c_clean}",
                     "score": 0.90,
-                    "chapter": item.strip()[:2] if len(item.strip()) >= 2 else "00",
+                    "chapter": c_clean[:2] if len(c_clean) >= 2 else "00",
                 })
             elif isinstance(item, dict):
-                h_code = str(item.get("hsn_code", item.get("hsn", item.get("predicted_hsn", "")))).strip()
+                h_code = str(item.get("hsn_code", item.get("hsn", item.get("predicted_hsn", ""))) or "").strip()
+                if not h_code or h_code.lower() in ("none", "nan") or not h_code.isdigit():
+                    continue
                 score = float(item.get("score", item.get("similarity_score", 0.90)))
                 desc = str(item.get("description", item.get("clean_description", f"HSN {h_code}"))).strip()
                 chap = str(item.get("chapter", h_code[:2] if len(h_code) >= 2 else "00")).strip()

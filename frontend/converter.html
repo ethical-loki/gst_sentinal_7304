@@ -3196,26 +3196,28 @@
                     initialDirtyPayloadStr = dirtyStr;
                     currentLivePayload = result.payload;
                     validateJsonInput();
-                    
-                    // Silent background audit preview to initialize Copilot state
-                    try {
-                        const auditResp = await fetch('/api/converter/process', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ payload: result.payload })
-                        });
+
+                    // Hide modal immediately for sub-second UI responsiveness
+                    hideLoading();
+                    showToast(`Generated ${result.count} invoice(s) with dirty field values!`, 'success');
+
+                    // Non-blocking background audit preview & Copilot diagnostic
+                    fetch('/api/converter/process', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ payload: result.payload })
+                    }).then(async auditResp => {
                         if (auditResp.ok) {
                             pipelineData = await auditResp.json();
                             currentValidationReport = pipelineData.validation_report;
                             currentCorrectedPayload = pipelineData.corrected_payload;
                         }
-                    } catch (auditErr) {
+                        triggerCopilotAutoDiagnostic();
+                    }).catch(auditErr => {
                         console.warn('Initial background audit preview:', auditErr);
-                    }
-
-                    showToast(`Generated ${result.count} invoice(s) with dirty field values!`, 'success');
-                    // Automatically inspect and seed Copilot diagnostic with the fresh payload
-                    await triggerCopilotAutoDiagnostic();
+                        triggerCopilotAutoDiagnostic();
+                    });
+                    return;
                 } else {
                     throw new Error('Invalid response structure from generator API');
                 }
@@ -3241,25 +3243,27 @@
                     currentLivePayload = data.payload;
                     validateJsonInput();
 
-                    // Silent background audit preview to initialize Copilot state
-                    try {
-                        const auditResp = await fetch('/api/converter/process', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ payload: data.payload })
-                        });
+                    // Hide modal immediately for sub-second UI responsiveness
+                    hideLoading();
+                    showToast('Sample dirty payload loaded!', 'success');
+
+                    // Non-blocking background audit preview & Copilot diagnostic
+                    fetch('/api/converter/process', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ payload: data.payload })
+                    }).then(async auditResp => {
                         if (auditResp.ok) {
                             pipelineData = await auditResp.json();
                             currentValidationReport = pipelineData.validation_report;
                             currentCorrectedPayload = pipelineData.corrected_payload;
                         }
-                    } catch (auditErr) {
+                        triggerCopilotAutoDiagnostic();
+                    }).catch(auditErr => {
                         console.warn('Initial background audit preview:', auditErr);
-                    }
-
-                    showToast('Sample dirty payload loaded!', 'success');
-                    // Automatically inspect and seed Copilot diagnostic with the sample payload
-                    await triggerCopilotAutoDiagnostic();
+                        triggerCopilotAutoDiagnostic();
+                    });
+                    return;
                 }
             } catch (err) {
                 showToast(`Error loading sample: ${err.message}`, 'error');

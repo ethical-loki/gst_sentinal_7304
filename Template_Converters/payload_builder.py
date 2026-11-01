@@ -51,14 +51,15 @@ except ImportError:
         PriceAnomalyDetector = None
 
 try:
-    from .hsn_resolver import lookup_hsn_code, validate_nic_2day_rule, audit_and_rectify_line_item_sentinel
+    from .hsn_resolver import lookup_hsn_code, validate_nic_2day_rule, audit_and_rectify_line_item_sentinel, validate_hsn_statutory
 except ImportError:
     try:
-        from hsn_resolver import lookup_hsn_code, validate_nic_2day_rule, audit_and_rectify_line_item_sentinel
+        from hsn_resolver import lookup_hsn_code, validate_nic_2day_rule, audit_and_rectify_line_item_sentinel, validate_hsn_statutory
     except ImportError:
         lookup_hsn_code = None
         validate_nic_2day_rule = None
         audit_and_rectify_line_item_sentinel = None
+        validate_hsn_statutory = None
 
 try:
     from src.rules.rate_slab_checker import rate_slab_checker
@@ -2810,7 +2811,14 @@ class PayloadBuilder:
             if lookup_hsn_code:
                 # 1. Check if HSN is missing, incomplete (< 4 digits), or invalid length
                 needs_lookup = not hsncd or len(hsncd) not in [4, 6, 8] or len(hsncd) < 4
-                matches = lookup_hsn_code(prdnm, prddesc, hsn_prefix=hsncd if len(hsncd) in [2, 3, 4] else None, top_k=3)
+
+                # Fast path: If HSN code exists in CBIC statutory master, skip heavy transformer cross-encoder reranker
+                stat_meta = validate_hsn_statutory(hsncd) if (not needs_lookup and validate_hsn_statutory) else None
+                if stat_meta is not None:
+                    hsn_statutory_rate = Decimal(str(stat_meta.get("standard_rate", 18.0)))
+                    matches = []
+                else:
+                    matches = lookup_hsn_code(prdnm, prddesc, hsn_prefix=hsncd if len(hsncd) in [2, 3, 4] else None, top_k=3)
                 if matches:
                     best_m = matches[0]
                     official_hsn = best_m["hsn_code"]
@@ -2932,9 +2940,9 @@ class PayloadBuilder:
                     print(f"[WARN] Module 2 Sentinel error: {ex}")
 
             if sentinel_audit and sentinel_audit.get("should_rectify"):
-                cf_hsn = str(sentinel_audit.get("rectified_hsn", "")).strip()
+                cf_hsn = str(sentinel_audit.get("rectified_hsn", "") or "").strip()
                 is_same_heading = bool(orig_hsn and cf_hsn and len(orig_hsn) >= 4 and len(cf_hsn) >= 4 and orig_hsn[:4] == cf_hsn[:4])
-                if cf_hsn and cf_hsn != orig_hsn and not is_same_heading:
+                if cf_hsn and cf_hsn.lower() not in ("none", "nan") and cf_hsn.isdigit() and cf_hsn != orig_hsn and not is_same_heading:
                     cf_rate = Decimal(str(sentinel_audit.get("statutory_rate", 18.0)))
                     err_p = float(sentinel_audit.get("error_probability", 0.0))
                     post_p = float(sentinel_audit.get("post_intervention_risk", 0.0))

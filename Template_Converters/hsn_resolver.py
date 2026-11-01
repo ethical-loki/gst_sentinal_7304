@@ -133,9 +133,13 @@ def lookup_hsn_code(
     backed by statutory tariff master (13,000+ items).
     Supports product description, product name, and optional statutory HSN prefix (e.g. '84', '8412').
     """
-    engine = get_hsn_intelligence_engine()
     query = f"{product_name} {product_desc}".strip() or product_name or product_desc
     clean_prefix = str(hsn_prefix).strip() if hsn_prefix else None
+    cache_key = (query, clean_prefix, int(top_k))
+    if cache_key in _LOOKUP_CACHE:
+        return _LOOKUP_CACHE[cache_key]
+
+    engine = get_hsn_intelligence_engine()
 
     if engine is not None:
         res = engine.search(query, top_k=max(top_k * 2, 10), hsn_prefix=clean_prefix)
@@ -182,10 +186,16 @@ def lookup_hsn_code(
         if clean_prefix:
             pref_matches = [m for m in formatted if m["hsn_code"].startswith(clean_prefix) or m["hsn_4digit"].startswith(clean_prefix)]
             if pref_matches:
-                return pref_matches[:top_k]
+                res = pref_matches[:top_k]
+                if len(_LOOKUP_CACHE) < 2048:
+                    _LOOKUP_CACHE[cache_key] = res
+                return res
 
         if formatted:
-            return formatted[:top_k]
+            res = formatted[:top_k]
+            if len(_LOOKUP_CACHE) < 2048:
+                _LOOKUP_CACHE[cache_key] = res
+            return res
 
     # Fallback to DataFrame lookup
     df = get_hsn_master()
@@ -194,6 +204,7 @@ def lookup_hsn_code(
 
     tokens = [t for t in re.findall(r"[a-z0-9]{3,}", query.lower()) if t not in {"and", "the", "for", "with"}]
     cand = df
+    is_vehicle = bool(re.search(r"\b(car|truck|bus|vehicle|tractor|motorcycle|scooter)\b", query.lower()))
     if is_vehicle:
         veh_cand = df[df["HSN_CD"].astype(str).str.startswith("87")]
         if not veh_cand.empty:
@@ -347,13 +358,17 @@ def get_hsn_misclassification_scorer():
     return _SCORER
 
 
+_LOOKUP_CACHE = {}
+_SENTINEL_AUDIT_CACHE = {}
+
+
 def get_hsn_audit_sentinel():
     """Initializes and caches the Module 2 HSNAuditSentinel (Day 05 + Day 06 + Day 07)."""
     global _SENTINEL
     if _SENTINEL is None:
         try:
             from src.ml.hsn_audit_sentinel import HSNAuditSentinel
-            _SENTINEL = HSNAuditSentinel()
+            _SENTINEL = HSNAuditSentinel(intelligence_engine=get_hsn_intelligence_engine())
         except Exception as e:
             print(f"[WARN] Failed to load HSNAuditSentinel in hsn_resolver: {e}")
             _SENTINEL = None
@@ -454,7 +469,7 @@ def classify_rule_2176_diagnostic(
     return None
 
 
-def audit_and_rectify_line_item_sentinel(
+def _audit_and_rectify_line_item_sentinel_impl(
     product_name: str,
     product_desc: str,
     declared_hsn: str,
@@ -642,3 +657,29 @@ def audit_and_rectify_line_item_sentinel(
         "status_badge": "AUTO_APPROVED",
     }
 
+
+
+def audit_and_rectify_line_item_sentinel(
+    product_name: str,
+    product_desc: str = "",
+    declared_hsn: Optional[str] = None,
+    unit_price: float = 0.0,
+    supplier_gstin: Optional[str] = None
+) -> Dict[str, Any]:
+    clean_desc = f"{product_name} {product_desc}".strip() or product_name or product_desc or "Item"
+    declared_hsn_str = str(declared_hsn or "").strip()
+    sup_gstin_str = str(supplier_gstin).strip().upper() if supplier_gstin else ""
+    cache_key = (clean_desc, declared_hsn_str, round(float(unit_price or 0.0), 2), sup_gstin_str)
+    if cache_key in _SENTINEL_AUDIT_CACHE:
+        return _SENTINEL_AUDIT_CACHE[cache_key]
+    
+    res = _audit_and_rectify_line_item_sentinel_impl(
+        product_name=product_name,
+        product_desc=product_desc,
+        declared_hsn=declared_hsn,
+        unit_price=unit_price,
+        supplier_gstin=supplier_gstin
+    )
+    if len(_SENTINEL_AUDIT_CACHE) < 2048:
+        _SENTINEL_AUDIT_CACHE[cache_key] = res
+    return res

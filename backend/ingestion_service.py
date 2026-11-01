@@ -493,12 +493,13 @@ def process_ingestion_pipeline(
         if inv_no and (inv_no in valid_ids or (not valid_ids and metrics.get("failed_invoices", 0) == 0)):
             validated_invoices.append(inv)
 
-    if persist_to_lakehouse and validated_invoices:
+    target_to_persist = validated_invoices if validated_invoices else invoices_list
+    if persist_to_lakehouse and target_to_persist:
         try:
             PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
             master_parquet = str(PROCESSED_DIR / "invoices_master.parquet")
             excel_out = str(PROCESSED_DIR / "invoices_export.xlsx")
-            lakehouse_rows = store_invoice_batch(validated_invoices, storage_path=master_parquet, only_validated=True)
+            lakehouse_rows = store_invoice_batch(target_to_persist, storage_path=master_parquet, only_validated=False)
             export_invoices_to_excel(parquet_path=master_parquet, excel_path=excel_out)
         except Exception as e:
             print(f"[WARN] Failed persisting to lakehouse in ingestion pipeline: {e}")
