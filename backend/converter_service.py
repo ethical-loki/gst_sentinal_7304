@@ -987,8 +987,23 @@ def match_and_patch_product_hsns(
     if not items and "ItemDtls" in target_inv:
         items = target_inv["ItemDtls"]
     if not items and "einvoices" in target_inv and isinstance(target_inv["einvoices"], list) and target_inv["einvoices"]:
-        inv0 = target_inv["einvoices"][0]
-        items = inv0.get("itemdtls", inv0.get("items", inv0.get("itemlist", inv0.get("ItemList", inv0.get("ItemDtls", [])))))
+        all_patches = []
+        for inv in target_inv["einvoices"]:
+            if isinstance(inv, dict):
+                all_patches.extend(match_and_patch_product_hsns(
+                    inv, specific_code=specific_code, taxable_value=taxable_value,
+                    quantity=quantity, unit_price=unit_price, unit=unit
+                ))
+        return all_patches
+    if not items and "invoices" in target_inv and isinstance(target_inv["invoices"], list) and target_inv["invoices"]:
+        all_patches = []
+        for inv in target_inv["invoices"]:
+            if isinstance(inv, dict):
+                all_patches.extend(match_and_patch_product_hsns(
+                    inv, specific_code=specific_code, taxable_value=taxable_value,
+                    quantity=quantity, unit_price=unit_price, unit=unit
+                ))
+        return all_patches
     if not isinstance(items, list):
         return []
 
@@ -1043,7 +1058,14 @@ def match_and_patch_product_hsns(
         if specific_code:
             chosen_hsn = str(specific_code).strip()
             rec = None
-            if engine is not None:
+            try:
+                from src.ml.qwen_hsn_verifier import get_qwen_hsn_verifier
+                qv = get_qwen_hsn_verifier()
+                if qv is not None:
+                    rec = qv.get_hsn_info(chosen_hsn)
+            except Exception:
+                pass
+            if not rec and engine is not None:
                 rec = engine.validate_hsn_code(chosen_hsn)
             if not rec:
                 matches = lookup_hsn_by_description(p_name, p_desc, top_k=1, hsn_prefix=chosen_hsn[:4] if len(chosen_hsn) >= 4 else chosen_hsn)
@@ -1061,12 +1083,14 @@ def match_and_patch_product_hsns(
             sent_res = None
             try:
                 from Template_Converters.hsn_resolver import audit_and_rectify_line_item_sentinel
+                decl_rt = float(itm.get("gstrate") or itm.get("igstrt") or (float(itm.get("cgstrt", 0)) + float(itm.get("sgstrt", 0))) or 0.0)
                 sent_res = audit_and_rectify_line_item_sentinel(
                     product_name=p_name,
                     product_desc=p_desc,
                     declared_hsn=curr_hsn,
                     unit_price=float(itm.get("unitrate", itm.get("unitprice", 0.0)) or 0.0),
-                    supplier_gstin=sup_gstin
+                    supplier_gstin=sup_gstin,
+                    declared_rate=decl_rt if decl_rt > 0 else None
                 )
             except Exception:
                 pass
@@ -1276,10 +1300,16 @@ def match_and_patch_product_hsns(
 
         if "valdt1" in target_inv and isinstance(target_inv["valdt1"], dict):
             target_inv["valdt1"]["assval"] = f"{tot_ass:.2f}"
+            target_inv["valdt1"]["assamt"] = f"{tot_ass:.2f}"
+            target_inv["valdt1"]["ttlassval"] = f"{tot_ass:.2f}"
             target_inv["valdt1"]["cgstval"] = f"{tot_cgst:.2f}"
+            target_inv["valdt1"]["cgstamt"] = f"{tot_cgst:.2f}"
             target_inv["valdt1"]["sgstval"] = f"{tot_sgst:.2f}"
+            target_inv["valdt1"]["sgstamt"] = f"{tot_sgst:.2f}"
             target_inv["valdt1"]["igstval"] = f"{tot_igst:.2f}"
+            target_inv["valdt1"]["igstamt"] = f"{tot_igst:.2f}"
             target_inv["valdt1"]["cesval"] = f"{tot_cess:.2f}"
+            target_inv["valdt1"]["cessamt"] = f"{tot_cess:.2f}"
             target_inv["valdt1"]["totinvval"] = f"{tot_inv:.2f}"
 
     return patched_records
@@ -2041,15 +2071,36 @@ def process_converter_chat(
 
     # 2. Identify target invoice in payload
     target_inv = None
+    inv_list = []
     if isinstance(payload, dict):
         if "einvoices" in payload and isinstance(payload["einvoices"], list) and len(payload["einvoices"]) > 0:
-            target_inv = payload["einvoices"][0]
+            inv_list = payload["einvoices"]
         elif "invoices" in payload and isinstance(payload["invoices"], list) and len(payload["invoices"]) > 0:
-            target_inv = payload["invoices"][0]
+            inv_list = payload["invoices"]
         else:
-            target_inv = payload
+            inv_list = [payload]
     elif isinstance(payload, list) and len(payload) > 0:
-        target_inv = payload[0]
+        inv_list = payload
+    else:
+        inv_list = []
+
+    # Check if user message explicitly targets an invoice by docno, index, or product name
+    if len(inv_list) > 1:
+        for idx, inv in enumerate(inv_list, start=1):
+            docno = str(inv.get("docdt1", {}).get("docno") or inv.get("docno") or "").strip().lower()
+            if docno and docno in msg_lower:
+                target_inv = inv
+                break
+            if f"invoice {idx}" in msg_lower or f"invoice #{idx}" in msg_lower or f"inv {idx}" in msg_lower or f"inv #{idx}" in msg_lower:
+                target_inv = inv
+                break
+            itms = inv.get("itemdtls", inv.get("items", []))
+            if any(str(it.get("prdnm", "")).strip().lower() in msg_lower for it in itms if it.get("prdnm")):
+                target_inv = inv
+                break
+
+    if not target_inv:
+        target_inv = inv_list[0] if inv_list else payload
 
     if not isinstance(target_inv, dict):
         return {
@@ -2200,6 +2251,7 @@ def process_converter_chat(
             p_desc = str(it.get("prddesc", p_nm)).strip()
             h_cd = re.sub(r"[^0-9]", "", str(it.get("hsncd", it.get("hsn", "")) or ""))
             u_rate = float(it.get("unitrate", it.get("unitprice", it.get("unit_price", it.get("rate", 1000.0)))) or 1000.0)
+            decl_rt = float(it.get("igstrt") or (float(it.get("cgstrt", 0)) + float(it.get("sgstrt", 0))) or it.get("gstrate", 0) or 0.0)
 
             sentinel_audit = None
             try:
@@ -2209,7 +2261,8 @@ def process_converter_chat(
                     product_desc=p_desc,
                     declared_hsn=h_cd,
                     unit_price=u_rate,
-                    supplier_gstin=curr_sup_gstin
+                    supplier_gstin=curr_sup_gstin,
+                    declared_rate=decl_rt if decl_rt > 0 else None
                 )
             except Exception:
                 try:
@@ -2219,7 +2272,8 @@ def process_converter_chat(
                         product_desc=p_desc,
                         declared_hsn=h_cd,
                         unit_price=u_rate,
-                        supplier_gstin=curr_sup_gstin
+                        supplier_gstin=curr_sup_gstin,
+                        declared_rate=decl_rt if decl_rt > 0 else None
                     )
                 except Exception:
                     pass
@@ -2248,11 +2302,16 @@ def process_converter_chat(
 
             is_same_heading = bool(h_cd and rec_hsn and len(h_cd) >= 4 and len(rec_hsn) >= 4 and h_cd[:4] == rec_hsn[:4])
 
+            # If Qwen layer confirmed HSN and tax rate are correct, it is already resolved (no error declared)
+            qwen_verified_ok = bool(sentinel_audit and not sentinel_audit.get("should_rectify") and not sentinel_audit.get("is_flagged"))
+            rate_is_aligned = bool(decl_rt <= 0 or abs(decl_rt - rec_rate) < 0.1)
+
             is_already_resolved = bool(
-                is_valid_domain_match or
-                (h_cd and rec_hsn and h_cd == rec_hsn and len(h_cd) in [6, 8]) or
-                (is_same_heading and len(h_cd) in [6, 8] and not has_hsn_err) or
-                (len(h_cd) in [6, 8] and best_h and h_cd[:2] == best_h[:2] and not is_ch_mismatch and not has_hsn_err)
+                qwen_verified_ok or
+                (is_valid_domain_match and rate_is_aligned) or
+                (h_cd and rec_hsn and h_cd == rec_hsn and len(h_cd) in [6, 8] and rate_is_aligned) or
+                (is_same_heading and len(h_cd) in [6, 8] and not has_hsn_err and rate_is_aligned) or
+                (len(h_cd) in [6, 8] and best_h and h_cd[:2] == best_h[:2] and not is_ch_mismatch and not has_hsn_err and rate_is_aligned)
             )
             is_sent_flagged = bool(sentinel_audit and (sentinel_audit.get("is_flagged") or sentinel_audit.get("should_rectify")) and rec_hsn != h_cd and not is_valid_domain_match and not is_same_heading)
 
@@ -2501,8 +2560,53 @@ def process_converter_chat(
                 )
             return prompt_text, ["Vehicle is KA01AB1234", "Verify vehicle number", "Disable E-Way Bill"]
 
+        # 5B. Shipping Details & Dispatch State Alignment (NIC Rule 2200)
+        ship_disp_errs = [
+            e for e in err_list 
+            if any(k in str(e.get("field", "")).lower() for k in ["shipdtl", "shipdt1", "ship_", "dispdt1", "dispdtl", "disp_"])
+        ]
+        if ship_disp_errs:
+            s_err = ship_disp_errs[0]
+            fld_name = str(s_err.get("field", "")).lower()
+            is_ship = "ship" in fld_name
+            prefix_label = "Ship" if is_ship else "Disp"
+            section_name = "Shipping Details (Ship-to / Port Details)" if is_ship else "Dispatch Details (Dispatch-from Details)"
+            sec_dt = target_invoice.get("shipdt1" if is_ship else "dispdt1", target_invoice.get("shipdtl" if is_ship else "dispdtl", {}))
+            sec_gstin = str(sec_dt.get("ship_gstin" if is_ship else "disp_gstin", target_invoice.get("ship_gstin" if is_ship else "disp_gstin", "")) or "").strip()
+            sec_st = str(sec_dt.get("ship_state" if is_ship else "disp_state", target_invoice.get("ship_state" if is_ship else "disp_state", "")) or "").strip()
+            sec_loc = str(sec_dt.get("ship_loc" if is_ship else "disp_loc", "") or "").strip()
+            sec_pin = str(sec_dt.get("ship_pin" if is_ship else "disp_pin", "") or "").strip()
+            sec_nm = str(sec_dt.get("ship_lglnm" if is_ship else "disp_trdnm", sec_dt.get("ship_bnm", "")) or "").strip()
+            
+            st_name = STATE_MASTER.get(sec_st, {}).get("name", f"State {sec_st}")
+            gst_st_name = STATE_MASTER.get(sec_gstin[:2], {}).get("name", f"State {sec_gstin[:2]}") if len(sec_gstin) >= 2 else ""
+
+            prompt_text = (
+                f"👉 **{section_name} GSTIN & State Code Alignment (NIC Rule 2200):**\n\n"
+                f"🚢 **Facility / Destination:** **`{sec_nm or sec_loc or 'Port / Warehouse'}`** (PIN: `{sec_pin}`, State: **{sec_st} - {st_name}**)\n"
+                f"• Declared GSTIN: `{sec_gstin or '(not specified)'}`" + (f" (Jurisdiction: **State {sec_gstin[:2]} - {gst_st_name}**)\n" if len(sec_gstin) >= 2 else "\n") +
+                f"• Declared State Code: **`{sec_st}`**\n\n"
+                f"⚠️ **NIC Rule 2200 Violation:** If a 15-character GSTIN is specified in {section_name}, "
+                f"the state code (`{sec_st}`) must match the first 2 digits of that GSTIN (`{sec_gstin[:2] if len(sec_gstin)>=2 else ''}`).\n\n"
+                f"• For port exports (e.g. Chennai Port) or third-party facilities located in another state, "
+                f"the facility is not registered under the supplier's state GSTIN. The GSTIN should be cleared or set to `URP`.\n"
+                f"• Alternatively, align the facility state code to `{sec_gstin[:2] if len(sec_gstin)>=2 else '36'}`."
+            )
+            actions = [
+                f"Clear {prefix_label} GSTIN for Port Export",
+                f"Set {prefix_label} GSTIN: URP",
+                f"Set {prefix_label} State: {sec_gstin[:2] if len(sec_gstin)>=2 else sec_st}",
+                "✏️ Edit Line Items / HSN",
+                "⚡ Auto-Fix All Compliance Errors"
+            ]
+            return prompt_text, actions
+
         # 6. Pincode / State Mismatch Diagnostics (Enriched with Taxpayer Name & Government Portal Data)
-        pin_errs = [e for e in err_list if "pin" in str(e.get("field", "")).lower() or "state" in str(e.get("field", "")).lower() or str(e.get("error_code")) in ["2274", "2275", "2242", "3041"]]
+        pin_errs = [
+            e for e in err_list 
+            if ("pin" in str(e.get("field", "")).lower() or "state" in str(e.get("field", "")).lower() or str(e.get("error_code")) in ["2274", "2275", "2242", "3041"])
+            and not any(k in str(e.get("field", "")).lower() for k in ["ship", "disp"])
+        ]
         if pin_errs:
             pe = pin_errs[0]
             is_sup = "supplier" in str(pe.get("field", "")).lower()
@@ -2809,6 +2913,34 @@ def process_converter_chat(
                 target_inv["buyerdt1"]["buyer_gstin"] = sugg_b
             patch_summary.append(f"Assigned registered 15-char Buyer GSTIN: {sugg_b} for B2B")
 
+        # 5C. Fix Shipping Details / Dispatch Details (NIC Rule 2200)
+        for s_key in ["shipdt1", "shipdtl"]:
+            if s_key in target_inv and isinstance(target_inv[s_key], dict):
+                s_dict = target_inv[s_key]
+                s_gst = str(s_dict.get("ship_gstin", target_inv.get("ship_gstin", "")) or "").strip()
+                s_st = str(s_dict.get("ship_state", target_inv.get("ship_state", "")) or "").strip()
+                if s_gst and s_gst != "URP" and len(s_gst) == 15 and s_st:
+                    if s_gst[:2] != s_st:
+                        is_exp = target_inv.get("trancatg", target_inv.get("trandt1", {}).get("trancatg", "")) == "EXP" or "port" in str(s_dict.get("ship_lglnm", "")).lower()
+                        if is_exp:
+                            s_dict["ship_gstin"] = "URP"
+                            target_inv["ship_gstin"] = "URP"
+                            patch_summary.append("Set ship_gstin to 'URP' for port terminal export (NIC Rule 2200 compliant)")
+                        else:
+                            s_dict["ship_state"] = s_gst[:2]
+                            target_inv["ship_state"] = s_gst[:2]
+                            patch_summary.append(f"Aligned ship_state to '{s_gst[:2]}' matching ship_gstin prefix")
+        for d_key in ["dispdt1", "dispdtl"]:
+            if d_key in target_inv and isinstance(target_inv[d_key], dict):
+                d_dict = target_inv[d_key]
+                d_gst = str(d_dict.get("disp_gstin", target_inv.get("disp_gstin", "")) or "").strip()
+                d_st = str(d_dict.get("disp_state", target_inv.get("disp_state", "")) or "").strip()
+                if d_gst and d_gst != "URP" and len(d_gst) == 15 and d_st:
+                    if d_gst[:2] != d_st:
+                        d_dict["disp_state"] = d_gst[:2]
+                        target_inv["disp_state"] = d_gst[:2]
+                        patch_summary.append(f"Aligned disp_state to '{d_gst[:2]}' matching disp_gstin prefix")
+
         # 6. Fix Product HSN & Tariffs
         hsn_patches = match_and_patch_product_hsns(target_inv)
         if hsn_patches:
@@ -2895,10 +3027,15 @@ def process_converter_chat(
                 target_inv["valdtls"]["totinvval"] = float(f"{total_calc:.2f}")
             if "valdt1" in target_inv and isinstance(target_inv["valdt1"], dict):
                 target_inv["valdt1"]["ttlassval"] = f"{tot_ass:.2f}"
+                target_inv["valdt1"]["assamt"] = f"{tot_ass:.2f}"
                 target_inv["valdt1"]["cgstval"] = f"{tot_cgst:.2f}"
+                target_inv["valdt1"]["cgstamt"] = f"{tot_cgst:.2f}"
                 target_inv["valdt1"]["sgstval"] = f"{tot_sgst:.2f}"
+                target_inv["valdt1"]["sgstamt"] = f"{tot_sgst:.2f}"
                 target_inv["valdt1"]["igstval"] = f"{tot_igst:.2f}"
+                target_inv["valdt1"]["igstamt"] = f"{tot_igst:.2f}"
                 target_inv["valdt1"]["cesval"] = f"{tot_cess:.2f}"
+                target_inv["valdt1"]["cessamt"] = f"{tot_cess:.2f}"
                 target_inv["valdt1"]["totinvval"] = f"{total_calc:.2f}"
             patch_summary.append("Rebalanced all tax calculations and invoice totals")
 
@@ -3141,6 +3278,48 @@ def process_converter_chat(
             f"Set `trandt1.transactionmode` to **`{mode_code}`** ({mode_names.get(mode_code, '')}).\n"
             f"NIC delivery mode requirement is satisfied."
         )
+
+    # -------------------------------------------------------------
+    # INTENT 2B: Shipping Details & Dispatch State Alignment (NIC Rule 2200 / 2201)
+    # -------------------------------------------------------------
+    elif not patch_applied and any(k in msg_lower for k in [
+        "ship gstin", "ship state", "ship_state", "disp gstin", "disp state", "disp_state",
+        "clear ship gstin", "clear disp gstin", "shipdtl", "dispdt1", "shipping details", "dispatch details"
+    ]):
+        is_ship = not any(k in msg_lower for k in ["disp", "dispatch"])
+        target_dict_key = "shipdt1" if is_ship else "dispdt1"
+        fallback_key = "shipdtl" if is_ship else "dispdtl"
+        gstin_fld = "ship_gstin" if is_ship else "disp_gstin"
+        state_fld = "ship_state" if is_ship else "disp_state"
+        pin_fld = "ship_pin" if is_ship else "disp_pin"
+
+        if target_dict_key not in target_inv or not isinstance(target_inv[target_dict_key], dict):
+            target_inv[target_dict_key] = target_inv.get(fallback_key, {})
+        sec_d = target_inv[target_dict_key]
+
+        if any(k in msg_lower for k in ["clear", "urp", "unregistered", "port export"]):
+            sec_d[gstin_fld] = "URP"
+            target_inv[gstin_fld] = "URP"
+            patch_applied = True
+            patch_summary.append(f"Set {gstin_fld} to 'URP' for port export facility (NIC Rule 2200 compliant)")
+            reply_lines.append(f"🚢 **{gstin_fld} Updated to 'URP'!**\n\nFacility in another state is designated as URP port/terminal facility per NIC Rule 2200.")
+        else:
+            m_st = re.search(r"state\s*[:=]?\s*([0-9]{1,2})", msg_lower)
+            if m_st:
+                new_st = m_st.group(1).zfill(2)
+                sec_d[state_fld] = new_st
+                target_inv[state_fld] = new_st
+                patch_applied = True
+                patch_summary.append(f"Updated {state_fld} to '{new_st}'")
+                reply_lines.append(f"🚢 **{state_fld} Updated!** Set to State **{new_st}**.")
+
+            m_pin = re.search(r"pin\s*[:=]?\s*([0-9]{6})", msg_lower)
+            if m_pin:
+                new_pin = m_pin.group(1)
+                sec_d[pin_fld] = new_pin
+                target_inv[pin_fld] = new_pin
+                patch_applied = True
+                patch_summary.append(f"Updated {pin_fld} to '{new_pin}'")
 
     # -------------------------------------------------------------
     # INTENT 3: Product HSN Code Fetch & Edit via Statutory ML HSN Intelligence Model
@@ -4360,10 +4539,15 @@ def process_converter_chat(
 
             if "valdt1" in target_inv and isinstance(target_inv["valdt1"], dict):
                 target_inv["valdt1"]["ttlassval"] = f"{tot_ass:.2f}"
+                target_inv["valdt1"]["assamt"] = f"{tot_ass:.2f}"
                 target_inv["valdt1"]["cgstval"] = f"{tot_cgst:.2f}"
+                target_inv["valdt1"]["cgstamt"] = f"{tot_cgst:.2f}"
                 target_inv["valdt1"]["sgstval"] = f"{tot_sgst:.2f}"
+                target_inv["valdt1"]["sgstamt"] = f"{tot_sgst:.2f}"
                 target_inv["valdt1"]["igstval"] = f"{tot_igst:.2f}"
+                target_inv["valdt1"]["igstamt"] = f"{tot_igst:.2f}"
                 target_inv["valdt1"]["cesval"] = f"{tot_cess:.2f}"
+                target_inv["valdt1"]["cessamt"] = f"{tot_cess:.2f}"
                 target_inv["valdt1"]["totinvval"] = f"{total_calc:.2f}"
 
             patch_applied = True
@@ -4712,6 +4896,15 @@ def process_converter_chat(
             f"Line-item rates, tax amounts and invoice totals were recalculated automatically.\n"
         )
 
+
+        # Strip legacy dirty keys RevChrg and Dt if clean counterparts exist
+        target_inv.pop("RevChrg", None)
+        target_inv.pop("Dt", None)
+        if "trandt1" in target_inv and isinstance(target_inv["trandt1"], dict):
+            target_inv["trandt1"].pop("RevChrg", None)
+        if "docdt1" in target_inv and isinstance(target_inv["docdt1"], dict):
+            target_inv["docdt1"].pop("Dt", None)
+
     # -------------------------------------------------------------
     # POST-PATCH RE-VALIDATION & NEXT STEP SEEDING
     # -------------------------------------------------------------
@@ -4729,10 +4922,17 @@ def process_converter_chat(
             new_audit_records = pipeline_res.get("audit_records", [])
             new_summary_text = pipeline_res.get("summary_text", "")
             new_corrected_payload = pipeline_res.get("corrected_payload", payload)
-            res0 = new_report.get("results", [{}])[0] if new_report.get("results") else {}
-            new_err_count = res0.get("error_count", 0)
+            results_list = new_report.get("results", [])
+            total_batch_errs = sum(r.get("error_count", 0) for r in results_list)
+            failed_inv_count = new_report.get("failed_invoices", sum(1 for r in results_list if r.get("error_count", 0) > 0))
+            valid_inv_count = new_report.get("valid_invoices", sum(1 for r in results_list if r.get("error_count", 0) == 0))
+            total_inv_count = len(results_list)
 
-            reply_lines.append(f"\n🔄 **Live Re-Audit Status:** {new_err_count} unresolved errors remaining.")
+            if total_inv_count > 1:
+                reply_lines.append(f"\n🔄 **Live Batch Re-Audit Status:** {valid_inv_count}/{total_inv_count} invoices compliant ({total_batch_errs} unresolved error(s) across {failed_inv_count} invoice(s)).")
+            else:
+                reply_lines.append(f"\n🔄 **Live Re-Audit Status:** {total_batch_errs} unresolved errors remaining.")
+            new_err_count = total_batch_errs
             if new_err_count == 0:
                 if target_inv.get("irn"):
                     reply_lines.append("🎉 **Invoice is 100% compliant with active IRN!** Ready for download or ERP dispatch.")
@@ -4748,6 +4948,7 @@ def process_converter_chat(
                     interactive_actions = ["🚀 Generate IRN", "📥 Download Corrected JSON"]
                     quick_prompts = ["🚀 Generate IRN", "📥 Download Corrected JSON"]
             else:
+                res0 = results_list[0] if results_list else {}
                 remaining_errors = res0.get("errors", [])
                 next_prompt, next_actions = get_friendly_next_step(target_inv, remaining_errors)
                 if next_prompt:

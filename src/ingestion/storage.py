@@ -53,51 +53,221 @@ DEFAULT_STORAGE_PATH = os.path.join(DEFAULT_STORAGE_DIR, "invoices_master.parque
 DEFAULT_EXCEL_PATH = os.path.join(DEFAULT_STORAGE_DIR, "invoices_export.xlsx")
 
 FLATTENED_INVOICE_SCHEMA = pa.schema([
-    # Document & Transaction Details
+    # 1. User Canonical Header / Identification
+    ("self_gstin", pa.string()),
+    ("system_cd", pa.string()),
+    ("branch_cd", pa.string()),
+    ("vertical_cd", pa.string()),
+    ("irnreq", pa.string()),
+    ("irn", pa.string()),
+
+    # 2. Transaction Parameters
+    ("trancatg", pa.string()),
+    ("reversecharge", pa.string()),
+    ("transactionmode", pa.string()),
+    ("ecom_gstin", pa.string()),
+    ("igst_on_intra", pa.string()),
+
+    # 3. Export Parameters
+    ("expcat", pa.string()),
+    ("wthpay", pa.string()),
+    ("shipbno", pa.string()),
+    ("shipbdt", pa.string()),
+    ("port", pa.string()),
+    ("invforcur", pa.string()),
+    ("forcur", pa.string()),
+    ("refclm", pa.string()),
+    ("cntcode", pa.string()),
+    ("expduty", pa.string()),
+
+    # 4. Document Reference
+    ("document_type", pa.string()),
+    ("docno", pa.string()),
+    ("docdt", pa.string()),
+    ("orginvno", pa.string()),
+    ("orginvdt", pa.string()),
+
+    # 5. Supplier Details
+    ("supplier_gstin", pa.string()),
+    ("supplier_lglnm", pa.string()),
+    ("supplier_trdnm", pa.string()),
+    ("supplier_bno", pa.string()),
+    ("supplier_bnm", pa.string()),
+    ("supplier_flno", pa.string()),
+    ("supplier_loc", pa.string()),
+    ("supplier_dst", pa.string()),
+    ("supplier_pin", pa.string()),
+    ("supplier_state", pa.string()),
+    ("supplier_phone", pa.string()),
+    ("supplier_email", pa.string()),
+
+    # 6. Customer Code
+    ("cust_cd", pa.string()),
+
+    # 7. Buyer Details
+    ("buyer_gstin", pa.string()),
+    ("buyer_lglnm", pa.string()),
+    ("buyer_trdnm", pa.string()),
+    ("buyer_bno", pa.string()),
+    ("buyer_bnm", pa.string()),
+    ("buyer_flno", pa.string()),
+    ("buyer_loc", pa.string()),
+    ("buyer_dst", pa.string()),
+    ("buyer_pin", pa.string()),
+    ("buyer_state", pa.string()),
+    ("pos", pa.string()),
+    ("buyer_phone", pa.string()),
+    ("buyer_email", pa.string()),
+
+    # 8. Dispatch Details
+    ("disp_gstin", pa.string()),
+    ("disp_trdnm", pa.string()),
+    ("disp_bno", pa.string()),
+    ("disp_bnm", pa.string()),
+    ("disp_flno", pa.string()),
+    ("disp_loc", pa.string()),
+    ("disp_dst", pa.string()),
+    ("disp_pin", pa.string()),
+    ("disp_state", pa.string()),
+    ("disp_phone", pa.string()),
+    ("disp_email", pa.string()),
+
+    # 9. Shipping Details
+    ("ship_gstin", pa.string()),
+    ("ship_lglnm", pa.string()),
+    ("ship_trdnm", pa.string()),
+    ("ship_bno", pa.string()),
+    ("ship_bnm", pa.string()),
+    ("ship_flno", pa.string()),
+    ("ship_loc", pa.string()),
+    ("ship_dst", pa.string()),
+    ("ship_pin", pa.string()),
+    ("ship_state", pa.string()),
+    ("ship_phone", pa.string()),
+    ("ship_email", pa.string()),
+
+    # 10. Period
+    ("frmdt", pa.string()),
+    ("todt", pa.string()),
+
+    # 11. Line Item Details
+    ("itemcd", pa.string()),
+    ("prdnm", pa.string()),
+    ("prddesc", pa.string()),
+    ("isservc", pa.string()),
+    ("hsncd", pa.string()),
+    ("barcde", pa.string()),
+    ("qty", pa.float64()),
+    ("freeqty", pa.float64()),
+    ("uqc", pa.string()),
+    ("unitrate", pa.float64()),
+    ("grossamt", pa.float64()),
+    ("discount", pa.float64()),
+    ("othchrg", pa.float64()),
+    ("pretaxval", pa.float64()),
+    ("assamt", pa.float64()),
+    ("taxability", pa.string()),
+    ("diffpercent", pa.float64()),
+    ("cgstrt", pa.float64()),
+    ("cgstamt", pa.float64()),
+    ("sgstrt", pa.float64()),
+    ("sgstamt", pa.float64()),
+    ("igstrt", pa.float64()),
+    ("igstamt", pa.float64()),
+    ("cessrt", pa.float64()),
+    ("cessamt", pa.float64()),
+    ("cessnonadval", pa.float64()),
+    ("statecessrt", pa.float64()),
+    ("statecessamt", pa.float64()),
+    ("statecesnonadvlamt", pa.float64()),
+    ("totitemval", pa.float64()),
+    ("ordlineref", pa.string()),
+    ("orgcntry", pa.string()),
+    ("prdsino", pa.string()),
+    ("batchname", pa.string()),
+    ("batchexpirydt", pa.string()),
+    ("batchwarrantydt", pa.string()),
+
+    # 12. Valuation Totals
+    ("ttlassval", pa.float64()),
+    ("cgstval", pa.float64()),
+    ("sgstval", pa.float64()),
+    ("igstval", pa.float64()),
+    ("cesval", pa.float64()),
+    ("stcesval", pa.float64()),
+    ("cesnonadval", pa.float64()),
+    ("discval", pa.float64()),
+    ("othchrgval", pa.float64()),
+    ("rndoffamt", pa.float64()),
+    ("totinvval", pa.float64()),
+
+    # 13. Payment
+    ("payee_name", pa.string()),
+    ("pmtmode", pa.string()),
+    ("fininsbr", pa.string()),
+    ("payterm", pa.string()),
+    ("payinstr", pa.string()),
+    ("crtrn", pa.string()),
+    ("dirdr", pa.string()),
+    ("crday", pa.string()),
+    ("paidamt", pa.float64()),
+    ("balamt", pa.float64()),
+    ("payduedt", pa.string()),
+    ("acctdet", pa.string()),
+    ("bnknm", pa.string()),
+    ("brnchnm", pa.string()),
+
+    # 14. References
+    ("invrmk", pa.string()),
+    ("invstdt", pa.string()),
+    ("invenddt", pa.string()),
+    ("othrefno", pa.string()),
+    ("recadvref", pa.string()),
+    ("recadvdt", pa.string()),
+    ("tendref", pa.string()),
+    ("contrref", pa.string()),
+    ("extref", pa.string()),
+    ("projref", pa.string()),
+    ("porefdt", pa.string()),
+    ("poref", pa.string()),
+
+    # 15. E-Way Bill
+    ("ewayreq", pa.string()),
+    ("subsupplytype", pa.string()),
+    ("mode_of_transport", pa.string()),
+    ("distance_of_transport", pa.float64()),
+    ("transporter_id", pa.string()),
+    ("transporter_name", pa.string()),
+    ("transport_doc_no", pa.string()),
+    ("transporter_doc_date", pa.string()),
+    ("veh_type", pa.string()),
+    ("veh_number", pa.string()),
+
+    # 16. ERP / Custom Metadata
+    ("brand_name", pa.string()),
+    ("client_name", pa.string()),
+    ("vendor_id", pa.string()),
+    ("period", pa.string()),
+    ("upiid", pa.string()),
+    ("upipayeename", pa.string()),
+    ("upiacctnumber", pa.string()),
+    ("upiactifsccd", pa.string()),
+
+    # 17. Lakehouse Compatibility Aliases & Telemetry
     ("invoice_id", pa.string()),
     ("doc_type", pa.string()),
     ("doc_date", pa.string()),
     ("transaction_category", pa.string()),
     ("reverse_charge", pa.string()),
-    ("igst_on_intra", pa.string()),
-
-    # Supplier Details
-    ("supplier_gstin", pa.string()),
-    ("supplier_lglnm", pa.string()),
-    ("supplier_trdnm", pa.string()),
-    ("supplier_state", pa.string()),
-    ("supplier_pin", pa.string()),
-    ("supplier_loc", pa.string()),
-    ("supplier_phone", pa.string()),
-    ("supplier_email", pa.string()),
-
-    # Buyer Details
-    ("buyer_gstin", pa.string()),
-    ("buyer_lglnm", pa.string()),
-    ("buyer_trdnm", pa.string()),
-    ("buyer_state", pa.string()),
-    ("buyer_pin", pa.string()),
     ("buyer_pos", pa.string()),
-    ("buyer_loc", pa.string()),
-    ("buyer_phone", pa.string()),
-    ("buyer_email", pa.string()),
-
-    # Dispatch & Shipping Details
     ("dispatch_name", pa.string()),
     ("dispatch_state", pa.string()),
     ("dispatch_pin", pa.string()),
-    ("ship_gstin", pa.string()),
     ("ship_name", pa.string()),
-    ("ship_state", pa.string()),
-    ("ship_pin", pa.string()),
-
-    # Export Details
     ("export_shipping_bill_no", pa.string()),
     ("export_shipping_bill_date", pa.string()),
     ("export_country", pa.string()),
     ("export_port", pa.string()),
-
-    # Line Item Details
     ("line_item_id", pa.string()),
     ("item_slno", pa.string()),
     ("product_name", pa.string()),
@@ -121,8 +291,6 @@ FLATTENED_INVOICE_SCHEMA = pa.schema([
     ("state_cess_amount", pa.float64()),
     ("other_charges", pa.float64()),
     ("total_item_value", pa.float64()),
-
-    # Invoice-Level Valuation Breakdown
     ("inv_taxable_value", pa.float64()),
     ("inv_cgst_amount", pa.float64()),
     ("inv_sgst_amount", pa.float64()),
@@ -131,28 +299,16 @@ FLATTENED_INVOICE_SCHEMA = pa.schema([
     ("inv_discount", pa.float64()),
     ("inv_roundoff", pa.float64()),
     ("inv_total_value", pa.float64()),
-
-    # Transportation & E-Way Bill Details
     ("ewb_required", pa.string()),
-    ("transporter_id", pa.string()),
-    ("transporter_name", pa.string()),
     ("transport_mode", pa.string()),
-    ("transport_doc_no", pa.string()),
-    ("transport_doc_date", pa.string()),
     ("transit_distance_km", pa.float64()),
     ("vehicle_number", pa.string()),
     ("vehicle_type", pa.string()),
-
-    # Payment & Settlement
     ("payment_mode", pa.string()),
     ("payment_account_no", pa.string()),
     ("payment_ifsc", pa.string()),
     ("payment_upi", pa.string()),
-
-    # Governance & Status
     ("compliance_status", pa.string()),
-
-    # Module 2: HSN Intelligence & Sentinel ML Telemetry
     ("sentinel_risk_prob", pa.float64()),
     ("sentinel_risk_level", pa.string()),
     ("sentinel_status_badge", pa.string()),
@@ -173,6 +329,193 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
             return float(str(v).replace(",", "").strip())
         except Exception:
             return 0.0
+
+    def _enrich_canonical_user_fields(row: Dict[str, Any], raw_pl: Any, raw_itm: Any = None) -> Dict[str, Any]:
+        """Ensures all 168 canonical user payload fields are populated explicitly on the row."""
+        pl_dict = raw_pl if isinstance(raw_pl, dict) else (raw_pl.model_dump() if hasattr(raw_pl, "model_dump") else {})
+        sup_d = pl_dict.get("supplierdt1") or pl_dict.get("supplier") or pl_dict.get("SellerDtls") or {}
+        buy_d = pl_dict.get("buyerdt1") or pl_dict.get("buyer") or pl_dict.get("BuyerDtls") or {}
+        disp_d = pl_dict.get("dispdt1") or pl_dict.get("dispatch") or pl_dict.get("DispDtls") or {}
+        ship_d = pl_dict.get("shipdtl") or pl_dict.get("shipping") or pl_dict.get("ShipDtls") or {}
+        exp_d = pl_dict.get("expdt1") or pl_dict.get("export") or pl_dict.get("ExpDtls") or {}
+        val_d = pl_dict.get("valdt1") or pl_dict.get("valdtls") or pl_dict.get("ValDtls") or {}
+        ewb_d = pl_dict.get("ewbdt1") or pl_dict.get("ewaybill") or pl_dict.get("EwbDtls") or {}
+        pay_d = pl_dict.get("paydtls") or pl_dict.get("payment") or pl_dict.get("PayDtls") or {}
+        trand_d = pl_dict.get("trandt1") or pl_dict.get("transaction") or pl_dict.get("trandtls") or pl_dict.get("TranDtls") or {}
+        doc_d = pl_dict.get("docdt1") or {}
+        itm_d = raw_itm if isinstance(raw_itm, dict) else (raw_itm.model_dump() if hasattr(raw_itm, "model_dump") else {})
+
+        # Canonical 168 fields mapping:
+        row["self_gstin"] = str(pl_dict.get("self_gstin") or row.get("supplier_gstin") or "").strip()
+        row["system_cd"] = str(pl_dict.get("system_cd") or "").strip()
+        row["branch_cd"] = str(pl_dict.get("branch_cd") or "").strip()
+        row["vertical_cd"] = str(pl_dict.get("vertical_cd") or "").strip()
+        row["irnreq"] = str(pl_dict.get("irnreq") or "Y").strip()
+        row["irn"] = str(pl_dict.get("irn") or "").strip()
+
+        row["trancatg"] = str(row.get("transaction_category") or trand_d.get("trancatg") or pl_dict.get("trancatg") or "B2B").strip()
+        row["reversecharge"] = str(row.get("reverse_charge") or trand_d.get("reversecharge") or "N").strip()
+        row["transactionmode"] = str(trand_d.get("transactionmode") or pl_dict.get("transactionmode") or "REG").strip()
+        row["ecom_gstin"] = str(trand_d.get("ecom_gstin") or pl_dict.get("ecom_gstin") or "").strip()
+        row["igst_on_intra"] = str(row.get("igst_on_intra") or "N").strip()
+
+        row["expcat"] = str(exp_d.get("expcat") or pl_dict.get("expcat") or "").strip()
+        row["wthpay"] = str(exp_d.get("wthpay") or pl_dict.get("wthpay") or "").strip()
+        row["shipbno"] = str(row.get("export_shipping_bill_no") or exp_d.get("shipbno") or "").strip()
+        row["shipbdt"] = str(row.get("export_shipping_bill_date") or exp_d.get("shipbdt") or "").strip()
+        row["port"] = str(row.get("export_port") or exp_d.get("port") or "").strip()
+        row["invforcur"] = str(exp_d.get("invforcur") or pl_dict.get("invforcur") or "").strip()
+        row["forcur"] = str(exp_d.get("forcur") or pl_dict.get("forcur") or "").strip()
+        row["refclm"] = str(exp_d.get("refclm") or pl_dict.get("refclm") or "").strip()
+        row["cntcode"] = str(row.get("export_country") or exp_d.get("cntcode") or "").strip()
+        row["expduty"] = str(exp_d.get("expduty") or pl_dict.get("expduty") or "").strip()
+
+        row["document_type"] = str(row.get("doc_type") or doc_d.get("document_type") or "INV").strip()
+        row["docno"] = str(row.get("invoice_id") or doc_d.get("docno") or "").strip()
+        row["docdt"] = str(row.get("doc_date") or doc_d.get("docdt") or "").strip()
+        row["orginvno"] = str(doc_d.get("orginvno") or pl_dict.get("orginvno") or "").strip()
+        row["orginvdt"] = str(doc_d.get("orginvdt") or pl_dict.get("orginvdt") or "").strip()
+
+        row["supplier_bno"] = str(sup_d.get("supplier_bno") or sup_d.get("bno") or "").strip()
+        row["supplier_bnm"] = str(sup_d.get("supplier_bnm") or sup_d.get("bnm") or "").strip()
+        row["supplier_flno"] = str(sup_d.get("supplier_flno") or sup_d.get("flno") or "").strip()
+        row["supplier_dst"] = str(sup_d.get("supplier_dst") or sup_d.get("dst") or "").strip()
+        row["cust_cd"] = str(pl_dict.get("cust_cd") or "").strip()
+
+        row["buyer_bno"] = str(buy_d.get("buyer_bno") or buy_d.get("bno") or "").strip()
+        row["buyer_bnm"] = str(buy_d.get("buyer_bnm") or buy_d.get("bnm") or "").strip()
+        row["buyer_flno"] = str(buy_d.get("buyer_flno") or buy_d.get("flno") or "").strip()
+        row["buyer_dst"] = str(buy_d.get("buyer_dst") or buy_d.get("dst") or "").strip()
+        row["pos"] = str(row.get("buyer_pos") or buy_d.get("pos") or "").strip()
+
+        row["disp_gstin"] = str(disp_d.get("disp_gstin") or disp_d.get("gstin") or "").strip()
+        row["disp_trdnm"] = str(row.get("dispatch_name") or disp_d.get("disp_trdnm") or disp_d.get("trdnm") or "").strip()
+        row["disp_bno"] = str(disp_d.get("disp_bno") or disp_d.get("bno") or "").strip()
+        row["disp_bnm"] = str(disp_d.get("disp_bnm") or disp_d.get("bnm") or "").strip()
+        row["disp_flno"] = str(disp_d.get("disp_flno") or disp_d.get("flno") or "").strip()
+        row["disp_loc"] = str(disp_d.get("disp_loc") or disp_d.get("loc") or "").strip()
+        row["disp_dst"] = str(disp_d.get("disp_dst") or disp_d.get("dst") or "").strip()
+        row["disp_pin"] = str(row.get("dispatch_pin") or disp_d.get("disp_pin") or disp_d.get("pin") or "").strip()
+        row["disp_state"] = str(row.get("dispatch_state") or disp_d.get("disp_state") or disp_d.get("state") or "").strip()
+        row["disp_phone"] = str(disp_d.get("disp_phone") or disp_d.get("phone") or "").strip()
+        row["disp_email"] = str(disp_d.get("disp_email") or disp_d.get("email") or "").strip()
+
+        row["ship_lglnm"] = str(row.get("ship_name") or ship_d.get("ship_lglnm") or ship_d.get("lglnm") or "").strip()
+        row["ship_trdnm"] = str(ship_d.get("ship_trdnm") or ship_d.get("trdnm") or "").strip()
+        row["ship_bno"] = str(ship_d.get("ship_bno") or ship_d.get("bno") or "").strip()
+        row["ship_bnm"] = str(ship_d.get("ship_bnm") or ship_d.get("bnm") or "").strip()
+        row["ship_flno"] = str(ship_d.get("ship_flno") or ship_d.get("flno") or "").strip()
+        row["ship_loc"] = str(ship_d.get("ship_loc") or ship_d.get("loc") or "").strip()
+        row["ship_dst"] = str(ship_d.get("ship_dst") or ship_d.get("dst") or "").strip()
+        row["ship_phone"] = str(ship_d.get("ship_phone") or ship_d.get("phone") or "").strip()
+        row["ship_email"] = str(ship_d.get("ship_email") or ship_d.get("email") or "").strip()
+
+        row["frmdt"] = str(pl_dict.get("frmdt") or "").strip()
+        row["todt"] = str(pl_dict.get("todt") or "").strip()
+
+        # Item fields
+        row["itemcd"] = str(itm_d.get("itemcd") or "").strip()
+        row["prdnm"] = str(row.get("product_name") or itm_d.get("prdnm") or "").strip()
+        row["prddesc"] = str(row.get("product_description") or itm_d.get("prddesc") or "").strip()
+        row["isservc"] = str(row.get("is_service") or itm_d.get("isservc") or "N").strip()
+        row["hsncd"] = str(row.get("hsn") or itm_d.get("hsncd") or "").strip()
+        row["barcde"] = str(itm_d.get("barcde") or "").strip()
+        row["qty"] = float(row.get("quantity", 0.0) or 0.0)
+        row["freeqty"] = float(itm_d.get("freeqty") or 0.0)
+        row["uqc"] = str(row.get("unit") or itm_d.get("uqc") or "NOS").strip()
+        row["unitrate"] = float(row.get("unit_price", 0.0) or 0.0)
+        row["grossamt"] = float(row.get("gross_amount", 0.0) or 0.0)
+        row["discount"] = float(row.get("item_discount", 0.0) or 0.0)
+        row["othchrg"] = float(row.get("other_charges", 0.0) or 0.0)
+        row["pretaxval"] = float(row.get("pretax_value", 0.0) or 0.0)
+        row["assamt"] = float(row.get("taxable_value", 0.0) or 0.0)
+        row["taxability"] = str(itm_d.get("taxability") or "TAX").strip()
+        row["diffpercent"] = float(itm_d.get("diffpercent") or 0.0)
+        row["cgstrt"] = float(itm_d.get("cgstrt") or 0.0)
+        row["cgstamt"] = float(row.get("cgst_amount", 0.0) or 0.0)
+        row["sgstrt"] = float(itm_d.get("sgstrt") or 0.0)
+        row["sgstamt"] = float(row.get("sgst_amount", 0.0) or 0.0)
+        row["igstrt"] = float(itm_d.get("igstrt") or 0.0)
+        row["igstamt"] = float(row.get("igst_amount", 0.0) or 0.0)
+        row["cessrt"] = float(row.get("cess_rate", 0.0) or 0.0)
+        row["cessamt"] = float(row.get("cess_amount", 0.0) or 0.0)
+        row["cessnonadval"] = float(itm_d.get("cessnonadval") or itm_d.get("cesnonadvl") or 0.0)
+        row["statecessrt"] = float(row.get("state_cess_rate", 0.0) or 0.0)
+        row["statecessamt"] = float(row.get("state_cess_amount", 0.0) or 0.0)
+        row["statecesnonadvlamt"] = float(itm_d.get("statecesnonadvlamt") or itm_d.get("statecesnonadvl") or 0.0)
+        row["totitemval"] = float(row.get("total_item_value", 0.0) or 0.0)
+        row["ordlineref"] = str(itm_d.get("ordlineref") or "").strip()
+        row["orgcntry"] = str(itm_d.get("orgcntry") or "").strip()
+        row["prdsino"] = str(itm_d.get("prdsino") or "").strip()
+        row["batchname"] = str(itm_d.get("batchname") or "").strip()
+        row["batchexpirydt"] = str(itm_d.get("batchexpirydt") or "").strip()
+        row["batchwarrantydt"] = str(itm_d.get("batchwarrantydt") or "").strip()
+
+        # Valuation fields
+        row["ttlassval"] = float(row.get("inv_taxable_value", 0.0) or 0.0)
+        row["cgstval"] = float(row.get("inv_cgst_amount", 0.0) or 0.0)
+        row["sgstval"] = float(row.get("inv_sgst_amount", 0.0) or 0.0)
+        row["igstval"] = float(row.get("inv_igst_amount", 0.0) or 0.0)
+        row["cesval"] = float(row.get("inv_cess_amount", 0.0) or 0.0)
+        row["stcesval"] = float(val_d.get("stcesval") or 0.0)
+        row["cesnonadval"] = float(val_d.get("cesnonadval") or 0.0)
+        row["discval"] = float(row.get("inv_discount", 0.0) or 0.0)
+        row["othchrgval"] = float(val_d.get("othchrgval") or val_d.get("othchrg") or 0.0)
+        row["rndoffamt"] = float(row.get("inv_roundoff", 0.0) or 0.0)
+        row["totinvval"] = float(row.get("inv_total_value", 0.0) or 0.0)
+
+        # Payment fields
+        row["payee_name"] = str(pay_d.get("payee_name") or pl_dict.get("payee_name") or "").strip()
+        row["pmtmode"] = str(row.get("payment_mode") or pay_d.get("pmtmode") or pl_dict.get("pmtmode") or "").strip()
+        row["fininsbr"] = str(pay_d.get("fininsbr") or pl_dict.get("fininsbr") or "").strip()
+        row["payterm"] = str(pay_d.get("payterm") or pl_dict.get("payterm") or "").strip()
+        row["payinstr"] = str(pay_d.get("payinstr") or pl_dict.get("payinstr") or "").strip()
+        row["crtrn"] = str(pay_d.get("crtrn") or pl_dict.get("crtrn") or "").strip()
+        row["dirdr"] = str(pay_d.get("dirdr") or pl_dict.get("dirdr") or "").strip()
+        row["crday"] = str(pay_d.get("crday") or pl_dict.get("crday") or "").strip()
+        row["paidamt"] = float(pay_d.get("paidamt") or pl_dict.get("paidamt") or 0.0)
+        row["balamt"] = float(pay_d.get("balamt") or pl_dict.get("balamt") or 0.0)
+        row["payduedt"] = str(pay_d.get("payduedt") or pl_dict.get("payduedt") or "").strip()
+        row["acctdet"] = str(pay_d.get("acctdet") or pl_dict.get("acctdet") or "").strip()
+        row["bnknm"] = str(pay_d.get("bnknm") or pl_dict.get("bnknm") or "").strip()
+        row["brnchnm"] = str(pay_d.get("brnchnm") or pl_dict.get("brnchnm") or "").strip()
+
+        # References
+        row["invrmk"] = str(pl_dict.get("invrmk") or "").strip()
+        row["invstdt"] = str(pl_dict.get("invstdt") or "").strip()
+        row["invenddt"] = str(pl_dict.get("invenddt") or "").strip()
+        row["othrefno"] = str(pl_dict.get("othrefno") or "").strip()
+        row["recadvref"] = str(pl_dict.get("recadvref") or "").strip()
+        row["recadvdt"] = str(pl_dict.get("recadvdt") or "").strip()
+        row["tendref"] = str(pl_dict.get("tendref") or "").strip()
+        row["contrref"] = str(pl_dict.get("contrref") or "").strip()
+        row["extref"] = str(pl_dict.get("extref") or "").strip()
+        row["projref"] = str(pl_dict.get("projref") or "").strip()
+        row["porefdt"] = str(pl_dict.get("porefdt") or "").strip()
+        row["poref"] = str(pl_dict.get("poref") or "").strip()
+
+        # Transportation & E-Way Bill
+        row["ewayreq"] = str(row.get("ewb_required") or ewb_d.get("ewayreq") or "N").strip()
+        row["subsupplytype"] = str(ewb_d.get("subsupplytype") or ("1" if row["ewayreq"] == "Y" else "")).strip()
+        row["mode_of_transport"] = str(row.get("transport_mode") or ewb_d.get("mode_of_transport") or "1").strip()
+        row["distance_of_transport"] = float(row.get("transit_distance_km", 0.0) or ewb_d.get("distance_of_transport") or 0.0)
+        row["transport_doc_no"] = str(row.get("transport_doc_no") or ewb_d.get("transport_doc_no") or "").strip()
+        row["transporter_doc_date"] = str(row.get("transport_doc_date") or ewb_d.get("transporter_doc_date") or "").strip()
+        row["veh_type"] = str(row.get("vehicle_type") or ewb_d.get("veh_type") or "R").strip()
+        row["veh_number"] = str(row.get("vehicle_number") or ewb_d.get("veh_number") or "").strip()
+
+        # ERP / Custom Metadata
+        row["brand_name"] = str(pl_dict.get("brand_name") or "").strip()
+        row["client_name"] = str(pl_dict.get("client_name") or "").strip()
+        row["vendor_id"] = str(pl_dict.get("vendor_id") or "").strip()
+        row["period"] = str(pl_dict.get("period") or "").strip()
+        row["upiid"] = str(row.get("payment_upi") or pay_d.get("upiid") or pl_dict.get("upiid") or "").strip()
+        row["upipayeename"] = str(pay_d.get("upipayeename") or pl_dict.get("upipayeename") or "").strip()
+        row["upiacctnumber"] = str(row.get("payment_account_no") or pay_d.get("upiacctnumber") or pl_dict.get("upiacctnumber") or "").strip()
+        row["upiactifsccd"] = str(row.get("payment_ifsc") or pay_d.get("upiactifsccd") or pl_dict.get("upiactifsccd") or "").strip()
+
+        return row
+
 
     rows = []
     if isinstance(payload, dict):
@@ -289,8 +632,10 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
 
         # Statutory Interceptions: Rules 2258-2278
         sup_gstin = str(sup.get("supplier_gstin") or sup.get("gstin") or sup.get("Gstin") or "").strip().upper()
-        sup_pin = str(sup.get("supplier_pin") or sup.get("pin") or sup.get("Pin") or "").strip()
-        buy_pin = str(buy.get("buyer_pin") or buy.get("pin") or buy.get("Pin") or "").strip()
+        raw_sup_pin = sup.get("supplier_pin") if sup.get("supplier_pin") is not None else (sup.get("pin") if sup.get("pin") is not None else sup.get("Pin"))
+        raw_buy_pin = buy.get("buyer_pin") if buy.get("buyer_pin") is not None else (buy.get("pin") if buy.get("pin") is not None else buy.get("Pin"))
+        sup_pin = raw_sup_pin if raw_sup_pin is not None else ""
+        buy_pin = raw_buy_pin if raw_buy_pin is not None else ""
 
         # Rule 2258 & Rule 2259
         rule_2258_msg = None
@@ -434,7 +779,8 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
                         product_desc=prod_desc,
                         declared_hsn=item_hsn,
                         unit_price=uprice,
-                        supplier_gstin=sup_gstin
+                        supplier_gstin=sup_gstin,
+                        declared_rate=gst_rate
                     )
                 except Exception:
                     sentinel_audit = {}
@@ -1052,6 +1398,8 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
                 if h2186_msg not in existing_reasons:
                     r["sentinel_audit_reasons"] = f"{existing_reasons}; {h2186_msg}" if existing_reasons else h2186_msg
 
+        for r in rows:
+            _enrich_canonical_user_fields(r, payload, None)
         return rows
 
     # InvoicePayload model branch
@@ -1304,7 +1652,8 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
                     product_desc=prod_desc,
                     declared_hsn=item_hsn,
                     unit_price=uprice,
-                    supplier_gstin=sup_gstin
+                    supplier_gstin=sup_gstin,
+                    declared_rate=gst_rate
                 )
             except Exception:
                 sentinel_audit = {}
@@ -1913,6 +2262,8 @@ def flatten_invoice_payload(payload: Union[InvoicePayload, Dict[str, Any]]) -> L
             if h2186_msg not in existing_reasons:
                 r["sentinel_audit_reasons"] = f"{existing_reasons}; {h2186_msg}" if existing_reasons else h2186_msg
 
+    for r in rows:
+        _enrich_canonical_user_fields(r, payload, None)
     return rows
 
 
@@ -1927,6 +2278,15 @@ def write_parquet(
         os.makedirs(dirname, exist_ok=True)
     if isinstance(data, list):
         data = pd.DataFrame(data)
+    if schema is not None:
+        for field in schema:
+            fname = field.name
+            if fname not in data.columns:
+                data[fname] = 0.0 if pa.types.is_floating(field.type) else ""
+            elif pa.types.is_floating(field.type):
+                data[fname] = data[fname].fillna(0.0)
+            elif pa.types.is_string(field.type):
+                data[fname] = data[fname].fillna("")
     table = pa.Table.from_pandas(data, schema=schema, preserve_index=False)
     pq.write_table(table, filepath, compression=compression)
     return True

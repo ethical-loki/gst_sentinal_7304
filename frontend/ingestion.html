@@ -8007,7 +8007,7 @@ async function fetchRawFiles() {
                             </div>
                         ` : '';
 
-                        const isHsnErr = err.error_code === 2176 || err.error_code === 2285 || (err.field && err.field.toLowerCase().includes('hsn')) || (err.message && err.message.toLowerCase().includes('hsn'));
+                        const isHsnErr = (err.error_code === 2176 || (err.field && err.field.toLowerCase().includes('hsn'))) && err.error_code !== 4009 && err.error_code !== 2285;
                         const hsnFixHtml = isHsnErr ? `
                             <div class="rule-quick-hsn-fix" style="margin-top: 10px; padding: 8px 12px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                 <span style="font-size: 0.8rem; font-weight: 700; color: #38bdf8;">📦 Input HSN Code:</span>
@@ -8973,6 +8973,26 @@ async function fetchRawFiles() {
         }
 
         // Statutory HSN Chapter Lookup Dictionary
+        function getHsnStatutoryRate(hsn, fallbackRate) {
+            const clean = String(hsn || '').replace(/[^0-9]/g, '');
+            const ch = clean.substring(0, 2);
+            const chapterRates = {
+                "61": 5.0, "62": 5.0, "63": 5.0,
+                "01": 0.0, "02": 0.0, "03": 0.0, "04": 5.0,
+                "07": 0.0, "08": 0.0, "09": 5.0, "10": 0.0,
+                "11": 5.0, "12": 5.0, "17": 5.0, "19": 12.0,
+                "27": 18.0, "28": 18.0, "29": 18.0, "30": 12.0,
+                "39": 18.0, "40": 18.0, "48": 12.0, "50": 5.0,
+                "52": 5.0, "54": 12.0, "55": 12.0, "64": 18.0,
+                "72": 18.0, "73": 18.0, "76": 18.0, "84": 18.0,
+                "85": 18.0, "87": 28.0, "90": 18.0, "94": 18.0,
+                "99": 18.0
+            };
+            if (chapterRates[ch] !== undefined) return chapterRates[ch];
+            if (fallbackRate !== undefined && !isNaN(fallbackRate) && fallbackRate > 0) return fallbackRate;
+            return 18.0;
+        }
+
         function getHsnChapterInfo(hsn) {
             const clean = String(hsn || '').replace(/[^0-9]/g, '');
             const ch = clean.substring(0, 2);
@@ -9052,10 +9072,11 @@ async function fetchRawFiles() {
                 if (taxInp) taxInp.value = totalTaxable.toFixed(2);
             }
             const curTaxable = parseFloat(taxInp ? taxInp.value : (rate * qty)) || 0;
-            const gstAmt = Math.round(curTaxable * 0.18 * 100) / 100;
+            const curGstRate = (hsnInp && typeof getHsnStatutoryRate === 'function') ? getHsnStatutoryRate(hsnInp.value) : 18.0;
+            const gstAmt = Math.round(curTaxable * (curGstRate / 100.0) * 100) / 100;
             const totLine = Math.round((curTaxable + gstAmt) * 100) / 100;
             if (badge) {
-                badge.innerHTML = `GST 18% (+₹${gstAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}) ➔ Total: ₹${totLine.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+                badge.innerHTML = `GST ${curGstRate}% (+₹${gstAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}) ➔ Total: ₹${totLine.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
             }
         }
 
@@ -9093,7 +9114,7 @@ async function fetchRawFiles() {
                         const numTax = parseFloat(taxVal);
                         itm0.assamt = numTax.toFixed(2);
                         const isInter = (target.supplierdt1?.supplier_gstin?.substring(0,2) || '') !== (target.buyerdt1?.pos || target.buyerdt1?.buyer_gstin?.substring(0,2) || '');
-                        const gstRate = 18.0;
+                        const gstRate = (typeof getHsnStatutoryRate === 'function') ? getHsnStatutoryRate(hsnVal) : 18.0;
                         const taxAmt = Math.round(numTax * (gstRate / 100) * 100) / 100;
                         const totItem = Math.round((numTax + taxAmt) * 100) / 100;
                         if (isInter) {
@@ -9551,15 +9572,17 @@ async function fetchRawFiles() {
 
                 const initCh = getHsnChapterInfo(defHsn);
                 const initTaxNum = parseFloat(String(defTaxVal).replace(/,/g, '')) || (parseFloat(defQty) * parseFloat(defUnitRate)) || 0;
-                let initGstRate = 18.0;
-                if (firstItm) {
+                let initGstRate = (typeof getHsnStatutoryRate === 'function') ? getHsnStatutoryRate(defHsn) : 18.0;
+                const ratePromptMatch = (typeof tailPrompt === 'string') ? tailPrompt.match(/with statutory\s*([0-9]+(?:\.[0-9]+)?)\s*%\s*GST/i) : null;
+                if (ratePromptMatch) {
+                    initGstRate = parseFloat(ratePromptMatch[1]);
+                } else if (firstItm) {
                     const rawIg = parseFloat(firstItm.igstrt || 0);
                     const rawDual = parseFloat(firstItm.cgstrt || 0) + parseFloat(firstItm.sgstrt || 0);
                     const rawG = parseFloat(firstItm.gstrate || 0);
-                    if (rawIg > 0.01) initGstRate = rawIg;
-                    else if (rawDual > 0.01) initGstRate = rawDual;
-                    else if (rawG > 0.01) initGstRate = rawG;
-                    else initGstRate = 18.0;
+                    if (rawIg > 0.01 && Math.abs(rawIg - initGstRate) < 0.1) initGstRate = rawIg;
+                    else if (rawDual > 0.01 && Math.abs(rawDual - initGstRate) < 0.1) initGstRate = rawDual;
+                    else if (rawG > 0.01 && Math.abs(rawG - initGstRate) < 0.1) initGstRate = rawG;
                 }
                 const initGstAmt = Math.round(initTaxNum * (initGstRate / 100) * 100) / 100;
                 const initTotLine = Math.round((initTaxNum + initGstAmt) * 100) / 100;

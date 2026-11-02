@@ -63,7 +63,7 @@ def format_dirty_decimal(val: float, force_comma: bool = False) -> str:
 
 def random_date_str() -> str:
     """Generates dates in random formats (slash, dot, dash)."""
-    past_days = random.randint(1, 120)
+    past_days = random.randint(0, 1)
     dt = datetime.today() - timedelta(days=past_days)
     fmt = random.choice(["%d/%m/%Y", "%d-%m-%Y", "%Y-%m-%d", "%d.%m.%Y"])
     return dt.strftime(fmt)
@@ -183,18 +183,23 @@ def generate_random_invoice(invoice_index: int) -> Dict[str, Any]:
         uqc_val = p["uqc"].lower() if random.random() < 0.4 else p["uqc"]
 
         items.append({
+            "itemcd": f"ITM-{p['prdnm'][:4]}",
             "prdnm": dirty_text_whitespace(p["prdnm"]),
             "prddesc": p["desc"],
             "isservc": "N",
             "hsncd": p["hsn"],
+            "barcde": f"890{random.randint(1000000000, 9999999999)}",
             "qty": f"{qty:.3f}",
+            "freeqty": "0.000",
             "uqc": uqc_val,
             "unitrate": f"{unitrate:.2f}",
             "grossamt": format_dirty_decimal(grossamt),
             "discount": str(discount) if discount > 0 else "",
             "othchrg": "",
+            "pretaxval": format_dirty_decimal(assamt),
             "assamt": format_dirty_decimal(assamt),
             "taxability": "TAX",
+            "diffpercent": "0.00",
             "cgstrt": f"{cgstrt:.2f}",
             "cgstamt": format_dirty_decimal(cgstamt),
             "sgstrt": f"{sgstrt:.2f}",
@@ -206,7 +211,14 @@ def generate_random_invoice(invoice_index: int) -> Dict[str, Any]:
             "cessnonadval": "",
             "statecessrt": "0.00",
             "statecessamt": "0.00",
-            "totitemval": format_dirty_decimal(totitemval)
+            "statecesnonadvlamt": "0.00",
+            "totitemval": format_dirty_decimal(totitemval),
+            "ordlineref": f"PO-LINE-{len(items) + 1}",
+            "orgcntry": "IN",
+            "prdsino": f"SN-{random.randint(10000, 99999)}",
+            "batchname": f"BAT-{random.randint(100, 999)}",
+            "batchexpirydt": "",
+            "batchwarrantydt": ""
         })
 
     totinvval = round(total_assamt + total_cgst + total_sgst + total_igst + total_cess, 2)
@@ -218,6 +230,7 @@ def generate_random_invoice(invoice_index: int) -> Dict[str, Any]:
     ewb_dist = str(random.randint(150, 1400)) if ewayreq == "Y" else ""
 
     invoice: Dict[str, Any] = {
+        "is_sez_buyer": True if trancatg == "SEZWP" else False,
         "self_gstin": self_gstin_val,
         "system_cd": random.choice(["ERP_SAP", "TALLY_PRIME", "ORACLE"]),
         "branch_cd": f"BR{random.randint(1, 99):02d}",
@@ -249,6 +262,7 @@ def generate_random_invoice(invoice_index: int) -> Dict[str, Any]:
             "supplier_email": f"billing@{sup_city.lower().replace(' ', '')}tex.com"
         },
         "buyerdt1": {
+            "is_sez_buyer": True if trancatg in ("SEZWP", "SEZWOP") else False,
             "buyer_gstin": buy_gstin,
             "buyer_trdnm": buy_company,
             "buyer_lglnm": dirty_text_whitespace(buy_company),
@@ -284,10 +298,36 @@ def generate_random_invoice(invoice_index: int) -> Dict[str, Any]:
             "transporter_name": "VRL LOGISTICS LTD" if ewayreq == "Y" else "",
             "mode_of_transport": ewb_mode if ewayreq == "Y" else "",
             "transport_doc_no": f"LR{random.randint(10000, 99999)}" if ewayreq == "Y" and ewb_mode == "2" else "",
-            "transporter_doc_date": random_date_str() if ewayreq == "Y" else "",
+            "transporter_doc_date": docdt if ewayreq == "Y" else "",
             "veh_type": "R" if ewayreq == "Y" and ewb_mode == "1" else "",
             "veh_number": ewb_veh_num
-        }
+        },
+        "paydtls": {
+            "payee_name": random_company_name(),
+            "pmtmode": "ONLINE",
+            "fininsbr": "MAIN",
+            "payterm": "NET30",
+            "payinstr": "RTGS",
+            "crtrn": "",
+            "dirdr": "",
+            "crday": "30",
+            "paidamt": "0.00",
+            "balamt": format_dirty_decimal(totinvval),
+            "payduedt": "",
+            "acctdet": "",
+            "bnknm": "STATE BANK OF INDIA",
+            "brnchnm": "ELECTRONIC CITY",
+            "upiid": f"{sup_city.lower()}tex@upi",
+            "upipayeename": random_company_name(),
+            "upiacctnumber": f"{random.randint(10000000000, 99999999999)}",
+            "upiactifsccd": f"SBIN00{random.randint(1000, 9999)}"
+        },
+        "cust_cd": f"CUST-{random.randint(1000, 9999)}",
+        "brand_name": "SENTINEL-ENTERPRISE",
+        "client_name": buy_company,
+        "vendor_id": f"VND-{random.randint(100, 999)}",
+        "period": datetime.now().strftime("%Y-%m"),
+        "invrmk": "E-INVOICE GENERATED"
     }
 
     if trancatg == "EXP":
@@ -301,7 +341,7 @@ def generate_random_invoice(invoice_index: int) -> Dict[str, Any]:
             "cntcode": buy_country
         }
         invoice["shipdtl"] = {
-            "ship_gstin": sup_gstin,
+            "ship_gstin": "URP",
             "ship_lglnm": "CHENNAI PORT TERMINAL",
             "ship_trdnm": "CHENNAI PORT TERMINAL",
             "ship_bno": "GATE 4",

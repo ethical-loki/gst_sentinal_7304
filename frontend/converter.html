@@ -3728,7 +3728,7 @@
                             </div>
                         ` : '';
 
-                        const isHsnErr = err.error_code === 2176 || err.error_code === 2285 || (err.field && err.field.toLowerCase().includes('hsn')) || (err.message && err.message.toLowerCase().includes('hsn'));
+                        const isHsnErr = (err.error_code === 2176 || (err.field && err.field.toLowerCase().includes('hsn'))) && err.error_code !== 4009 && err.error_code !== 2285;
                         const hsnFixHtml = isHsnErr ? `
                             <div class="rule-quick-hsn-fix" style="margin-top: 10px; padding: 8px 12px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                 <span style="font-size: 0.8rem; font-weight: 700; color: #38bdf8;">📦 Input HSN Code:</span>
@@ -4736,6 +4736,26 @@
             sendCopilotQuickMessage(`Set HSN: ${hsnVal}`);
         }
 
+        function getHsnStatutoryRate(hsn, fallbackRate) {
+            const clean = String(hsn || '').replace(/[^0-9]/g, '');
+            const ch = clean.substring(0, 2);
+            const chapterRates = {
+                "61": 5.0, "62": 5.0, "63": 5.0,
+                "01": 0.0, "02": 0.0, "03": 0.0, "04": 5.0,
+                "07": 0.0, "08": 0.0, "09": 5.0, "10": 0.0,
+                "11": 5.0, "12": 5.0, "17": 5.0, "19": 12.0,
+                "27": 18.0, "28": 18.0, "29": 18.0, "30": 12.0,
+                "39": 18.0, "40": 18.0, "48": 12.0, "50": 5.0,
+                "52": 5.0, "54": 12.0, "55": 12.0, "64": 18.0,
+                "72": 18.0, "73": 18.0, "76": 18.0, "84": 18.0,
+                "85": 18.0, "87": 28.0, "90": 18.0, "94": 18.0,
+                "99": 18.0
+            };
+            if (chapterRates[ch] !== undefined) return chapterRates[ch];
+            if (fallbackRate !== undefined && !isNaN(fallbackRate) && fallbackRate > 0) return fallbackRate;
+            return 18.0;
+        }
+
         function updateCopilotHsnCalc(el) {
             const bar = el.closest('.copilot-hsn-pricing-bar');
             if (!bar) return;
@@ -4758,10 +4778,12 @@
                 if (taxInp) taxInp.value = totalTaxable.toFixed(2);
             }
             const curTaxable = parseFloat(taxInp ? taxInp.value : (rate * qty)) || 0;
-            const gstAmt = Math.round(curTaxable * 0.18 * 100) / 100;
+            const hsnInp = bar.querySelector('input[data-field="hsn"]') || bar.querySelector('input.copilot-inline-hsn-input');
+            const curGstRate = (hsnInp && typeof getHsnStatutoryRate === 'function') ? getHsnStatutoryRate(hsnInp.value) : 18.0;
+            const gstAmt = Math.round(curTaxable * (curGstRate / 100.0) * 100) / 100;
             const totLine = Math.round((curTaxable + gstAmt) * 100) / 100;
             if (badge) {
-                badge.innerHTML = `GST 18% (₹${gstAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}) ➔ Total: ₹${totLine.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
+                badge.innerHTML = `GST ${curGstRate}% (₹${gstAmt.toLocaleString('en-IN', {minimumFractionDigits: 2})}) ➔ Total: ₹${totLine.toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
             }
         }
 
@@ -4967,8 +4989,10 @@
             activeTopic = 'docno';
         } else if (!isDateJustPatched && actions.some(a => /change date to|set date:/i.test(a))) {
             activeTopic = 'date';
-        } else if (!isHsnJustPatched && actions.some(a => /set hsn:|fix hsn/i.test(a))) {
+        } else if (!isHsnJustPatched && actions.some(a => /set hsn:|fix hsn|edit line items|edit hsn/i.test(a))) {
             activeTopic = 'hsn';
+        } else if (actions.some(a => /ship|disp|rule 2200/i.test(a))) {
+            activeTopic = 'ship_disp';
         } else if (!isVehJustPatched && actions.some(a => /vehicle is|verify vehicle/i.test(a))) {
             activeTopic = 'vehicle';
         } else if (actions.some(a => /set mode:/i.test(a))) {
@@ -4998,8 +5022,10 @@
                 activeTopic = 'docno';
             } else if (!isDateJustPatched && (tailPrompt.includes('document date') || tailPrompt.includes('change the document date') || tailPrompt.includes('invoice date') || tailPrompt.includes('date to within') || tailPrompt.includes('docdt'))) {
                 activeTopic = 'date';
-            } else if (!isHsnJustPatched && (tailPrompt.includes('product hsn') || tailPrompt.includes('wrong hsn code') || tailPrompt.includes('wrong / incomplete hsn') || tailPrompt.includes('hsn intelligence'))) {
+            } else if (!isHsnJustPatched && (tailPrompt.includes('product hsn') || tailPrompt.includes('wrong hsn code') || tailPrompt.includes('wrong / incomplete hsn') || tailPrompt.includes('hsn intelligence') || tailPrompt.includes('edit line items') || tailPrompt.includes('line item'))) {
                 activeTopic = 'hsn';
+            } else if (tailPrompt.includes('shipping details') || tailPrompt.includes('shipdtl') || tailPrompt.includes('rule 2200') || tailPrompt.includes('dispatch details') || tailPrompt.includes('dispdt1')) {
+                activeTopic = 'ship_disp';
             } else if (!isVehJustPatched && (tailPrompt.includes('what is your vehicle registration') || tailPrompt.includes('vehicle registration number') || tailPrompt.includes('vehicle plate') || tailPrompt.includes('e-way bill road transit'))) {
                 activeTopic = 'vehicle';
             } else if (tailPrompt.includes('delivery mode applies') || tailPrompt.includes('transaction mode')) {
@@ -5018,7 +5044,7 @@
         // If 100% compliant AND no interactive module is being discussed or requested, show Generate IRN / Download
         const hasInteractiveModule = Boolean(
             activeTopic ||
-            actions.some(a => /vehicle|veh|ka01|hsn|pin|state|date|mode|subsupply|gstin|tax\s*math|transporter|docno|invoice/i.test(a))
+            actions.some(a => /vehicle|veh|ka01|hsn|pin|state|date|mode|subsupply|gstin|tax\s*math|transporter|docno|invoice|ship|disp/i.test(a))
         );
 
         if (isCompliant && !hasInteractiveModule) {
@@ -5220,7 +5246,16 @@
         const renderHsnBox = () => {
             if (renderedBoxCount > 0 || handledTypes.has('hsn') || isHsnJustPatched) return;
             const hsnAct = findAction(a => /set hsn:|fix hsn/i.test(a));
-            const hasHsnPrompt = Boolean(activeTopic === 'hsn' || hsnAct || tailPrompt.includes('quick question on product hsn') || tailPrompt.includes('wrong / incomplete hsn code') || tailPrompt.includes('wrong hsn code detected'));
+            const hasHsnPrompt = Boolean(
+                activeTopic === 'hsn' ||
+                hsnAct ||
+                actions.some(a => /edit.*line|edit.*hsn|item.*hsn/i.test(a)) ||
+                tailPrompt.includes('quick question on product hsn') ||
+                tailPrompt.includes('wrong / incomplete hsn code') ||
+                tailPrompt.includes('wrong hsn code detected') ||
+                tailPrompt.includes('edit line items') ||
+                tailPrompt.includes('product line item')
+            );
             if (hasHsnPrompt) {
                 handledTypes.add('hsn');
                 renderedBoxCount++;
@@ -5289,6 +5324,61 @@
                     </div>
                 `;
             }
+        };
+
+        const renderShipDtlsBox = () => {
+            if (renderedBoxCount > 0 || handledTypes.has('ship_disp')) return;
+            const shipAct = findAction(a => /clear (?:ship|disp) gstin|set (?:ship|disp) (?:gstin|state)/i.test(a));
+            const hasShipPrompt = Boolean(
+                activeTopic === 'ship_disp' ||
+                shipAct ||
+                actions.some(a => /ship|disp|rule 2200/i.test(a)) ||
+                tailPrompt.includes('shipping details') ||
+                tailPrompt.includes('shipdtl') ||
+                tailPrompt.includes('dispatch details') ||
+                tailPrompt.includes('dispdt1') ||
+                tailPrompt.includes('rule 2200')
+            );
+            if (!hasShipPrompt) return;
+            handledTypes.add('ship_disp');
+            renderedBoxCount++;
+
+            const isShip = !tailPrompt.includes('dispatch details') && !tailPrompt.includes('dispdt1');
+            const secName = isShip ? 'Shipping (Ship-To / Port Details)' : 'Dispatch Details';
+            const secDict = isShip ? (targetInv.shipdt1 || targetInv.shipdtl || {}) : (targetInv.dispdt1 || targetInv.dispdtl || {});
+            const defGstin = secDict.ship_gstin || secDict.disp_gstin || targetInv.ship_gstin || targetInv.disp_gstin || '';
+            const defSt = secDict.ship_state || secDict.disp_state || targetInv.ship_state || targetInv.disp_state || '33';
+            const defPin = secDict.ship_pin || secDict.disp_pin || targetInv.ship_pin || targetInv.disp_pin || '600001';
+
+            barsHtml += `
+                <div class="copilot-inline-suggestion-bar copilot-ship-bar" style="margin-top: 8px; margin-bottom: 6px; padding: 12px 14px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 8px; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">🚢 ${secName} & NIC Rule 2200 Alignment:</span>
+                        <span style="font-size: 0.72rem; color: #f59e0b; font-family: 'JetBrains Mono', monospace; background: rgba(245, 158, 11, 0.1); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.3);">Rule 2200 Compliance</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">FACILITY GSTIN (or URP)</label>
+                            <input type="text" data-field="ship_gstin" class="copilot-inline-ship-gstin-input" placeholder="e.g. URP" value="${escapeHtml(defGstin)}" maxlength="15" onkeydown="if(event.key==='Enter'){event.preventDefault();submitCopilotShipInput(this);}" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 140px; font-weight: 700; text-transform: uppercase;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">STATE / UT</label>
+                            <select data-field="ship_state" class="copilot-inline-ship-state-select" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 8px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; cursor: pointer; max-width: 170px;">
+                                ${buildStateOptionsHtml(defSt)}
+                            </select>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <label style="font-size: 0.70rem; color: #94a3b8; font-weight: 600;">PINCODE</label>
+                            <input type="text" data-field="ship_pin" class="copilot-inline-ship-pin-input" placeholder="e.g. 600001" value="${escapeHtml(defPin)}" maxlength="6" style="background: #090e1a; color: #f8fafc; border: 1px solid #38bdf8; border-radius: 6px; padding: 5px 9px; font-size: 0.84rem; outline: none; font-family: 'JetBrains Mono', monospace; width: 85px;">
+                        </div>
+                        <div style="display: flex; align-items: flex-end; padding-top: 14px; gap: 6px; flex-wrap: wrap;">
+                            <button type="button" class="copilot-action-btn" onclick="submitCopilotShipInput(this)" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; white-space: nowrap;">🚢 Apply Shipping Details</button>
+                            <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('Clear Ship GSTIN for Port Export')" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap;">⚡ Set GSTIN to URP</button>
+                            <button type="button" class="copilot-action-btn" onclick="sendCopilotQuickMessage('✏️ Edit Line Items / HSN')" style="background: rgba(192, 132, 252, 0.2); border: 1px solid #c084fc; color: #e879f9; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap;">✏️ Edit Line Items</button>
+                        </div>
+                    </div>
+                </div>
+            `;
         };
 
         const renderPinStateBox = () => {
@@ -5554,6 +5644,7 @@
         else if (activeTopic === 'subsupply') renderSubsupplyBox();
         else if (activeTopic === 'transporter') renderTransporterBox();
         else if (activeTopic === 'tax_math') renderTaxMathBox();
+        else if (activeTopic === 'ship_disp') renderShipDtlsBox();
 
         // 2. Fallback step-by-step sequence of unresolved issues (strictly one-by-one, aligned with get_friendly_next_step priority)
         if (renderedBoxCount === 0 && !isDocnoJustPatched && (!isDocNoValid || actions.some(a => /invoice no|docno/i.test(a)))) renderDocnoBox();
@@ -5567,6 +5658,7 @@
         if (renderedBoxCount === 0 && (actions.some(a => /subsupply/i.test(a)) || tailPrompt.includes('subsupply'))) renderSubsupplyBox();
         if (renderedBoxCount === 0 && (actions.some(a => /transporter/i.test(a)) || tailPrompt.includes('transporter'))) renderTransporterBox();
         if (renderedBoxCount === 0 && (actions.some(a => /tax\s*math/i.test(a)) || tailPrompt.includes('tax valuation'))) renderTaxMathBox();
+        if (renderedBoxCount === 0 && (actions.some(a => /ship|disp|rule 2200/i.test(a)) || tailPrompt.includes('shipping details') || tailPrompt.includes('rule 2200'))) renderShipDtlsBox();
 
         if (renderedBoxCount === 0 && !isPosJustPatched && (hasPosMismatchText || actions.some(a => /set pos:|place of supply/i.test(a)))) renderPosBox();
 
@@ -5871,5 +5963,19 @@
             }
         }
     </script>
+
+    window.submitCopilotShipInput = function(btn) {
+        const parent = btn.closest('.copilot-ship-bar');
+        if (!parent) return;
+        const gstin = (parent.querySelector('[data-field="ship_gstin"]').value || '').trim();
+        const st = (parent.querySelector('[data-field="ship_state"]').value || '').trim();
+        const pin = (parent.querySelector('[data-field="ship_pin"]').value || '').trim();
+        if (gstin.toUpperCase() === 'URP' || !gstin) {
+            sendCopilotQuickMessage(`Clear Ship GSTIN for Port Export, Set Ship State: ${st}`);
+        } else {
+            sendCopilotQuickMessage(`Set Ship GSTIN: ${gstin}, Set Ship State: ${st}, Set Ship PIN: ${pin}`);
+        }
+    };
+
 </body>
 </html>

@@ -1,60 +1,26 @@
 ===========================================================================
              GST E-INVOICE & E-WAY BILL TRANSFORMATION REPORT
 ===========================================================================
-Total Invoices Processed : 5
-Compliant (Valid)       : 0
-Non-Compliant (Failed)  : 5
+Total Invoices Processed : 1
+Compliant (Valid)       : 1
+Non-Compliant (Failed)  : 0
 ---------------------------------------------------------------------------
 
-[INVALID] Invoice #1: INV-2026-001
-   Status             : INVALID
-   Auto-Corrections   : 34
-   Unresolved Errors  : 2
+[VALID] Invoice #1: INV26119115
+   Status             : VALID
+   Auto-Corrections   : 16
+   Unresolved Errors  : 0
    * Corrections Made (Customer Errors Fixed):
-     - [KEY_NAME_NORMALIZATION] system cd: 'system cd' -> 'system_cd'
-       Reason: Standardized non-compliant key 'system cd' to schema key 'system_cd'
-     - [KEY_NAME_NORMALIZATION] branch cd: 'branch cd' -> 'branch_cd'
-       Reason: Standardized non-compliant key 'branch cd' to schema key 'branch_cd'
-     - [KEY_NAME_NORMALIZATION] vertical cd: 'vertical cd' -> 'vertical_cd'
-       Reason: Standardized non-compliant key 'vertical cd' to schema key 'vertical_cd'
-     - [KEY_NAME_NORMALIZATION] trandt1.igst_on_intra: 'igst_on_intra' -> 'igstonintra'
-       Reason: Standardized non-compliant key 'igst_on_intra' to schema key 'igstonintra'
-     - [KEY_NAME_NORMALIZATION] supplierdt1.supplier_lginm: 'supplier_lginm' -> 'supplier_lglnm'
-       Reason: Standardized non-compliant key 'supplier_lginm' to schema key 'supplier_lglnm'
-     - [KEY_NAME_NORMALIZATION] supplierdt1.supplier flno: 'supplier flno' -> 'supplier_flno'
-       Reason: Standardized non-compliant key 'supplier flno' to schema key 'supplier_flno'
-     - [KEY_NAME_NORMALIZATION] supplierdt1.supplier state: 'supplier state' -> 'supplier_state'
-       Reason: Standardized non-compliant key 'supplier state' to schema key 'supplier_state'
-     - [KEY_NAME_NORMALIZATION] buyerdt1.buyer loc: 'buyer loc' -> 'buyer_loc'
-       Reason: Standardized non-compliant key 'buyer loc' to schema key 'buyer_loc'
-     - [KEY_NAME_NORMALIZATION] buyerdt1.buyer pin: 'buyer pin' -> 'buyer_pin'
-       Reason: Standardized non-compliant key 'buyer pin' to schema key 'buyer_pin'
-     - [KEY_NAME_NORMALIZATION] buyerdt1.buyer state: 'buyer state' -> 'buyer_state'
-       Reason: Standardized non-compliant key 'buyer state' to schema key 'buyer_state'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].ugc: 'ugc' -> 'uqc'
-       Reason: Standardized non-compliant key 'ugc' to schema key 'uqc'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].unit_rate: 'unit_rate' -> 'unitrate'
-       Reason: Standardized non-compliant key 'unit_rate' to schema key 'unitrate'
+     - [KEY_NAME_NORMALIZATION] docdt1.doc_date: 'doc_date' -> 'docdt'
+       Reason: Standardized non-compliant key 'doc_date' to schema key 'docdt'
+     - [KEY_NAME_NORMALIZATION] itemdtls[1].pretaxval: 'pretaxval' -> 'assamt'
+       Reason: Standardized non-compliant key 'pretaxval' to schema key 'assamt'
      - [KEY_NAME_NORMALIZATION] itemdtls[1].igstval: 'igstval' -> 'igstamt'
        Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
      - [KEY_NAME_NORMALIZATION] itemdtls[1].cgstval: 'cgstval' -> 'cgstamt'
        Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
      - [KEY_NAME_NORMALIZATION] itemdtls[1].sgstval: 'sgstval' -> 'sgstamt'
        Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].hsn: 'hsn' -> 'hsncd'
-       Reason: Standardized non-compliant key 'hsn' to schema key 'hsncd'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].hsn_code: 'hsn_code' -> 'hsncd'
-       Reason: Standardized non-compliant key 'hsn_code' to schema key 'hsncd'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].unitprice: 'unitprice' -> 'unitrate'
-       Reason: Standardized non-compliant key 'unitprice' to schema key 'unitrate'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].unit_price: 'unit_price' -> 'unitrate'
-       Reason: Standardized non-compliant key 'unit_price' to schema key 'unitrate'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].unit: 'unit' -> 'uqc'
-       Reason: Standardized non-compliant key 'unit' to schema key 'uqc'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].totamt: 'totamt' -> 'grossamt'
-       Reason: Standardized non-compliant key 'totamt' to schema key 'grossamt'
-     - [KEY_NAME_NORMALIZATION] itemdtls[1].assval: 'assval' -> 'assamt'
-       Reason: Standardized non-compliant key 'assval' to schema key 'assamt'
      - [KEY_NAME_NORMALIZATION] valdt1.cgstval: 'cgstval' -> 'cgstamt'
        Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
      - [KEY_NAME_NORMALIZATION] valdt1.sgstval: 'sgstval' -> 'sgstamt'
@@ -63,127 +29,18 @@ Non-Compliant (Failed)  : 5
        Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
      - [KEY_NAME_NORMALIZATION] valdt1.cesval: 'cesval' -> 'cessamt'
        Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
-     - [KEY_NAME_NORMALIZATION] valdt1.assval: 'assval' -> 'assamt'
-       Reason: Standardized non-compliant key 'assval' to schema key 'assamt'
-     - [KEY_NAME_NORMALIZATION] cgstval: 'cgstval' -> 'cgstamt'
-       Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
-     - [KEY_NAME_NORMALIZATION] sgstval: 'sgstval' -> 'sgstamt'
-       Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
-     - [KEY_NAME_NORMALIZATION] igstval: 'igstval' -> 'igstamt'
-       Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
-     - [KEY_NAME_NORMALIZATION] cesval: 'cesval' -> 'cessamt'
-       Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
-     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-30' -> '30-10-2026'
-       Reason: Standardized date format from '2026-10-30' to '30-10-2026'
-     - [MODULE_2_SENTINEL_HSN_RECTIFICATION] itemdtls[1].hsncd: '85011013' -> '62052000'
-       Reason: 🛡️ Module 2 HSN Sentinel Interception: Declared HSN '85011013' flagged with P(Error) = 85.5% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 85 (Electrical Machinery), but semantic text matches Chapter 62 (Articles of Apparel, Not Knitted) with 97.8% similarity., Vendor historical risk: Supplier has a 5.0% historical misclassification rate across prior filings., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '62052000' (Post-Intervention P(Error) = 2.9%, -82.7% risk drop) with statutory 5.0% GST before transmission to NIC portal.
-     - [PRICE_UNIT_RATE_ANOMALY] itemdtls[1].unitrate: '10000.0' -> '10000.0'
-       Reason: Severe Over-Invoicing detected: Unit rate ₹10,000.00/NOS is 23.8x higher than market maximum ₹420.00/NOS.
-   ! Unresolved NIC Rule Violations:
-     - [Code 4009] ewbdt1: E Way Bill can be generated provided at least HSN of one item belongs to goods.
-     - [Code 2176] itemdtls[1].hsncd: HSN Misclassification Screened: Declared HSN '85011013' flagged by Module 2 Sentinel.
-       Resolution: Confirm and apply Recommended HSN '62052000' to unlock Stage 2 IRN generation.
----------------------------------------------------------------------------
-[INVALID] Invoice #2: INV-2026-002
-   Status             : INVALID
-   Auto-Corrections   : 8
-   Unresolved Errors  : 3
-   * Corrections Made (Customer Errors Fixed):
-     - [KEY_NAME_NORMALIZATION] valdt1.cgstval: 'cgstval' -> 'cgstamt'
-       Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
-     - [KEY_NAME_NORMALIZATION] valdt1.sgstval: 'sgstval' -> 'sgstamt'
-       Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
-     - [KEY_NAME_NORMALIZATION] valdt1.igstval: 'igstval' -> 'igstamt'
-       Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
-     - [KEY_NAME_NORMALIZATION] valdt1.cesval: 'cesval' -> 'cessamt'
-       Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
-     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-30' -> '30-10-2026'
-       Reason: Standardized date format from '2026-10-30' to '30-10-2026'
-     - [FORMAT_NORMALIZATION] itemdtls[1].grossamt: '28000,00' -> '28000.00'
-       Reason: Replaced comma decimal separator '28000,00' with standard point notation '28000.00'
-     - [MODULE_2_SENTINEL_HSN_RECTIFICATION] itemdtls[2].hsncd: '850440' -> '85423300'
-       Reason: 🛡️ Module 2 HSN Sentinel Interception: Declared HSN '850440' flagged with P(Error) = 45.2% (MEDIUM risk). SHAP Root Causes: Low semantic match confidence: Retrieval similarity score (49.0%) is insufficient to guarantee correct classification., Unit price of ₹260.00 deviates significantly (20.1x) from statutory median price (₹5,229.06) for HSN 850440., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '85423300' (Post-Intervention P(Error) = 26.2%, -18.9% risk drop) with statutory 18.0% GST before transmission to NIC portal.
-     - [INVOICE_TOTALS_RECONCILIATION] valdt1.totinvval: '44741.20' -> '44740.00'
+     - [KEY_NAME_NORMALIZATION] doc_date: 'doc_date' -> 'docdt'
+       Reason: Standardized non-compliant key 'doc_date' to schema key 'docdt'
+     - [KEY_NAME_NORMALIZATION] document_date: 'document_date' -> 'docdt'
+       Reason: Standardized non-compliant key 'document_date' to schema key 'docdt'
+     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-11-02' -> '02-11-2026'
+       Reason: Standardized date format from '2026-11-02' to '02-11-2026'
+     - [UQC_MASTER_AUTO_ALIGNMENT] itemdtls[1].uqc: 'nos' -> 'NOS'
+       Reason: Unit Quantity Code 'nos' is not as per NIC master (Rule 2177). GST portal requires strict 3-letter uppercase code without punctuation. Original 'nos' formatted to 'NOS'. Auto-aligned to 'NOS'.
+     - [FORMAT_NORMALIZATION] itemdtls[1].assamt: '102480,11' -> '102480.11'
+       Reason: Replaced comma decimal separator '102480,11' with standard point notation '102480.11'
+     - [INVOICE_TOTALS_RECONCILIATION] valdt1.totinvval: '12092652.98' -> '120926.53'
        Reason: Reconciled Total Invoice Value with sum of items, taxes, other charges minus discounts (Rule 2189)
-   ! Unresolved NIC Rule Violations:
-     - [Code 4009] ewbdt1: E Way Bill can be generated provided at least HSN of one item belongs to goods.
-     - [Code 4021] ewbdt1.transporter_doc_date: Transporter document date cannot be earlier than invoice date.
-     - [Code 2176] itemdtls[2].hsncd: HSN Misclassification Screened: Declared HSN '850440' flagged by Module 2 Sentinel.
-       Resolution: Confirm and apply Recommended HSN '85423300' to unlock Stage 2 IRN generation.
----------------------------------------------------------------------------
-[INVALID] Invoice #3: EXP-2026-003
-   Status             : INVALID
-   Auto-Corrections   : 8
-   Unresolved Errors  : 1
-   * Corrections Made (Customer Errors Fixed):
-     - [KEY_NAME_NORMALIZATION] valdt1.cgstval: 'cgstval' -> 'cgstamt'
-       Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
-     - [KEY_NAME_NORMALIZATION] valdt1.sgstval: 'sgstval' -> 'sgstamt'
-       Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
-     - [KEY_NAME_NORMALIZATION] valdt1.igstval: 'igstval' -> 'igstamt'
-       Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
-     - [KEY_NAME_NORMALIZATION] valdt1.cesval: 'cesval' -> 'cessamt'
-       Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
-     - [DATE_FORMAT_NORMALIZATION] expdt1.shipbdt: '25/08/2026' -> '25-08-2026'
-       Reason: Standardized date format from '25/08/2026' to '25-08-2026'
-     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-30' -> '30-10-2026'
-       Reason: Standardized date format from '2026-10-30' to '30-10-2026'
-     - [FORMAT_NORMALIZATION] itemdtls[1].grossamt: '1040000,00' -> '1040000.00'
-       Reason: Replaced comma decimal separator '1040000,00' with standard point notation '1040000.00'
-     - [FORMAT_NORMALIZATION] itemdtls[1].totitemval: '1227200,00' -> '1227200.00'
-       Reason: Replaced comma decimal separator '1227200,00' with standard point notation '1227200.00'
-   ! Unresolved NIC Rule Violations:
-     - [Code 4009] ewbdt1: E Way Bill can be generated provided at least HSN of one item belongs to goods.
----------------------------------------------------------------------------
-[INVALID] Invoice #4: SEZ-2026-004
-   Status             : INVALID
-   Auto-Corrections   : 8
-   Unresolved Errors  : 2
-   * Corrections Made (Customer Errors Fixed):
-     - [KEY_NAME_NORMALIZATION] valdt1.cgstval: 'cgstval' -> 'cgstamt'
-       Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
-     - [KEY_NAME_NORMALIZATION] valdt1.sgstval: 'sgstval' -> 'sgstamt'
-       Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
-     - [KEY_NAME_NORMALIZATION] valdt1.igstval: 'igstval' -> 'igstamt'
-       Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
-     - [KEY_NAME_NORMALIZATION] valdt1.cesval: 'cesval' -> 'cessamt'
-       Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
-     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-30' -> '30-10-2026'
-       Reason: Standardized date format from '2026-10-30' to '30-10-2026'
-     - [FORMAT_NORMALIZATION] itemdtls[1].grossamt: '10000,00' -> '10000.00'
-       Reason: Replaced comma decimal separator '10000,00' with standard point notation '10000.00'
-     - [FORMAT_NORMALIZATION] itemdtls[1].assamt: '10000,00' -> '10000.00'
-       Reason: Replaced comma decimal separator '10000,00' with standard point notation '10000.00'
-     - [FORMAT_NORMALIZATION] itemdtls[1].totitemval: '11800,00' -> '11800.00'
-       Reason: Replaced comma decimal separator '11800,00' with standard point notation '11800.00'
-   ! Unresolved NIC Rule Violations:
-     - [Code 2247] buyerdt1.buyer_gstin: Recipient should be SEZ for - SEZWP transaction: Recipient '24TUHCN2957U5ZT' is a regular domestic taxpayer (DTA), but invoice was tagged as 'SEZWP'. Transactions with standard domestic enterprises cannot use SEZ supply types. Set SupTyp to 'B2B'.
-       Resolution: Change supply type to B2B for domestic buyers, or pass the buyer's distinct SEZ unit GSTIN.
-     - [Code 4009] ewbdt1: E Way Bill can be generated provided at least HSN of one item belongs to goods.
----------------------------------------------------------------------------
-[INVALID] Invoice #5: INV-2026-005
-   Status             : INVALID
-   Auto-Corrections   : 8
-   Unresolved Errors  : 2
-   * Corrections Made (Customer Errors Fixed):
-     - [KEY_NAME_NORMALIZATION] valdt1.cgstval: 'cgstval' -> 'cgstamt'
-       Reason: Standardized non-compliant key 'cgstval' to schema key 'cgstamt'
-     - [KEY_NAME_NORMALIZATION] valdt1.sgstval: 'sgstval' -> 'sgstamt'
-       Reason: Standardized non-compliant key 'sgstval' to schema key 'sgstamt'
-     - [KEY_NAME_NORMALIZATION] valdt1.igstval: 'igstval' -> 'igstamt'
-       Reason: Standardized non-compliant key 'igstval' to schema key 'igstamt'
-     - [KEY_NAME_NORMALIZATION] valdt1.cesval: 'cesval' -> 'cessamt'
-       Reason: Standardized non-compliant key 'cesval' to schema key 'cessamt'
-     - [DATE_FORMAT_NORMALIZATION] docdt1.docdt: '2026-10-30' -> '30-10-2026'
-       Reason: Standardized date format from '2026-10-30' to '30-10-2026'
-     - [MODULE_2_SENTINEL_HSN_RECTIFICATION] itemdtls[1].hsncd: '760110' -> '72181000'
-       Reason: 🛡️ Module 2 HSN Sentinel Interception: Declared HSN '760110' flagged with P(Error) = 86.3% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 76 (Aluminium and Articles Thereof), but semantic text matches Chapter 72 (Iron and Steel) with 90.6% similarity., Unit price of ₹210.00 deviates significantly (9.5x) from statutory median price (₹1,997.38) for HSN 760110., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '72181000' (Post-Intervention P(Error) = 16.1%, -70.2% risk drop) with statutory 18.0% GST before transmission to NIC portal.
-     - [FORMAT_NORMALIZATION] itemdtls[1].grossamt: '105000,00' -> '105000.00'
-       Reason: Replaced comma decimal separator '105000,00' with standard point notation '105000.00'
-     - [FORMAT_NORMALIZATION] itemdtls[1].totitemval: '123900,00' -> '123900.00'
-       Reason: Replaced comma decimal separator '123900,00' with standard point notation '123900.00'
-   ! Unresolved NIC Rule Violations:
-     - [Code 4009] ewbdt1: E Way Bill can be generated provided at least HSN of one item belongs to goods.
-     - [Code 2176] itemdtls[1].hsncd: HSN Misclassification Screened: Declared HSN '760110' flagged by Module 2 Sentinel.
-       Resolution: Confirm and apply Recommended HSN '72181000' to unlock Stage 2 IRN generation.
+     - [DATE_FORMAT_NORMALIZATION] ewbdt1.transporter_doc_date: '2026-11-02' -> '02-11-2026'
+       Reason: Standardized date format from '2026-11-02' to '02-11-2026'
 ---------------------------------------------------------------------------

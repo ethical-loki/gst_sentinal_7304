@@ -1,146 +1,61 @@
 {
-  "total_invoices": 5,
-  "valid_invoices": 0,
-  "failed_invoices": 5,
+  "total_invoices": 1,
+  "valid_invoices": 1,
+  "failed_invoices": 0,
   "results": [
     {
-      "invoice_number": "INV-2026-001",
-      "status": "INVALID",
-      "error_count": 2,
-      "errors": [
-        {
-          "error_code": 4009,
-          "field": "ewbdt1",
-          "message": "E Way Bill can be generated provided at least HSN of one item belongs to goods.",
-          "reason": "",
-          "resolution": ""
-        },
-        {
-          "error_code": 2176,
-          "field": "itemdtls[1].hsncd",
-          "message": "HSN Misclassification Screened: Declared HSN '85011013' flagged by Module 2 Sentinel.",
-          "reason": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '85011013' flagged with P(Error) = 85.5% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 85 (Electrical Machinery), but semantic text matches Chapter 62 (Articles of Apparel, Not Knitted) with 97.8% similarity., Vendor historical risk: Supplier has a 5.0% historical misclassification rate across prior filings., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '62052000' (Post-Intervention P(Error) = 2.9%, -82.7% risk drop) with statutory 5.0% GST before transmission to NIC portal.",
-          "resolution": "Confirm and apply Recommended HSN '62052000' to unlock Stage 2 IRN generation."
-        }
-      ],
+      "invoice_number": "INV26119115",
+      "status": "VALID",
+      "error_count": 0,
+      "errors": [],
       "price_anomaly_report": {
-        "status": "CRITICAL_RISK",
-        "has_anomalies": true,
-        "anomaly_count": 1,
-        "over_invoicing_count": 1,
+        "status": "CLEAN",
+        "has_anomalies": false,
+        "anomaly_count": 0,
+        "over_invoicing_count": 0,
         "under_invoicing_count": 0,
         "typo_count": 0,
-        "max_risk_score": 96,
+        "max_risk_score": 0,
         "items_scanned": 1,
         "findings": [
           {
             "item_index": 1,
-            "prdnm": "COTTON-SHIRTS",
-            "hsncd": "62052000",
+            "prdnm": "LED-DRIVER",
+            "hsncd": "850440",
             "uqc": "NOS",
-            "unitrate": 10000.0,
-            "qty": 10.0,
-            "assamt": 100000.0,
-            "is_anomaly": true,
-            "anomaly_type": "OVER_INVOICING",
-            "severity": "CRITICAL",
-            "risk_score": 96,
-            "benchmark_min": 180.0,
-            "benchmark_max": 420.0,
-            "benchmark_median": 280.0,
-            "ratio_to_median": 35.71,
+            "unitrate": 294.21,
+            "qty": 348.323,
+            "assamt": 102480.11,
+            "is_anomaly": false,
+            "anomaly_type": "NORMAL",
+            "severity": "NONE",
+            "risk_score": 0,
+            "benchmark_min": 140.0,
+            "benchmark_max": 550.0,
+            "benchmark_median": 260.0,
+            "ratio_to_median": 1.13,
             "suggested_rate": null,
-            "reason": "Severe Over-Invoicing detected: Unit rate \u20b910,000.00/NOS is 23.8x higher than market maximum \u20b9420.00/NOS.",
-            "statutory_risk": "\u26a0\ufe0f Potential Circular Trading / Fraudulent Input Tax Credit (ITC) claim prohibited under CGST Act Section 132(1)(b) & Rule 86A.",
-            "benchmark_source": "Keyword:cotton"
+            "reason": "Unit rate is within normal statutory benchmark range.",
+            "statutory_risk": "",
+            "benchmark_source": "HSN:850440"
           }
         ]
       },
-      "corrections_applied_count": 34,
+      "corrections_applied_count": 16,
       "corrections_applied": [
         {
           "category": "KEY_NAME_NORMALIZATION",
-          "field": "system cd",
-          "original": "system cd",
-          "corrected": "system_cd",
-          "description": "Standardized non-compliant key 'system cd' to schema key 'system_cd'"
+          "field": "docdt1.doc_date",
+          "original": "doc_date",
+          "corrected": "docdt",
+          "description": "Standardized non-compliant key 'doc_date' to schema key 'docdt'"
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
-          "field": "branch cd",
-          "original": "branch cd",
-          "corrected": "branch_cd",
-          "description": "Standardized non-compliant key 'branch cd' to schema key 'branch_cd'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "vertical cd",
-          "original": "vertical cd",
-          "corrected": "vertical_cd",
-          "description": "Standardized non-compliant key 'vertical cd' to schema key 'vertical_cd'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "trandt1.igst_on_intra",
-          "original": "igst_on_intra",
-          "corrected": "igstonintra",
-          "description": "Standardized non-compliant key 'igst_on_intra' to schema key 'igstonintra'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "supplierdt1.supplier_lginm",
-          "original": "supplier_lginm",
-          "corrected": "supplier_lglnm",
-          "description": "Standardized non-compliant key 'supplier_lginm' to schema key 'supplier_lglnm'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "supplierdt1.supplier flno",
-          "original": "supplier flno",
-          "corrected": "supplier_flno",
-          "description": "Standardized non-compliant key 'supplier flno' to schema key 'supplier_flno'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "supplierdt1.supplier state",
-          "original": "supplier state",
-          "corrected": "supplier_state",
-          "description": "Standardized non-compliant key 'supplier state' to schema key 'supplier_state'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "buyerdt1.buyer loc",
-          "original": "buyer loc",
-          "corrected": "buyer_loc",
-          "description": "Standardized non-compliant key 'buyer loc' to schema key 'buyer_loc'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "buyerdt1.buyer pin",
-          "original": "buyer pin",
-          "corrected": "buyer_pin",
-          "description": "Standardized non-compliant key 'buyer pin' to schema key 'buyer_pin'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "buyerdt1.buyer state",
-          "original": "buyer state",
-          "corrected": "buyer_state",
-          "description": "Standardized non-compliant key 'buyer state' to schema key 'buyer_state'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].ugc",
-          "original": "ugc",
-          "corrected": "uqc",
-          "description": "Standardized non-compliant key 'ugc' to schema key 'uqc'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].unit_rate",
-          "original": "unit_rate",
-          "corrected": "unitrate",
-          "description": "Standardized non-compliant key 'unit_rate' to schema key 'unitrate'"
+          "field": "itemdtls[1].pretaxval",
+          "original": "pretaxval",
+          "corrected": "assamt",
+          "description": "Standardized non-compliant key 'pretaxval' to schema key 'assamt'"
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
@@ -165,55 +80,6 @@
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].hsn",
-          "original": "hsn",
-          "corrected": "hsncd",
-          "description": "Standardized non-compliant key 'hsn' to schema key 'hsncd'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].hsn_code",
-          "original": "hsn_code",
-          "corrected": "hsncd",
-          "description": "Standardized non-compliant key 'hsn_code' to schema key 'hsncd'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].unitprice",
-          "original": "unitprice",
-          "corrected": "unitrate",
-          "description": "Standardized non-compliant key 'unitprice' to schema key 'unitrate'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].unit_price",
-          "original": "unit_price",
-          "corrected": "unitrate",
-          "description": "Standardized non-compliant key 'unit_price' to schema key 'unitrate'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].unit",
-          "original": "unit",
-          "corrected": "uqc",
-          "description": "Standardized non-compliant key 'unit' to schema key 'uqc'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].totamt",
-          "original": "totamt",
-          "corrected": "grossamt",
-          "description": "Standardized non-compliant key 'totamt' to schema key 'grossamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "itemdtls[1].assval",
-          "original": "assval",
-          "corrected": "assamt",
-          "description": "Standardized non-compliant key 'assval' to schema key 'assamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
           "field": "valdt1.cgstval",
           "original": "cgstval",
           "corrected": "cgstamt",
@@ -242,645 +108,74 @@
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.assval",
-          "original": "assval",
-          "corrected": "assamt",
-          "description": "Standardized non-compliant key 'assval' to schema key 'assamt'"
+          "field": "doc_date",
+          "original": "doc_date",
+          "corrected": "docdt",
+          "description": "Standardized non-compliant key 'doc_date' to schema key 'docdt'"
         },
         {
           "category": "KEY_NAME_NORMALIZATION",
-          "field": "cgstval",
-          "original": "cgstval",
-          "corrected": "cgstamt",
-          "description": "Standardized non-compliant key 'cgstval' to schema key 'cgstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "sgstval",
-          "original": "sgstval",
-          "corrected": "sgstamt",
-          "description": "Standardized non-compliant key 'sgstval' to schema key 'sgstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "igstval",
-          "original": "igstval",
-          "corrected": "igstamt",
-          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "cesval",
-          "original": "cesval",
-          "corrected": "cessamt",
-          "description": "Standardized non-compliant key 'cesval' to schema key 'cessamt'"
+          "field": "document_date",
+          "original": "document_date",
+          "corrected": "docdt",
+          "description": "Standardized non-compliant key 'document_date' to schema key 'docdt'"
         },
         {
           "category": "DATE_FORMAT_NORMALIZATION",
           "field": "docdt1.docdt",
-          "original": "2026-10-30",
-          "corrected": "30-10-2026",
-          "description": "Standardized date format from '2026-10-30' to '30-10-2026'"
+          "original": "2026-11-02",
+          "corrected": "02-11-2026",
+          "description": "Standardized date format from '2026-11-02' to '02-11-2026'"
         },
         {
-          "category": "MODULE_2_SENTINEL_HSN_RECTIFICATION",
-          "field": "itemdtls[1].hsncd",
-          "original": "85011013",
-          "corrected": "62052000",
-          "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '85011013' flagged with P(Error) = 85.5% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 85 (Electrical Machinery), but semantic text matches Chapter 62 (Articles of Apparel, Not Knitted) with 97.8% similarity., Vendor historical risk: Supplier has a 5.0% historical misclassification rate across prior filings., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '62052000' (Post-Intervention P(Error) = 2.9%, -82.7% risk drop) with statutory 5.0% GST before transmission to NIC portal."
-        },
-        {
-          "category": "PRICE_UNIT_RATE_ANOMALY",
-          "field": "itemdtls[1].unitrate",
-          "original": "10000.0",
-          "corrected": "10000.0",
-          "severity": "CRITICAL",
-          "anomaly_type": "OVER_INVOICING",
-          "risk_score": 96,
-          "description": "Severe Over-Invoicing detected: Unit rate \u20b910,000.00/NOS is 23.8x higher than market maximum \u20b9420.00/NOS."
-        }
-      ],
-      "buyer_risk_profile": {
-        "buyer_gstin": "27TUHCN2957U5ZN",
-        "buyer_name": "MAHARASHTRA   INDUSTRIAL DISTRIBUTORS",
-        "buyer_state": "27",
-        "pos": "27",
-        "supplier_state": "29",
-        "is_urp": false,
-        "itc_eligibility": "ELIGIBLE_100_PERCENT",
-        "risk_score": 10,
-        "risk_level": "LOW",
-        "risk_badge": "\ud83d\udfe2 LOW RISK",
-        "risk_factors": [
-          "\u2705 Buyer GSTIN '27TUHCN2957U5ZN' conforms to statutory 15-character Modulo-36 standard.",
-          "\u2705 Place of Supply (POS: 27) matches Buyer GSTIN state jurisdiction (27).",
-          "\u2705 Interstate supply (29 -> 27) correctly routed through Integrated GST (IGST).",
-          "\u2705 Input Tax Credit (ITC) Claim: Fully eligible under CGST Act Section 16(2)."
-        ]
-      },
-      "hsn_screening_alert": {
-        "status": "FLAGGED",
-        "declared_hsn": "85011013",
-        "recommended_hsn": "62052000",
-        "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '85011013' flagged with P(Error) = 85.5% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 85 (Electrical Machinery), but semantic text matches Chapter 62 (Articles of Apparel, Not Knitted) with 97.8% similarity., Vendor historical risk: Supplier has a 5.0% historical misclassification rate across prior filings., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '62052000' (Post-Intervention P(Error) = 2.9%, -82.7% risk drop) with statutory 5.0% GST before transmission to NIC portal."
-      }
-    },
-    {
-      "invoice_number": "INV-2026-002",
-      "status": "INVALID",
-      "error_count": 3,
-      "errors": [
-        {
-          "error_code": 4009,
-          "field": "ewbdt1",
-          "message": "E Way Bill can be generated provided at least HSN of one item belongs to goods.",
-          "reason": "",
-          "resolution": ""
-        },
-        {
-          "error_code": 4021,
-          "field": "ewbdt1.transporter_doc_date",
-          "message": "Transporter document date cannot be earlier than invoice date.",
-          "reason": "",
-          "resolution": ""
-        },
-        {
-          "error_code": 2176,
-          "field": "itemdtls[2].hsncd",
-          "message": "HSN Misclassification Screened: Declared HSN '850440' flagged by Module 2 Sentinel.",
-          "reason": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '850440' flagged with P(Error) = 45.2% (MEDIUM risk). SHAP Root Causes: Low semantic match confidence: Retrieval similarity score (49.0%) is insufficient to guarantee correct classification., Unit price of \u20b9260.00 deviates significantly (20.1x) from statutory median price (\u20b95,229.06) for HSN 850440., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '85423300' (Post-Intervention P(Error) = 26.2%, -18.9% risk drop) with statutory 18.0% GST before transmission to NIC portal.",
-          "resolution": "Confirm and apply Recommended HSN '85423300' to unlock Stage 2 IRN generation."
-        }
-      ],
-      "price_anomaly_report": {
-        "status": "CLEAN",
-        "has_anomalies": false,
-        "anomaly_count": 0,
-        "over_invoicing_count": 0,
-        "under_invoicing_count": 0,
-        "typo_count": 0,
-        "max_risk_score": 0,
-        "items_scanned": 2,
-        "findings": [
-          {
-            "item_index": 1,
-            "prdnm": "COTTON-YARN",
-            "hsncd": "520522",
-            "uqc": "KGS",
-            "unitrate": 280.0,
-            "qty": 100.0,
-            "assamt": 28000.0,
-            "is_anomaly": false,
-            "anomaly_type": "NORMAL",
-            "severity": "NONE",
-            "risk_score": 0,
-            "benchmark_min": 220.0,
-            "benchmark_max": 380.0,
-            "benchmark_median": 300.0,
-            "ratio_to_median": 0.93,
-            "suggested_rate": null,
-            "reason": "Unit rate is within normal statutory benchmark range.",
-            "statutory_risk": "",
-            "benchmark_source": "HSN:520522"
-          },
-          {
-            "item_index": 2,
-            "prdnm": "LED-DRIVER",
-            "hsncd": "85423300",
-            "uqc": "NOS",
-            "unitrate": 260.0,
-            "qty": 50.0,
-            "assamt": 13000.0,
-            "is_anomaly": false,
-            "anomaly_type": "NORMAL",
-            "severity": "NONE",
-            "risk_score": 0,
-            "benchmark_min": 140.0,
-            "benchmark_max": 550.0,
-            "benchmark_median": 260.0,
-            "ratio_to_median": 1.0,
-            "suggested_rate": null,
-            "reason": "Unit rate is within normal statutory benchmark range.",
-            "statutory_risk": "",
-            "benchmark_source": "Keyword:driver"
-          }
-        ]
-      },
-      "corrections_applied_count": 8,
-      "corrections_applied": [
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.cgstval",
-          "original": "cgstval",
-          "corrected": "cgstamt",
-          "description": "Standardized non-compliant key 'cgstval' to schema key 'cgstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.sgstval",
-          "original": "sgstval",
-          "corrected": "sgstamt",
-          "description": "Standardized non-compliant key 'sgstval' to schema key 'sgstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.igstval",
-          "original": "igstval",
-          "corrected": "igstamt",
-          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.cesval",
-          "original": "cesval",
-          "corrected": "cessamt",
-          "description": "Standardized non-compliant key 'cesval' to schema key 'cessamt'"
-        },
-        {
-          "category": "DATE_FORMAT_NORMALIZATION",
-          "field": "docdt1.docdt",
-          "original": "2026-10-30",
-          "corrected": "30-10-2026",
-          "description": "Standardized date format from '2026-10-30' to '30-10-2026'"
-        },
-        {
-          "category": "FORMAT_NORMALIZATION",
-          "field": "itemdtls[1].grossamt",
-          "original": "28000,00",
-          "corrected": "28000.00",
-          "description": "Replaced comma decimal separator '28000,00' with standard point notation '28000.00'"
-        },
-        {
-          "category": "MODULE_2_SENTINEL_HSN_RECTIFICATION",
-          "field": "itemdtls[2].hsncd",
-          "original": "850440",
-          "corrected": "85423300",
-          "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '850440' flagged with P(Error) = 45.2% (MEDIUM risk). SHAP Root Causes: Low semantic match confidence: Retrieval similarity score (49.0%) is insufficient to guarantee correct classification., Unit price of \u20b9260.00 deviates significantly (20.1x) from statutory median price (\u20b95,229.06) for HSN 850440., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '85423300' (Post-Intervention P(Error) = 26.2%, -18.9% risk drop) with statutory 18.0% GST before transmission to NIC portal."
-        },
-        {
-          "category": "INVOICE_TOTALS_RECONCILIATION",
-          "field": "valdt1.totinvval",
-          "original": "44741.20",
-          "corrected": "44740.00",
-          "description": "Reconciled Total Invoice Value with sum of items, taxes, other charges minus discounts (Rule 2189)"
-        }
-      ],
-      "buyer_risk_profile": {
-        "buyer_gstin": "27AAACR4849R1ZL",
-        "buyer_name": "PUNE ENGINEERING WORKS PVT LTD",
-        "buyer_state": "27",
-        "pos": "27",
-        "supplier_state": "27",
-        "is_urp": false,
-        "itc_eligibility": "ELIGIBLE_100_PERCENT",
-        "risk_score": 10,
-        "risk_level": "LOW",
-        "risk_badge": "\ud83d\udfe2 LOW RISK",
-        "risk_factors": [
-          "\u2705 Buyer GSTIN '27AAACR4849R1ZL' conforms to statutory 15-character Modulo-36 standard.",
-          "\u2705 Place of Supply (POS: 27) matches Buyer GSTIN state jurisdiction (27).",
-          "\u2705 Intrastate supply (27) correctly routed through dual CGST + SGST.",
-          "\u2705 Input Tax Credit (ITC) Claim: Fully eligible under CGST Act Section 16(2)."
-        ]
-      },
-      "hsn_screening_alert": {
-        "status": "FLAGGED",
-        "declared_hsn": "850440",
-        "recommended_hsn": "85423300",
-        "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '850440' flagged with P(Error) = 45.2% (MEDIUM risk). SHAP Root Causes: Low semantic match confidence: Retrieval similarity score (49.0%) is insufficient to guarantee correct classification., Unit price of \u20b9260.00 deviates significantly (20.1x) from statutory median price (\u20b95,229.06) for HSN 850440., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '85423300' (Post-Intervention P(Error) = 26.2%, -18.9% risk drop) with statutory 18.0% GST before transmission to NIC portal."
-      }
-    },
-    {
-      "invoice_number": "EXP-2026-003",
-      "status": "INVALID",
-      "error_count": 1,
-      "errors": [
-        {
-          "error_code": 4009,
-          "field": "ewbdt1",
-          "message": "E Way Bill can be generated provided at least HSN of one item belongs to goods.",
-          "reason": "",
-          "resolution": ""
-        }
-      ],
-      "price_anomaly_report": {
-        "status": "CLEAN",
-        "has_anomalies": false,
-        "anomaly_count": 0,
-        "over_invoicing_count": 0,
-        "under_invoicing_count": 0,
-        "typo_count": 0,
-        "max_risk_score": 0,
-        "items_scanned": 1,
-        "findings": [
-          {
-            "item_index": 1,
-            "prdnm": "STEEL-ROD",
-            "hsncd": "720839",
-            "uqc": "TON",
-            "unitrate": 52000.0,
-            "qty": 20.0,
-            "assamt": 1040000.0,
-            "is_anomaly": false,
-            "anomaly_type": "NORMAL",
-            "severity": "NONE",
-            "risk_score": 0,
-            "benchmark_min": 45000.0,
-            "benchmark_max": 65000.0,
-            "benchmark_median": 55000.0,
-            "ratio_to_median": 0.95,
-            "suggested_rate": null,
-            "reason": "Unit rate is within normal statutory benchmark range.",
-            "statutory_risk": "",
-            "benchmark_source": "HSN:720839"
-          }
-        ]
-      },
-      "corrections_applied_count": 8,
-      "corrections_applied": [
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.cgstval",
-          "original": "cgstval",
-          "corrected": "cgstamt",
-          "description": "Standardized non-compliant key 'cgstval' to schema key 'cgstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.sgstval",
-          "original": "sgstval",
-          "corrected": "sgstamt",
-          "description": "Standardized non-compliant key 'sgstval' to schema key 'sgstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.igstval",
-          "original": "igstval",
-          "corrected": "igstamt",
-          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.cesval",
-          "original": "cesval",
-          "corrected": "cessamt",
-          "description": "Standardized non-compliant key 'cesval' to schema key 'cessamt'"
-        },
-        {
-          "category": "DATE_FORMAT_NORMALIZATION",
-          "field": "expdt1.shipbdt",
-          "original": "25/08/2026",
-          "corrected": "25-08-2026",
-          "description": "Standardized date format from '25/08/2026' to '25-08-2026'"
-        },
-        {
-          "category": "DATE_FORMAT_NORMALIZATION",
-          "field": "docdt1.docdt",
-          "original": "2026-10-30",
-          "corrected": "30-10-2026",
-          "description": "Standardized date format from '2026-10-30' to '30-10-2026'"
-        },
-        {
-          "category": "FORMAT_NORMALIZATION",
-          "field": "itemdtls[1].grossamt",
-          "original": "1040000,00",
-          "corrected": "1040000.00",
-          "description": "Replaced comma decimal separator '1040000,00' with standard point notation '1040000.00'"
-        },
-        {
-          "category": "FORMAT_NORMALIZATION",
-          "field": "itemdtls[1].totitemval",
-          "original": "1227200,00",
-          "corrected": "1227200.00",
-          "description": "Replaced comma decimal separator '1227200,00' with standard point notation '1227200.00'"
-        }
-      ],
-      "buyer_risk_profile": {
-        "buyer_gstin": "URP",
-        "buyer_name": "PACIFIC APPAREL IMPORTERS LLC",
-        "buyer_state": "96",
-        "pos": "96",
-        "supplier_state": "33",
-        "is_urp": true,
-        "itc_eligibility": "NOT_APPLICABLE_URP",
-        "risk_score": 10,
-        "risk_level": "LOW",
-        "risk_badge": "\ud83d\udfe2 LOW RISK",
-        "risk_factors": [
-          "\u2139\ufe0f Consumer / B2C transaction (URP recipient).",
-          "\u2705 Interstate supply (33 -> 96) correctly routed through Integrated GST (IGST)."
-        ]
-      }
-    },
-    {
-      "invoice_number": "SEZ-2026-004",
-      "status": "INVALID",
-      "error_count": 2,
-      "errors": [
-        {
-          "error_code": 2247,
-          "field": "buyerdt1.buyer_gstin",
-          "message": "Recipient should be SEZ for - SEZWP transaction: Recipient '24TUHCN2957U5ZT' is a regular domestic taxpayer (DTA), but invoice was tagged as 'SEZWP'. Transactions with standard domestic enterprises cannot use SEZ supply types. Set SupTyp to 'B2B'.",
-          "reason": "The transaction supply type (TranDtls.SupTyp) is set to SEZWP or SEZWOP, but the recipient's GSTIN (BuyerDtls.Gstin) is registered as a regular domestic taxpayer (DTA) rather than an SEZ unit or developer in the GST master registry.",
-          "resolution": "Change supply type to B2B for domestic buyers, or pass the buyer's distinct SEZ unit GSTIN."
-        },
-        {
-          "error_code": 4009,
-          "field": "ewbdt1",
-          "message": "E Way Bill can be generated provided at least HSN of one item belongs to goods.",
-          "reason": "",
-          "resolution": ""
-        }
-      ],
-      "price_anomaly_report": {
-        "status": "CLEAN",
-        "has_anomalies": false,
-        "anomaly_count": 0,
-        "over_invoicing_count": 0,
-        "under_invoicing_count": 0,
-        "typo_count": 0,
-        "max_risk_score": 0,
-        "items_scanned": 1,
-        "findings": [
-          {
-            "item_index": 1,
-            "prdnm": "POLY-HANGER",
-            "hsncd": "39269069",
-            "uqc": "PCS",
-            "unitrate": 20.0,
-            "qty": 500.0,
-            "assamt": 10000.0,
-            "is_anomaly": false,
-            "anomaly_type": "NORMAL",
-            "severity": "NONE",
-            "risk_score": 0,
-            "benchmark_min": 10.0,
-            "benchmark_max": 45.0,
-            "benchmark_median": 22.0,
-            "ratio_to_median": 0.91,
-            "suggested_rate": null,
-            "reason": "Unit rate is within normal statutory benchmark range.",
-            "statutory_risk": "",
-            "benchmark_source": "HSN:39269069"
-          }
-        ]
-      },
-      "corrections_applied_count": 8,
-      "corrections_applied": [
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.cgstval",
-          "original": "cgstval",
-          "corrected": "cgstamt",
-          "description": "Standardized non-compliant key 'cgstval' to schema key 'cgstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.sgstval",
-          "original": "sgstval",
-          "corrected": "sgstamt",
-          "description": "Standardized non-compliant key 'sgstval' to schema key 'sgstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.igstval",
-          "original": "igstval",
-          "corrected": "igstamt",
-          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.cesval",
-          "original": "cesval",
-          "corrected": "cessamt",
-          "description": "Standardized non-compliant key 'cesval' to schema key 'cessamt'"
-        },
-        {
-          "category": "DATE_FORMAT_NORMALIZATION",
-          "field": "docdt1.docdt",
-          "original": "2026-10-30",
-          "corrected": "30-10-2026",
-          "description": "Standardized date format from '2026-10-30' to '30-10-2026'"
-        },
-        {
-          "category": "FORMAT_NORMALIZATION",
-          "field": "itemdtls[1].grossamt",
-          "original": "10000,00",
-          "corrected": "10000.00",
-          "description": "Replaced comma decimal separator '10000,00' with standard point notation '10000.00'"
+          "category": "UQC_MASTER_AUTO_ALIGNMENT",
+          "field": "itemdtls[1].uqc",
+          "original": "nos",
+          "corrected": "NOS",
+          "description": "Unit Quantity Code 'nos' is not as per NIC master (Rule 2177). GST portal requires strict 3-letter uppercase code without punctuation. Original 'nos' formatted to 'NOS'. Auto-aligned to 'NOS'."
         },
         {
           "category": "FORMAT_NORMALIZATION",
           "field": "itemdtls[1].assamt",
-          "original": "10000,00",
-          "corrected": "10000.00",
-          "description": "Replaced comma decimal separator '10000,00' with standard point notation '10000.00'"
+          "original": "102480,11",
+          "corrected": "102480.11",
+          "description": "Replaced comma decimal separator '102480,11' with standard point notation '102480.11'"
         },
         {
-          "category": "FORMAT_NORMALIZATION",
-          "field": "itemdtls[1].totitemval",
-          "original": "11800,00",
-          "corrected": "11800.00",
-          "description": "Replaced comma decimal separator '11800,00' with standard point notation '11800.00'"
-        }
-      ],
-      "buyer_risk_profile": {
-        "buyer_gstin": "24TUHCN2957U5ZT",
-        "buyer_name": "KANDLA FREE TRADE APPARELS SEZ UNIT",
-        "buyer_state": "24",
-        "pos": "24",
-        "supplier_state": "24",
-        "is_urp": false,
-        "itc_eligibility": "ELIGIBLE_100_PERCENT",
-        "risk_score": 45,
-        "risk_level": "HIGH",
-        "risk_badge": "\ud83d\udfe0 HIGH RISK",
-        "risk_factors": [
-          "\u2705 Buyer GSTIN '24TUHCN2957U5ZT' conforms to statutory 15-character Modulo-36 standard.",
-          "\u2705 Place of Supply (POS: 24) matches Buyer GSTIN state jurisdiction (24).",
-          "\u274c Tax Split Mismatch: Intrastate supply (24) charged IGST instead of dual CGST+SGST.",
-          "\u2705 Input Tax Credit (ITC) Claim: Fully eligible under CGST Act Section 16(2)."
-        ]
-      }
-    },
-    {
-      "invoice_number": "INV-2026-005",
-      "status": "INVALID",
-      "error_count": 2,
-      "errors": [
-        {
-          "error_code": 4009,
-          "field": "ewbdt1",
-          "message": "E Way Bill can be generated provided at least HSN of one item belongs to goods.",
-          "reason": "",
-          "resolution": ""
-        },
-        {
-          "error_code": 2176,
-          "field": "itemdtls[1].hsncd",
-          "message": "HSN Misclassification Screened: Declared HSN '760110' flagged by Module 2 Sentinel.",
-          "reason": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '760110' flagged with P(Error) = 86.3% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 76 (Aluminium and Articles Thereof), but semantic text matches Chapter 72 (Iron and Steel) with 90.6% similarity., Unit price of \u20b9210.00 deviates significantly (9.5x) from statutory median price (\u20b91,997.38) for HSN 760110., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '72181000' (Post-Intervention P(Error) = 16.1%, -70.2% risk drop) with statutory 18.0% GST before transmission to NIC portal.",
-          "resolution": "Confirm and apply Recommended HSN '72181000' to unlock Stage 2 IRN generation."
-        }
-      ],
-      "price_anomaly_report": {
-        "status": "CLEAN",
-        "has_anomalies": false,
-        "anomaly_count": 0,
-        "over_invoicing_count": 0,
-        "under_invoicing_count": 0,
-        "typo_count": 0,
-        "max_risk_score": 0,
-        "items_scanned": 1,
-        "findings": [
-          {
-            "item_index": 1,
-            "prdnm": "ALUM-INGOT",
-            "hsncd": "72181000",
-            "uqc": "KGS",
-            "unitrate": 210.0,
-            "qty": 500.0,
-            "assamt": 105000.0,
-            "is_anomaly": false,
-            "anomaly_type": "NORMAL",
-            "severity": "NONE",
-            "risk_score": 0,
-            "benchmark_min": 15.0,
-            "benchmark_max": 8000.0,
-            "benchmark_median": 250.0,
-            "ratio_to_median": 0.84,
-            "suggested_rate": null,
-            "reason": "Unit rate is within normal statutory benchmark range.",
-            "statutory_risk": "",
-            "benchmark_source": "UQC:KGS"
-          }
-        ]
-      },
-      "corrections_applied_count": 8,
-      "corrections_applied": [
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.cgstval",
-          "original": "cgstval",
-          "corrected": "cgstamt",
-          "description": "Standardized non-compliant key 'cgstval' to schema key 'cgstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.sgstval",
-          "original": "sgstval",
-          "corrected": "sgstamt",
-          "description": "Standardized non-compliant key 'sgstval' to schema key 'sgstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.igstval",
-          "original": "igstval",
-          "corrected": "igstamt",
-          "description": "Standardized non-compliant key 'igstval' to schema key 'igstamt'"
-        },
-        {
-          "category": "KEY_NAME_NORMALIZATION",
-          "field": "valdt1.cesval",
-          "original": "cesval",
-          "corrected": "cessamt",
-          "description": "Standardized non-compliant key 'cesval' to schema key 'cessamt'"
+          "category": "INVOICE_TOTALS_RECONCILIATION",
+          "field": "valdt1.totinvval",
+          "original": "12092652.98",
+          "corrected": "120926.53",
+          "description": "Reconciled Total Invoice Value with sum of items, taxes, other charges minus discounts (Rule 2189)"
         },
         {
           "category": "DATE_FORMAT_NORMALIZATION",
-          "field": "docdt1.docdt",
-          "original": "2026-10-30",
-          "corrected": "30-10-2026",
-          "description": "Standardized date format from '2026-10-30' to '30-10-2026'"
-        },
-        {
-          "category": "MODULE_2_SENTINEL_HSN_RECTIFICATION",
-          "field": "itemdtls[1].hsncd",
-          "original": "760110",
-          "corrected": "72181000",
-          "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '760110' flagged with P(Error) = 86.3% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 76 (Aluminium and Articles Thereof), but semantic text matches Chapter 72 (Iron and Steel) with 90.6% similarity., Unit price of \u20b9210.00 deviates significantly (9.5x) from statutory median price (\u20b91,997.38) for HSN 760110., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '72181000' (Post-Intervention P(Error) = 16.1%, -70.2% risk drop) with statutory 18.0% GST before transmission to NIC portal."
-        },
-        {
-          "category": "FORMAT_NORMALIZATION",
-          "field": "itemdtls[1].grossamt",
-          "original": "105000,00",
-          "corrected": "105000.00",
-          "description": "Replaced comma decimal separator '105000,00' with standard point notation '105000.00'"
-        },
-        {
-          "category": "FORMAT_NORMALIZATION",
-          "field": "itemdtls[1].totitemval",
-          "original": "123900,00",
-          "corrected": "123900.00",
-          "description": "Replaced comma decimal separator '123900,00' with standard point notation '123900.00'"
+          "field": "ewbdt1.transporter_doc_date",
+          "original": "2026-11-02",
+          "corrected": "02-11-2026",
+          "description": "Standardized date format from '2026-11-02' to '02-11-2026'"
         }
       ],
       "buyer_risk_profile": {
-        "buyer_gstin": "07TUHCN2957U5ZP",
-        "buyer_name": "CAPITAL CABLE & CONDUCTORS LTD",
-        "buyer_state": "07",
-        "pos": "07",
-        "supplier_state": "19",
+        "buyer_gstin": "33VLTOQ1450U1ZW",
+        "buyer_name": "KPR   SOLUTIONS",
+        "buyer_state": "33",
+        "pos": "33",
+        "supplier_state": "36",
         "is_urp": false,
         "itc_eligibility": "ELIGIBLE_100_PERCENT",
         "risk_score": 10,
         "risk_level": "LOW",
         "risk_badge": "\ud83d\udfe2 LOW RISK",
         "risk_factors": [
-          "\u2705 Buyer GSTIN '07TUHCN2957U5ZP' conforms to statutory 15-character Modulo-36 standard.",
-          "\u2705 Place of Supply (POS: 07) matches Buyer GSTIN state jurisdiction (07).",
-          "\u2705 Interstate supply (19 -> 07) correctly routed through Integrated GST (IGST).",
+          "\u2705 Buyer GSTIN '33VLTOQ1450U1ZW' conforms to statutory 15-character Modulo-36 standard.",
+          "\u2705 Place of Supply (POS: 33) matches Buyer GSTIN state jurisdiction (33).",
+          "\u2705 Interstate supply (36 -> 33) correctly routed through Integrated GST (IGST).",
           "\u2705 Input Tax Credit (ITC) Claim: Fully eligible under CGST Act Section 16(2)."
         ]
-      },
-      "hsn_screening_alert": {
-        "status": "FLAGGED",
-        "declared_hsn": "760110",
-        "recommended_hsn": "72181000",
-        "description": "\ud83d\udee1\ufe0f Module 2 HSN Sentinel Interception: Declared HSN '760110' flagged with P(Error) = 86.3% (HIGH risk). SHAP Root Causes: Declared HSN belongs to Chapter 76 (Aluminium and Articles Thereof), but semantic text matches Chapter 72 (Iron and Steel) with 90.6% similarity., Unit price of \u20b9210.00 deviates significantly (9.5x) from statutory median price (\u20b91,997.38) for HSN 760110., Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side.. Auto-rectified to Counterfactual HSN '72181000' (Post-Intervention P(Error) = 16.1%, -70.2% risk drop) with statutory 18.0% GST before transmission to NIC portal."
       }
     }
   ],
-  "total_price_anomalies": 1,
-  "compliance_rate": 0.0
+  "total_price_anomalies": 0,
+  "compliance_rate": 100.0
 }

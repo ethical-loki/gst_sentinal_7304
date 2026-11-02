@@ -845,14 +845,6 @@ class DynamicHSNSemanticMatcher:
         stemmed_q = stem_word_set(q_words_3)
         q_lower = clean_query.lower()
 
-        # Technology subtype conflict mapping
-        TECH_CONFLICTS = {
-            "servo": {"squirrel cage", "squirrel", "slipring", "traction", "universal"},
-            "stepper": {"squirrel cage", "squirrel", "slipring", "traction", "universal"},
-            "brushless": {"squirrel cage", "squirrel", "slipring", "traction", "universal"},
-            "induction": {"servo", "stepper", "synchronous"},
-        }
-
         def check_real_residual(hier_text: str) -> bool:
             parts = str(hier_text).split(" -> ")
             leaf = parts[-1].strip().rstrip(".").lower()
@@ -872,47 +864,22 @@ class DynamicHSNSemanticMatcher:
             else:
                 dist_tokens = set(str(raw_dist).lower().split())
 
-            # Apply morphological stemming to determine shared distinctive tokens under GIR 3(a)
-            shares_token = bool(stem_word_set(dist_tokens) & stemmed_q)
+            # Dynamic morphological token extraction under GIR 3(a)
+            cand_tokens = stem_word_set(re.findall(r"\b[a-z0-9]{2,}\b", desc_lower))
+            shares_token = bool(stem_word_set(dist_tokens) & stemmed_q) or bool(cand_tokens & stemmed_q)
 
             multiplier = 1.0
-            # Apply 0.85x down-weight multiplier for residual branch unless query explicitly shares distinctive token
+            # GIR 3(a): Specific description preferred over general/residual basket ('Other...')
             if is_res and not shares_token:
                 multiplier *= 0.85
 
-            # Subtype compatibility check:
-            # Penalize candidates with mutually exclusive technology qualifiers (e.g. servo motor vs squirrel cage induction)
-            for tech, conf_types in TECH_CONFLICTS.items():
-                if tech in q_lower:
-                    if any(conf in desc_lower for conf in conf_types):
-                        multiplier *= 0.80
-
-            # Statutory capacity bracket inference (e.g. Heading 8501 multi-phase AC motors):
-            # 8501 51: <= 750 W (fractional / micro / FHP)
-            # 8501 52: > 750 W to <= 75 kW (standard industrial / machinery / commercial)
-            # 8501 53: > 75 kW (heavy utility / traction / high capacity)
-            if code.startswith("85015"):
-                is_industrial = any(w in q_lower for w in ["industrial", "cnc", "machinery", "machine", "robotics", "automation", "drive"])
-                is_fractional = any(w in q_lower for w in ["micro", "mini", "fractional", "toy", "small", "fhp"])
-                is_heavy = any(w in q_lower for w in ["traction", "locomotive", "megawatt", "mw", "heavy utility", "high voltage", "substation"])
-
-                if is_industrial and not is_heavy and not is_fractional:
-                    if code.startswith("850152"):
-                        multiplier *= 1.10
-                    elif code.startswith("850153"):
-                        multiplier *= 0.85
-                    elif code.startswith("850151"):
-                        multiplier *= 0.85
-                elif is_heavy:
-                    if code.startswith("850153"):
-                        multiplier *= 1.10
-                    else:
-                        multiplier *= 0.85
-                elif is_fractional:
-                    if code.startswith("850151"):
-                        multiplier *= 1.10
-                    else:
-                        multiplier *= 0.85
+            # Dynamic token overlap specificity boost:
+            # If candidate description explicitly shares distinct descriptive tokens with the query, reward specificity
+            if stemmed_q and cand_tokens:
+                overlap_count = len(stemmed_q & cand_tokens)
+                overlap_ratio = overlap_count / max(1, len(stemmed_q))
+                if overlap_ratio >= 0.5:
+                    multiplier *= (1.0 + min(0.15, 0.10 * overlap_ratio))
 
             final_score = raw_combined[idx] * multiplier
 

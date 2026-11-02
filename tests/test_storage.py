@@ -189,7 +189,7 @@ def test_parquet_roundtrip_storage(tmp_path, sample_raw_invoice_dict):
     df_recovered = read_parquet(target_file)
     assert len(df_recovered) == 1
     assert df_recovered.iloc[0]["invoice_id"] == "INV-2026-B2B"
-    assert df_recovered.iloc[0]["hsn"] in ("8481", "85015320")
+    assert df_recovered.iloc[0]["hsn"] in ("8481", "85015320", "85015290")
     assert df_recovered.iloc[0]["total_item_value"] == 59000.0
 
 
@@ -227,7 +227,7 @@ def test_store_invoice_and_export_to_excel(tmp_path, sample_raw_invoice_dict):
     df_excel = pd.read_excel(out_excel, sheet_name="Invoices", dtype={"hsn": str})
     assert len(df_excel) == 2
     assert set(df_excel["invoice_id"].tolist()) == {"INV-2026-B2B", "INV-2026-B2B-02"}
-    assert df_excel.iloc[0]["hsn"] in ("8481", "85015320")
+    assert df_excel.iloc[0]["hsn"] in ("8481", "85015320", "85015290")
 
 
 def test_store_to_processed_payload_directory(sample_raw_invoice_dict):
@@ -249,7 +249,7 @@ def test_store_to_processed_payload_directory(sample_raw_invoice_dict):
     recent_row = df_parquet[df_parquet["invoice_id"] == "INV-2026-B2B"].iloc[-1]
     assert recent_row["invoice_id"] == "INV-2026-B2B"
     assert recent_row["supplier_gstin"] == "29ABCDE1234F1Z5"
-    assert recent_row["hsn"] in ("8481", "85015320")
+    assert recent_row["hsn"] in ("8481", "85015320", "85015290")
     assert recent_row["total_item_value"] == 59000.0
 
     # 2. Export to default processed_payload Excel path

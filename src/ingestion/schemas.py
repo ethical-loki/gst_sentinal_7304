@@ -12407,16 +12407,18 @@ class InvoicePayload(BaseModel):
 
                 sup_gstin = str(cleaned_data.get("supplierdt1", {}).get("supplier_gstin") or cleaned_data.get("self_gstin", "") or "").strip()
 
-                # Module 2: Machine Learning HSN Gatekeeper, Tree SHAP & Counterfactual Self-Healing
+                # Module 2: Qwen 2.5 Neural Verifier, ML HSN Gatekeeper & Counterfactual Self-Healing
                 sentinel_audit = None
                 if audit_and_rectify_line_item_sentinel:
                     try:
+                        raw_rt = float(itm.get("igstrt") or (float(itm.get("cgstrt", 0)) + float(itm.get("sgstrt", 0))) or itm.get("gstrate", 0) or 0.0)
                         sentinel_audit = audit_and_rectify_line_item_sentinel(
                             product_name=p_name,
                             product_desc=p_desc,
                             declared_hsn=curr_hsn,
                             unit_price=float(itm["unitprice"]),
-                            supplier_gstin=sup_gstin
+                            supplier_gstin=sup_gstin,
+                            declared_rate=raw_rt if raw_rt > 0 else None
                         )
                     except Exception as ex:
                         print(f"[WARN] Module 2 Sentinel error: {ex}")

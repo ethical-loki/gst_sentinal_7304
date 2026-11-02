@@ -118,26 +118,66 @@ class HSNVerifiedStore:
     def lookup(self, query: str) -> Optional[Dict[str, Any]]:
         """
         Sub-0.5ms O(1) Cache Hit Lookup.
-        Returns the verified record if previously audited.
+        Returns the verified record if previously audited in data/hsn_verified_store.parquet.
         """
         clean_key = normalize_trade_key(query)
         if not clean_key:
             return None
 
-        # Exact normalized match
+        # 1. Exact normalized match
         rec = self.memory_cache.get(clean_key)
         if rec:
             res = dict(rec)
             res["is_cache_hit"] = True
-            res["match_type"] = "Verified Qwen Memory Store (<0.5ms)"
+            res["match_type"] = "Already there in the stored file (data/hsn_verified_store.parquet)"
             return res
 
-        # Suffix / prefix match for slightly varied queries
+        # 2. Check hyphen-to-space and space-to-hyphen variants
+        alt_key = re.sub(r"\s+", " ", clean_key.replace("-", " ")).strip()
+        alt_hyphen = re.sub(r"\s+", "-", clean_key).strip()
         for k, v in self.memory_cache.items():
-            if k == clean_key or (len(k) > 10 and (k in clean_key or clean_key in k)):
+            k_alt = re.sub(r"\s+", " ", k.replace("-", " ")).strip()
+            if k == clean_key or k == alt_key or k_alt == alt_key or k_alt == clean_key or k == alt_hyphen:
                 res = dict(v)
                 res["is_cache_hit"] = True
-                res["match_type"] = "Verified Qwen Memory Store (<0.5ms)"
+                res["match_type"] = "Already there in the stored file (data/hsn_verified_store.parquet)"
+                return res
+
+        # 3. Substring / containment match for rich trade queries
+        for k, v in self.memory_cache.items():
+            k_alt = re.sub(r"\s+", " ", k.replace("-", " ")).strip()
+            if (len(k) >= 5 and (k in clean_key or clean_key in k)) or (len(k_alt) >= 5 and (k_alt in alt_key or alt_key in k_alt)):
+                res = dict(v)
+                res["is_cache_hit"] = True
+                res["match_type"] = "Already there in the stored file (data/hsn_verified_store.parquet)"
+                return res
+
+        return None
+
+    def lookup_item(self, product_name: str, product_desc: str = "") -> Optional[Dict[str, Any]]:
+        """
+        Multi-key fast lookup for invoice payloads:
+        Checks combined description, product name, and product description in hsn_verified_store.parquet.
+        """
+        p_name = (product_name or "").strip()
+        p_desc = (product_desc or "").strip()
+        combined = f"{p_name} {p_desc}".strip() or p_name or p_desc
+
+        # Check combined description first
+        res = self.lookup(combined)
+        if res:
+            return res
+
+        # Check product name
+        if p_name and p_name != combined:
+            res = self.lookup(p_name)
+            if res:
+                return res
+
+        # Check product description
+        if p_desc and p_desc != combined:
+            res = self.lookup(p_desc)
+            if res:
                 return res
 
         return None

@@ -139,6 +139,39 @@ def lookup_hsn_code(
     if cache_key in _LOOKUP_CACHE:
         return _LOOKUP_CACHE[cache_key]
 
+    # Step 0: Check data/hsn_verified_store.parquet first (fast retrieval, no time waster)
+    try:
+        from src.ml.hsn_verified_store import get_hsn_verified_store
+        store = get_hsn_verified_store()
+        cached = store.lookup(query) or store.lookup(product_name)
+        if cached and (not clean_prefix or cached.get("hsn_code", "").startswith(clean_prefix)):
+            c_code = str(cached.get("hsn_code", "")).strip()
+            c_rate = float(cached.get("gst_rate", 18.0))
+            cached_res = [{
+                "hsn_code": c_code,
+                "hsn_4digit": c_code[:4],
+                "heading": c_code[:4],
+                "chapter": c_code[:2],
+                "description": str(cached.get("description", "")),
+                "clean_description": query.lower().strip(),
+                "gst_rate": c_rate,
+                "igst_rate": c_rate,
+                "cgst_rate": round(c_rate / 2.0, 2),
+                "sgst_rate": round(c_rate / 2.0, 2),
+                "is_blocked_17_5": 0,
+                "blocked_17_5_reason": "Eligible: General ITC",
+                "score": 1.0,
+                "confidence_pct": 100.0,
+                "match_type": "Already there in the stored file (data/hsn_verified_store.parquet)",
+                "is_from_store": True,
+                "storage_file": "data/hsn_verified_store.parquet",
+                "reasoning": f"Already there in the stored file (data/hsn_verified_store.parquet): {cached.get('reasoning', '')}"
+            }]
+            _LOOKUP_CACHE[cache_key] = cached_res
+            return cached_res
+    except Exception:
+        pass
+
     engine = get_hsn_intelligence_engine()
 
     if engine is not None:
@@ -475,16 +508,219 @@ def _audit_and_rectify_line_item_sentinel_impl(
     declared_hsn: str,
     unit_price: float,
     supplier_gstin: Optional[str] = None,
+    declared_rate: Optional[float] = None,
 ) -> Dict[str, Any]:
     """
-    Evaluates an invoice line item against Module 2 HSNAuditSentinel and Rule 2176:
-    - Verifies format, length, and existence against CBIC statutory tariff master
-    - Evaluates LightGBM calibrated misclassification probability P(Error)
-    - Tree SHAP attribution of error root causes
-    - Minimal corrective counterfactual HSN recommendation (P(Error | h*) < 0.05)
+    Evaluates an invoice line item against Qwen 2.5 Neural Verification Layer, Module 2 HSNAuditSentinel and Rule 2176:
+    - Validates format and statutory existence against CBIC tariff master (Rule 2176).
+    - Validates declared HSN code using the Qwen layer against product functional specifications.
+    - If HSN code is correct AND statutory tax rate matches: approves item without declaring any error.
+    - If HSN code is wrong or tax rate diverges: rectifies HSN code according to the statutory tax rate.
     
     Returns structured audit decisions for the self-healing E-Invoice & Lakehouse pipeline.
     """
+    clean_desc = f"{product_name} {product_desc}".strip() or product_name or product_desc or "Item"
+    declared_hsn_str = str(declared_hsn or "").strip()
+    sup_gstin_str = str(supplier_gstin).strip().upper() if supplier_gstin else ""
+    decl_rate_f = float(declared_rate) if declared_rate is not None else None
+
+    # =========================================================================
+    # STEP 1: FIRST CHECK IN hsn_verified_store.parquet!
+    # Ultra-fast retrieval (<0.5ms) with zero time wasted.
+    # Checks based on product description and product name from the payload.
+    # If found, declares "Already there in the stored file (data/hsn_verified_store.parquet)".
+    # =========================================================================
+    store_record = None
+    try:
+        from src.ml.hsn_verified_store import get_hsn_verified_store
+        store = get_hsn_verified_store()
+        if hasattr(store, "lookup_item"):
+            store_record = store.lookup_item(product_name=product_name, product_desc=product_desc)
+        if not store_record:
+            store_record = store.lookup(clean_desc) or store.lookup(product_name) or (store.lookup(product_desc) if product_desc else None)
+    except Exception as s_err:
+        store_record = None
+
+    if store_record is not None:
+        from src.ml.qwen_hsn_verifier import clean_hsn_digits, format_hsn
+        c_hsn = clean_hsn_digits(store_record.get("hsn_code", ""))
+        c_rate = float(store_record.get("gst_rate", 18.0))
+        c_desc = str(store_record.get("description", ""))
+        stored_reason = str(store_record.get("reasoning", ""))
+        decl_digits = clean_hsn_digits(declared_hsn_str)
+        rate_ok = (decl_rate_f is None or abs(decl_rate_f - c_rate) < 0.1)
+        hsn_ok = (decl_digits == c_hsn or (store_record.get("is_perfect_match", False) and decl_digits == clean_hsn_digits(store_record.get("base_hsn", ""))))
+        is_perfect = bool(hsn_ok and rate_ok)
+
+        if is_perfect:
+            # Verified and aligned: NO ERROR DECLARED!
+            return {
+                "is_flagged": False,
+                "should_rectify": False,
+                "original_hsn": declared_hsn_str,
+                "rectified_hsn": declared_hsn_str,
+                "statutory_rate": c_rate,
+                "error_probability": 0.02,
+                "post_intervention_risk": 0.02,
+                "risk_drop": 0.0,
+                "risk_level": "LOW",
+                "reasons": [
+                    f"⚡ Already there in the stored file (data/hsn_verified_store.parquet): Statutory tariff code '{declared_hsn_str}' verified correct ({stored_reason}) with statutory {c_rate:.1f}% GST."
+                ],
+                "shap_attributions": {"stored_verified_file": 1.0},
+                "status_badge": "AUTO_APPROVED",
+                "source": "ALREADY_IN_STORED_FILE",
+                "qwen_audit": {
+                    "item_description": clean_desc,
+                    "is_perfect_match": True,
+                    "status": "PERFECT_MATCH",
+                    "base_hsn": declared_hsn_str,
+                    "qwen_hsn": c_hsn,
+                    "qwen_rate": c_rate,
+                    "reasoning": f"Already there in the stored file (data/hsn_verified_store.parquet): {stored_reason}",
+                    "is_cache_hit": True,
+                    "storage_file": "data/hsn_verified_store.parquet",
+                    "source": "ALREADY_IN_STORED_FILE",
+                    "verification_model": "Already there in the stored file (data/hsn_verified_store.parquet)"
+                }
+            }
+        else:
+            # Code or rate mismatch: Rectified according to stored official statutory tariff
+            rule_2176_msg = None
+            rule_2176_diag = classify_rule_2176_diagnostic(declared_hsn_str, product_name, product_desc)
+            if rule_2176_diag is not None:
+                rule_2176_msg = f"⚠️ NIC Rule 2176 Violation: HSN code(s)-{declared_hsn_str or '(blank)'} is invalid. Wrong HSN code is being passed. Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side."
+
+            reasons = [
+                f"⚡ Already there in the stored file (data/hsn_verified_store.parquet): You entered {declared_hsn_str or '(blank)'} for '{product_name}'. Reclassified to Official Statutory Tariff {c_hsn} ({c_desc[:60]}...) with statutory {c_rate:.1f}% GST.",
+                f"⚡ Stored Statutory Reasoning: {stored_reason}",
+                "Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side."
+            ]
+            if rule_2176_msg:
+                reasons.insert(0, rule_2176_msg)
+
+            return {
+                "is_flagged": True,
+                "should_rectify": True,
+                "original_hsn": declared_hsn_str,
+                "rectified_hsn": c_hsn,
+                "statutory_rate": c_rate,
+                "error_probability": 0.98 if rule_2176_msg else 0.85,
+                "post_intervention_risk": 0.03,
+                "risk_drop": 0.95 if rule_2176_msg else 0.82,
+                "risk_level": "HIGH",
+                "reasons": reasons,
+                "shap_attributions": {"stored_verified_file": 0.95},
+                "status_badge": "FLAGGED_AND_RECTIFIED",
+                "error_code": 2176,
+                "resolution": f"Confirm and apply Recommended HSN '{c_hsn}' with statutory {c_rate:.1f}% GST to unlock Stage 2 IRN generation.",
+                "source": "ALREADY_IN_STORED_FILE",
+                "qwen_audit": {
+                    "item_description": clean_desc,
+                    "is_perfect_match": False,
+                    "status": "CORRECTED_BY_QWEN",
+                    "base_hsn": declared_hsn_str,
+                    "qwen_hsn": c_hsn,
+                    "qwen_rate": c_rate,
+                    "reasoning": f"Already there in the stored file (data/hsn_verified_store.parquet): {stored_reason}",
+                    "is_cache_hit": True,
+                    "storage_file": "data/hsn_verified_store.parquet",
+                    "source": "ALREADY_IN_STORED_FILE",
+                    "verification_model": "Already there in the stored file (data/hsn_verified_store.parquet)"
+                }
+            }
+
+    # =========================================================================
+    # STEP 2: NO FOUND RESULT IN STORED FILE -> EXECUTE QWEN LAYER!
+    # In the Data Lakehouse module, evaluates product name, product description,
+    # declared HSN code, and declared tax rate via Qwen 2.5 Neural Layer.
+    # =========================================================================
+    rule_2176 = classify_rule_2176_diagnostic(declared_hsn_str, product_name, product_desc)
+
+    # 3. If NO found result in the stored file -> Execute Qwen Neural Layer & Statutory Tariff Grounding
+    qwen_audit = None
+    try:
+        from src.ml.qwen_hsn_verifier import get_qwen_hsn_verifier
+        qwen_verifier = get_qwen_hsn_verifier()
+        if qwen_verifier is not None:
+            qwen_audit = qwen_verifier.verify_item(
+                query=clean_desc,
+                base_hsn=declared_hsn_str,
+                base_rate=decl_rate_f
+            )
+    except Exception as q_err:
+        qwen_audit = None
+
+    if qwen_audit is not None:
+        is_perfect = bool(qwen_audit.get("is_perfect_match", False))
+        q_hsn = str(qwen_audit.get("qwen_hsn", declared_hsn_str)).strip()
+        q_rate = float(qwen_audit.get("qwen_rate", 18.0))
+        q_desc = str(qwen_audit.get("qwen_description", ""))
+        q_reason = str(qwen_audit.get("reasoning", ""))
+
+        # Persist newly verified result to data/hsn_verified_store.parquet so it is already there next time
+        try:
+            from src.ml.hsn_verified_store import get_hsn_verified_store
+            store = get_hsn_verified_store()
+            store.upsert(
+                query=clean_desc,
+                hsn_code=q_hsn,
+                description=q_desc,
+                gst_rate=q_rate,
+                status="PERFECT_MATCH" if is_perfect else "CORRECTED_BY_QWEN",
+                is_perfect_match=is_perfect,
+                reasoning=q_reason,
+                base_hsn=declared_hsn_str,
+                verified_by="Qwen2.5-0.5B-Instruct Neural Verification"
+            )
+            _SENTINEL_AUDIT_CACHE.clear()
+        except Exception:
+            pass
+
+        # If Qwen layer confirms HSN is correct and statutory tax rate is aligned:
+        # NO ERROR DECLARED!
+        if is_perfect:
+            return {
+                "is_flagged": False,
+                "should_rectify": False,
+                "original_hsn": declared_hsn_str,
+                "rectified_hsn": declared_hsn_str,
+                "statutory_rate": q_rate,
+                "error_probability": 0.02,
+                "post_intervention_risk": 0.02,
+                "risk_drop": 0.0,
+                "risk_level": "LOW",
+                "reasons": [
+                    f"🧠 Qwen 2.5 Neural Verification: Statutory tariff code '{declared_hsn_str}' verified correct ({q_reason}) with statutory {q_rate:.1f}% GST."
+                ],
+                "shap_attributions": {"qwen_statutory_verification": 1.0},
+                "status_badge": "AUTO_APPROVED",
+                "qwen_audit": qwen_audit,
+            }
+        else:
+            # HSN is wrong or tax rate requires alignment: Rectify HSN according to statutory tax rate
+            return {
+                "is_flagged": True,
+                "should_rectify": True,
+                "original_hsn": declared_hsn_str,
+                "rectified_hsn": q_hsn,
+                "statutory_rate": q_rate,
+                "error_probability": 0.85,
+                "post_intervention_risk": 0.03,
+                "risk_drop": 0.82,
+                "risk_level": "HIGH",
+                "reasons": [
+                    f"⚠️ Wrong / Misclassified HSN Code Detected: You entered {declared_hsn_str or '(blank)'} for '{product_name}'. Reclassified by Qwen Layer to Official Statutory Tariff {q_hsn} ({q_desc[:60]}...) with statutory {q_rate:.1f}% GST.",
+                    f"🧠 Qwen Statutory Reasoning: {q_reason}",
+                    "Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side."
+                ],
+                "shap_attributions": {"qwen_statutory_verification": 0.95},
+                "status_badge": "FLAGGED_AND_RECTIFIED",
+                "error_code": 2176,
+                "resolution": f"Confirm and apply Recommended HSN '{q_hsn}' with statutory {q_rate:.1f}% GST to unlock Stage 2 IRN generation.",
+                "qwen_audit": qwen_audit,
+            }
+
     sentinel = get_hsn_audit_sentinel()
     clean_desc = f"{product_name} {product_desc}".strip() or product_name or product_desc or "Item"
     declared_hsn_str = str(declared_hsn or "").strip()
@@ -664,12 +900,14 @@ def audit_and_rectify_line_item_sentinel(
     product_desc: str = "",
     declared_hsn: Optional[str] = None,
     unit_price: float = 0.0,
-    supplier_gstin: Optional[str] = None
+    supplier_gstin: Optional[str] = None,
+    declared_rate: Optional[float] = None
 ) -> Dict[str, Any]:
     clean_desc = f"{product_name} {product_desc}".strip() or product_name or product_desc or "Item"
     declared_hsn_str = str(declared_hsn or "").strip()
     sup_gstin_str = str(supplier_gstin).strip().upper() if supplier_gstin else ""
-    cache_key = (clean_desc, declared_hsn_str, round(float(unit_price or 0.0), 2), sup_gstin_str)
+    d_rate_round = round(float(declared_rate), 2) if declared_rate is not None else None
+    cache_key = (clean_desc, declared_hsn_str, round(float(unit_price or 0.0), 2), sup_gstin_str, d_rate_round)
     if cache_key in _SENTINEL_AUDIT_CACHE:
         return _SENTINEL_AUDIT_CACHE[cache_key]
     
@@ -678,7 +916,8 @@ def audit_and_rectify_line_item_sentinel(
         product_desc=product_desc,
         declared_hsn=declared_hsn,
         unit_price=unit_price,
-        supplier_gstin=supplier_gstin
+        supplier_gstin=supplier_gstin,
+        declared_rate=declared_rate
     )
     if len(_SENTINEL_AUDIT_CACHE) < 2048:
         _SENTINEL_AUDIT_CACHE[cache_key] = res

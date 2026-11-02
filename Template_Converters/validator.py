@@ -289,6 +289,28 @@ class ValidationError:
         }
 
 
+def _parse_dec(val: Any, default: str = "0.00") -> Decimal:
+    """Safely converts numeric or string values to Decimal, handling commas and formatting."""
+    if val is None:
+        return Decimal(default)
+    if isinstance(val, (int, float)):
+        return Decimal(str(val))
+    if isinstance(val, Decimal):
+        return val
+    s = str(val).strip()
+    if not s:
+        return Decimal(default)
+    s = s.replace(" ", "")
+    if "," in s and "." in s:
+        s = s.replace(",", "")
+    elif "," in s and "." not in s:
+        s = s.replace(",", ".")
+    try:
+        return Decimal(s)
+    except Exception:
+        return Decimal(default)
+
+
 class GSTValidator:
     """
     Validates E-Invoice and E-Way Bill payloads against official NIC specifications.
@@ -1315,6 +1337,8 @@ class GSTValidator:
 
             if isservc not in ["Y", "N"]:
                 errors.append(ValidationError(2285, f"itemdtls[{sl}].isservc", f"Invalid isservc '{isservc}' for item {sl}. Must be 'Y' (Service) or 'N' (Goods)"))
+            if isservc != "Y" and not str(hsn).startswith("99"):
+                has_goods_item = True
 
             if not hsn:
                 errors.append(ValidationError(2176, f"itemdtls[{sl}].hsncd", f"HSN code(s)-(blank) is invalid: Wrong HSN code is being passed. Pl check the HSN code being passed and Cross-check the correctness of HSN code on e-invoice portal. Still, if you feel it is correct, then please send the details to the helpdesk for verification at e-invoice system side."))
@@ -1357,21 +1381,21 @@ class GSTValidator:
 
             # Numerical precision and calculation checks
             try:
-                qty = Decimal(raw_qty or "0")
-                unitrate = Decimal(str(itm.get("unitrate", itm.get("unitprice", itm.get("UnitPrice", "0"))) or "0"))
-                gross = Decimal(str(itm.get("grossamt", itm.get("totamt", itm.get("TotAmt", "0"))) or "0"))
-                discount = Decimal(str(itm.get("discount", itm.get("discval", itm.get("Discount", "0"))) or "0"))
-                othchrg = Decimal(str(itm.get("othchrg", itm.get("OthChrg", "0")) or "0"))
-                assamt = Decimal(str(itm.get("assamt", itm.get("assval", itm.get("AssAmt", "0"))) or "0"))
-                cgstrt = Decimal(str(itm.get("cgstrt", itm.get("gstrate", itm.get("CgstRt", "0"))) or "0"))
-                cgstamt = Decimal(str(itm.get("cgstamt", itm.get("cgstval", itm.get("CgstAmt", "0"))) or "0"))
-                sgstrt = Decimal(str(itm.get("sgstrt", itm.get("gstrate", itm.get("SgstRt", "0"))) or "0"))
-                sgstamt = Decimal(str(itm.get("sgstamt", itm.get("sgstval", itm.get("SgstAmt", "0"))) or "0"))
-                igstrt = Decimal(str(itm.get("igstrt", itm.get("gstrate", itm.get("IgstRt", "0"))) or "0"))
-                igstamt = Decimal(str(itm.get("igstamt", itm.get("igstval", itm.get("IgstAmt", "0"))) or "0"))
-                gstrate = Decimal(str(itm.get("gstrate", itm.get("GstRt", igstrt if igstrt > 0 else (cgstrt + sgstrt))) or "0"))
-                cessrt = Decimal(str(itm.get("cessrt", itm.get("cesrt", itm.get("CesRt", "0"))) or "0"))
-                cessamt = Decimal(str(itm.get("cessamt", itm.get("cesval", itm.get("CesAmt", "0"))) or "0"))
+                qty = _parse_dec(raw_qty)
+                unitrate = _parse_dec(itm.get("unitrate", itm.get("unitprice", itm.get("UnitPrice", "0"))))
+                gross = _parse_dec(itm.get("grossamt", itm.get("totamt", itm.get("TotAmt", "0"))))
+                discount = _parse_dec(itm.get("discount", itm.get("discval", itm.get("Discount", "0"))))
+                othchrg = _parse_dec(itm.get("othchrg", itm.get("OthChrg", "0")))
+                assamt = _parse_dec(itm.get("assamt", itm.get("assval", itm.get("AssAmt", "0"))))
+                cgstrt = _parse_dec(itm.get("cgstrt", itm.get("gstrate", itm.get("CgstRt", "0"))))
+                cgstamt = _parse_dec(itm.get("cgstamt", itm.get("cgstval", itm.get("CgstAmt", "0"))))
+                sgstrt = _parse_dec(itm.get("sgstrt", itm.get("gstrate", itm.get("SgstRt", "0"))))
+                sgstamt = _parse_dec(itm.get("sgstamt", itm.get("sgstval", itm.get("SgstAmt", "0"))))
+                igstrt = _parse_dec(itm.get("igstrt", itm.get("gstrate", itm.get("IgstRt", "0"))))
+                igstamt = _parse_dec(itm.get("igstamt", itm.get("igstval", itm.get("IgstAmt", "0"))))
+                gstrate = _parse_dec(itm.get("gstrate", itm.get("GstRt", igstrt if igstrt > 0 else (cgstrt + sgstrt))))
+                cessrt = _parse_dec(itm.get("cessrt", itm.get("cesrt", itm.get("CesRt", "0"))))
+                cessamt = _parse_dec(itm.get("cessamt", itm.get("cesval", itm.get("CesAmt", "0"))))
 
                 # Rule 2240: GST rate of tax is incorrect or not as notified
                 raw_gstrt_val = itm.get("gstrate", itm.get("GstRt"))
@@ -1384,11 +1408,11 @@ class GSTValidator:
                 ) if classify_rule_2240_diagnostic else None
                 if diag_2240 and not diag_2240["is_valid"]:
                     errors.append(ValidationError(2240, f"itemdtls[{sl}].gstrate", f"For Sl. No {sl}, GST rate of tax is incorrect or not as notified: {diag_2240['reason']}"))
-                stcessrt = Decimal(str(itm.get("statecessrt", itm.get("statecesrate", itm.get("StateCesRt", itm.get("stcesrt", itm.get("StCesRt", "0"))))) or "0"))
-                stcessamt = Decimal(str(itm.get("statecessamt", itm.get("statecesval", itm.get("StateCesAmt", itm.get("statecesamt", itm.get("stcesval", itm.get("StCesAmt", itm.get("stcessamt", "0"))))))) or "0"))
-                cesnonad = Decimal(str(itm.get("cessnonadval", itm.get("cesnonadval", itm.get("CesNonAdVal", itm.get("CesNonAdvlAmt", "0")))) or "0"))
-                stcesnonad = Decimal(str(itm.get("statecesnonadvl", itm.get("statecesnonadval", itm.get("StateCesNonAdvlAmt", itm.get("StateCesNonAdVal", itm.get("stcesnonadval", itm.get("stcesnonadvl", "0")))))) or "0"))
-                totitemval = Decimal(str(itm.get("totitemval", itm.get("totval", itm.get("TotItemVal", "0"))) or "0"))
+                stcessrt = _parse_dec(itm.get("statecessrt", itm.get("statecesrate", itm.get("StateCesRt", itm.get("stcesrt", itm.get("StCesRt", "0"))))))
+                stcessamt = _parse_dec(itm.get("statecessamt", itm.get("statecesval", itm.get("StateCesAmt", itm.get("statecesamt", itm.get("stcesval", itm.get("StCesAmt", itm.get("stcessamt", "0"))))))))
+                cesnonad = _parse_dec(itm.get("cessnonadval", itm.get("cesnonadval", itm.get("CesNonAdVal", itm.get("CesNonAdvlAmt", "0")))))
+                stcesnonad = _parse_dec(itm.get("statecesnonadvl", itm.get("statecesnonadval", itm.get("StateCesNonAdvlAmt", itm.get("StateCesNonAdVal", itm.get("stcesnonadval", itm.get("stcesnonadvl", "0")))))))
+                totitemval = _parse_dec(itm.get("totitemval", itm.get("totval", itm.get("TotItemVal", "0"))))
 
                 # Gross Amount validation: Qty * UnitPrice (Rule 2192)
                 expected_gross = (qty * unitrate).quantize(Decimal("0.01"))
@@ -1555,17 +1579,17 @@ class GSTValidator:
         val_raw = invoice.get("valdt1") or invoice.get("valdtls") or invoice.get("ValDtls")
         valdt1 = val_raw if isinstance(val_raw, dict) else (invoice.get("valdt1", {}) if isinstance(invoice.get("valdt1"), dict) else invoice)
         try:
-            ttlassval = Decimal(str(valdt1.get("ttlassval", valdt1.get("assval", valdt1.get("AssVal", "0"))) or "0"))
-            cgstval = Decimal(str(valdt1.get("cgstval", valdt1.get("CgstVal", "0")) or "0"))
-            sgstval = Decimal(str(valdt1.get("sgstval", valdt1.get("SgstVal", "0")) or "0"))
-            igstval = Decimal(str(valdt1.get("igstval", valdt1.get("IgstVal", "0")) or "0"))
-            cesval = Decimal(str(valdt1.get("cesval", valdt1.get("CesVal", "0")) or "0"))
-            stcesval = Decimal(str(valdt1.get("stcesval", valdt1.get("StCesVal", "0")) or "0"))
-            cesnonadval = Decimal(str(valdt1.get("cesnonadval", valdt1.get("CesNonAdVal", "0")) or "0"))
-            totinvval = Decimal(str(valdt1.get("totinvval", valdt1.get("totval", valdt1.get("TotInvVal", "0"))) or "0"))
-            othchrg = Decimal(str(valdt1.get("othchrg", valdt1.get("OthChrg", "0")) or "0"))
-            discval = Decimal(str(valdt1.get("discval", valdt1.get("discount", valdt1.get("Discount", "0"))) or "0"))
-            rndoffamt = Decimal(str(valdt1.get("rndoffamt", valdt1.get("RndOffAmt", "0")) or "0"))
+            ttlassval = _parse_dec(valdt1.get("assamt", valdt1.get("ttlassval", valdt1.get("assval", valdt1.get("AssVal", "0")))))
+            cgstval = _parse_dec(valdt1.get("cgstamt", valdt1.get("cgstval", valdt1.get("CgstVal", "0"))))
+            sgstval = _parse_dec(valdt1.get("sgstamt", valdt1.get("sgstval", valdt1.get("SgstVal", "0"))))
+            igstval = _parse_dec(valdt1.get("igstamt", valdt1.get("igstval", valdt1.get("IgstVal", "0"))))
+            cesval = _parse_dec(valdt1.get("cessamt", valdt1.get("cesval", valdt1.get("CesVal", "0"))))
+            stcesval = _parse_dec(valdt1.get("stcesval", valdt1.get("StCesVal", "0")))
+            cesnonadval = _parse_dec(valdt1.get("cesnonadval", valdt1.get("CesNonAdVal", "0")))
+            totinvval = _parse_dec(valdt1.get("totinvval", valdt1.get("totval", valdt1.get("TotInvVal", "0"))))
+            othchrg = _parse_dec(valdt1.get("othchrg", valdt1.get("OthChrg", "0")))
+            discval = _parse_dec(valdt1.get("discval", valdt1.get("discount", valdt1.get("Discount", "0"))))
+            rndoffamt = _parse_dec(valdt1.get("rndoffamt", valdt1.get("RndOffAmt", "0")))
 
             # Reconciliation of header totals with line item sums (Strict mathematical equality for assessable value, +/- Rs 2 tolerance for taxes)
             if abs(ttlassval - sum_assamt) > Decimal("0.005"):
