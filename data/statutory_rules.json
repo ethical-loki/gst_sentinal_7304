@@ -1,0 +1,86 @@
+[
+  {
+    "rule_id": "SECTION_XI_APPAREL_KNITTED",
+    "source_note": "Section XI Note 1 & Chapter 61 Note 1",
+    "trigger_families": ["garments_and_apparel", "textiles"],
+    "condition_form": ["knitted", "crocheted"],
+    "target_chapter": "61",
+    "boost": 0.018
+  },
+  {
+    "rule_id": "SECTION_XI_APPAREL_WOVEN",
+    "source_note": "Section XI Note 1 & Chapter 62 Note 1",
+    "trigger_families": ["garments_and_apparel", "textiles"],
+    "condition_form": ["woven"],
+    "target_chapter": "62",
+    "boost": 0.018
+  },
+  {
+    "rule_id": "SECTION_XX_FURNITURE",
+    "source_note": "Chapter 94 Note 1 & Heading 9403",
+    "trigger_families": ["furniture"],
+    "target_chapter": "94",
+    "boost": 0.018
+  },
+  {
+    "rule_id": "SECTION_XII_FOOTWEAR",
+    "source_note": "Chapter 64 Note 1",
+    "trigger_families": ["footwear"],
+    "target_chapter": "64",
+    "boost": 0.018
+  },
+  {
+    "rule_id": "CHAPTER_03_VS_16_SEAFOOD_RAW",
+    "source_note": "Chapter 03 Note 1 & Chapter 16 Note 1",
+    "trigger_families": ["seafood", "fish"],
+    "condition_form": ["fresh", "chilled", "frozen", "raw", "live"],
+    "target_chapter": "03",
+    "boost": 0.018
+  },
+  {
+    "rule_id": "CHAPTER_03_VS_16_SEAFOOD_PREPARED",
+    "source_note": "Chapter 16 Note 1",
+    "trigger_families": ["seafood", "fish"],
+    "condition_form": ["cooked", "prepared", "canned", "preserved"],
+    "target_chapter": "16",
+    "boost": 0.018
+  },
+  {
+    "rule_id": "CHAPTER_68_VS_87_MOUNTED_BRAKE",
+    "source_note": "Chapter 68 Note 1(e) & Chapter 87 Heading 8708",
+    "trigger_families": ["friction_materials", "automotive_parts"],
+    "condition_form": ["mounted"],
+    "target_chapter": "87",
+    "boost": 0.020
+  },
+  {
+    "rule_id": "CHAPTER_68_VS_87_UNMOUNTED_FRICTION",
+    "source_note": "Chapter 68 Heading 6813",
+    "trigger_families": ["friction_materials"],
+    "condition_form": ["unmounted", "without"],
+    "target_chapter": "68",
+    "boost": 0.020
+  },
+  {
+    "rule_id": "SECTION_XVI_ELECTRONICS_MICROPROCESSORS",
+    "source_note": "Chapter 85 Note 8 & Heading 8542",
+    "trigger_families": ["electronics_and_appliances", "semiconductors"],
+    "target_chapter": "85",
+    "boost": 0.020
+  },
+  {
+    "rule_id": "SECTION_XIV_PRECIOUS_METALS",
+    "source_note": "Chapter 71 Note 1",
+    "trigger_families": ["precious_metals_and_stones"],
+    "target_chapter": "71",
+    "boost": 0.018
+  },
+  {
+    "rule_id": "SECTION_VI_PHARMACEUTICALS",
+    "source_note": "Chapter 30 Note 1 & Heading 3004",
+    "trigger_families": ["pharmaceuticals"],
+    "target_chapter": "30",
+    "boost": 0.020
+  }
+]
+

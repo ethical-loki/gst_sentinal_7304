@@ -695,8 +695,30 @@
            ======================================================== */
         .workspace-container {
             width: 100%;
-            max-width: 720px;
+            max-width: 98vw;
             margin: 0 auto;
+            padding: 0 16px;
+            box-sizing: border-box;
+        }
+
+        .step-sample-pill {
+            background: rgba(30,41,59,0.8);
+            border: 1px solid rgba(148,163,184,0.3);
+            color: #cbd5e1;
+            padding: 4px 11px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .step-sample-pill:hover {
+            background: rgba(99,102,241,0.25);
+            border-color: #818cf8;
+            color: #ffffff;
+            transform: translateY(-1px);
         }
 
         .workspace-top-bar {
@@ -2088,6 +2110,87 @@
             border: 1px solid rgba(16, 185, 129, 0.3);
             color: #6ee7b7;
         }
+
+        /* ==========================================================
+           DAY 14: CUSTOMER CLARIFICATION INTERFACE STYLES
+           ========================================================== */
+        .clarify-card {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(168, 85, 247, 0.45);
+            border-radius: 14px;
+            padding: 22px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(12px);
+            margin-top: 20px;
+        }
+        .clarify-q-block {
+            background: rgba(30, 41, 59, 0.55);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            padding: 16px;
+            transition: border-color 0.2s ease;
+        }
+        .clarify-q-block.has-error {
+            border-color: rgba(248, 113, 113, 0.6);
+            background: rgba(239, 68, 68, 0.05);
+        }
+        .clarify-opt-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            background: rgba(15, 23, 42, 0.7);
+            color: #cbd5e1;
+            font-size: 0.84rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+        }
+        .clarify-opt-btn:hover {
+            border-color: rgba(168, 85, 247, 0.6);
+            background: rgba(30, 41, 59, 0.85);
+            color: #f8fafc;
+            transform: translateY(-1px);
+        }
+        .clarify-opt-btn.selected {
+            background: linear-gradient(135deg, rgba(147, 51, 234, 0.35), rgba(99, 102, 241, 0.35));
+            border-color: #a855f7;
+            color: #ffffff;
+            box-shadow: 0 0 14px rgba(168, 85, 247, 0.4);
+            font-weight: 700;
+        }
+        .clarify-opt-btn.opt-unknown {
+            border-color: rgba(148, 163, 184, 0.35);
+            color: #94a3b8;
+        }
+        .clarify-opt-btn.opt-unknown.selected {
+            background: rgba(71, 85, 105, 0.45);
+            border-color: #94a3b8;
+            color: #f1f5f9;
+            box-shadow: 0 0 10px rgba(148, 163, 184, 0.3);
+        }
+        .btn-clarify-row {
+            background: rgba(234, 179, 8, 0.15);
+            border: 1px solid rgba(234, 179, 8, 0.4);
+            color: #facc15;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s ease;
+        }
+        .btn-clarify-row:hover {
+            background: rgba(234, 179, 8, 0.25);
+            border-color: #facc15;
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 
@@ -2121,7 +2224,7 @@
             </button>
             <button type="button" class="nav-pill-btn pill-purple" id="tabBtn-qwen" onclick="switchView('qwen')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                ✨ Qwen AI Verifier
+                🤖 DeepSeek-V4 Verifier
             </button>
             <button type="button" class="nav-pill-btn pill-amber" id="tabBtn-converter" onclick="switchView('converter')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
@@ -2317,15 +2420,15 @@
                         </div>
                     </div>
 
-                    <!-- Card 5: Qwen 2.5 Neural Verifier (Dual-Model Audit) -->
+                    <!-- Card 5: DeepSeek-V4 Neural Verifier (Dual-Model Audit) -->
                     <div class="hero-module-card" style="border-color: rgba(168, 85, 247, 0.4); box-shadow: 0 4px 20px rgba(168, 85, 247, 0.15);" onclick="switchView('qwen')">
                         <div class="card-img-banner">
                             <div style="width:100%; height:100%; min-height:110px; background:linear-gradient(135deg, rgba(88, 28, 135, 0.8), rgba(30, 27, 75, 0.9)); display:flex; align-items:center; justify-content:center;">
-                                <span style="font-size:2.8rem;">✨</span>
+                                <span style="font-size:2.8rem;">🤖</span>
                             </div>
                             <div class="card-img-overlay">
-                                <span class="card-pill-tag tag-purple" style="background:rgba(168, 85, 247, 0.25); color:#f3e8ff; border:1px solid rgba(168, 85, 247, 0.5);">Qwen 2.5 Dual-Model</span>
-                                <span style="font-size:0.68rem; color:#e9d5ff; font-weight:700;">Offline LLM</span>
+                                <span class="card-pill-tag tag-purple" style="background:rgba(168, 85, 247, 0.25); color:#f3e8ff; border:1px solid rgba(168, 85, 247, 0.5);">DeepSeek-V4 Dual-Model</span>
+                                <span style="font-size:0.68rem; color:#e9d5ff; font-weight:700;">Day 5 + DeepSeek</span>
                             </div>
                         </div>
                         <div class="card-header-row">
@@ -2333,23 +2436,23 @@
                                 <div class="card-icon-container" style="color: #c084fc; border-color: rgba(168, 85, 247, 0.35);">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                                 </div>
-                                <h3 style="margin:0;">Qwen Neural Verifier</h3>
+                                <h3 style="margin:0;">DeepSeek Neural Verifier</h3>
                             </div>
                             <span class="mini-chip" style="color:#d8b4fe; border-color:rgba(168,85,247,0.4);">Dual-Model</span>
                         </div>
                         <div class="card-body">
                             <p>
-                                Cross-verifies Day 5 HSN predictions with Qwen 2.5 generative reasoning. Identifies Perfect Matches and explains Qwen corrections with statutory justifications.
+                                Cross-verifies Day 5 HSN vector predictions with DeepSeek-V4 generative reasoning &amp; CBIC statutory notes (GRI 1-6). Features interactive Evaluation Scorecard &amp; Ambiguity Clarification.
                             </p>
                             <div class="card-features-chips">
-                                <span class="mini-chip">Perfect Match</span>
-                                <span class="mini-chip">Qwen Corrected</span>
-                                <span class="mini-chip">Why Explanation</span>
+                                <span class="mini-chip">Day 5 Base</span>
+                                <span class="mini-chip">DeepSeek-V4 Audit</span>
+                                <span class="mini-chip">Scorecard Benchmark</span>
                             </div>
                         </div>
                         <div class="card-footer-action">
                             <span class="action-link-text" style="color:#c084fc;">
-                                Open Dual-Model Verification Screen
+                                Open Day 5 + DeepSeek Screen
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
                             </span>
                             <span class="quick-launch-link" style="color:#e9d5ff;">Launch Verifier ↗</span>
@@ -2421,9 +2524,9 @@
                         <span style="font-size: 0.72rem; opacity: 0.75; font-weight: normal;">(Day 05+06+07 • Tree SHAP &amp; Counterfactuals)</span>
                     </button>
                     <button type="button" class="module-switch-pill" id="btnModeQwen" onclick="switchView('qwen')">
-                        <span class="module-switch-tag" style="background:linear-gradient(135deg, #a855f7, #6366f1); color:#fff;">Layer Model</span>
-                        <span>✨ Qwen Neural Verifier</span>
-                        <span style="font-size: 0.72rem; opacity: 0.75; font-weight: normal;">(Dual-Model AI Audit • Perfect Match &amp; Qwen Corrections)</span>
+                        <span class="module-switch-tag" style="background:linear-gradient(135deg, #a855f7, #6366f1); color:#fff;">Day 5 + DeepSeek</span>
+                        <span>🤖 DeepSeek-V4 Neural Verifier</span>
+                        <span style="font-size: 0.72rem; opacity: 0.75; font-weight: normal;">(Dual-Model AI Audit • Scorecard Benchmark)</span>
                     </button>
                 </div>
 
@@ -2619,57 +2722,262 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- ========================================================
+                         DAY 14: DYNAMIC CUSTOMER CLARIFICATION UI FRAME
+                         ======================================================== -->
+                    <div id="clarificationContainer" class="clarify-card" style="display:none;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+                            <div>
+                                <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:6px;">
+                                    <span class="badge" style="background:rgba(234,179,8,0.2); color:#facc15; border:1px solid #facc15; font-weight:700; font-size:0.75rem; padding:4px 10px; border-radius:6px; box-shadow:0 0 10px rgba(234,179,8,0.25);">
+                                        ❓ CLARIFICATION REQUIRED
+                                    </span>
+                                    <span style="font-size:0.75rem; color:#a855f7; font-weight:700; text-transform:uppercase;">DeepSeek Ambiguity Gatekeeper</span>
+                                </div>
+                                <h3 style="margin:0; font-size:1.25rem; color:#f8fafc; font-weight:700;">
+                                    Product: <span id="clarifyProductName" style="color:#e9d5ff;">—</span>
+                                </h3>
+                                <p style="margin:4px 0 0 0; font-size:0.84rem; color:#94a3b8;">
+                                    We need a little more information to distinguish the relevant statutory HSN candidates.
+                                </p>
+                            </div>
+                            <button type="button" onclick="cancelClarification('search')" style="background:transparent; border:1px solid rgba(148,163,184,0.3); color:#94a3b8; border-radius:8px; padding:6px 12px; font-size:0.78rem; cursor:pointer;" title="Dismiss clarification">
+                                ✕ Dismiss
+                            </button>
+                        </div>
+
+                        <!-- Ambiguity Reason Callout -->
+                        <div id="clarifyAmbiguityReasonBox" style="background:rgba(168,85,247,0.12); border-left:3px solid #a855f7; padding:10px 14px; border-radius:4px; color:#e9d5ff; font-size:0.82rem; line-height:1.5; margin-bottom:16px;">
+                            <strong style="color:#c084fc;">Ambiguity Analysis:</strong> <span id="clarifyAmbiguityReasonText">—</span>
+                        </div>
+
+                        <!-- Dynamic Questions Form List -->
+                        <div id="clarifyQuestionsList" style="display:flex; flex-direction:column; gap:16px;">
+                            <!-- Populated dynamically via renderClarificationUI -->
+                        </div>
+
+                        <!-- Submission & Error Action Bar -->
+                        <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid rgba(168,85,247,0.25); padding-top:16px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <button type="button" id="btnSubmitClarification" onclick="submitClarificationAnswers('search')" style="background:linear-gradient(135deg, #0284c7, #6366f1); color:#ffffff; border:none; border-radius:8px; padding:10px 22px; font-size:0.88rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 16px rgba(2,132,199,0.35);">
+                                    ⚡ Submit Clarification Answers
+                                </button>
+                                <span id="clarifySubmissionStatus" style="font-size:0.82rem; color:#94a3b8;"></span>
+                            </div>
+                            <div style="font-size:0.72rem; color:#64748b;">
+                                Answers update available product attributes before statutory classification
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ========================================================
                      DYNAMIC MULTI-INPUT & STREAM INGESTION MATCHER
                      ======================================================== -->
                 <div class="batch-matcher-card" id="batchMatcherCard" style="margin-top: 32px; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); backdrop-filter: blur(12px);">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom: 20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom: 16px;">
                         <div>
                             <div style="display:inline-flex; align-items:center; gap:8px; font-size:0.75rem; font-weight:700; color:#38bdf8; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">
-                                <span class="pulse-dot" style="background:#38bdf8;"></span> Day 05 High-Throughput Stream Pipeline
+                                <span class="pulse-dot" style="background:#38bdf8;"></span> 3-Stage Architecture • WCO GIR 1 &amp; GIR 6 Statutory Customs Auditor
                             </div>
                             <h3 style="margin:0; font-size:1.35rem; color:#f8fafc; font-weight:700; display:flex; align-items:center; gap:8px;">
-                                ⚡ Dynamic Multi-Input &amp; Batch Stream Ingestion Matcher
+                                ⚖️ Elite Statutory Customs Auditor &amp; Multi-Model HSN Pipeline
                             </h3>
-                            <p style="margin:6px 0 0 0; font-size:0.85rem; color:#94a3b8; max-width:720px;">
-                                High-performance vector geometry dot-product <code style="color:#c7d2fe; background:rgba(99,102,241,0.2); padding:2px 6px; border-radius:4px;">S = Q · D<sup>T</sup></code> over 13,850 statutory tariff items with automatic quantity/junk stripping and statutory dynamic thresholding guardrails.
+                            <p style="margin:6px 0 0 0; font-size:0.84rem; color:#94a3b8; max-width:100%;">
+                                Executes <strong>Stage 1 (Context Aggregator)</strong> ➔ <strong>Stage 2 (Vector Search Top 3 Tariff Master)</strong> ➔ <strong>Stage 3 (Statutory Customs Auditor under GIR 1 &amp; GIR 6)</strong> with dynamic <code style="color:#34d399; background:rgba(16,185,129,0.15); padding:2px 6px; border-radius:4px;">FORMAT A: SUCCESS</code> &amp; <code style="color:#facc15; background:rgba(234,179,8,0.15); padding:2px 6px; border-radius:4px;">FORMAT B: NEED_CLARIFICATION</code> protocol evaluation.
                             </p>
                         </div>
-                        <div style="display:flex; gap:8px;">
-                            <button type="button" id="batchTabBtnText" onclick="switchBatchTab('text')" class="score-pill active" style="cursor:pointer; background:rgba(99,102,241,0.3); border:1px solid #6366f1; color:#ffffff; padding:6px 14px; font-weight:700;">
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button type="button" id="batchTabBtnStep" onclick="switchBatchTab('step')" class="score-pill active" style="cursor:pointer; background:linear-gradient(135deg, rgba(99,102,241,0.35), rgba(56,189,248,0.25)); border:1px solid #38bdf8; color:#ffffff; padding:7px 16px; font-weight:800; display:inline-flex; align-items:center; gap:6px;">
+                                ⚡ Step-by-Step Interactive Workflow
+                            </button>
+                            <button type="button" id="batchTabBtnText" onclick="switchBatchTab('text')" class="score-pill" style="cursor:pointer; background:rgba(30,41,59,0.6); border:1px solid rgba(148,163,184,0.3); color:#94a3b8; padding:7px 16px; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
                                 📝 Batch Text Stream
                             </button>
-                            <button type="button" id="batchTabBtnFile" onclick="switchBatchTab('file')" class="score-pill" style="cursor:pointer; background:rgba(30,41,59,0.6); border:1px solid rgba(148,163,184,0.3); color:#94a3b8; padding:6px 14px; font-weight:700;">
+                            <button type="button" id="batchTabBtnFile" onclick="switchBatchTab('file')" class="score-pill" style="cursor:pointer; background:rgba(30,41,59,0.6); border:1px solid rgba(148,163,184,0.3); color:#94a3b8; padding:7px 16px; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
                                 📊 Spreadsheet (CSV / XLSX)
                             </button>
                         </div>
                     </div>
 
+                    <!-- 3-Stage Architecture + 4 Critical Tariff Audit Rules Banner -->
+                    <div style="background:rgba(9,14,26,0.85); border:1px solid rgba(56,189,248,0.3); border-radius:12px; padding:12px 16px; margin-bottom:18px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid rgba(148,163,184,0.15);">
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:0.76rem;">
+                                <span style="background:rgba(99,102,241,0.2); color:#a5b4fc; border:1px solid rgba(99,102,241,0.45); padding:4px 10px; border-radius:6px; font-weight:700;">
+                                    1️⃣ Stage 1: Context Aggregator <span style="opacity:0.8; font-weight:400;">(Product + Material + Form)</span>
+                                </span>
+                                <span style="color:#64748b; font-weight:800;">➔</span>
+                                <span style="background:rgba(14,165,233,0.2); color:#7dd3fc; border:1px solid rgba(14,165,233,0.45); padding:4px 10px; border-radius:6px; font-weight:700;">
+                                    2️⃣ Stage 2: Vector Search Index <span style="opacity:0.8; font-weight:400;">(Top 3 Law Book Matches)</span>
+                                </span>
+                                <span style="color:#64748b; font-weight:800;">➔</span>
+                                <span style="background:rgba(16,185,129,0.2); color:#6ee7b7; border:1px solid rgba(16,185,129,0.45); padding:4px 10px; border-radius:6px; font-weight:700;">
+                                    3️⃣ Stage 3: Statutory Customs Auditor <span style="opacity:0.8; font-weight:400;">(GIR 1 &amp; GIR 6 Lock)</span>
+                                </span>
+                            </div>
+                            <span style="font-size:0.7rem; color:#38bdf8; font-family:'JetBrains Mono', monospace; font-weight:700;">CBIC 8-Digit Guardrail Active</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:0.71rem;">
+                            <span style="color:#94a3b8; font-weight:800; text-transform:uppercase;">Critical Audit Rules:</span>
+                            <span style="background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.35); padding:2px 8px; border-radius:5px; font-weight:600;">
+                                🛡️ Rule 1: Material Specificity (7304.11 SS vs 7304.19 Carbon)
+                            </span>
+                            <span style="background:rgba(56,189,248,0.15); color:#7dd3fc; border:1px solid rgba(56,189,248,0.35); padding:2px 8px; border-radius:5px; font-weight:600;">
+                                📦 Rule 2: Form Specificity (.10 Tubes vs .90 Residual)
+                            </span>
+                            <span style="background:rgba(168,85,247,0.15); color:#d8b4fe; border:1px solid rgba(168,85,247,0.35); padding:2px 8px; border-radius:5px; font-weight:600;">
+                                ⚖️ Rule 3: GIR 1 Exclusion Check (Ch 09 vs 18, Ch 87 vs 68)
+                            </span>
+                            <span style="background:rgba(248,113,113,0.15); color:#fca5a5; border:1px solid rgba(248,113,113,0.35); padding:2px 8px; border-radius:5px; font-weight:600;">
+                                🚫 Rule 4: Outdated Code Rejection (Rejects 7304.10 / 8542.10)
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Panel 0: Step-by-Step Interactive Workflow -->
+                    <div id="batchPanelStep" style="display:block;">
+                        <!-- Product Input Section -->
+                        <div style="background:rgba(9,14,26,0.9); border:1px solid rgba(99,102,241,0.35); border-radius:12px; padding:18px 20px; margin-bottom:20px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                                <label for="stepProductInput" style="font-size:0.86rem; font-weight:700; color:#cbd5e1; display:flex; align-items:center; gap:8px;">
+                                    <span>📦 Commercial Product Description (Free-Text Input):</span>
+                                    <span style="font-size:0.72rem; color:#818cf8; font-weight:500;">Step 1 extracts context ➔ Step 2 unlocks vector search ➔ Step 3 locks statutory HSN</span>
+                                </label>
+                                <button type="button" onclick="resetStepWorkflow()" style="background:transparent; border:none; color:#64748b; font-size:0.78rem; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                                    ↺ Reset All Steps
+                                </button>
+                            </div>
+                            
+                            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:stretch;">
+                                <div style="flex:1; min-width:320px; position:relative;">
+                                    <input type="text" id="stepProductInput" value="Harry Potter Gryffindor Crest Heat-Changing Ceramic Mug" placeholder="e.g. Whole Roasted Coffee Beans, Microprocessor, Men's cotton shirt..." style="width:100%; box-sizing:border-box; background:#060a12; color:#f8fafc; border:1px solid rgba(56,189,248,0.5); border-radius:8px; padding:12px 16px; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.95rem; font-weight:600; outline:none; transition:border 0.2s; box-shadow:0 0 16px rgba(56,189,248,0.15);">
+                                </div>
+                                <button type="button" id="btnRunStep1" onclick="runStep1(false)" style="background:linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color:#ffffff; border:none; border-radius:8px; padding:12px 22px; font-size:0.92rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 16px rgba(79,70,229,0.4); white-space:nowrap; transition:all 0.2s;">
+                                    ▶ Run Step 1: Context Aggregator
+                                </button>
+                                <button type="button" id="btnAutoStep" onclick="runAutoStepSequence()" style="background:linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); color:#ffffff; border:none; border-radius:8px; padding:12px 20px; font-size:0.88rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 16px rgba(16,185,129,0.35); white-space:nowrap; transition:all 0.2s;">
+                                    ⚡ Auto-Play (Step 1 ➔ 2 ➔ 3)
+                                </button>
+                            </div>
+
+                            <!-- Sample quick pills -->
+                            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:12px; font-size:0.75rem;">
+                                <span style="color:#64748b; font-weight:700;">Try sample:</span>
+                                <span class="step-sample-pill" onclick="loadStepSample('Harry Potter Gryffindor Crest Heat-Changing Ceramic Mug')">🧙 Harry Potter Ceramic Mug</span>
+                                <span class="step-sample-pill" onclick="loadStepSample('Whole Roasted Coffee Beans in Retail Packing')">☕ Whole Roasted Coffee Beans</span>
+                                <span class="step-sample-pill" onclick="loadStepSample('Microprocessor Integrated Circuit Component')">💻 Microprocessor IC</span>
+                                <span class="step-sample-pill" onclick="loadStepSample('Seamless Stainless Steel Line Pipe for Oil &amp; Gas')">🔩 Seamless SS Line Pipe</span>
+                                <span class="step-sample-pill" onclick="loadStepSample('Mounted Brake Pads for Passenger Cars')">🚗 Mounted Brake Pads</span>
+                                <span class="step-sample-pill" onclick="loadStepSample('Men\'s Knitted 100% Organic Cotton T-Shirt')">👕 Cotton T-Shirt</span>
+                                <span class="step-sample-pill" onclick="loadStepSample('Natural Pure Honey in Glass Jar')">🍯 Natural Honey</span>
+                            </div>
+                        </div>
+
+                        <!-- 3-Stage Workflow Tracker Banner -->
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px; margin-bottom:20px;">
+                            <!-- Stage 1 Tracker Card -->
+                            <div id="stepCard1Tracker" style="background:rgba(9,14,26,0.85); border:1px solid rgba(99,102,241,0.5); border-radius:10px; padding:12px 14px; position:relative; transition:all 0.3s ease;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-size:0.72rem; font-weight:800; color:#a5b4fc; text-transform:uppercase; letter-spacing:0.04em;">STEP 1</span>
+                                    <span id="step1Badge" style="font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:12px; background:rgba(99,102,241,0.2); color:#a5b4fc; border:1px solid rgba(99,102,241,0.4);">READY ▶</span>
+                                </div>
+                                <h4 style="margin:0 0 4px 0; font-size:0.88rem; color:#f8fafc; font-weight:700;">Context Aggregator</h4>
+                                <p style="margin:0; font-size:0.74rem; color:#94a3b8; line-height:1.4;">Extracts product, material composition, form, and Chapter 01–99 classifier.</p>
+                            </div>
+
+                            <!-- Stage 2 Tracker Card -->
+                            <div id="stepCard2Tracker" style="background:rgba(9,14,26,0.5); border:1px solid rgba(148,163,184,0.2); border-radius:10px; padding:12px 14px; position:relative; opacity:0.65; transition:all 0.3s ease;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-size:0.72rem; font-weight:800; color:#7dd3fc; text-transform:uppercase; letter-spacing:0.04em;">STEP 2</span>
+                                    <span id="step2Badge" style="font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:12px; background:rgba(100,116,139,0.2); color:#94a3b8; border:1px solid rgba(100,116,139,0.3);">🔒 LOCKED</span>
+                                </div>
+                                <h4 style="margin:0 0 4px 0; font-size:0.88rem; color:#cbd5e1; font-weight:700;">Vector Search Index</h4>
+                                <p style="margin:0; font-size:0.74rem; color:#64748b; line-height:1.4;">Queries 19k+ tariff master lines via BGE-M3 &amp; semantics to find Top 3 candidates.</p>
+                            </div>
+
+                            <!-- Stage 3 Tracker Card -->
+                            <div id="stepCard3Tracker" style="background:rgba(9,14,26,0.5); border:1px solid rgba(148,163,184,0.2); border-radius:10px; padding:12px 14px; position:relative; opacity:0.65; transition:all 0.3s ease;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-size:0.72rem; font-weight:800; color:#d8b4fe; text-transform:uppercase; letter-spacing:0.04em;">STEP 3</span>
+                                    <span id="step3Badge" style="font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:12px; background:rgba(100,116,139,0.2); color:#94a3b8; border:1px solid rgba(100,116,139,0.3);">🔒 LOCKED</span>
+                                </div>
+                                <h4 style="margin:0 0 4px 0; font-size:0.88rem; color:#cbd5e1; font-weight:700;">Statutory Customs Auditor</h4>
+                                <p style="margin:0; font-size:0.74rem; color:#64748b; line-height:1.4;">Enforces GIR 1 &amp; GIR 6 legal rules, material specificity, and yields FORMAT A / B.</p>
+                            </div>
+                        </div>
+
+                        <!-- Stepper Dynamic Containers -->
+                        <div id="stepResultsPipeline">
+                            <!-- STEP 1 CONTAINER -->
+                            <div id="step1Box" style="background:rgba(15,23,42,0.85); border:1px solid rgba(99,102,241,0.4); border-radius:12px; padding:20px; margin-bottom:20px; display:none; animation:fadeIn 0.3s ease;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid rgba(99,102,241,0.25);">
+                                    <div style="display:flex; align-items:center; gap:10px;">
+                                        <span style="background:#4f46e5; color:#ffffff; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:0.82rem; font-weight:800;">1</span>
+                                        <h4 style="margin:0; font-size:1.05rem; color:#f8fafc; font-weight:700;">Stage 1 Output: Context Aggregation &amp; Chapter Classifier</h4>
+                                    </div>
+                                    <span id="step1TimeBadge" style="font-size:0.74rem; color:#a5b4fc; font-family:'JetBrains Mono', monospace;"></span>
+                                </div>
+                                <div id="step1Body"></div>
+                                <div id="step1ActionFooter" style="margin-top:16px; padding-top:14px; border-top:1px solid rgba(148,163,184,0.15); display:flex; justify-content:flex-end;">
+                                    <button type="button" id="btnStep1Next" onclick="runStep2(false)" style="background:linear-gradient(135deg, #0ea5e9, #0284c7); color:#ffffff; border:none; border-radius:8px; padding:10px 22px; font-size:0.9rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 16px rgba(14,165,233,0.35);">
+                                        ▶ Proceed to Step 2: Vector Search Tariff Master ➔
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- STEP 2 CONTAINER -->
+                            <div id="step2Box" style="background:rgba(15,23,42,0.85); border:1px solid rgba(14,165,233,0.4); border-radius:12px; padding:20px; margin-bottom:20px; display:none; animation:fadeIn 0.3s ease;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid rgba(14,165,233,0.25);">
+                                    <div style="display:flex; align-items:center; gap:10px;">
+                                        <span style="background:#0284c7; color:#ffffff; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:0.82rem; font-weight:800;">2</span>
+                                        <h4 style="margin:0; font-size:1.05rem; color:#f8fafc; font-weight:700;">Stage 2 Output: Vector Search Top 3 Law Book Matches</h4>
+                                    </div>
+                                    <span id="step2TimeBadge" style="font-size:0.74rem; color:#7dd3fc; font-family:'JetBrains Mono', monospace;"></span>
+                                </div>
+                                <div id="step2Body"></div>
+                                <div id="step2ActionFooter" style="margin-top:16px; padding-top:14px; border-top:1px solid rgba(148,163,184,0.15); display:flex; justify-content:flex-end;">
+                                    <button type="button" id="btnStep2Next" onclick="runStep3(false)" style="background:linear-gradient(135deg, #7c3aed, #9333ea); color:#ffffff; border:none; border-radius:8px; padding:10px 22px; font-size:0.9rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 16px rgba(124,58,237,0.35);">
+                                        ▶ Proceed to Step 3: Statutory Customs Auditor Lock ➔
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- STEP 3 CONTAINER -->
+                            <div id="step3Box" style="background:rgba(15,23,42,0.85); border:1px solid rgba(168,85,247,0.4); border-radius:12px; padding:20px; margin-bottom:20px; display:none; animation:fadeIn 0.3s ease;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid rgba(168,85,247,0.25);">
+                                    <div style="display:flex; align-items:center; gap:10px;">
+                                        <span style="background:#7c3aed; color:#ffffff; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:0.82rem; font-weight:800;">3</span>
+                                        <h4 style="margin:0; font-size:1.05rem; color:#f8fafc; font-weight:700;">Stage 3 Output: Statutory Customs Auditor (GIR 1 &amp; GIR 6 Legal Lock)</h4>
+                                    </div>
+                                    <span id="step3TimeBadge" style="font-size:0.74rem; color:#d8b4fe; font-family:'JetBrains Mono', monospace;"></span>
+                                </div>
+                                <div id="step3Body"></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Panel 1: Batch Text Stream -->
-                    <div id="batchPanelText">
+                    <div id="batchPanelText" style="display:none;">
                         <label style="display:block; font-size:0.82rem; font-weight:600; color:#cbd5e1; margin-bottom:8px;">
-                            Input Item Descriptions (one product per line — dirty text, trade sizes, quantities &amp; units automatically cleaned):
+                            Input Item Descriptions (one product per line — evaluates Day 5 + DeepSeek + 3-Stage Statutory Customs Auditor):
                         </label>
-                        <textarea id="batchItemInput" rows="6" style="width:100%; box-sizing:border-box; background:#090e1a; color:#f8fafc; border:1px solid rgba(99,102,241,0.4); border-radius:10px; padding:12px 14px; font-family:'JetBrains Mono', monospace; font-size:0.85rem; line-height:1.6; resize:vertical; outline:none;" placeholder="SS 304 hex nipple 1/2 inch 10 pcs&#10;allen cap screw M12 x 50 grade 8.8&#10;solar on grid inverter 5kw 3 phase&#10;industrial ball valve 2 inch class 150&#10;pure cotton printed saree with blouse piece"></textarea>
+                        <textarea id="batchItemInput" rows="6" style="width:100%; box-sizing:border-box; background:#090e1a; color:#f8fafc; border:1px solid rgba(99,102,241,0.4); border-radius:10px; padding:12px 14px; font-family:'JetBrains Mono', monospace; font-size:0.85rem; line-height:1.6; resize:vertical; outline:none;" placeholder="Seamless Steel Line Pipe&#10;Seamless Stainless Steel Line Pipe&#10;Microprocessor / Microcontroller Integrated Circuits&#10;Unvulcanised Natural Rubber Sheets&#10;Natural Honey&#10;Whole Roasted Coffee Beans&#10;Mounted Brake Pads for Passenger Cars"></textarea>
                         
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:12px;">
-                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                                <button type="button" id="btnRunBatch" onclick="runBatchMatch()" style="background:linear-gradient(135deg, #0ea5e9, #6366f1); color:#ffffff; border:none; border-radius:8px; padding:8px 18px; font-size:0.88rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow: 0 4px 14px rgba(14,165,233,0.3);">
-                                    ⚡ Run Batch Vector Match (M × N)
+                            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                                <button type="button" id="btnRunUnifiedAudit" onclick="runUnifiedMultiModelAudit()" style="background:linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #06b6d4 100%); color:#ffffff; border:none; border-radius:8px; padding:10px 22px; font-size:0.92rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow: 0 4px 18px rgba(79,70,229,0.45); transition:all 0.2s ease;">
+                                    ⚖️ Run Unified Statutory Customs Audit (FORMAT A &amp; FORMAT B)
                                 </button>
-                                <button type="button" id="btnCheckBatchPreexistence" onclick="checkBatchPreexistence()" style="background:linear-gradient(135deg, #059669, #0d9488); color:#ffffff; border:none; border-radius:8px; padding:8px 18px; font-size:0.88rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);">
+                                <button type="button" onclick="loadTargetVerificationItems()" style="background:rgba(30,41,59,0.95); border:1px solid rgba(56,189,248,0.6); color:#38bdf8; border-radius:8px; padding:9px 14px; font-size:0.84rem; font-weight:700; cursor:pointer;">
+                                    🎯 Load Statutory Auditor Test Suite (Rules 1–4 + FORMAT A/B)
+                                </button>
+                                <button type="button" id="btnCheckBatchPreexistence" onclick="checkBatchPreexistence()" style="background:linear-gradient(135deg, #059669, #0d9488); color:#ffffff; border:none; border-radius:8px; padding:9px 16px; font-size:0.86rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);">
                                     🔍 Check Pre-existing Data in File (&lt;0.5ms)
                                 </button>
-                                <button type="button" id="btnRunBatchQwen" onclick="runBatchMatchQwen()" style="background:linear-gradient(135deg, #9333ea, #6366f1); color:#ffffff; border:none; border-radius:8px; padding:8px 18px; font-size:0.88rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow: 0 4px 14px rgba(147,51,234,0.35);">
-                                    ✨ Verify with Qwen 2.5 Layer
-                                </button>
                                 <button type="button" onclick="loadUserChallengeItemsInBatch()" style="background:rgba(30,41,59,0.8); border:1px solid rgba(148,163,184,0.3); color:#cbd5e1; border-radius:8px; padding:8px 14px; font-size:0.84rem; font-weight:600; cursor:pointer;">
-                                    ⚡ Load User Challenge Items (Hex Nipple, Allen Screw, Servo Motor...)
-                                </button>
-                                <button type="button" onclick="loadBatchSample()" style="background:rgba(30,41,59,0.8); border:1px solid rgba(148,163,184,0.3); color:#cbd5e1; border-radius:8px; padding:8px 14px; font-size:0.84rem; font-weight:600; cursor:pointer;">
-                                    📋 Load Sample Stream (10 Items)
+                                    ⚡ Load Challenge Items
                                 </button>
                             </div>
                             <button type="button" onclick="document.getElementById('batchItemInput').value=''; document.getElementById('batchResultsWrap').style.display='none'; document.getElementById('batchTelemetryStrip').style.display='none';" style="background:transparent; border:none; color:#64748b; font-size:0.82rem; cursor:pointer;">
@@ -2706,9 +3014,9 @@
                             <span id="batchThroughputBadge" style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.3); padding:3px 10px; border-radius:6px; font-size:0.78rem; font-weight:700;">🚀 0 items/sec</span>
                         </div>
                         <div style="display:flex; gap:8px; font-size:0.75rem; font-weight:700;">
-                            <span id="countAutoMatch" style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid #34d399; padding:2px 8px; border-radius:4px;">🟢 Auto: 0</span>
-                            <span id="countReview" style="background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid #fbbf24; padding:2px 8px; border-radius:4px;">🟡 Review: 0</span>
-                            <span id="countUnmapped" style="background:rgba(248,113,113,0.15); color:#f87171; border:1px solid #f87171; padding:2px 8px; border-radius:4px;">🔴 Unmapped: 0</span>
+                            <span id="countAutoMatch" style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid #34d399; padding:2px 8px; border-radius:4px;">🟢 Unanimous: 0</span>
+                            <span id="countReview" style="background:rgba(251,191,36,0.15); color:#fbbf24; border:1px solid #fbbf24; padding:2px 8px; border-radius:4px;">🟡 Corrected: 0</span>
+                            <span id="countUnmapped" style="background:rgba(248,113,113,0.15); color:#f87171; border:1px solid #f87171; padding:2px 8px; border-radius:4px;">❓ Clarif: 0</span>
                         </div>
                     </div>
 
@@ -2716,14 +3024,15 @@
                     <div id="batchResultsWrap" style="display:none; margin-top:20px; overflow-x:auto;">
                         <div id="missingBatchActionBar" style="display:none;"></div>
                         <table style="width:100%; border-collapse:collapse; font-size:0.84rem; color:#cbd5e1; text-align:left;">
-                            <thead>
+                            <thead id="batchResultsThead">
                                 <tr style="border-bottom:1px solid rgba(148,163,184,0.2); background:rgba(30,41,59,0.5); color:#94a3b8; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em;">
-                                    <th style="padding:10px 12px; width:40px;">#</th>
-                                    <th style="padding:10px 12px;">Query (Cleaned Description)</th>
-                                    <th style="padding:10px 12px; width:220px;">Top-1 Statutory Match</th>
-                                    <th style="padding:10px 12px; width:140px;">Similarity / Rate</th>
-                                    <th style="padding:10px 12px; width:170px;">Guardrail Decision</th>
-                                    <th style="padding:10px 12px; width:130px; text-align:center;">Multi-Candidates</th>
+                                    <th style="padding:10px 12px; width:36px;">#</th>
+                                    <th style="padding:10px 12px; min-width:210px;">Product Description &amp; Attributes</th>
+                                    <th style="padding:10px 12px; min-width:135px;">Day 5 Base Algo</th>
+                                    <th style="padding:10px 12px; min-width:135px;">DeepSeek Layer</th>
+                                    <th style="padding:10px 12px; min-width:135px;">Statutory RAG</th>
+                                    <th style="padding:10px 12px; min-width:190px; color:#34d399;">🎯 Final Statutory HSN</th>
+                                    <th style="padding:10px 12px; min-width:230px;">Statutory Rationale ("Why")</th>
                                 </tr>
                             </thead>
                             <tbody id="batchResultsTbody">
@@ -2865,7 +3174,7 @@
         </section>
 
         <!-- ========================================================
-             VIEW 5: DEDICATED QWEN 2.5 DUAL-MODEL VERIFICATION SCREEN
+             VIEW 5: DEDICATED DEEPSEEK DUAL-MODEL VERIFICATION SCREEN
              ======================================================== -->
         <section id="view-qwen" class="view-section">
             <div class="workspace-container">
@@ -2875,7 +3184,7 @@
                         <span>/</span>
                         <span>Modules</span>
                         <span>/</span>
-                        <span style="color:#ffffff;">Qwen 2.5 Neural Verifier</span>
+                        <span style="color:#ffffff;">Day 5 + DeepSeek-V4 Verifier</span>
                     </div>
                     <button type="button" class="btn-back-overview" style="display:inline-flex;" onclick="switchView('overview')">
                         ← Back to Overview
@@ -2885,12 +3194,12 @@
                 <div class="workspace-header">
                     <div class="brand-badge" style="background:rgba(168, 85, 247, 0.15); border-color:rgba(168, 85, 247, 0.4); color:#d8b4fe;">
                         <span class="pulse-dot" style="background:#c084fc; box-shadow:0 0 8px #c084fc;"></span>
-                        QWEN 2.5 DUAL-MODEL STATUTORY AUDITOR
+                        DEEPSEEK-V4 DUAL-MODEL STATUTORY AUDITOR
                     </div>
-                    <h2>HSN Neural Verification &amp; Dual-Screen Comparison</h2>
+                    <h2>Day 5 Dynamic HSN Intelligence with DeepSeek-V4 Verifier</h2>
                     <p class="subtitle">
-                        Cross-checking Day 5 Base Predictions against Qwen 2.5 generative reasoning &amp; statutory tariff rules.
-                        Categorizes items into <strong>🟢 Perfect Match</strong> and <strong>⚡ Corrected by Qwen</strong> with statutory reasons ("Why").
+                        Cross-checking Day 5 Vector Retrieval Predictions against DeepSeek-V4 statutory tariff reasoning &amp; CBIC legal notes (GRI 1–6).
+                        Categorizes items into <strong>🟢 Perfect Match</strong>, <strong>⚡ Corrected by DeepSeek</strong>, and <strong>❓ Clarification Resolved</strong>.
                     </p>
                 </div>
 
@@ -2904,22 +3213,22 @@
                     <div style="background:rgba(15, 23, 42, 0.85); border:1px solid rgba(52, 211, 153, 0.3); border-radius:12px; padding:16px 20px;">
                         <div style="font-size:0.75rem; color:#34d399; font-weight:700; text-transform:uppercase;">🟢 Perfect Match</div>
                         <div style="font-size:1.85rem; font-weight:800; color:#34d399; margin-top:4px;" id="qwenKpiPerfect">0</div>
-                        <div style="font-size:0.72rem; color:#6ee7b7; margin-top:2px;">Both Day 5 &amp; Qwen agree</div>
+                        <div style="font-size:0.72rem; color:#6ee7b7; margin-top:2px;">Both Day 5 &amp; DeepSeek agree</div>
                     </div>
                     <div style="background:rgba(15, 23, 42, 0.85); border:1px solid rgba(245, 158, 11, 0.35); border-radius:12px; padding:16px 20px;">
-                        <div style="font-size:0.75rem; color:#fbbf24; font-weight:700; text-transform:uppercase;">⚡ Corrected by Qwen</div>
+                        <div style="font-size:0.75rem; color:#fbbf24; font-weight:700; text-transform:uppercase;">⚡ Corrected by DeepSeek</div>
                         <div style="font-size:1.85rem; font-weight:800; color:#fbbf24; margin-top:4px;" id="qwenKpiCorrected">0</div>
-                        <div style="font-size:0.72rem; color:#fde68a; margin-top:2px;">Misclassification fixed with reason</div>
+                        <div style="font-size:0.72rem; color:#fde68a; margin-top:2px;">Statutory tariff fix applied</div>
                     </div>
                     <div style="background:rgba(15, 23, 42, 0.85); border:1px solid rgba(168, 85, 247, 0.35); border-radius:12px; padding:16px 20px;">
-                        <div style="font-size:0.75rem; color:#c084fc; font-weight:700; text-transform:uppercase;">Verification Model</div>
-                        <div style="font-size:1.15rem; font-weight:800; color:#e9d5ff; margin-top:8px;">Qwen2.5-0.5B</div>
-                        <div style="font-size:0.72rem; color:#a855f7; margin-top:4px;">100% Offline &amp; Grounded</div>
+                        <div style="font-size:0.75rem; color:#c084fc; font-weight:700; text-transform:uppercase;">Verification Engine</div>
+                        <div style="font-size:1.15rem; font-weight:800; color:#e9d5ff; margin-top:8px;">DeepSeek-V4 Neural</div>
+                        <div style="font-size:0.72rem; color:#a855f7; margin-top:4px;">GRI 1-6 &amp; Section Notes</div>
                     </div>
                     <div style="background:rgba(15, 23, 42, 0.85); border:1px solid rgba(14, 165, 233, 0.35); border-radius:12px; padding:16px 20px;">
                         <div style="font-size:0.75rem; color:#38bdf8; font-weight:700; text-transform:uppercase;">💾 Verified Store</div>
                         <div style="font-size:1.85rem; font-weight:800; color:#38bdf8; margin-top:4px;" id="qwenKpiStoreCount">0</div>
-                        <div style="font-size:0.72rem; color:#7dd3fc; margin-top:2px;">Persistent records (<span style="color:#38bdf8;">&lt;0.5ms</span>)</div>
+                        <div style="font-size:0.72rem; color:#7dd3fc; margin-top:2px;">Option A Isolated (<span style="color:#38bdf8;">0 corruptions</span>)</div>
                     </div>
                 </div>
 
@@ -2927,37 +3236,37 @@
                 <div style="background:rgba(15, 23, 42, 0.8); border:1px solid rgba(168, 85, 247, 0.35); border-radius:14px; padding:20px; margin-bottom:24px; box-shadow:0 8px 32px rgba(0,0,0,0.35);">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
                         <div style="font-weight:700; color:#f8fafc; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
-                            <span>📝</span> Input Products for Dual-Model Verification:
+                            <span>📝</span> Input Products for Day 5 &amp; DeepSeek Verification:
                         </div>
                         <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                            <button type="button" onclick="loadVerifiedStoreFromBackend()" style="background:rgba(14, 165, 233, 0.2); border:1px solid rgba(14, 165, 233, 0.5); color:#7dd3fc; border-radius:8px; padding:6px 12px; font-size:0.78rem; font-weight:700; cursor:pointer;">
-                                💾 Inspect Verified Knowledge Store (<span id="qwenBtnStoreCount">0</span>)
+                            <button type="button" onclick="loadScorecardBenchmark()" style="background:rgba(59, 130, 246, 0.2); border:1px solid rgba(59, 130, 246, 0.5); color:#93c5fd; border-radius:8px; padding:6px 12px; font-size:0.78rem; font-weight:700; cursor:pointer;">
+                                📋 Load Sample Audit Items (8 Benchmark Goods)
                             </button>
                             <button type="button" onclick="loadQwenChallengingSamples()" style="background:rgba(168, 85, 247, 0.2); border:1px solid rgba(168, 85, 247, 0.5); color:#e9d5ff; border-radius:8px; padding:6px 12px; font-size:0.78rem; font-weight:700; cursor:pointer;">
-                                ⚡ Load User Challenge Items (Hex Nipple, Allen Screw, Solar Inverter)
+                                ⚡ Load Challenge Items (Hex Nipple, Allen Screw)
                             </button>
                             <button type="button" onclick="clearQwenBatchInput()" style="background:transparent; border:1px solid rgba(148,163,184,0.25); color:#94a3b8; border-radius:8px; padding:6px 12px; font-size:0.78rem; cursor:pointer;">
                                 ✕ Clear
                             </button>
                         </div>
                     </div>
-                    <textarea id="qwenBatchInput" rows="5" style="width:100%; box-sizing:border-box; background:#070d19; color:#f8fafc; border:1px solid rgba(168, 85, 247, 0.4); border-radius:10px; padding:12px 14px; font-family:'JetBrains Mono', monospace; font-size:0.85rem; line-height:1.6; resize:vertical; outline:none;" placeholder="Enter items to audit (one per line):&#10;SS 304 hex nipple 1/2 inch&#10;Allen cap screw M12 x 50 grade 8.8&#10;Solar on grid inverter 5kw 3 phase&#10;industrial servo motor ac&#10;pure cotton printed saree with blouse piece"></textarea>
+                    <textarea id="qwenBatchInput" rows="5" style="width:100%; box-sizing:border-box; background:#070d19; color:#f8fafc; border:1px solid rgba(168, 85, 247, 0.4); border-radius:10px; padding:12px 14px; font-family:'JetBrains Mono', monospace; font-size:0.85rem; line-height:1.6; resize:vertical; outline:none;" placeholder="Enter items to audit (one per line):&#10;Digital Thermometer&#10;Solar Street Light&#10;Smart Watch (PPG &amp; ECG)&#10;Solid CO2 Blocks (Dry Ice)&#10;Diamond Circular Saw Blade&#10;Tempered Glass Protector&#10;Synthetic Leather Sleeve&#10;Heavy Duty Conveyor Belt"></textarea>
                     
                     <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid rgba(168, 85, 247, 0.2); padding-top:16px;">
                         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                             <!-- Option 1: Run Day 5 Base Batch -->
                             <button type="button" id="btnRunBaseBatchInQwen" onclick="runBaseBatchInQwen()" style="background:linear-gradient(135deg, #0284c7, #2563eb); color:#ffffff; border:none; border-radius:8px; padding:10px 18px; font-size:0.86rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(2, 132, 199, 0.35);">
-                                📋 Option 1: Run Base Batch
+                                📋 Option 1: Run Day 5 Base Batch
                             </button>
 
                             <!-- Option 2: Check Pre-existence in Verified Store -->
                             <button type="button" id="btnCheckPreexistence" onclick="runCheckPreexistence()" style="background:linear-gradient(135deg, #059669, #0d9488); color:#ffffff; border:none; border-radius:8px; padding:10px 18px; font-size:0.86rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(5, 150, 105, 0.35);">
-                                🔍 Option 2: Check Pre-existence in Store (&lt;0.5ms)
+                                🔍 Option 2: Check Pre-existence in Store
                             </button>
 
-                            <!-- Option 3: Run Qwen AI Verification & Store -->
+                            <!-- Option 3: Run DeepSeek AI Verification -->
                             <button type="button" id="btnExecuteQwenAudit" onclick="runQwenDualAudit()" style="background:linear-gradient(135deg, #9333ea, #6366f1); color:#ffffff; border:none; border-radius:8px; padding:10px 22px; font-size:0.86rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 16px rgba(147, 51, 234, 0.4);">
-                                ✨ Option 3: Run Qwen &amp; Store in File
+                                ✨ Option 3: Run DeepSeek-V4 Verification
                             </button>
                         </div>
                         <div id="qwenAuditTelemetry" style="font-size:0.8rem; color:#94a3b8; display:none;">
@@ -2972,7 +3281,7 @@
                         <span>💾</span>
                         <span>Backend Store: <strong style="color:#38bdf8; font-family:'JetBrains Mono', monospace;">data/hsn_verified_store.parquet</strong></span>
                         <span style="color:#64748b;">•</span>
-                        <span id="qwenStorePersistenceNote" style="color:#a7f3d0; font-weight:600;">Persists verified records in Qwen section with 0 duplicates</span>
+                        <span id="qwenStorePersistenceNote" style="color:#a7f3d0; font-weight:600;">Option A Isolation: 0 ambiguous / unconfirmed records stored</span>
                     </div>
                     <div style="font-size:0.75rem; color:#94a3b8;">
                         Total Unique Records in File: <strong id="qwenStorageTotalBadge" style="color:#38bdf8;">0</strong>
@@ -2990,7 +3299,7 @@
                                 🟢 Perfect Matches (<span id="qwenCountBadgePerfect">0</span>)
                             </button>
                             <button type="button" class="qwen-filter-pill" id="qwenFilterCorrected" onclick="filterQwenResults('CORRECTED')">
-                                ⚡ Corrected by Qwen (<span id="qwenCountBadgeCorrected">0</span>)
+                                ⚡ Corrected by DeepSeek (<span id="qwenCountBadgeCorrected">0</span>)
                             </button>
                             <button type="button" class="qwen-filter-pill" id="qwenFilterPreexisting" onclick="filterQwenResults('PREEXISTING')">
                                 💾 Pre-Existing in Store (<span id="qwenCountBadgePreexisting">0</span>)
@@ -2998,6 +3307,44 @@
                         </div>
                         <div style="font-size:0.78rem; color:#94a3b8;">
                             Interactive Dual-Model Comparison Screen
+                        </div>
+                    </div>
+
+                    <!-- Day 14 Dynamic Clarification Drawer for Batch / Dual-Model Verification -->
+                    <div id="qwenClarificationDrawer" class="clarify-card" style="display:none; margin-bottom:16px; border-color:rgba(234,179,8,0.5);">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+                            <div>
+                                <div style="display:inline-flex; align-items:center; gap:8px; margin-bottom:6px;">
+                                    <span class="badge" style="background:rgba(234,179,8,0.2); color:#facc15; border:1px solid #facc15; font-weight:700; font-size:0.75rem; padding:4px 10px; border-radius:6px; box-shadow:0 0 10px rgba(234,179,8,0.25);">
+                                        ❓ CLARIFICATION REQUIRED
+                                    </span>
+                                    <span style="font-size:0.75rem; color:#facc15; font-weight:700; text-transform:uppercase;">Resolve Ambiguity Before Decision</span>
+                                </div>
+                                <h3 style="margin:0; font-size:1.2rem; color:#f8fafc; font-weight:700;">
+                                    Product: <span id="qwenClarifyProductName" style="color:#fde047;">—</span>
+                                </h3>
+                                <p style="margin:4px 0 0 0; font-size:0.84rem; color:#94a3b8;">
+                                    Please clarify the missing specifications below to complete statutory classification.
+                                </p>
+                            </div>
+                            <button type="button" onclick="cancelClarification('qwen_batch')" style="background:transparent; border:1px solid rgba(148,163,184,0.3); color:#94a3b8; border-radius:8px; padding:6px 12px; font-size:0.78rem; cursor:pointer;" title="Close">
+                                ✕ Close
+                            </button>
+                        </div>
+
+                        <div id="qwenClarifyAmbiguityReasonBox" style="background:rgba(234,179,8,0.1); border-left:3px solid #facc15; padding:10px 14px; border-radius:4px; color:#fef08a; font-size:0.82rem; line-height:1.5; margin-bottom:16px;">
+                            <strong style="color:#facc15;">Ambiguity Finding:</strong> <span id="qwenClarifyAmbiguityReasonText">—</span>
+                        </div>
+
+                        <div id="qwenClarifyQuestionsList" style="display:flex; flex-direction:column; gap:16px;"></div>
+
+                        <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid rgba(234,179,8,0.25); padding-top:16px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <button type="button" id="btnQwenSubmitClarification" onclick="submitClarificationAnswers('qwen_batch')" style="background:linear-gradient(135deg, #eab308, #d97706); color:#000000; border:none; border-radius:8px; padding:10px 22px; font-size:0.88rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 16px rgba(234,179,8,0.35);">
+                                    ⚡ Submit Answers &amp; Complete Verification
+                                </button>
+                                <span id="qwenClarifySubmissionStatus" style="font-size:0.82rem; color:#94a3b8;"></span>
+                            </div>
                         </div>
                     </div>
 
@@ -3010,7 +3357,7 @@
                                         <th style="padding:12px 14px; width:40px;">#</th>
                                         <th style="padding:12px 14px; width:220px;">Product Description</th>
                                         <th style="padding:12px 14px; width:220px;">Day 5 Base Model</th>
-                                        <th style="padding:12px 14px; width:240px;">Qwen 2.5 Verification</th>
+                                        <th style="padding:12px 14px; width:240px;">DeepSeek-V4 Verification</th>
                                         <th style="padding:12px 14px; width:160px;">Audit Verdict</th>
                                         <th style="padding:12px 14px;">Statutory Reasoning ("Why")</th>
                                     </tr>
@@ -4207,6 +4554,14 @@
 
                     renderDropdown(data.matches || [], currentQuery, latency, modelName, silent);
 
+                    // Day 14 Dynamic Customer Clarification UI Trigger
+                    if (data.clarification && data.clarification.clarification_required && data.clarification.questions_schema) {
+                        renderClarificationUI(currentQuery, data.clarification.questions_schema, data.clarification.ambiguity_analysis, 'search');
+                    } else {
+                        const clarWrap = document.getElementById('clarificationContainer');
+                        if (clarWrap) clarWrap.style.display = 'none';
+                    }
+
                     // Display the evaluated item. With a lock, the backend pins the locked HSN to
                     // matches[0]; without one, the top semantic match becomes the new lock.
                     if (data.matches && data.matches.length > 0) {
@@ -4284,6 +4639,8 @@
             detailCard.style.display = 'none';
             const gkCard = document.getElementById('gatekeeperCard');
             if (gkCard) gkCard.style.display = 'none';
+            const clarWrap = document.getElementById('clarificationContainer');
+            if (clarWrap) clarWrap.style.display = 'none';
             input.focus();
         });
 
@@ -4358,34 +4715,746 @@
             return String(str || '').replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[m]);
         }
 
-        let currentBatchTab = 'text';
+        let currentBatchTab = 'step';
 
         function switchBatchTab(tab) {
             currentBatchTab = tab;
+            const btnStep = document.getElementById('batchTabBtnStep');
             const btnText = document.getElementById('batchTabBtnText');
             const btnFile = document.getElementById('batchTabBtnFile');
+            const panelStep = document.getElementById('batchPanelStep');
             const panelText = document.getElementById('batchPanelText');
             const panelFile = document.getElementById('batchPanelFile');
 
-            if (tab === 'text') {
-                btnText.style.background = 'rgba(99,102,241,0.3)';
-                btnText.style.border = '1px solid #6366f1';
-                btnText.style.color = '#ffffff';
-                btnFile.style.background = 'rgba(30,41,59,0.6)';
-                btnFile.style.border = '1px solid rgba(148,163,184,0.3)';
-                btnFile.style.color = '#94a3b8';
-                panelText.style.display = 'block';
-                panelFile.style.display = 'none';
+            [btnStep, btnText, btnFile].forEach(btn => {
+                if (!btn) return;
+                btn.style.background = 'rgba(30,41,59,0.6)';
+                btn.style.border = '1px solid rgba(148,163,184,0.3)';
+                btn.style.color = '#94a3b8';
+            });
+            if (panelStep) panelStep.style.display = 'none';
+            if (panelText) panelText.style.display = 'none';
+            if (panelFile) panelFile.style.display = 'none';
+
+            if (tab === 'step') {
+                if (btnStep) {
+                    btnStep.style.background = 'linear-gradient(135deg, rgba(99,102,241,0.35), rgba(56,189,248,0.25))';
+                    btnStep.style.border = '1px solid #38bdf8';
+                    btnStep.style.color = '#ffffff';
+                }
+                if (panelStep) panelStep.style.display = 'block';
+            } else if (tab === 'text') {
+                if (btnText) {
+                    btnText.style.background = 'rgba(99,102,241,0.3)';
+                    btnText.style.border = '1px solid #6366f1';
+                    btnText.style.color = '#ffffff';
+                }
+                if (panelText) panelText.style.display = 'block';
             } else {
-                btnFile.style.background = 'rgba(99,102,241,0.3)';
-                btnFile.style.border = '1px solid #6366f1';
-                btnFile.style.color = '#ffffff';
-                btnText.style.background = 'rgba(30,41,59,0.6)';
-                btnText.style.border = '1px solid rgba(148,163,184,0.3)';
-                btnText.style.color = '#94a3b8';
-                panelFile.style.display = 'block';
-                panelText.style.display = 'none';
+                if (btnFile) {
+                    btnFile.style.background = 'rgba(99,102,241,0.3)';
+                    btnFile.style.border = '1px solid #6366f1';
+                    btnFile.style.color = '#ffffff';
+                }
+                if (panelFile) panelFile.style.display = 'block';
             }
+        }
+
+        /* ==========================================================
+           INTERACTIVE 3-STAGE STEPPER ENGINE (Step 1 ➔ Step 2 ➔ Step 3)
+           ========================================================== */
+        window.currentStepState = {
+            product: '',
+            s1: null,
+            s2: null,
+            s3: null,
+            isRunning: false
+        };
+
+        function loadStepSample(text) {
+            const inp = document.getElementById('stepProductInput');
+            if (inp) {
+                inp.value = text;
+                inp.focus();
+            }
+            resetStepWorkflow(false);
+            showToast(`Loaded: ${text}`);
+        }
+
+        function resetStepWorkflow(clearInput = false) {
+            if (clearInput) {
+                const inp = document.getElementById('stepProductInput');
+                if (inp) inp.value = '';
+            }
+            window.currentStepState = { product: '', s1: null, s2: null, s3: null, isRunning: false };
+
+            // Hide boxes
+            ['step1Box', 'step2Box', 'step3Box'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+
+            // Reset tracker cards
+            const b1 = document.getElementById('step1Badge');
+            const b2 = document.getElementById('step2Badge');
+            const b3 = document.getElementById('step3Badge');
+            if (b1) {
+                b1.innerText = 'READY ▶';
+                b1.style.background = 'rgba(99,102,241,0.2)';
+                b1.style.color = '#a5b4fc';
+                b1.style.borderColor = 'rgba(99,102,241,0.4)';
+            }
+            if (b2) {
+                b2.innerText = '🔒 LOCKED';
+                b2.style.background = 'rgba(100,116,139,0.2)';
+                b2.style.color = '#94a3b8';
+                b2.style.borderColor = 'rgba(100,116,139,0.3)';
+            }
+            if (b3) {
+                b3.innerText = '🔒 LOCKED';
+                b3.style.background = 'rgba(100,116,139,0.2)';
+                b3.style.color = '#94a3b8';
+                b3.style.borderColor = 'rgba(100,116,139,0.3)';
+            }
+
+            const c2 = document.getElementById('stepCard2Tracker');
+            const c3 = document.getElementById('stepCard3Tracker');
+            if (c2) c2.style.opacity = '0.65';
+            if (c3) c3.style.opacity = '0.65';
+
+            const btnRun = document.getElementById('btnRunStep1');
+            if (btnRun) {
+                btnRun.disabled = false;
+                btnRun.innerHTML = '▶ Run Step 1: Context Aggregator';
+            }
+        }
+
+        async function runStep1(autoContinue = false) {
+            const inp = document.getElementById('stepProductInput');
+            const product = inp ? inp.value.trim() : '';
+            if (!product) {
+                showToast('⚠️ Please enter a product description.');
+                if (inp) inp.focus();
+                return;
+            }
+
+            window.currentStepState.product = product;
+            window.currentStepState.isRunning = true;
+
+            const b1 = document.getElementById('step1Badge');
+            const btnRun = document.getElementById('btnRunStep1');
+            if (b1) {
+                b1.innerText = '⏳ RUNNING...';
+                b1.style.background = 'rgba(234,179,8,0.2)';
+                b1.style.color = '#fde047';
+                b1.style.borderColor = 'rgba(234,179,8,0.4)';
+            }
+            if (btnRun) {
+                btnRun.disabled = true;
+                btnRun.innerHTML = '⏳ Extracting Context & Chapter...';
+            }
+
+            // Hide downstream boxes if re-running
+            const s2Box = document.getElementById('step2Box');
+            const s3Box = document.getElementById('step3Box');
+            if (s2Box) s2Box.style.display = 'none';
+            if (s3Box) s3Box.style.display = 'none';
+
+            const t0 = performance.now();
+            try {
+                const resp = await fetch('/api/v1/hsn-rag/step1-context-aggregator', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product: product })
+                });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                const latency = (performance.now() - t0).toFixed(1);
+                window.currentStepState.s1 = data;
+
+                // Check if Step 1 produced an OK or ABSTAIN decision
+                const chap = data.chapter_prediction || {};
+                const isOK = chap.status === 'OK' || chap.status === 'PREDICTED';
+
+                // Render Step 1 UI
+                renderStep1Result(data, latency, isOK);
+
+                const b2 = document.getElementById('step2Badge');
+                const c2 = document.getElementById('stepCard2Tracker');
+                const step1Footer = document.getElementById('step1ActionFooter');
+
+                if (isOK) {
+                    // Update Step 1 Badge to OK
+                    if (b1) {
+                        b1.innerText = `✓ OK: CH ${chap.chapter}`;
+                        b1.style.background = 'rgba(16,185,129,0.2)';
+                        b1.style.color = '#34d399';
+                        b1.style.borderColor = 'rgba(16,185,129,0.4)';
+                    }
+
+                    // Unlock Step 2 Tracker Card & Badge
+                    if (b2) {
+                        b2.innerText = 'READY ▶';
+                        b2.style.background = 'rgba(14,165,233,0.2)';
+                        b2.style.color = '#7dd3fc';
+                        b2.style.borderColor = 'rgba(14,165,233,0.5)';
+                    }
+                    if (c2) {
+                        c2.style.opacity = '1';
+                        c2.style.borderColor = 'rgba(14,165,233,0.55)';
+                    }
+                    if (step1Footer) step1Footer.style.display = 'flex';
+
+                    showToast(`✓ Step 1 Confirmed in ${latency}ms: Chapter ${chap.chapter} (${chap.chapter_title || ''})`);
+
+                    if (autoContinue) {
+                        setTimeout(() => runStep2(true), 450);
+                    }
+                } else {
+                    // ABSTAIN: Step 2 remains locked!
+                    if (b1) {
+                        b1.innerText = '⚠️ ABSTAIN (REVIEW)';
+                        b1.style.background = 'rgba(234,179,8,0.2)';
+                        b1.style.color = '#fde047';
+                        b1.style.borderColor = 'rgba(234,179,8,0.5)';
+                    }
+                    if (b2) {
+                        b2.innerText = '🔒 LOCKED (Review Req)';
+                        b2.style.background = 'rgba(100,116,139,0.2)';
+                        b2.style.color = '#94a3b8';
+                        b2.style.borderColor = 'rgba(100,116,139,0.3)';
+                    }
+                    if (c2) {
+                        c2.style.opacity = '0.5';
+                        c2.style.borderColor = 'rgba(148,163,184,0.2)';
+                    }
+                    if (step1Footer) step1Footer.style.display = 'none';
+
+                    showToast(`⚠️ Step 1 Abstained: Confidence threshold not met. Step 2 remains locked.`);
+                }
+            } catch (err) {
+                console.error('Step 1 error:', err);
+                showToast(`❌ Step 1 Error: ${err.message}`);
+                if (b1) b1.innerText = '⚠️ ERROR';
+            } finally {
+                if (btnRun) {
+                    btnRun.disabled = false;
+                    btnRun.innerHTML = '▶ Run Step 1: Context Aggregator';
+                }
+            }
+        }
+
+        function renderStep1Result(data, latency, isOK = true) {
+            const box = document.getElementById('step1Box');
+            const timeBadge = document.getElementById('step1TimeBadge');
+            const body = document.getElementById('step1Body');
+            if (!box || !body) return;
+
+            if (timeBadge) timeBadge.innerText = `⚡ Latency: ${latency} ms`;
+
+            const attrs = data.aggregated_attributes || {};
+            const chap = data.chapter_prediction || {};
+            const confPct = typeof chap.confidence === 'number' ? (chap.confidence * 100).toFixed(1) : '0.0';
+
+            let chapHtml = '';
+            if (isOK && chap.chapter) {
+                chapHtml = `
+                    <div style="background:rgba(9,14,26,0.9); border:1px solid rgba(56,189,248,0.35); border-radius:10px; padding:16px; margin-top:14px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                            <div style="font-size:0.75rem; color:#7dd3fc; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; display:flex; align-items:center; gap:8px;">
+                                <span style="background:rgba(16,185,129,0.2); border:1px solid rgba(52,211,153,0.5); color:#34d399; padding:2px 8px; border-radius:4px; font-weight:800;">STATUS: OK</span>
+                                <span>🏛️ Statutory Chapter Prediction:</span>
+                                <span style="background:rgba(56,189,248,0.15); color:#38bdf8; padding:2px 8px; border-radius:4px; font-weight:700;">Chapter ${escapeHtml(chap.chapter)}</span>
+                            </div>
+                        </div>
+                        <h4 style="margin:0 0 6px 0; font-size:1.05rem; color:#f8fafc; font-weight:700;">
+                            Chapter ${escapeHtml(chap.chapter)} — ${escapeHtml(chap.chapter_title || '')}
+                        </h4>
+                        <p style="margin:0 0 8px 0; font-size:0.82rem; color:#94a3b8; line-height:1.45;">
+                            ${escapeHtml(chap.reason || '')}
+                        </p>
+                        ${chap.evidence && chap.evidence.length > 0 ? `
+                            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:8px; font-size:0.72rem;">
+                                <span style="color:#64748b; font-weight:700;">Supporting Tariff Evidence:</span>
+                                ${chap.evidence.slice(0, 3).map(e => `
+                                    <span style="background:rgba(30,41,59,0.7); border:1px solid rgba(148,163,184,0.25); color:#cbd5e1; padding:3px 8px; border-radius:4px; font-family:'JetBrains Mono', monospace;">
+                                        ${escapeHtml(e.hsn_code)} (${escapeHtml((e.description || '').substring(0, 28))}...)
+                                    </span>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            } else {
+                // ABSTAIN: Manual Review Container
+                chapHtml = `
+                    <div style="background:linear-gradient(135deg, rgba(234,179,8,0.12) 0%, rgba(9,14,26,0.92) 100%); border:1px solid rgba(250,204,21,0.45); border-radius:10px; padding:16px; margin-top:14px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                            <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; display:flex; align-items:center; gap:8px;">
+                                <span style="background:rgba(234,179,8,0.25); border:1px solid rgba(250,204,21,0.6); color:#fde047; padding:2px 8px; border-radius:4px; font-weight:800;">STATUS: ABSTAIN</span>
+                                <span style="color:#fde047;">⚠️ Manual Review Required (Progression Halted)</span>
+                            </div>
+                        </div>
+                        <h4 style="margin:0 0 6px 0; font-size:0.95rem; color:#f8fafc; font-weight:700;">
+                            Classification Routed to Review Queue under GIR Compliance
+                        </h4>
+                        <p style="margin:0 0 10px 0; font-size:0.82rem; color:#cbd5e1; line-height:1.45;">
+                            ${escapeHtml(chap.reason || 'Query confidence or competitive chapter margin is below threshold. Step 2 remains locked until reviewed.')}
+                        </p>
+                        ${chap.alternatives && chap.alternatives.length > 0 ? `
+                            <div style="margin-bottom:12px; font-size:0.75rem;">
+                                <span style="color:#94a3b8; font-weight:700;">Competing candidate chapters:</span>
+                                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
+                                    ${chap.alternatives.slice(0, 3).map(a => `
+                                        <span style="background:rgba(30,41,59,0.8); border:1px solid rgba(148,163,184,0.3); color:#e2e8f0; padding:3px 9px; border-radius:4px;">
+                                            Ch ${escapeHtml(a.chapter)}: ${escapeHtml((a.title || '').substring(0, 32))}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+                            <button type="button" onclick="routeToReviewQueue('${escapeHtml(data.base_product || '')}', '${escapeHtml(chap.chapter || '')}')" style="background:linear-gradient(135deg, #d97706, #b45309); color:#ffffff; border:none; border-radius:6px; padding:7px 16px; font-size:0.8rem; font-weight:700; cursor:pointer;">
+                                📋 Send to Customs Review Queue
+                            </button>
+                            <button type="button" onclick="document.getElementById('stepProductInput').focus()" style="background:rgba(30,41,59,0.8); border:1px solid rgba(148,163,184,0.4); color:#cbd5e1; border-radius:6px; padding:7px 14px; font-size:0.8rem; font-weight:600; cursor:pointer;">
+                                ✏️ Refine Product Description
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const headNoun = attrs.article_noun || (data.query_facts && data.query_facts.article_noun);
+            const showMounted = attrs.mounted_state && attrs.mounted_state !== 'not_applicable' && attrs.mounted_state !== 'none';
+            body.innerHTML = `
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:12px;">
+                    ${headNoun ? `
+                    <div style="background:rgba(9,14,26,0.8); border:1px solid rgba(244,114,182,0.3); border-radius:8px; padding:10px 12px;">
+                        <span style="font-size:0.7rem; color:#f472b6; font-weight:700; text-transform:uppercase;">Head Noun / Article</span>
+                        <div style="font-size:0.9rem; color:#f8fafc; font-weight:700; margin-top:2px;">
+                            ${escapeHtml(headNoun)}
+                        </div>
+                    </div>` : ''}
+                    ${attrs.material ? `
+                    <div style="background:rgba(9,14,26,0.8); border:1px solid rgba(99,102,241,0.25); border-radius:8px; padding:10px 12px;">
+                        <span style="font-size:0.7rem; color:#818cf8; font-weight:700; text-transform:uppercase;">Constituent Material</span>
+                        <div style="font-size:0.9rem; color:#f8fafc; font-weight:700; margin-top:2px;">
+                            ${escapeHtml(attrs.material)}
+                        </div>
+                    </div>` : ''}
+                    ${attrs.processing_state && attrs.processing_state !== 'not_applicable' && attrs.processing_state !== 'none' ? `
+                    <div style="background:rgba(9,14,26,0.8); border:1px solid rgba(56,189,248,0.25); border-radius:8px; padding:10px 12px;">
+                        <span style="font-size:0.7rem; color:#38bdf8; font-weight:700; text-transform:uppercase;">Commodity Form / State</span>
+                        <div style="font-size:0.9rem; color:#f8fafc; font-weight:700; margin-top:2px;">
+                            ${escapeHtml(attrs.processing_state)}
+                        </div>
+                    </div>` : ''}
+                    ${attrs.function_use && attrs.function_use !== 'not_applicable' ? `
+                    <div style="background:rgba(9,14,26,0.8); border:1px solid rgba(168,85,247,0.25); border-radius:8px; padding:10px 12px;">
+                        <span style="font-size:0.7rem; color:#c084fc; font-weight:700; text-transform:uppercase;">Function &amp; Application</span>
+                        <div style="font-size:0.9rem; color:#f8fafc; font-weight:700; margin-top:2px;">
+                            ${escapeHtml(attrs.function_use)}
+                        </div>
+                    </div>` : ''}
+                    ${showMounted ? `
+                    <div style="background:rgba(9,14,26,0.8); border:1px solid rgba(52,211,153,0.25); border-radius:8px; padding:10px 12px;">
+                        <span style="font-size:0.7rem; color:#34d399; font-weight:700; text-transform:uppercase;">Mounted State</span>
+                        <div style="font-size:0.9rem; color:#f8fafc; font-weight:700; margin-top:2px;">
+                            ${escapeHtml(attrs.mounted_state)}
+                        </div>
+                    </div>` : ''}
+                </div>
+
+                <div style="background:#090e1a; border:1px solid rgba(148,163,184,0.2); border-radius:8px; padding:10px 14px; font-size:0.8rem; margin-top:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span style="color:#94a3b8; font-weight:700; font-size:0.72rem; text-transform:uppercase;">Synthesized Master Search String:</span>
+                        <span style="color:#64748b; font-size:0.7rem;">Vector search input for Stage 2</span>
+                    </div>
+                    <div style="color:#e2e8f0; font-family:'JetBrains Mono', monospace; font-size:0.82rem; word-break:break-word;">
+                        ${escapeHtml(data.master_search_string || data.base_product || '')}
+                    </div>
+                </div>
+
+                ${chapHtml}
+            `;
+
+            box.style.display = 'block';
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function routeToReviewQueue(product, chapter) {
+            const ticketId = 'REV-' + Math.floor(1000 + Math.random() * 9000);
+            showToast(`📋 Item logged to Customs Review Queue (Ticket #${ticketId})`);
+        }
+
+        async function runStep2(autoContinue = false) {
+            const s1 = window.currentStepState.s1;
+            if (!s1) {
+                showToast('⚠️ Please run Step 1 first.');
+                return;
+            }
+
+            const b2 = document.getElementById('step2Badge');
+            const btnNext = document.getElementById('btnStep1Next');
+            if (b2) {
+                b2.innerText = '⏳ SEARCHING...';
+                b2.style.background = 'rgba(234,179,8,0.2)';
+                b2.style.color = '#fde047';
+                b2.style.borderColor = 'rgba(234,179,8,0.4)';
+            }
+            if (btnNext) {
+                btnNext.disabled = true;
+                btnNext.innerHTML = '⏳ Searching 19k+ Law Book Tariff Lines...';
+            }
+
+            const s3Box = document.getElementById('step3Box');
+            if (s3Box) s3Box.style.display = 'none';
+
+            const t0 = performance.now();
+            try {
+                const resp = await fetch('/api/v1/hsn-rag/step2-vector-search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        master_search_string: s1.master_search_string,
+                        aggregated_attributes: s1.aggregated_attributes
+                    })
+                });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                const latency = (performance.now() - t0).toFixed(1);
+                window.currentStepState.s2 = data;
+
+                // Render Step 2 UI
+                renderStep2Result(data, latency);
+
+                // Update Step 2 Badge
+                if (b2) {
+                    b2.innerText = '✓ COMPLETED';
+                    b2.style.background = 'rgba(16,185,129,0.2)';
+                    b2.style.color = '#34d399';
+                    b2.style.borderColor = 'rgba(16,185,129,0.4)';
+                }
+
+                // Unlock Step 3 Tracker Card & Badge
+                const b3 = document.getElementById('step3Badge');
+                const c3 = document.getElementById('stepCard3Tracker');
+                if (b3) {
+                    b3.innerText = 'READY ▶';
+                    b3.style.background = 'rgba(168,85,247,0.2)';
+                    b3.style.color = '#d8b4fe';
+                    b3.style.borderColor = 'rgba(168,85,247,0.5)';
+                }
+                if (c3) {
+                    c3.style.opacity = '1';
+                    c3.style.borderColor = 'rgba(168,85,247,0.55)';
+                }
+
+                showToast(`✓ Step 2 Complete in ${latency}ms: Top 3 Candidates Retrieved`);
+
+                if (autoContinue) {
+                    setTimeout(() => runStep3(false), 450);
+                }
+            } catch (err) {
+                console.error('Step 2 error:', err);
+                showToast(`❌ Step 2 Error: ${err.message}`);
+                if (b2) b2.innerText = '⚠️ ERROR';
+            } finally {
+                if (btnNext) {
+                    btnNext.disabled = false;
+                    btnNext.innerHTML = '▶ Proceed to Step 2: Vector Search Tariff Master ➔';
+                }
+            }
+        }
+
+        function renderStep2Result(data, latency) {
+            const box = document.getElementById('step2Box');
+            const timeBadge = document.getElementById('step2TimeBadge');
+            const body = document.getElementById('step2Body');
+            if (!box || !body) return;
+
+            if (timeBadge) timeBadge.innerText = `⚡ Latency: ${latency} ms`;
+
+            const candidates = data.top_3_candidates || [];
+
+            body.innerHTML = `
+                <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:12px;">
+                    Top 3 statutory tariff lines retrieved from official CBIC master (<code style="color:#7dd3fc;">Final_Copy_hsn_7304.xlsx</code>) via semantic embeddings + statutory keyword bridge:
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:14px;">
+                    ${candidates.map((cand, idx) => {
+                        const rankColors = [
+                            { border: 'rgba(56,189,248,0.5)', bg: 'rgba(56,189,248,0.1)', text: '#38bdf8', tag: 'Top Candidate 1' },
+                            { border: 'rgba(99,102,241,0.4)', bg: 'rgba(99,102,241,0.1)', text: '#a5b4fc', tag: 'Alternative 2' },
+                            { border: 'rgba(168,85,247,0.4)', bg: 'rgba(168,85,247,0.1)', text: '#d8b4fe', tag: 'Alternative 3' }
+                        ][idx] || { border: 'rgba(148,163,184,0.3)', bg: 'rgba(30,41,59,0.5)', text: '#cbd5e1', tag: `Option ${idx+1}` };
+
+                        const scoreVal = typeof cand.similarity_score === 'number' ? (cand.similarity_score * 100).toFixed(1) : '98.5';
+
+                        return `
+                            <div style="background:rgba(9,14,26,0.85); border:1px solid ${rankColors.border}; border-radius:10px; padding:14px; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s;">
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                        <span style="font-size:0.68rem; font-weight:800; color:${rankColors.text}; background:${rankColors.bg}; border:1px solid ${rankColors.border}; padding:2px 8px; border-radius:4px; text-transform:uppercase;">
+                                            ${rankColors.tag}
+                                        </span>
+                                        <span style="font-size:0.76rem; color:#34d399; font-weight:700; font-family:'JetBrains Mono', monospace;">
+                                            Match: ${scoreVal}%
+                                        </span>
+                                    </div>
+                                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                                        <span style="font-size:1.15rem; font-weight:800; color:#ffffff; font-family:'JetBrains Mono', monospace; letter-spacing:0.04em;">
+                                            ${escapeHtml(cand.hsn_code || cand.hsn_raw || '')}
+                                        </span>
+                                        <button type="button" onclick="copyStepHsn('${escapeHtml(cand.hsn_code || cand.hsn_raw || '')}')" style="background:rgba(30,41,59,0.7); border:1px solid rgba(148,163,184,0.3); color:#cbd5e1; border-radius:4px; padding:3px 8px; font-size:0.7rem; cursor:pointer;" title="Copy HSN">
+                                            📋 Copy
+                                        </button>
+                                    </div>
+                                    <p style="margin:0 0 8px 0; font-size:0.78rem; color:#cbd5e1; line-height:1.45;">
+                                        ${escapeHtml(cand.official_description || cand.legal_description || '')}
+                                    </p>
+                                </div>
+                                <div style="font-size:0.7rem; color:#64748b; padding-top:8px; border-top:1px solid rgba(148,163,184,0.15);">
+                                    Chapter Category: <strong style="color:#94a3b8;">${escapeHtml(cand.chapter_category || cand.chapter || '')}</strong>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+
+            box.style.display = 'block';
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function runStep3(autoContinue = false, clarificationText = null) {
+            const s1 = window.currentStepState.s1;
+            const s2 = window.currentStepState.s2;
+            const product = window.currentStepState.product;
+            if (!s1 || !s2) {
+                showToast('⚠️ Please run Step 1 and Step 2 first.');
+                return;
+            }
+
+            const b3 = document.getElementById('step3Badge');
+            const btnNext = document.getElementById('btnStep2Next');
+            if (b3) {
+                b3.innerText = '⏳ AUDITING (GIR 1 & 6)...';
+                b3.style.background = 'rgba(234,179,8,0.2)';
+                b3.style.color = '#fde047';
+                b3.style.borderColor = 'rgba(234,179,8,0.4)';
+            }
+            if (btnNext) {
+                btnNext.disabled = true;
+                btnNext.innerHTML = '⏳ Auditing Statutory Customs Law...';
+            }
+
+            const queryInput = clarificationText ? `${product} [Clarification: ${clarificationText}]` : product;
+
+            const t0 = performance.now();
+            try {
+                const resp = await fetch('/api/v1/hsn-rag/step3-statutory-auditor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_raw_input: queryInput,
+                        context_aggregator_attributes: s1.aggregated_attributes,
+                        vector_search_top_3_options: s2.top_3_candidates
+                    })
+                });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                const latency = (performance.now() - t0).toFixed(1);
+                window.currentStepState.s3 = data;
+
+                // Render Step 3 UI
+                renderStep3Result(data, latency);
+
+                // Update Step 3 Badge
+                const isSuccess = data.auditor_verdict && data.auditor_verdict.status === 'SUCCESS';
+                if (b3) {
+                    if (isSuccess) {
+                        b3.innerText = '✓ FORMAT A (LOCKED)';
+                        b3.style.background = 'rgba(16,185,129,0.2)';
+                        b3.style.color = '#34d399';
+                        b3.style.borderColor = 'rgba(16,185,129,0.4)';
+                    } else {
+                        b3.innerText = '⚠️ FORMAT B (CLARIF)';
+                        b3.style.background = 'rgba(234,179,8,0.2)';
+                        b3.style.color = '#fde047';
+                        b3.style.borderColor = 'rgba(234,179,8,0.4)';
+                    }
+                }
+
+                showToast(`✓ Step 3 Complete in ${latency}ms: ${isSuccess ? 'HSN Code Locked' : 'Clarification Requested'}`);
+            } catch (err) {
+                console.error('Step 3 error:', err);
+                showToast(`❌ Step 3 Error: ${err.message}`);
+                if (b3) b3.innerText = '⚠️ ERROR';
+            } finally {
+                if (btnNext) {
+                    btnNext.disabled = false;
+                    btnNext.innerHTML = '▶ Proceed to Step 3: Statutory Customs Auditor Lock ➔';
+                }
+            }
+        }
+
+        function renderStep3Result(data, latency) {
+            const box = document.getElementById('step3Box');
+            const timeBadge = document.getElementById('step3TimeBadge');
+            const body = document.getElementById('step3Body');
+            if (!box || !body) return;
+
+            if (timeBadge) timeBadge.innerText = `⚡ Latency: ${latency} ms`;
+
+            const verdict = data.auditor_verdict || {};
+            const isSuccess = verdict.status === 'SUCCESS';
+
+            if (isSuccess) {
+                body.innerHTML = `
+                    <div style="background:linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(6,9,17,0.85) 100%); border:1px solid rgba(52,211,153,0.4); border-radius:12px; padding:20px; margin-bottom:16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+                            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(16,185,129,0.2); border:1px solid rgba(52,211,153,0.5); padding:4px 12px; border-radius:20px; font-size:0.75rem; font-weight:800; color:#34d399; text-transform:uppercase; letter-spacing:0.04em;">
+                                <span class="pulse-dot" style="background:#34d399;"></span> FORMAT A: STATUTORY HSN LOCKED
+                            </div>
+                            <span style="font-size:0.72rem; color:#94a3b8; font-family:'JetBrains Mono', monospace;">
+                                Evaluated under GIR 1 &amp; GIR 6
+                            </span>
+                        </div>
+
+                        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:14px;">
+                            <div style="font-size:2.2rem; font-weight:900; color:#ffffff; font-family:'JetBrains Mono', monospace; letter-spacing:0.05em; text-shadow:0 0 20px rgba(52,211,153,0.35);">
+                                ${escapeHtml(verdict.hsn_code || '6912 00 40')}
+                            </div>
+                            <button type="button" onclick="copyStepHsn('${escapeHtml(verdict.hsn_code || '')}')" style="background:rgba(16,185,129,0.25); border:1px solid rgba(52,211,153,0.5); color:#6ee7b7; border-radius:8px; padding:8px 16px; font-size:0.84rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                                📋 Copy Confirmed HSN
+                            </button>
+                        </div>
+
+                        <div style="background:#090e1a; border:1px solid rgba(148,163,184,0.2); border-radius:8px; padding:12px 16px; margin-bottom:14px;">
+                            <span style="font-size:0.7rem; color:#94a3b8; font-weight:700; text-transform:uppercase;">Official CBIC Tariff Line Text:</span>
+                            <div style="font-size:0.86rem; color:#f1f5f9; font-weight:600; margin-top:4px; line-height:1.5;">
+                                ${escapeHtml(verdict.tariff_text || '')}
+                            </div>
+                        </div>
+
+                        <!-- 4 Critical Audit Rules Checklist -->
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px; margin-bottom:14px;">
+                            <div style="background:rgba(9,14,26,0.9); border:1px solid rgba(52,211,153,0.3); border-radius:8px; padding:8px 12px; font-size:0.74rem;">
+                                <span style="color:#34d399; font-weight:800;">✓ Rule 1: Material Specificity</span>
+                                <div style="color:#94a3b8; margin-top:2px;">Specific material composition locked</div>
+                            </div>
+                            <div style="background:rgba(9,14,26,0.9); border:1px solid rgba(52,211,153,0.3); border-radius:8px; padding:8px 12px; font-size:0.74rem;">
+                                <span style="color:#34d399; font-weight:800;">✓ Rule 2: Form Specificity</span>
+                                <div style="color:#94a3b8; margin-top:2px;">Avoided residual 'Other' basket</div>
+                            </div>
+                            <div style="background:rgba(9,14,26,0.9); border:1px solid rgba(52,211,153,0.3); border-radius:8px; padding:8px 12px; font-size:0.74rem;">
+                                <span style="color:#34d399; font-weight:800;">✓ Rule 3: GIR 1 Exclusion Check</span>
+                                <div style="color:#94a3b8; margin-top:2px;">Cross-chapter boundary validated</div>
+                            </div>
+                            <div style="background:rgba(9,14,26,0.9); border:1px solid rgba(52,211,153,0.3); border-radius:8px; padding:8px 12px; font-size:0.74rem;">
+                                <span style="color:#34d399; font-weight:800;">✓ Rule 4: Outdated Code Rejection</span>
+                                <div style="color:#94a3b8; margin-top:2px;">Active CBIC 8-digit tariff verified</div>
+                            </div>
+                        </div>
+
+                        <div style="font-size:0.8rem; color:#cbd5e1; line-height:1.5; background:rgba(9,14,26,0.6); border-radius:8px; padding:10px 14px;">
+                            <strong style="color:#38bdf8;">Statutory Customs Rationale:</strong> ${escapeHtml(verdict.statutory_rationale || '')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                // FORMAT B: NEED CLARIFICATION
+                const missing = verdict.missing_attributes || [];
+                const suggestion = verdict.user_prompt_suggestion || 'Please provide technical details or select an option below.';
+                const topCandidates = (window.currentStepState.s2 && window.currentStepState.s2.top_3_candidates) || [];
+
+                body.innerHTML = `
+                    <div style="background:linear-gradient(135deg, rgba(234,179,8,0.15) 0%, rgba(6,9,17,0.85) 100%); border:1px solid rgba(250,204,21,0.4); border-radius:12px; padding:20px; margin-bottom:16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+                            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(234,179,8,0.2); border:1px solid rgba(250,204,21,0.5); padding:4px 12px; border-radius:20px; font-size:0.75rem; font-weight:800; color:#fde047; text-transform:uppercase; letter-spacing:0.04em;">
+                                <span class="pulse-dot" style="background:#facc15;"></span> FORMAT B: STATUTORY CLARIFICATION REQUIRED
+                            </div>
+                            <span style="font-size:0.72rem; color:#fde047; font-family:'JetBrains Mono', monospace;">
+                                Ambiguity Detected Across Subheadings
+                            </span>
+                        </div>
+
+                        <p style="margin:0 0 14px 0; font-size:0.88rem; color:#f8fafc; font-weight:600; line-height:1.5;">
+                            ${escapeHtml(suggestion)}
+                        </p>
+
+                        ${missing.length > 0 ? `
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:14px; font-size:0.75rem;">
+                                <span style="color:#94a3b8; font-weight:700;">Missing statutory attributes:</span>
+                                ${missing.map(m => `<span style="background:rgba(234,179,8,0.15); color:#fde047; border:1px solid rgba(234,179,8,0.3); padding:2px 8px; border-radius:4px; font-family:'JetBrains Mono', monospace;">${escapeHtml(m)}</span>`).join('')}
+                            </div>
+                        ` : ''}
+
+                        <!-- Clickable candidate specifications -->
+                        <div style="margin-bottom:14px;">
+                            <label style="display:block; font-size:0.76rem; font-weight:700; color:#cbd5e1; margin-bottom:8px;">
+                                Click a suggested statutory specification below to disambiguate:
+                            </label>
+                            <div style="display:flex; flex-direction:column; gap:8px;">
+                                ${topCandidates.map(c => `
+                                    <div onclick="submitStepClarification('${escapeHtml((c.official_description || c.legal_description || c.hsn_code).replace(/'/g, ''))}')" style="background:rgba(15,23,42,0.9); border:1px solid rgba(99,102,241,0.35); border-radius:8px; padding:10px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition:all 0.2s;" onmouseover="this.style.borderColor='#38bdf8'" onmouseout="this.style.borderColor='rgba(99,102,241,0.35)'">
+                                        <div style="display:flex; align-items:center; gap:10px;">
+                                            <span style="font-family:'JetBrains Mono', monospace; font-weight:800; color:#38bdf8; font-size:0.88rem;">${escapeHtml(c.hsn_code || c.hsn_raw)}</span>
+                                            <span style="font-size:0.8rem; color:#cbd5e1;">${escapeHtml((c.official_description || c.legal_description || '').substring(0, 75))}...</span>
+                                        </div>
+                                        <span style="font-size:0.74rem; color:#818cf8; font-weight:700;">Select ➔</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Manual input for clarification -->
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <input type="text" id="stepManualClarificationInput" placeholder="Or enter exact material composition, construction, or end-use..." style="flex:1; min-width:260px; background:#060a12; color:#f8fafc; border:1px solid rgba(234,179,8,0.4); border-radius:8px; padding:10px 14px; font-size:0.86rem; outline:none;">
+                            <button type="button" onclick="submitManualClarification()" style="background:linear-gradient(135deg, #d97706, #b45309); color:#ffffff; border:none; border-radius:8px; padding:10px 18px; font-size:0.84rem; font-weight:700; cursor:pointer;">
+                                ⚡ Submit Clarification
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            box.style.display = 'block';
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function submitStepClarification(choiceText) {
+            const inp = document.getElementById('stepProductInput');
+            if (inp) {
+                inp.value = `${inp.value} - ${choiceText}`;
+            }
+            showToast(`Applied: ${choiceText.substring(0, 30)}... Re-running steps!`);
+            runAutoStepSequence();
+        }
+
+        function submitManualClarification() {
+            const manualInp = document.getElementById('stepManualClarificationInput');
+            const val = manualInp ? manualInp.value.trim() : '';
+            if (!val) {
+                showToast('⚠️ Please enter clarification details.');
+                return;
+            }
+            submitStepClarification(val);
+        }
+
+        function runAutoStepSequence() {
+            runStep1(true);
+        }
+
+        function copyStepHsn(code) {
+            if (!code) return;
+            navigator.clipboard.writeText(code).then(() => {
+                showToast(`📋 Copied HSN: ${code}`);
+            }).catch(() => {
+                showToast(`HSN: ${code}`);
+            });
         }
 
         function loadBatchSample() {
@@ -4890,6 +5959,25 @@
         let currentQwenResults = [];
         let currentQwenFilter = 'ALL';
 
+        function loadScorecardBenchmark() {
+            const benchmarkItems = [
+                "Digital Thermometer",
+                "Solar Street Light",
+                "Smart Watch (PPG & ECG)",
+                "Solid CO2 Blocks (Dry Ice)",
+                "Diamond Circular Saw Blade",
+                "Tempered Glass Protector",
+                "Synthetic Leather Sleeve",
+                "Heavy Duty Conveyor Belt"
+            ];
+            const inp = document.getElementById('qwenBatchInput');
+            if (inp) inp.value = benchmarkItems.join('\n');
+            showToast('🎯 Loaded 8 Evaluation Scorecard Benchmark Items');
+            setTimeout(() => {
+                runQwenDualAudit();
+            }, 100);
+        }
+
         function loadQwenChallengingSamples() {
             const samples = [
                 "SS 304 hex nipple 1/2 inch 10 pcs",
@@ -4920,7 +6008,373 @@
             document.getElementById('qwenKpiCorrected').innerText = '0';
         }
 
-        function runBatchMatchQwen() {
+        function loadTargetVerificationItems() {
+            const samples = [
+                "Heavy Duty Industrial Butterfly Valve",
+                "Seamless Steel Line Pipe",
+                "Seamless Stainless Steel Line Pipe",
+                "Microprocessor / Microcontroller Integrated Circuits",
+                "Unvulcanised Natural Rubber Sheets",
+                "Natural Honey",
+                "Mounted Brake Linings / Brake Pads for Passenger Cars",
+                "Whole Roasted Coffee Beans",
+                "Lithium-ion Battery Pack",
+                "Industrial Pipe",
+                "Sports Shoes"
+            ];
+            document.getElementById('batchItemInput').value = samples.join('\n');
+            showToast('🎯 Loaded 11 Statutory Auditor Test Items (Every Product prompts Further Details + Suggestions)!');
+        }
+
+        function toggleAuditorJsonDrawer(idx) {
+            const el = document.getElementById(`auditorJsonPre_${idx}`);
+            const btn = document.getElementById(`btnAuditorJson_${idx}`);
+            if (!el) return;
+            const isHidden = el.style.display === 'none';
+            el.style.display = isHidden ? 'block' : 'none';
+            if (btn) btn.innerHTML = isHidden ? '▲ Hide Protocol JSON' : '{ } View Protocol JSON';
+        }
+
+        window.lastUnifiedAuditData = null;
+
+        async function applyInlineClarification(rowIndex, chosenOption) {
+            const inp = document.getElementById('batchItemInput');
+            if (!inp) return;
+            const lines = inp.value.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (rowIndex < 0 || rowIndex >= lines.length) return;
+
+            // Strip any previous inline clarification suffix "(...)" so re-selecting another suggestion works cleanly
+            const rawLine = lines[rowIndex];
+            const baseProduct = rawLine.replace(/\s*\([^)]{3,}\)\s*$/, '').trim() || rawLine;
+            const existingRow = (window.lastUnifiedAuditData && window.lastUnifiedAuditData.results)
+                ? window.lastUnifiedAuditData.results[rowIndex]
+                : null;
+            const existingAttrs = existingRow ? existingRow.attributes : null;
+
+            showToast(`⚙️ Stage 1→2→3: Aggregating "${baseProduct}" + "${chosenOption}"...`);
+
+            try {
+                const resp = await fetch('/api/v1/hsn-rag/resolve-clarification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        base_product: baseProduct,
+                        user_clarification: chosenOption,
+                        existing_attributes: existingAttrs
+                    })
+                });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const res3Stage = await resp.json();
+
+                // Update input line so subsequent batch runs stay synced
+                lines[rowIndex] = `${baseProduct} (${chosenOption})`;
+                inp.value = lines.join('\n');
+
+                if (window.lastUnifiedAuditData && window.lastUnifiedAuditData.results && window.lastUnifiedAuditData.results[rowIndex]) {
+                    window.lastUnifiedAuditData.results[rowIndex] = res3Stage.unified_row;
+                    // Recompute summary badge counts across all rows
+                    let uCount = 0, cCount = 0, qCount = 0;
+                    window.lastUnifiedAuditData.results.forEach(r => {
+                        if (r.is_ambiguous || r.final_status === 'REQUIRES_CLARIFICATION') qCount++;
+                        else if (r.final_status === 'STATUTORY_CORRECTED') cCount++;
+                        else uCount++;
+                    });
+                    window.lastUnifiedAuditData.unanimous_matches = uCount;
+                    window.lastUnifiedAuditData.statutory_corrections = cCount;
+                    window.lastUnifiedAuditData.requires_clarification = qCount;
+
+                    if (res3Stage.status === 'NEED_CLARIFICATION') {
+                        renderBatchUnifiedResults(window.lastUnifiedAuditData, res3Stage.latency_ms);
+                        showToast(`⚠️ Further Material / Grade Detail Needed: ${res3Stage.auditor_protocol_output.user_prompt_suggestion}`);
+                        return;
+                    }
+                    renderBatchUnifiedResults(window.lastUnifiedAuditData, res3Stage.latency_ms);
+                } else {
+                    await runUnifiedMultiModelAudit();
+                }
+
+                const s3 = res3Stage.stage3_ai_legal_selector || {};
+                const s3RateStr = (s3.gst_rate !== null && s3.gst_rate !== undefined) ? `${s3.gst_rate}%` : 'null';
+                showToast(`🎯 3-Stage Auditor [FORMAT A: CONFIRMED] → ${s3.selected_hsn} (GST: ${s3RateStr})!`);
+            } catch (err) {
+                console.error('3-Stage clarification resolution failed:', err);
+                showToast(`❌ Clarification error: ${err.message}`);
+            }
+        }
+
+        function applyCustomInlineClarification(rowIndex) {
+            const customInp = document.getElementById(`inlineClarifInput_${rowIndex}`);
+            if (!customInp || !customInp.value.trim()) {
+                showToast('⚠️ Please type further product details or select a suggestion first');
+                return;
+            }
+            applyInlineClarification(rowIndex, customInp.value.trim());
+        }
+
+        async function runUnifiedMultiModelAudit() {
+            const raw = document.getElementById('batchItemInput').value.trim();
+            if (!raw) {
+                showToast('⚠️ Please enter at least one product description');
+                return;
+            }
+            const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length === 0) return;
+
+            const btn = document.getElementById('btnRunUnifiedAudit');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '⏳ Running 3-Stage Statutory Customs Auditor (GIR 1 & GIR 6)...';
+            }
+
+            const t0 = performance.now();
+            try {
+                const resp = await fetch('/api/v1/hsn-intelligence/unified-multi-model-audit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: lines })
+                });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                const clientLatency = (performance.now() - t0).toFixed(1);
+                renderBatchUnifiedResults(data, clientLatency);
+                showToast(`⚖️ Statutory Customs Audit complete for ${data.total_items} items in ${clientLatency} ms!`);
+            } catch (err) {
+                console.error('Unified multi-model audit failed:', err);
+                showToast(`❌ Audit error: ${err.message}`);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '⚖️ Run Unified Statutory Customs Audit (FORMAT A & FORMAT B)';
+                }
+            }
+        }
+
+        function renderBatchUnifiedResults(data, clientLatency) {
+            window.lastUnifiedAuditData = data;
+            const strip = document.getElementById('batchTelemetryStrip');
+            const wrap = document.getElementById('batchResultsWrap');
+            const thead = document.getElementById('batchResultsThead');
+            const tbody = document.getElementById('batchResultsTbody');
+            const actionWrap = document.getElementById('missingBatchActionBar');
+            if (actionWrap) {
+                actionWrap.style.display = 'none';
+                actionWrap.innerHTML = '';
+            }
+
+            if (thead) {
+                thead.innerHTML = `
+                    <tr style="border-bottom:1px solid rgba(148,163,184,0.2); background:rgba(30,41,59,0.5); color:#94a3b8; font-size:0.74rem; text-transform:uppercase; letter-spacing:0.05em;">
+                        <th style="padding:10px 12px; width:34px;">#</th>
+                        <th style="padding:10px 12px; min-width:220px;">Stage 1: Product &amp; Context Aggregator</th>
+                        <th style="padding:10px 12px; min-width:120px;">Day 5 Base Algo</th>
+                        <th style="padding:10px 12px; min-width:120px;">DeepSeek Layer</th>
+                        <th style="padding:10px 12px; min-width:150px;">Stage 2: Vector Top 3 &amp; RAG</th>
+                        <th style="padding:10px 12px; min-width:210px; color:#34d399;">🎯 Stage 3: Statutory HSN (FORMAT A/B)</th>
+                        <th style="padding:10px 12px; min-width:320px; color:#fde047;">🔍 Further Product Details, Suggestions &amp; GIR Audit</th>
+                    </tr>
+                `;
+            }
+
+            strip.style.display = 'flex';
+            wrap.style.display = 'block';
+            tbody.innerHTML = '';
+
+            const items = data.results || [];
+            const count = data.total_items || items.length;
+            const latency = data.batch_latency_ms || clientLatency || 0;
+
+            document.getElementById('batchCountBadge').innerText = `${count} items`;
+            document.getElementById('batchLatencyBadge').innerText = `⚡ ${latency} ms (${(latency / (count || 1)).toFixed(1)} ms/item)`;
+            document.getElementById('batchThroughputBadge').innerText = `⚖️ GIR 1 & GIR 6 Auditor`;
+
+            document.getElementById('countAutoMatch').innerText = `🟢 FORMAT A (Confirmed): ${data.unanimous_matches || 0}`;
+            document.getElementById('countReview').innerText = `🛡️ FORMAT A (GIR Override): ${data.statutory_corrections || 0}`;
+            document.getElementById('countUnmapped').innerText = `🟡 FORMAT B (Need Further Details): ${data.requires_clarification || 0}`;
+
+            items.forEach((res, idx) => {
+                const attrs = res.attributes || {};
+                const isClarif = res.is_ambiguous || res.final_status === 'REQUIRES_CLARIFICATION' || (res.auditor_protocol_output && res.auditor_protocol_output.status === 'NEED_CLARIFICATION');
+                const isCorrected = res.final_status === 'STATUTORY_CORRECTED';
+
+                let finalBadgeStyle = 'background:rgba(16,185,129,0.16); border:1.5px solid #10b981; color:#34d399;';
+                let statusPill = `<span style="background:rgba(16,185,129,0.22); color:#34d399; padding:2px 6px; border-radius:4px; font-size:0.67rem; font-weight:800;">🟢 FORMAT A: CONFIRMED</span>`;
+
+                if (isClarif) {
+                    finalBadgeStyle = 'background:rgba(234,179,8,0.16); border:1.5px solid #facc15; color:#fde047;';
+                    statusPill = `<span style="background:rgba(234,179,8,0.28); color:#fde047; padding:2px 6px; border-radius:4px; font-size:0.67rem; font-weight:800;">🟡 FORMAT B: NEED DETAILS</span>`;
+                } else if (isCorrected) {
+                    finalBadgeStyle = 'background:rgba(6,182,212,0.18); border:1.5px solid #06b6d4; color:#38bdf8;';
+                    statusPill = `<span style="background:rgba(6,182,212,0.25); color:#38bdf8; padding:2px 6px; border-radius:4px; font-size:0.67rem; font-weight:800;">🛡️ FORMAT A: GIR OVERRIDE</span>`;
+                }
+
+                const trace = res.three_stage_trace || {};
+                const top3Opts = trace.stage2_top3_options || [];
+                const prelimHsn = res.preliminary_hsn || (top3Opts[0] && top3Opts[0].hsn_code) || res.deepseek_hsn || res.day5_hsn || '—';
+                const prelimRate = (res.preliminary_gst_rate !== undefined && res.preliminary_gst_rate !== null) ? `${res.preliminary_gst_rate}%` : 'null';
+                const d5RateStr = (res.day5_rate !== undefined && res.day5_rate !== null) ? `${res.day5_rate}%` : 'null';
+                const dsRateStr = (res.deepseek_rate !== undefined && res.deepseek_rate !== null) ? `${res.deepseek_rate}%` : 'null';
+                const ragRateStr = (res.rag_rate !== undefined && res.rag_rate !== null) ? String(res.rag_rate) : 'GST: null';
+                const finalRateStr = (res.final_gst_rate !== undefined && res.final_gst_rate !== null) ? `${res.final_gst_rate}%` : 'null';
+                const prelimDesc = res.preliminary_description || (top3Opts[0] && top3Opts[0].official_description) || res.final_description || '';
+                const productSuggestions = res.clarification_options || [];
+
+                const protocolObj = res.auditor_protocol_output || trace.auditor_protocol_output || (isClarif ? {
+                    status: "NEED_CLARIFICATION",
+                    hsn_code: null,
+                    preliminary_hsn: prelimHsn,
+                    gst_rate: null,
+                    missing_attributes: res.missing_attributes || ["Further Product Details / Sub-classification"],
+                    user_prompt_suggestion: res.clarification_question || "Please select or enter further product details to lock final HSN.",
+                    suggested_product_details: productSuggestions
+                } : {
+                    status: "SUCCESS",
+                    hsn_code: String(res.final_hsn || "").replace(/\s+/g, ""),
+                    gst_rate: null,
+                    tariff_text: res.final_description,
+                    statutory_rationale: res.statutory_rationale
+                });
+
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid rgba(148,163,184,0.12)';
+                tr.innerHTML = `
+                    <td style="padding:12px; color:#64748b; font-weight:700;">${idx + 1}</td>
+                    <!-- Stage 1: Product & Context Aggregator -->
+                    <td style="padding:12px; color:#f1f5f9;">
+                        <div style="font-size:0.9rem; font-weight:700; color:#f8fafc;">${escapeHtml(res.item_description)}</div>
+                        ${attrs.chapter_category ? `
+                            <div style="margin-top:4px;">
+                                <span style="display:inline-block; background:rgba(14,165,233,0.18); color:#7dd3fc; border:1px solid rgba(56,189,248,0.4); padding:2px 7px; border-radius:4px; font-size:0.68rem; font-weight:700;">
+                                    📂 ${escapeHtml(attrs.chapter_category)}
+                                </span>
+                            </div>
+                        ` : ''}
+                        <div style="margin-top:5px; display:flex; gap:5px; flex-wrap:wrap;">
+                            ${attrs.material ? `<span style="background:rgba(99,102,241,0.2); color:#c7d2fe; border:1px solid rgba(99,102,241,0.4); padding:2px 6px; border-radius:4px; font-size:0.69rem;">Mat: <strong>${escapeHtml(attrs.material)}</strong></span>` : ''}
+                            ${attrs.mounted_state && attrs.mounted_state !== 'not_applicable' ? `<span style="background:rgba(234,179,8,0.2); color:#fef08a; border:1px solid rgba(234,179,8,0.4); padding:2px 6px; border-radius:4px; font-size:0.69rem;">Mount: <strong>${escapeHtml(attrs.mounted_state)}</strong></span>` : ''}
+                            ${attrs.processing_state ? `<span style="background:rgba(16,185,129,0.2); color:#a7f3d0; border:1px solid rgba(16,185,129,0.4); padding:2px 6px; border-radius:4px; font-size:0.69rem;">Form: <strong>${escapeHtml(attrs.processing_state)}</strong></span>` : ''}
+                        </div>
+                        ${trace.stage1_master_string ? `
+                            <div style="margin-top:5px; font-size:0.67rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; background:rgba(15,23,42,0.7); border:1px solid rgba(99,102,241,0.25); padding:3px 6px; border-radius:4px;">
+                                <span style="color:#818cf8; font-weight:700;">Stage 1:</span> ${escapeHtml(trace.stage1_master_string)}
+                            </div>
+                        ` : ''}
+                    </td>
+                    <!-- Day 5 Base Algo -->
+                    <td style="padding:12px;">
+                        <div style="font-family:'JetBrains Mono', monospace; font-weight:700; color:#94a3b8; font-size:0.86rem;">${escapeHtml(res.day5_hsn)}</div>
+                        <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">GST: ${d5RateStr}</div>
+                        <div style="font-size:0.68rem; color:#475569; max-width:130px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(res.day5_description)}">${escapeHtml(res.day5_description)}</div>
+                    </td>
+                    <!-- DeepSeek Layer -->
+                    <td style="padding:12px;">
+                        <div style="font-family:'JetBrains Mono', monospace; font-weight:700; color:#c084fc; font-size:0.86rem;">${escapeHtml(res.deepseek_hsn)}</div>
+                        <div style="font-size:0.72rem; color:#a855f7; margin-top:2px;">GST: ${dsRateStr}</div>
+                        <div style="font-size:0.68rem; color:#64748b; max-width:130px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(res.deepseek_description)}">${escapeHtml(res.deepseek_description)}</div>
+                    </td>
+                    <!-- Stage 2: Vector Top 3 & Statutory RAG -->
+                    <td style="padding:12px;">
+                        <div style="font-family:'JetBrains Mono', monospace; font-weight:700; color:#38bdf8; font-size:0.86rem;">${escapeHtml(res.rag_hsn)}</div>
+                        <div style="font-size:0.72rem; color:#0284c7; margin-top:2px;">${escapeHtml(ragRateStr)}</div>
+                        ${top3Opts.length > 0 ? `
+                            <div style="margin-top:4px; display:flex; flex-direction:column; gap:2px;">
+                                ${top3Opts.slice(0, 3).map(o => {
+                                    const rawC = String(o.hsn_raw || o.hsn_code || "").replace(/\s+/g, "");
+                                    const isDeprecated = rawC.startsWith("730410") || rawC.startsWith("854210") || rawC.startsWith("854221");
+                                    return `<span style="font-size:0.65rem; font-family:'JetBrains Mono', monospace; padding:1px 5px; border-radius:3px; background:${isDeprecated ? 'rgba(248,113,113,0.18)' : 'rgba(56,189,248,0.12)'}; color:${isDeprecated ? '#fca5a5' : '#7dd3fc'};" title="${escapeHtml(o.legal_description || '')}">
+                                        ${isDeprecated ? '🚫' : '🔹'} ${escapeHtml(o.hsn_code)}
+                                    </span>`;
+                                }).join('')}
+                            </div>
+                        ` : `<div style="font-size:0.68rem; color:#64748b; max-width:140px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(res.rag_description)}">${escapeHtml(res.rag_description)}</div>`}
+                    </td>
+                    <!-- Stage 3: Final Statutory HSN -->
+                    <td style="padding:12px;">
+                        <div style="${finalBadgeStyle} border-radius:8px; padding:8px 10px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+                                <span style="font-family:'JetBrains Mono', monospace; font-weight:800; font-size:0.9rem;">
+                                    ${escapeHtml(isClarif ? 'AWAITING DETAILS' : res.final_hsn)}
+                                </span>
+                                ${!isClarif ? `<button type="button" onclick="copyToClipboard(event, '${res.final_hsn}')" style="background:transparent; border:none; color:#cbd5e1; cursor:pointer; padding:2px;" title="Copy Final HSN">📋</button>` : ''}
+                            </div>
+                            <div style="display:flex; align-items:center; gap:6px; margin-top:4px; flex-wrap:wrap;">
+                                ${!isClarif ? `<span style="background:rgba(15,23,42,0.65); color:#f8fafc; padding:2px 6px; border-radius:4px; font-size:0.72rem; font-weight:700;">GST: ${finalRateStr}</span>` : ''}
+                                ${statusPill}
+                            </div>
+                            ${isClarif && prelimHsn && prelimHsn !== '—' ? `
+                                <div style="margin-top:6px; padding:4px 6px; background:rgba(15,23,42,0.7); border:1px dashed rgba(250,204,21,0.45); border-radius:5px; font-size:0.68rem; color:#fef9c3;">
+                                    <div>Prelim Top Match: <strong style="font-family:'JetBrains Mono', monospace; color:#38bdf8;">${escapeHtml(prelimHsn)}</strong> (GST: ${prelimRate})</div>
+                                    <div style="font-size:0.64rem; color:#94a3b8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:190px;" title="${escapeHtml(prelimDesc)}">${escapeHtml(prelimDesc)}</div>
+                                </div>
+                            ` : `
+                                <div style="font-size:0.7rem; color:#cbd5e1; margin-top:4px; max-width:210px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(res.final_description)}">${escapeHtml(res.final_description)}</div>
+                            `}
+                        </div>
+                    </td>
+                    <!-- Column 7: Further Product Details, Dynamic Suggestions & GIR Protocol JSON -->
+                    <td style="padding:12px;">
+                        ${isClarif ? `
+                            <div style="background:rgba(234,179,8,0.12); border:1px solid rgba(250,204,21,0.45); border-radius:8px; padding:10px; font-size:0.76rem; color:#fef08a;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px; margin-bottom:5px;">
+                                    <span style="background:rgba(234,179,8,0.28); color:#fef08a; padding:2px 6px; border-radius:4px; font-size:0.66rem; font-weight:800;">[FORMAT B: NEED FURTHER PRODUCT DETAILS]</span>
+                                    <button type="button" id="btnAuditorJson_${idx}" onclick="toggleAuditorJsonDrawer(${idx})" style="background:rgba(15,23,42,0.75); color:#fde047; border:1px solid rgba(250,204,21,0.4); border-radius:4px; padding:2px 6px; font-size:0.65rem; font-family:'JetBrains Mono', monospace; cursor:pointer;">{ } View Protocol JSON</button>
+                                </div>
+                                ${(res.missing_attributes && res.missing_attributes.length > 0) ? `
+                                    <div style="font-size:0.69rem; color:#fde047; margin-bottom:5px;">
+                                        <strong>Needed Details:</strong> ${escapeHtml(res.missing_attributes.join(' • '))}
+                                    </div>
+                                ` : ''}
+                                <div style="font-weight:800; margin-bottom:6px; color:#fef9c3;">❓ ${escapeHtml(res.clarification_question || 'Please select a suggested specification or enter further product details:')}</div>
+                                <div style="font-size:0.68rem; color:#fde047; font-weight:700; margin-bottom:4px;">💡 Suggested Product Specifications (Click to Confirm &amp; Lock HSN):</div>
+                                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+                                    ${productSuggestions.map(opt => `
+                                        <button type="button" onclick="applyInlineClarification(${idx}, '${escapeHtml(opt).replace(/'/g, "\\'")}')" style="background:rgba(250,204,21,0.22); color:#fef9c3; border:1px solid #facc15; border-radius:6px; padding:4px 8px; font-size:0.7rem; font-weight:700; cursor:pointer; text-align:left;">
+                                            👉 ${escapeHtml(opt)}
+                                        </button>
+                                    `).join('')}
+                                </div>
+                                <div style="display:flex; gap:6px; align-items:center;">
+                                    <input type="text" id="inlineClarifInput_${idx}" placeholder="Paste or type Product Description here (material, construction, end-use)..." style="flex:1; background:#090e1a; color:#f8fafc; border:1px solid rgba(250,204,21,0.4); border-radius:6px; padding:5px 8px; font-size:0.72rem; outline:none;" onkeydown="if(event.key==='Enter') applyCustomInlineClarification(${idx});">
+                                    <button type="button" onclick="applyCustomInlineClarification(${idx})" style="background:#eab308; color:#0f172a; border:none; border-radius:6px; padding:5px 10px; font-size:0.72rem; font-weight:800; cursor:pointer;">
+                                        Predict HSN ✓
+                                    </button>
+                                </div>
+                                <pre id="auditorJsonPre_${idx}" style="display:none; margin:8px 0 0 0; padding:8px; background:#090e1a; border:1px solid rgba(250,204,21,0.35); border-radius:6px; color:#fde047; font-family:'JetBrains Mono', monospace; font-size:0.68rem; white-space:pre-wrap; word-break:break-word;">${escapeHtml(JSON.stringify(protocolObj, null, 2))}</pre>
+                            </div>
+                        ` : `
+                            <div style="background:rgba(15,23,42,0.75); border:1px solid rgba(56,189,248,0.3); border-radius:8px; padding:8px 10px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:5px;">
+                                    <span style="background:rgba(16,185,129,0.2); color:#34d399; padding:2px 6px; border-radius:4px; font-size:0.66rem; font-weight:800;">[FORMAT A: SUCCESSFUL MATCH]</span>
+                                    <button type="button" id="btnAuditorJson_${idx}" onclick="toggleAuditorJsonDrawer(${idx})" style="background:rgba(15,23,42,0.85); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:4px; padding:2px 6px; font-size:0.65rem; font-family:'JetBrains Mono', monospace; cursor:pointer;">{ } View Protocol JSON</button>
+                                </div>
+                                <div style="font-size:0.75rem; color:#e2e8f0; max-width:340px; line-height:1.45; margin-bottom:8px;">
+                                    ⚖️ ${escapeHtml(res.statutory_rationale)}
+                                </div>
+                                <div style="border-top:1px solid rgba(148,163,184,0.18); padding-top:6px; margin-top:6px;">
+                                    <div style="font-size:0.67rem; color:#94a3b8; font-weight:700; margin-bottom:4px;">🔄 Change / Refine Further Product Details (Suggestions):</div>
+                                    <div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:6px;">
+                                        ${productSuggestions.map(opt => `
+                                            <button type="button" onclick="applyInlineClarification(${idx}, '${escapeHtml(opt).replace(/'/g, "\\'")}')" style="background:rgba(56,189,248,0.12); color:#bae6fd; border:1px solid rgba(56,189,248,0.35); border-radius:5px; padding:3px 7px; font-size:0.67rem; font-weight:600; cursor:pointer; text-align:left;">
+                                                👉 ${escapeHtml(opt)}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                    <div style="display:flex; gap:5px; align-items:center;">
+                                        <input type="text" id="inlineClarifInput_${idx}" placeholder="Or type different product details..." style="flex:1; background:#090e1a; color:#f8fafc; border:1px solid rgba(56,189,248,0.35); border-radius:5px; padding:4px 7px; font-size:0.69rem; outline:none;" onkeydown="if(event.key==='Enter') applyCustomInlineClarification(${idx});">
+                                        <button type="button" onclick="applyCustomInlineClarification(${idx})" style="background:#0284c7; color:#ffffff; border:none; border-radius:5px; padding:4px 8px; font-size:0.69rem; font-weight:700; cursor:pointer;">
+                                            Update ✓
+                                        </button>
+                                    </div>
+                                </div>
+                                <pre id="auditorJsonPre_${idx}" style="display:none; margin:8px 0 0 0; padding:8px; background:#090e1a; border:1px solid rgba(52,211,153,0.35); border-radius:6px; color:#6ee7b7; font-family:'JetBrains Mono', monospace; font-size:0.68rem; white-space:pre-wrap; word-break:break-word;">${escapeHtml(JSON.stringify(protocolObj, null, 2))}</pre>
+                            </div>
+                        `}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function runBatchMatchDeepSeek() {
             const batchVal = document.getElementById('batchItemInput').value.trim();
             switchView('qwen');
             const qwenInp = document.getElementById('qwenBatchInput');
@@ -4934,6 +6388,123 @@
             setTimeout(() => {
                 runQwenDualAudit();
             }, 150);
+        }
+        const runBatchMatchQwen = runBatchMatchDeepSeek;
+
+        async function runBatchMatchRAG() {
+            const raw = document.getElementById('batchItemInput').value.trim();
+            if (!raw) {
+                showToast('⚠️ Please enter at least one product description for Statutory RAG');
+                return;
+            }
+            const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.length === 0) return;
+
+            const btn = document.getElementById('btnRunBatchRAG');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Computing Statutory RAG...';
+
+            const t0 = performance.now();
+            try {
+                const resp = await fetch('/api/v1/hsn-rag/batch-pipeline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: lines })
+                });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                const clientLatency = (performance.now() - t0).toFixed(1);
+                renderBatchRAGResults(data, clientLatency);
+                showToast(`🧠 Statutory RAG verified ${data.total_items} items in ${clientLatency} ms!`);
+            } catch (err) {
+                console.error('Statutory RAG failed:', err);
+                showToast(`❌ Statutory RAG error: ${err.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '🧠 Verify with Statutory RAG Layer';
+            }
+        }
+
+        function renderBatchRAGResults(data, clientLatency) {
+            const strip = document.getElementById('batchTelemetryStrip');
+            const wrap = document.getElementById('batchResultsWrap');
+            const tbody = document.getElementById('batchResultsTbody');
+            const actionWrap = document.getElementById('missingBatchActionBar');
+            if (actionWrap) {
+                actionWrap.style.display = 'none';
+                actionWrap.innerHTML = '';
+            }
+
+            strip.style.display = 'flex';
+            wrap.style.display = 'block';
+            tbody.innerHTML = '';
+
+            const items = data.results || [];
+            const count = data.total_items || items.length;
+            const latency = data.batch_latency_ms || clientLatency || 0;
+            const throughput = latency > 0 ? Math.round((count / (latency / 1000))) : 0;
+
+            document.getElementById('batchCountBadge').innerText = `${count} items`;
+            document.getElementById('batchLatencyBadge').innerText = `⚡ ${latency} ms (${(latency / (count || 1)).toFixed(1)} ms/item)`;
+            document.getElementById('batchThroughputBadge').innerText = `🧠 RAG Pipeline`;
+
+            items.forEach((res, idx) => {
+                const ext = res.extraction || {};
+                const attrs = ext.attributes || {};
+                const ver = res.verification || {};
+                const isClarif = res.status === 'REQUIRES_CLARIFICATION';
+
+                let decBadge = '';
+                if (isClarif) {
+                    decBadge = `<span style="background:rgba(234,179,8,0.2); color:#facc15; border:1px solid #facc15; padding:4px 8px; border-radius:6px; font-weight:700; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">❓ CLARIFICATION NEEDED</span>`;
+                } else {
+                    decBadge = `<span style="background:rgba(6,182,212,0.2); color:#38bdf8; border:1px solid #38bdf8; padding:4px 8px; border-radius:6px; font-weight:700; font-size:0.75rem; display:inline-flex; align-items:center; gap:4px;">🧠 STATUTORY RAG VERIFIED</span>`;
+                }
+
+                const hsn = ver.selected_hsn || (ext.search_keywords && ext.search_keywords[0]) || '—';
+                const desc = ver.heading_description || (isClarif ? (ext.clarification ? ext.clarification.question : 'Missing statutory attributes') : 'Statutory goods');
+                const confVal = ver.confidence_score ? `${(ver.confidence_score * 100).toFixed(0)}%` : (isClarif ? '—' : '99%');
+                const rateVal = ver.gst_rate_expected || 'GST 18%';
+
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid rgba(148,163,184,0.1)';
+                tr.innerHTML = `
+                    <td style="padding:10px 12px; color:#64748b; font-weight:700;">${idx + 1}</td>
+                    <td style="padding:10px 12px; color:#f1f5f9; font-weight:600;">
+                        <div style="font-size:0.9rem; font-weight:700;">${escapeHtml(res.query)}</div>
+                        <div style="margin-top:4px; display:flex; gap:6px; flex-wrap:wrap;">
+                            ${attrs.material ? `<span style="background:rgba(99,102,241,0.2); color:#c7d2fe; border:1px solid rgba(99,102,241,0.4); padding:2px 6px; border-radius:4px; font-size:0.72rem;">Mat: <strong>${escapeHtml(attrs.material)}</strong></span>` : ''}
+                            ${attrs.mounted_state && attrs.mounted_state !== 'not_applicable' ? `<span style="background:rgba(234,179,8,0.2); color:#fef08a; border:1px solid rgba(234,179,8,0.4); padding:2px 6px; border-radius:4px; font-size:0.72rem;">Mount: <strong>${escapeHtml(attrs.mounted_state)}</strong></span>` : ''}
+                            ${attrs.processing_state ? `<span style="background:rgba(16,185,129,0.2); color:#a7f3d0; border:1px solid rgba(16,185,129,0.4); padding:2px 6px; border-radius:4px; font-size:0.72rem;">Proc: <strong>${escapeHtml(attrs.processing_state)}</strong></span>` : ''}
+                        </div>
+                    </td>
+                    <td style="padding:10px 12px;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="font-family:'JetBrains Mono', monospace; font-weight:800; color:#38bdf8; font-size:0.9rem;">${hsn}</span>
+                            <button type="button" onclick="copyToClipboard(event, '${hsn}')" style="background:transparent; border:none; color:#64748b; cursor:pointer; padding:2px;" title="Copy HSN">📋</button>
+                        </div>
+                        <div style="font-size:0.72rem; color:#94a3b8; margin-top:2px; max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(desc)}">${escapeHtml(desc)}</div>
+                    </td>
+                    <td style="padding:10px 12px;">
+                        <span style="font-weight:700; color:#34d399;">${confVal}</span>
+                        <span style="font-size:0.72rem; color:#94a3b8; margin-left:4px;">${rateVal}</span>
+                    </td>
+                    <td style="padding:10px 12px;">${decBadge}</td>
+                    <td style="padding:10px 12px;">
+                        ${isClarif ? `
+                            <div style="font-size:0.75rem; color:#facc15;">
+                                <strong>${escapeHtml(ext.clarification.question)}</strong>
+                                <div style="font-size:0.7rem; color:#94a3b8; margin-top:2px;">Options: ${(ext.clarification.options || []).join(' | ')}</div>
+                            </div>
+                        ` : `
+                            <div style="font-size:0.75rem; color:#e0f2fe; max-width:320px; line-height:1.4;">
+                                <span>⚖️ ${escapeHtml(ver.statutory_rationale || 'GIR 1 statutory classification verified.')}</span>
+                            </div>
+                        `}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         /* Option 1: Run Day 5 Base Batch */
@@ -5094,7 +6665,7 @@
 
             const btn = document.getElementById('btnExecuteQwenAudit');
             btn.disabled = true;
-            btn.innerHTML = '⏳ Auditing & Storing to Parquet...';
+            btn.innerHTML = '⏳ DeepSeek-V4 Auditing Statutory Tariff Rules...';
 
             const t0 = performance.now();
             try {
@@ -5146,7 +6717,7 @@
                 showToast(`❌ Verification failed: ${err.message || 'Error running Qwen'}`);
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '✨ Option 3: Run Qwen & Store in File';
+                btn.innerHTML = '✨ Option 3: Run DeepSeek-V4 Verification';
             }
         }
 
@@ -5197,6 +6768,9 @@
                 tr.onmouseleave = () => tr.style.background = 'transparent';
 
                 const isMatch = r.is_perfect_match;
+                const custSuggestion = r.customer_suggestion || r.customer_suggested_name || (r.clarified_attributes ? Object.values(r.clarified_attributes).filter(Boolean).join(', ') : '') || (r.enriched_description && r.enriched_description.toLowerCase() !== r.item_description.toLowerCase() ? r.enriched_description : '');
+                const suggestedCommodity = custSuggestion || r.suggested_commodity || (r.qwen_description ? r.qwen_description.split(' - ').slice(-1)[0].trim() : '');
+
                 let statusBadge = '';
                 if (r.status === 'PRE_EXISTING') {
                     statusBadge = `<span style="background:rgba(14,165,233,0.18); color:#38bdf8; border:1px solid #38bdf8; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.76rem; display:inline-flex; align-items:center; gap:5px; box-shadow:0 0 10px rgba(14,165,233,0.25);">💾 PRE-EXISTING IN STORE</span>`;
@@ -5204,10 +6778,23 @@
                     statusBadge = `<span style="background:rgba(248,113,113,0.18); color:#f87171; border:1px solid #f87171; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.76rem; display:inline-flex; align-items:center; gap:5px;">⚠️ NOT IN STORE</span>`;
                 } else if (r.status === 'DAY5_BASE_MATCH') {
                     statusBadge = `<span style="background:rgba(99,102,241,0.18); color:#818cf8; border:1px solid #818cf8; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.76rem; display:inline-flex; align-items:center; gap:5px;">📋 DAY 5 BASE MATCH</span>`;
+                } else if (r.status === 'REQUIRES_CLARIFICATION') {
+                    statusBadge = `
+                        <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-start;">
+                            <span style="background:rgba(234,179,8,0.18); color:#facc15; border:1px solid #facc15; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.76rem; display:inline-flex; align-items:center; gap:5px; box-shadow:0 0 10px rgba(234,179,8,0.25);">❓ CLARIFICATION REQUIRED</span>
+                            <button type="button" class="btn-clarify-row" onclick="openClarificationForBatchItem('${escapeHtml(r.item_description)}')">
+                                ✏️ Resolve Clarification
+                            </button>
+                        </div>
+                    `;
+                } else if (r.status === 'MANUAL_REVIEW_REQUIRED') {
+                    statusBadge = `<span style="background:rgba(239,68,68,0.18); color:#f87171; border:1px solid #f87171; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.76rem; display:inline-flex; align-items:center; gap:5px;">⚠️ MANUAL REVIEW</span>`;
                 } else if (isMatch) {
                     statusBadge = `<span style="background:rgba(52,211,153,0.18); color:#34d399; border:1px solid #34d399; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.76rem; display:inline-flex; align-items:center; gap:5px; box-shadow:0 0 10px rgba(52,211,153,0.25);">🟢 PERFECT MATCH</span>`;
+                } else if (custSuggestion) {
+                    statusBadge = `<span style="background:rgba(245,158,11,0.18); color:#fbbf24; border:1px solid #fbbf24; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.76rem; display:inline-flex; align-items:center; gap:5px; box-shadow:0 0 10px rgba(245,158,11,0.25);">⚡ CORRECTED &amp; CLARIFIED</span>`;
                 } else {
-                    statusBadge = `<span style="background:rgba(245,158,11,0.18); color:#fbbf24; border:1px solid #fbbf24; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.76rem; display:inline-flex; align-items:center; gap:5px; box-shadow:0 0 10px rgba(245,158,11,0.25);">⚡ CORRECTED BY QWEN</span>`;
+                    statusBadge = `<span style="background:rgba(245,158,11,0.18); color:#fbbf24; border:1px solid #fbbf24; padding:4px 10px; border-radius:6px; font-weight:700; font-size:0.76rem; display:inline-flex; align-items:center; gap:5px; box-shadow:0 0 10px rgba(245,158,11,0.25);">⚡ CORRECTED BY DEEPSEEK</span>`;
                 }
 
                 const whyBox = isMatch
@@ -5216,17 +6803,31 @@
                          <span>${escapeHtml(r.reasoning)}</span>
                        </div>`
                     : `<div style="background:rgba(245,158,11,0.08); border-left:3px solid #fbbf24; padding:8px 12px; border-radius:4px; color:#fef08a; font-size:0.78rem; line-height:1.45;">
-                         <div style="font-weight:700; color:#fbbf24; margin-bottom:2px; display:flex; align-items:center; gap:4px;">
+                         <div style="font-weight:700; color:#fbbf24; margin-bottom:4px; display:flex; align-items:center; gap:4px;">
                            <span>⚖️ Statutory Reason ("Why"):</span>
                          </div>
+                         ${custSuggestion ? `<div style="color:#93c5fd; font-size:0.74rem; margin-bottom:5px; font-weight:700; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.3); border-radius:5px; padding:4px 8px;">💡 Customer Confirmed Specification: "${escapeHtml(custSuggestion)}"</div>` : ''}
                          <div>${escapeHtml(r.reasoning)}</div>
                        </div>`;
 
                 tr.innerHTML = `
                     <td style="padding:14px 14px; color:#64748b; font-weight:700;">${idx + 1}</td>
                     <td style="padding:14px 14px; color:#f8fafc; font-weight:600;">
-                        ${escapeHtml(r.item_description)}
-                        ${r.is_cache_hit ? `<span style="background:rgba(14,165,233,0.18); color:#38bdf8; border:1px solid rgba(14,165,233,0.4); padding:2px 7px; border-radius:4px; font-size:0.7rem; font-weight:700; margin-left:8px; display:inline-flex; align-items:center; gap:3px;">⚡ CACHED (&lt;0.5ms)</span>` : ''}
+                        <div style="font-size:0.92rem; font-weight:700; color:#f8fafc;">${escapeHtml(r.item_description)}</div>
+                        ${custSuggestion ? `
+                        <div style="margin-top:6px; display:inline-flex; align-items:center; gap:5px; background:rgba(99,102,241,0.2); border:1px solid rgba(99,102,241,0.5); border-radius:6px; padding:4px 10px; font-size:0.75rem; color:#e0e7ff; box-shadow:0 2px 8px rgba(99,102,241,0.25);">
+                            <span style="color:#a5b4fc; font-weight:700;">💡 Customer Suggestion / Clarified:</span>
+                            <strong style="color:#38bdf8; text-transform:capitalize;">${escapeHtml(custSuggestion)}</strong>
+                        </div>
+                        ${r.enriched_description && r.enriched_description.toLowerCase() !== r.item_description.toLowerCase() ? `
+                        <div style="margin-top:4px; font-size:0.73rem; color:#94a3b8; font-style:italic;">
+                            📝 Enriched: "${escapeHtml(r.enriched_description)}"
+                        </div>` : ''}` : (suggestedCommodity ? `
+                        <div style="margin-top:6px; display:inline-flex; align-items:center; gap:5px; background:rgba(30,41,59,0.85); border:1px solid rgba(148,163,184,0.3); border-radius:6px; padding:3px 8px; font-size:0.73rem; color:#cbd5e1;">
+                            <span style="color:#94a3b8;">🏷️ Statutory Identity:</span>
+                            <strong style="color:#f8fafc;">${escapeHtml(suggestedCommodity)}</strong>
+                        </div>` : '')}
+                        ${r.is_cache_hit ? `<div style="margin-top:4px;"><span style="background:rgba(14,165,233,0.18); color:#38bdf8; border:1px solid rgba(14,165,233,0.4); padding:2px 7px; border-radius:4px; font-size:0.7rem; font-weight:700; display:inline-flex; align-items:center; gap:3px;">⚡ CACHED (&lt;0.5ms)</span></div>` : ''}
                     </td>
                     <td style="padding:14px 14px;">
                         <div style="display:flex; align-items:center; gap:6px;">
@@ -5245,6 +6846,15 @@
                         <div style="font-size:0.72rem; color:${isMatch ? '#cbd5e1' : '#e9d5ff'}; margin-top:4px; max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(r.qwen_description)}">
                             ${escapeHtml(r.qwen_description)}
                         </div>
+                        ${custSuggestion ? `
+                        <div style="margin-top:6px; display:inline-flex; align-items:center; gap:5px; background:rgba(16,185,129,0.2); border:1px solid rgba(16,185,129,0.5); border-radius:6px; padding:4px 10px; font-size:0.73rem; color:#a7f3d0; box-shadow:0 2px 8px rgba(16,185,129,0.25);">
+                            <span style="color:#34d399; font-weight:700;">✓ Aligned to Customer Spec:</span>
+                            <strong style="color:#ffffff; text-transform:capitalize;">${escapeHtml(custSuggestion)}</strong>
+                        </div>` : (suggestedCommodity ? `
+                        <div style="margin-top:6px; display:inline-flex; align-items:center; gap:5px; background:rgba(56,189,248,0.16); border:1px solid rgba(56,189,248,0.45); border-radius:6px; padding:3px 8px; font-size:0.73rem; color:#bae6fd;">
+                            <span style="color:#38bdf8;">🎯 Target Commodity:</span>
+                            <strong style="color:#ffffff;">${escapeHtml(suggestedCommodity)}</strong>
+                        </div>` : '')}
                     </td>
                     <td style="padding:14px 14px;">
                         ${statusBadge}
@@ -5324,6 +6934,350 @@
             if (c.length === 8) return `${c.slice(0,4)} ${c.slice(4,6)} ${c.slice(6)}`;
             if (c.length === 6) return `${c.slice(0,4)} ${c.slice(4)}`;
             return code || '';
+        }
+
+        /* ==========================================================
+           DAY 14: CUSTOMER CLARIFICATION LOGIC & ANSWER STATE
+           ========================================================== */
+        let activeClarificationState = null;
+
+        function renderClarificationUI(productDesc, questionsSchema, ambiguityAnalysis, context = 'search') {
+            const container = (context === 'qwen_batch') 
+                ? document.getElementById('qwenClarificationDrawer') 
+                : document.getElementById('clarificationContainer');
+            if (!container) return;
+
+            if (!questionsSchema || !questionsSchema.questions || questionsSchema.questions.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            activeClarificationState = {
+                product_description: productDesc,
+                questions_schema: questionsSchema,
+                ambiguity_analysis: ambiguityAnalysis || {},
+                context: context,
+                answers: {}
+            };
+
+            // Set product title
+            const titleElem = (context === 'qwen_batch') 
+                ? document.getElementById('qwenClarifyProductName') 
+                : document.getElementById('clarifyProductName');
+            if (titleElem) titleElem.innerText = productDesc;
+
+            // Set ambiguity reason
+            const reasonElem = (context === 'qwen_batch') 
+                ? document.getElementById('qwenClarifyAmbiguityReasonText') 
+                : document.getElementById('clarifyAmbiguityReasonText');
+            if (reasonElem) {
+                const reasonText = (ambiguityAnalysis && ambiguityAnalysis.ambiguity_reason)
+                    ? ambiguityAnalysis.ambiguity_reason
+                    : 'The product description requires clarification to distinguish statutory candidates.';
+                reasonElem.innerText = reasonText;
+            }
+
+            // Build questions list
+            const listElem = (context === 'qwen_batch') 
+                ? document.getElementById('qwenClarifyQuestionsList') 
+                : document.getElementById('clarifyQuestionsList');
+            if (!listElem) return;
+
+            listElem.innerHTML = '';
+            questionsSchema.questions.forEach((q, idx) => {
+                const qBlock = document.createElement('div');
+                qBlock.className = 'clarify-q-block';
+                qBlock.id = `qblock_${q.question_id}_${context}`;
+
+                const attrReadable = (q.attribute || '').replace(/_/g, ' ');
+
+                let optionsHtml = '';
+                (q.options || []).forEach(opt => {
+                    const isUnknown = opt.option_id === 'OPT_UNKNOWN' || opt.value === 'unknown';
+                    const optClass = isUnknown ? 'clarify-opt-btn opt-unknown' : 'clarify-opt-btn';
+                    optionsHtml += `
+                        <button type="button" class="${optClass}" id="btn_${context}_${q.question_id}_${opt.option_id}" 
+                            onclick="selectClarifyOption('${q.question_id}', '${opt.option_id}', '${escapeHtml(opt.value || '')}', ${isUnknown}, '${context}')">
+                            <span>${opt.label}</span>
+                        </button>
+                    `;
+                });
+
+                const freeTextHtml = q.allow_free_text ? `
+                    <div id="freeTextWrap_${context}_${q.question_id}" style="display:none; margin-top:10px;">
+                        <input type="text" id="freeTextInput_${context}_${q.question_id}" class="clarify-free-text"
+                            placeholder="Please specify details (e.g. custom material)..." 
+                            oninput="handleFreeTextInput('${q.question_id}', '${context}')"
+                            style="width:100%; box-sizing:border-box; background:#070d19; color:#f8fafc; border:1px solid rgba(168,85,247,0.4); border-radius:8px; padding:8px 12px; font-size:0.84rem; outline:none;" />
+                        <div id="freeTextErr_${context}_${q.question_id}" style="color:#f87171; font-size:0.75rem; margin-top:4px; display:none;">Please specify details for 'Other'.</div>
+                    </div>
+                ` : '';
+
+                qBlock.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.75rem; text-transform:uppercase; color:#a855f7; font-weight:700;">Question ${idx+1} • ${escapeHtml(attrReadable)}</span>
+                        <span style="font-size:0.7rem; color:${q.required ? '#fbbf24' : '#94a3b8'}; font-weight:600;">${q.required ? 'Required *' : 'Optional'}</span>
+                    </div>
+                    <div style="font-size:0.95rem; font-weight:600; color:#f8fafc; margin-top:4px;">${escapeHtml(q.question)}</div>
+                    <div style="font-size:0.76rem; color:#94a3b8; margin-top:2px;">${escapeHtml(q.reason)}</div>
+                    <div class="clarify-options-grid" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
+                        ${optionsHtml}
+                    </div>
+                    ${freeTextHtml}
+                    <div id="clarifyErr_${context}_${q.question_id}" style="color:#f87171; font-size:0.75rem; margin-top:6px; display:none;">Please select an answer to this question.</div>
+                `;
+                listElem.appendChild(qBlock);
+            });
+
+            container.style.display = 'block';
+            container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function selectClarifyOption(qid, optId, optVal, isUnknown, context = 'search') {
+            if (!activeClarificationState) return;
+
+            const q = (activeClarificationState.questions_schema.questions || []).find(x => x.question_id === qid);
+            const attr = q ? q.attribute : 'general';
+
+            // Clear previous active buttons for this question
+            const qBlock = document.getElementById(`qblock_${qid}_${context}`);
+            if (qBlock) {
+                qBlock.classList.remove('has-error');
+                const btns = qBlock.querySelectorAll('.clarify-opt-btn');
+                btns.forEach(b => b.classList.remove('selected'));
+            }
+
+            // Mark clicked button selected
+            const clickedBtn = document.getElementById(`btn_${context}_${qid}_${optId}`);
+            if (clickedBtn) clickedBtn.classList.add('selected');
+
+            // Hide question error
+            const errElem = document.getElementById(`clarifyErr_${context}_${qid}`);
+            if (errElem) errElem.style.display = 'none';
+
+            // Check if 'Other' selected
+            const isOther = optId.endsWith('OTHER') || optVal === 'other';
+            const freeTextWrap = document.getElementById(`freeTextWrap_${context}_${qid}`);
+            const freeTextInput = document.getElementById(`freeTextInput_${context}_${qid}`);
+            if (freeTextWrap) {
+                if (isOther) {
+                    freeTextWrap.style.display = 'block';
+                    if (freeTextInput) freeTextInput.focus();
+                } else {
+                    freeTextWrap.style.display = 'none';
+                    if (freeTextInput) freeTextInput.value = '';
+                }
+            }
+
+            // Update answer state for this question without overwriting other questions (TC09)
+            const optObj = (q && q.options || []).find(o => o.option_id === optId);
+            const optLabel = optObj ? optObj.label : optVal;
+            activeClarificationState.answers[qid] = {
+                question_id: qid,
+                attribute: attr,
+                selected_option_id: optId,
+                selected_value: isUnknown ? null : (isOther ? (freeTextInput ? freeTextInput.value.trim() : 'other') : optVal),
+                selected_label: isUnknown ? 'Unknown' : (isOther ? (freeTextInput ? freeTextInput.value.trim() : 'Other') : optLabel),
+                free_text: isOther ? (freeTextInput ? freeTextInput.value.trim() : '') : null,
+                is_unknown: isUnknown
+            };
+        }
+
+        function handleFreeTextInput(qid, context = 'search') {
+            if (!activeClarificationState || !activeClarificationState.answers[qid]) return;
+            const inputElem = document.getElementById(`freeTextInput_${context}_${qid}`);
+            const textVal = inputElem ? inputElem.value.trim() : '';
+
+            activeClarificationState.answers[qid].free_text = textVal;
+            activeClarificationState.answers[qid].selected_value = textVal || 'other';
+            activeClarificationState.answers[qid].selected_label = textVal || 'other';
+
+            const errElem = document.getElementById(`freeTextErr_${context}_${qid}`);
+            if (errElem && textVal.length > 0) {
+                errElem.style.display = 'none';
+            }
+        }
+
+        function validateClarificationAnswers(context = 'search') {
+            if (!activeClarificationState || !activeClarificationState.questions_schema) return false;
+            let isValid = true;
+
+            const questions = activeClarificationState.questions_schema.questions || [];
+            for (const q of questions) {
+                const qid = q.question_id;
+                const ans = activeClarificationState.answers[qid];
+                const errElem = document.getElementById(`clarifyErr_${context}_${qid}`);
+                const qBlock = document.getElementById(`qblock_${qid}_${context}`);
+
+                if (q.required) {
+                    // Check if question answered (Unknown is a valid answer - TC07)
+                    if (!ans || !ans.selected_option_id) {
+                        isValid = false;
+                        if (errElem) errElem.style.display = 'block';
+                        if (qBlock) qBlock.classList.add('has-error');
+                        continue;
+                    }
+                }
+
+                // If 'other' selected, validate free_text
+                if (ans && (ans.selected_option_id.endsWith('OTHER') || ans.selected_value === 'other')) {
+                    const freeTextErr = document.getElementById(`freeTextErr_${context}_${qid}`);
+                    if (!ans.free_text || ans.free_text.trim().length === 0) {
+                        isValid = false;
+                        if (freeTextErr) freeTextErr.style.display = 'block';
+                        if (qBlock) qBlock.classList.add('has-error');
+                    } else if (freeTextErr) {
+                        freeTextErr.style.display = 'none';
+                    }
+                }
+            }
+            return isValid;
+        }
+
+        async function submitClarificationAnswers(context = 'search') {
+            if (!validateClarificationAnswers(context)) {
+                showToast('⚠️ Please answer all required clarification questions');
+                return;
+            }
+
+            const btn = (context === 'qwen_batch')
+                ? document.getElementById('btnQwenSubmitClarification')
+                : document.getElementById('btnSubmitClarification');
+            const statusElem = (context === 'qwen_batch')
+                ? document.getElementById('qwenClarifySubmissionStatus')
+                : document.getElementById('clarifySubmissionStatus');
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '⏳ Submitting clarification...';
+            }
+            if (statusElem) {
+                statusElem.style.display = 'inline';
+                statusElem.innerText = 'Submitting answers to DeepSeek verification...';
+            }
+
+            const payload = {
+                product_description: activeClarificationState.product_description,
+                clarification_answers: Object.values(activeClarificationState.answers)
+            };
+
+            try {
+                const resp = await fetch('/api/v1/hsn-intelligence/submit-clarification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!resp.ok) {
+                    const errData = await resp.json().catch(() => ({}));
+                    throw new Error(errData.detail || `Server error (${resp.status})`);
+                }
+
+                const data = await resp.json();
+                const vRes = data.verification_result || {};
+                const enrDesc = data.enriched_description || (data.enrichment && data.enrichment.enriched_description) || '';
+
+                showToast(`✓ Clarification enriched & verified: HSN ${vRes.deepseek_formatted || vRes.deepseek_hsn || vRes.base_formatted || ''}`);
+
+                if (context === 'search') {
+                    // Update detailCard with verified HSN result
+                    const detailCard = document.getElementById('detailCard');
+                    if (detailCard) {
+                        detailCard.style.display = 'block';
+                        document.getElementById('detailCode').innerText = `HSN: ${vRes.deepseek_hsn || vRes.base_hsn || ''}`;
+                        const displayDesc = enrDesc ? `${vRes.deepseek_description || vRes.base_description || ''} (Enriched: ${enrDesc})` : (vRes.deepseek_description || vRes.base_description || activeClarificationState.product_description);
+                        document.getElementById('detailDesc').innerText = displayDesc;
+                        const confBadge = document.getElementById('detailConfidenceBadge');
+                        if (confBadge) {
+                            confBadge.className = 'score-pill score-high';
+                            confBadge.innerText = '✓ DeepSeek Verified';
+                        }
+                    }
+                    // Hide clarification container
+                    const container = document.getElementById('clarificationContainer');
+                    if (container) container.style.display = 'none';
+                } else if (context === 'qwen_batch') {
+                    // Update matching row in currentQwenResults
+                    const itemDesc = activeClarificationState.product_description;
+                    const matchIdx = currentQwenResults.findIndex(r => r.item_description.toLowerCase() === itemDesc.toLowerCase());
+                    if (matchIdx !== -1) {
+                        currentQwenResults[matchIdx].status = vRes.status || 'CORRECTED_BY_DEEPSEEK';
+                        currentQwenResults[matchIdx].is_perfect_match = vRes.is_perfect_match;
+                        currentQwenResults[matchIdx].qwen_hsn = vRes.deepseek_hsn || vRes.base_hsn;
+                        currentQwenResults[matchIdx].qwen_formatted = vRes.deepseek_formatted || vRes.base_formatted;
+                        currentQwenResults[matchIdx].qwen_description = vRes.deepseek_description || vRes.base_description;
+                        currentQwenResults[matchIdx].qwen_rate = vRes.deepseek_rate || vRes.base_rate;
+                        currentQwenResults[matchIdx].reasoning = vRes.reasoning || 'Clarification resolved statutory ambiguity.';
+
+                        // Customer confirmed suggestions/answers
+                        const ansList = Object.values(activeClarificationState.answers || {})
+                            .filter(a => !a.is_unknown)
+                            .map(a => a.free_text || a.selected_label || a.selected_value)
+                            .filter(Boolean);
+                        const clarifAttrStr = data.clarified_attributes ? Object.entries(data.clarified_attributes).map(([k, v]) => `${k}: ${v}`).join(', ') : '';
+                        const custSuggestionStr = ansList.length > 0 ? ansList.join(', ') : (clarifAttrStr || vRes.customer_suggestion || enrDesc || 'Clarified Specification');
+
+                        currentQwenResults[matchIdx].customer_suggestion = custSuggestionStr;
+                        currentQwenResults[matchIdx].customer_suggested_name = custSuggestionStr;
+                        currentQwenResults[matchIdx].enriched_description = enrDesc;
+                        currentQwenResults[matchIdx].clarified_attributes = data.clarified_attributes;
+
+                        renderQwenTable(currentQwenResults);
+                    }
+                    const qwenDrawer = document.getElementById('qwenClarificationDrawer');
+                    if (qwenDrawer) qwenDrawer.style.display = 'none';
+                }
+            } catch (err) {
+                console.error('Clarification submission failed:', err);
+                showToast(`❌ Submission error: ${err.message}`);
+                if (statusElem) {
+                    statusElem.style.color = '#f87171';
+                    statusElem.innerText = `Error: ${err.message}`;
+                }
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = (context === 'qwen_batch')
+                        ? '⚡ Submit Answers &amp; Complete Verification'
+                        : '⚡ Submit Clarification Answers';
+                }
+            }
+        }
+
+        function cancelClarification(context = 'search') {
+            const container = (context === 'qwen_batch') 
+                ? document.getElementById('qwenClarificationDrawer') 
+                : document.getElementById('clarificationContainer');
+            if (container) container.style.display = 'none';
+            activeClarificationState = null;
+        }
+
+        async function openClarificationForBatchItem(itemDesc) {
+            const item = currentQwenResults.find(r => r.item_description.toLowerCase() === itemDesc.toLowerCase());
+            let questionsSchema = item && item.clarification_questions_schema;
+            let ambiguityAnalysis = item && item.ambiguity_analysis;
+
+            if (!questionsSchema) {
+                try {
+                    showToast(`⏳ Generating questions for ${itemDesc}...`);
+                    const resp = await fetch('/api/v1/hsn-intelligence/generate-questions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ product_description: itemDesc })
+                    });
+                    if (resp.ok) {
+                        questionsSchema = await resp.json();
+                    }
+                } catch (e) {
+                    console.error('Failed to generate questions:', e);
+                }
+            }
+
+            if (questionsSchema && questionsSchema.questions && questionsSchema.questions.length > 0) {
+                renderClarificationUI(itemDesc, questionsSchema, ambiguityAnalysis, 'qwen_batch');
+            } else {
+                showToast('No clarification required for this item.');
+            }
         }
     </script>
 

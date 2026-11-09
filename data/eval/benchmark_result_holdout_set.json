@@ -1,0 +1,84 @@
+{
+  "dataset": "holdout_set.csv",
+  "total_items": 161,
+  "top1_accuracy": 0.8074534161490683,
+  "top3_accuracy": 0.9875776397515528,
+  "abstention_rate": 0.14285714285714285,
+  "avg_latency_ms": 327.31954844687306,
+  "category_stats": {
+    "Chemicals & Pharma": {
+      "total": 24,
+      "top1": 22,
+      "top3": 23,
+      "abstain": 2
+    },
+    "Technical & Electronics": {
+      "total": 21,
+      "top1": 18,
+      "top3": 21,
+      "abstain": 2
+    },
+    "Food & Agriculture": {
+      "total": 29,
+      "top1": 21,
+      "top3": 29,
+      "abstain": 7
+    },
+    "Minerals & Heavy Articles": {
+      "total": 19,
+      "top1": 11,
+      "top3": 18,
+      "abstain": 6
+    },
+    "Abbreviations & Colloquial": {
+      "total": 14,
+      "top1": 13,
+      "top3": 14,
+      "abstain": 1
+    },
+    "Finished Article vs Material": {
+      "total": 20,
+      "top1": 14,
+      "top3": 20,
+      "abstain": 3
+    },
+    "Seed Examples": {
+      "total": 10,
+      "top1": 10,
+      "top3": 10,
+      "abstain": 0
+    },
+    "Negation & State Pairs": {
+      "total": 21,
+      "top1": 18,
+      "top3": 21,
+      "abstain": 2
+    },
+    "Services SAC": {
+      "total": 3,
+      "top1": 3,
+      "top3": 3,
+      "abstain": 0
+    }
+  },
+  "variant_stats": {
+    "branded": {
+      "total": 53,
+      "top1": 45,
+      "top3": 53,
+      "abstain": 6
+    },
+    "plain": {
+      "total": 55,
+      "top1": 46,
+      "top3": 54,
+      "abstain": 6
+    },
+    "noisy": {
+      "total": 53,
+      "top1": 39,
+      "top3": 52,
+      "abstain": 11
+    }
+  }
+}

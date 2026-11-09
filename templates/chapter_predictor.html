@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GST Sentinel — HSN Chapter Predictor</title>
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --surface: #111827;
+            --surface-hover: #1f2937;
+            --border: #374151;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --green: #10b981;
+            --amber: #f59e0b;
+            --red: #ef4444;
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font);
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-badge {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .brand h1 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .system-pill {
+            font-size: 12px;
+            background: #1e293b;
+            border: 1px solid var(--border);
+            padding: 4px 12px;
+            border-radius: 9999px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot-live {
+            width: 8px;
+            height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .tabs-nav {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            background-color: var(--surface);
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 14px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        main {
+            flex: 1;
+            padding: 24px 32px;
+            max-width: 98vw;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Search Section */
+        .search-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .search-input {
+            flex: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            font-size: 16px;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-predict {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0 32px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-predict:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Spinner & Progress */
+        .spinner-bar {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 14px 20px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Result Card */
+        .result-card {
+            display: none;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            margin-bottom: 24px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 16px;
+        }
+
+        .chapter-badge-group {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+        }
+
+        .chapter-num {
+            font-size: 48px;
+            font-weight: 800;
+            color: #60a5fa;
+            line-height: 1;
+        }
+
+        .chapter-title-group h2 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .chapter-title-group .sub-label {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .status-badge {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .status-predicted {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--green);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .status-needs-review {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--amber);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        /* Confidence Meter */
+        .confidence-section {
+            margin-bottom: 24px;
+        }
+
+        .conf-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .meter-container {
+            width: 100%;
+            height: 10px;
+            background: #1f2937;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .meter-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 9999px;
+            transition: width 0.5s ease-out;
+        }
+
+        /* Reason Box */
+        .reason-box {
+            background: #1e293b;
+            border-left: 4px solid var(--primary);
+            padding: 14px 18px;
+            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #e2e8f0;
+            margin-bottom: 24px;
+        }
+
+        /* Grid for Alternatives & Evidence */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .alt-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .alt-item {
+            background: #1a2234;
+            border: 1px solid var(--border);
+            padding: 12px 14px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .alt-ch {
+            font-weight: 700;
+            color: #93c5fd;
+            font-size: 15px;
+        }
+
+        .alt-name {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .alt-score {
+            font-size: 12px;
+            font-weight: 600;
+            background: #111827;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        /* Evidence Table */
+        .evidence-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .evidence-table th {
+            text-align: left;
+            padding: 10px 12px;
+            background: #1f2937;
+            color: var(--text-secondary);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .evidence-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #1e293b;
+            color: #d1d5db;
+        }
+
+        .evidence-table tr:hover {
+            background: var(--surface-hover);
+        }
+
+        .hsn-pill {
+            font-family: monospace;
+            font-weight: 700;
+            color: #60a5fa;
+            background: rgba(59, 130, 246, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .highlight {
+            background-color: rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+            padding: 1px 3px;
+            border-radius: 2px;
+            font-weight: 600;
+        }
+
+        /* Timings Pill Bar */
+        .timings-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .time-tag {
+            background: #1e293b;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        /* Feedback Controls */
+        .feedback-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        .btn-feedback {
+            background: #1f2937;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-feedback:hover {
+            color: var(--text-primary);
+            border-color: var(--primary);
+        }
+
+        .btn-feedback.correct:hover {
+            color: var(--green);
+            border-color: var(--green);
+        }
+
+        .btn-feedback.wrong:hover {
+            color: var(--red);
+            border-color: var(--red);
+        }
+
+        /* Batch Tab */
+        .upload-box {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            background: var(--surface);
+            cursor: pointer;
+            transition: border-color 0.2s;
+            margin-bottom: 24px;
+        }
+
+        .upload-box:hover {
+            border-color: var(--primary);
+        }
+
+        .batch-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .batch-table-container {
+            overflow-x: auto;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .btn-export {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <span class="brand-badge">CBIC / WCO</span>
+            <h1>GST Sentinel — HSN Chapter Predictor</h1>
+        </div>
+        <div class="system-pill" id="health-status">
+            <span class="dot-live"></span>
+            <span id="health-text">Checking System Status...</span>
+        </div>
+    </header>
+
+    <div class="tabs-nav">
+        <button class="tab-btn active" onclick="switchTab('single')">Single Product Prediction</button>
+        <button class="tab-btn" onclick="switchTab('batch')">Batch CSV Processing</button>
+    </div>
+
+    <main>
+        <!-- TAB 1: Single Prediction -->
+        <div id="tab-single" class="tab-content active">
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    id="product-input" 
+                    class="search-input" 
+                    placeholder="Enter commercial product description (e.g., Whole Roasted Coffee Beans, Microprocessor, Cotton Shirt)..."
+                    autocomplete="off"
+                />
+                <button class="btn-predict" id="predict-btn" onclick="executePredict()">
+                    <span>Predict Chapter</span>
+                </button>
+            </div>
+
+            <!-- Stage Progress Indicator -->
+            <div class="spinner-bar" id="spinner-bar">
+                <div class="spinner"></div>
+                <span id="stage-label">Initializing statutory retrieval pipeline...</span>
+            </div>
+
+            <!-- Result Card -->
+            <div class="result-card" id="result-card">
+                <div class="card-header">
+                    <div class="chapter-badge-group">
+                        <div class="chapter-num" id="res-chapter">09</div>
+                        <div class="chapter-title-group">
+                            <h2 id="res-title">Coffee, tea, mate and spices</h2>
+                            <div class="sub-label">Statutory Chapter (01–99) | Final_Copy_hsn_7304.xlsx</div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="status-badge" id="res-status">PREDICTED</span>
+                    </div>
+                </div>
+
+                <!-- Confidence Meter -->
+                <div class="confidence-section">
+                    <div class="conf-header">
+                        <span>Statutory Confidence</span>
+                        <span id="res-conf-val">95%</span>
+                    </div>
+                    <div class="meter-container">
+                        <div class="meter-fill" id="res-meter"></div>
+                    </div>
+                </div>
+
+                <!-- Statutory Rationale -->
+                <div class="reason-box" id="res-reason">
+                    Classified under GIR 1 & GIR 6 based on primary constituent material and processing state.
+                </div>
+
+                <!-- Grid: Alternatives + Evidence -->
+                <div class="details-grid">
+                    <div>
+                        <div class="section-title">Top Alternative Chapters</div>
+                        <ul class="alt-list" id="res-alts"></ul>
+                    </div>
+                    <div>
+                        <div class="section-title">Statutory Evidence Lines (Final_Copy_hsn_7304)</div>
+                        <table class="evidence-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 110px;">HSN Code</th>
+                                    <th>Statutory Description</th>
+                                    <th style="width: 70px;">Relevance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="res-evidence-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Stage Timings -->
+                <div class="timings-bar" id="res-timings"></div>
+
+                <!-- Auditor Feedback -->
+                <div class="feedback-bar">
+                    <span style="color: var(--text-muted);">Auditor Feedback:</span>
+                    <button class="btn-feedback correct" onclick="submitFeedback(true)">✓ Correct Chapter</button>
+                    <button class="btn-feedback wrong" onclick="promptCorrection()">✕ Wrong Chapter</button>
+                    <span id="feedback-ack" style="color: var(--green); margin-left: 10px; display: none;">Feedback saved!</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Batch Processing -->
+        <div id="tab-batch" class="tab-content">
+            <div class="upload-box" onclick="document.getElementById('csv-file-input').click()">
+                <input type="file" id="csv-file-input" accept=".csv" style="display: none;" onchange="handleFileSelect(event)">
+                <div style="font-size: 32px; margin-bottom: 12px;">📄</div>
+                <h3 style="font-size: 16px; margin-bottom: 6px;">Upload Commercial Invoices CSV</h3>
+                <p style="font-size: 13px; color: var(--text-secondary);">One product name per row. Max 500 items per batch.</p>
+            </div>
+
+            <div class="batch-controls" id="batch-controls" style="display: none;">
+                <div style="font-size: 14px; color: var(--text-secondary);">
+                    Processed: <span id="batch-count" style="color: white; font-weight: 700;">0</span> items
+                </div>
+                <button class="btn-export" onclick="exportBatchCSV()">⬇ Export Classified CSV</button>
+            </div>
+
+            <div class="batch-table-container" id="batch-table-container" style="display: none;">
+                <table class="evidence-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Product Name</th>
+                            <th>Chapter</th>
+                            <th>Title</th>
+                            <th>Confidence</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="batch-results-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentPrediction = null;
+        let batchResults = [];
+
+        // Tab Switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            if (tab === 'single') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('tab-single').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('tab-batch').classList.add('active');
+            }
+        }
+
+        // Enter key in input
+        document.getElementById('product-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                executePredict();
+            }
+        });
+
+        // Health check on load
+        async function checkHealth() {
+            try {
+                const res = await fetch('/api/chapter/health');
+                const data = await res.json();
+                const text = document.getElementById('health-text');
+                if (data.status === 'healthy') {
+                    const llmStatus = data.llm_reachable ? 'Ollama 7B/3B Online' : 'RRF Statistical Mode';
+                    text.textContent = `Tariff Master: ${data.lexical_records_count.toLocaleString()} rows | ${llmStatus}`;
+                } else {
+                    text.textContent = 'System Initializing...';
+                }
+            } catch (e) {
+                document.getElementById('health-text').textContent = 'API Offline';
+            }
+        }
+        checkHealth();
+
+        // Single Predict Action
+        async function executePredict() {
+            const input = document.getElementById('product-input').value.trim();
+            if (!input) return;
+
+            const spinner = document.getElementById('spinner-bar');
+            const card = document.getElementById('result-card');
+            const label = document.getElementById('stage-label');
+            const btn = document.getElementById('predict-btn');
+
+            btn.disabled = true;
+            spinner.style.display = 'flex';
+            card.style.display = 'none';
+
+            // Animated stage labels
+            const stages = [
+                'Stage A: Normalizing product & preserving statutory negations...',
+                'Stage B: BM25 Lexical search across 19,396 tariff lines...',
+                'Stage C: Semantic vector embeddings & chapter aggregation...',
+                'Stage D: Evaluating GIR 1 & GIR 6 Legal Reranking...'
+            ];
+            let stageIdx = 0;
+            const stageTimer = setInterval(() => {
+                stageIdx = (stageIdx + 1) % stages.length;
+                label.textContent = stages[stageIdx];
+            }, 300);
+
+            try {
+                const res = await fetch('/api/chapter/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product_name: input, top_k: 3 })
+                });
+
+                clearInterval(stageTimer);
+                if (!res.ok) throw new Error('Prediction API error');
+                const data = await res.json();
+                currentPrediction = data;
+                renderResult(data, input);
+            } catch (err) {
+                clearInterval(stageTimer);
+                alert('Prediction request failed: ' + err.message);
+            } finally {
+                spinner.style.display = 'none';
+                btn.disabled = false;
+            }
+        }
+
+        function highlightTokens(text, query) {
+            if (!text) return '';
+            const words = query.toLowerCase().split(/\s+/).filter(w => w.length >= 3);
+            let out = text;
+            for (const w of words) {
+                const regex = new RegExp(`(${w})`, 'gi');
+                out = out.replace(regex, '<span class="highlight">$1</span>');
+            }
+            return out;
+        }
+
+        function renderResult(pred, query) {
+            document.getElementById('res-chapter').textContent = pred.chapter;
+            document.getElementById('res-title').textContent = pred.chapter_title;
+            document.getElementById('res-reason').textContent = pred.reason;
+
+            // Status Badge
+            const statusBadge = document.getElementById('res-status');
+            statusBadge.textContent = pred.status;
+            if (pred.status === 'PREDICTED') {
+                statusBadge.className = 'status-badge status-predicted';
+            } else {
+                statusBadge.className = 'status-badge status-needs-review';
+            }
+
+            // Confidence Bar
+            const confPct = Math.round(pred.confidence * 100);
+            document.getElementById('res-conf-val').textContent = `${confPct}%`;
+            const meter = document.getElementById('res-meter');
+            meter.style.width = `${confPct}%`;
+            if (pred.confidence >= 0.80) {
+                meter.style.backgroundColor = 'var(--green)';
+            } else if (pred.confidence >= 0.55) {
+                meter.style.backgroundColor = 'var(--amber)';
+            } else {
+                meter.style.backgroundColor = 'var(--red)';
+            }
+
+            // Alternatives
+            const altsList = document.getElementById('res-alts');
+            altsList.innerHTML = '';
+            if (pred.alternatives && pred.alternatives.length > 0) {
+                pred.alternatives.forEach(alt => {
+                    const li = document.createElement('li');
+                    li.className = 'alt-item';
+                    li.innerHTML = `
+                        <div>
+                            <div class="alt-ch">Chapter ${alt.chapter}</div>
+                            <div class="alt-name">${alt.title}</div>
+                        </div>
+                        <div class="alt-score">${Math.round(alt.score * 100)}%</div>
+                    `;
+                    altsList.appendChild(li);
+                });
+            } else {
+                altsList.innerHTML = '<li style="color: var(--text-muted); font-size: 13px;">No alternative chapters within margin.</li>';
+            }
+
+            // Evidence Table
+            const evBody = document.getElementById('res-evidence-body');
+            evBody.innerHTML = '';
+            if (pred.evidence && pred.evidence.length > 0) {
+                pred.evidence.forEach(ev => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><span class="hsn-pill">${ev.hsn_code}</span></td>
+                        <td>${highlightTokens(ev.description, query)}</td>
+                        <td style="color: #93c5fd; font-weight: 600;">${ev.score.toFixed(2)}</td>
+                    `;
+                    evBody.appendChild(tr);
+                });
+            } else {
+                evBody.innerHTML = '<tr><td colspan="3" style="color: var(--text-muted); text-align: center;">No specific tariff lines retrieved.</td></tr>';
+            }
+
+            // Timings
+            const timingsBox = document.getElementById('res-timings');
+            timingsBox.innerHTML = '';
+            const t = pred.stage_timings_ms || {};
+            const tag1 = document.createElement('span');
+            tag1.className = 'time-tag';
+            tag1.textContent = `Norm: ${t.stage_a_norm_ms || 0}ms`;
+            const tag2 = document.createElement('span');
+            tag2.className = 'time-tag';
+            tag2.textContent = `BM25: ${t.stage_b_bm25_ms || 0}ms`;
+            const tag3 = document.createElement('span');
+            tag3.className = 'time-tag';
+            tag3.textContent = `Embedding: ${t.stage_c_embedding_ms || 0}ms`;
+            const tag4 = document.createElement('span');
+            tag4.className = 'time-tag';
+            tag4.textContent = `Rerank: ${t.stage_d_llm_rerank_ms || 0}ms (${pred.rerank_model_used || 'RRF'})`;
+            const tag5 = document.createElement('span');
+            tag5.className = 'time-tag';
+            tag5.style.color = '#93c5fd';
+            tag5.textContent = `Total: ${t.total_pipeline_ms || 0}ms`;
+
+            timingsBox.appendChild(tag1);
+            timingsBox.appendChild(tag2);
+            timingsBox.appendChild(tag3);
+            timingsBox.appendChild(tag4);
+            timingsBox.appendChild(tag5);
+
+            document.getElementById('feedback-ack').style.display = 'none';
+            document.getElementById('result-card').style.display = 'block';
+        }
+
+        // Feedback Handling
+        async function submitFeedback(isCorrect, actualChapter = null) {
+            if (!currentPrediction) return;
+            try {
+                await fetch('/api/chapter/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        product_name: currentPrediction.product_name,
+                        predicted_chapter: currentPrediction.chapter,
+                        actual_chapter: actualChapter || currentPrediction.chapter,
+                        is_correct: isCorrect,
+                        notes: isCorrect ? 'Verified by user' : `Corrected to Chapter ${actualChapter}`
+                    })
+                });
+                const ack = document.getElementById('feedback-ack');
+                ack.style.display = 'inline';
+                setTimeout(() => ack.style.display = 'none', 3000);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function promptCorrection() {
+            const ch = prompt('Enter the correct 2-digit HSN Chapter (e.g. 09, 85, 62):');
+            if (ch && ch.trim()) {
+                submitFeedback(false, ch.trim().padStart(2, '0'));
+            }
+        }
+
+        // Batch CSV Upload
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            document.getElementById('batch-controls').style.display = 'none';
+            document.getElementById('batch-table-container').style.display = 'none';
+
+            try {
+                const res = await fetch('/api/chapter/batch', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!res.ok) throw new Error('Batch processing failed');
+                
+                const blob = await res.blob();
+                const text = await blob.text();
+                parseBatchCSVResponse(text);
+            } catch (err) {
+                alert('Error processing CSV: ' + err.message);
+            }
+        }
+
+        function parseBatchCSVResponse(csvText) {
+            const lines = csvText.split('\n').filter(l => l.trim().length > 0);
+            if (lines.length <= 1) return;
+
+            batchResults = [];
+            const tbody = document.getElementById('batch-results-body');
+            tbody.innerHTML = '';
+
+            for (let i = 1; i < lines.length; i++) {
+                const parts = lines[i].split(',');
+                if (parts.length < 5) continue;
+                const row = {
+                    idx: i,
+                    product: parts[0].replace(/"/g, ''),
+                    chapter: parts[2].replace(/"/g, ''),
+                    title: parts[3].replace(/"/g, ''),
+                    confidence: parts[4].replace(/"/g, ''),
+                    status: parts[5].replace(/"/g, '')
+                };
+                batchResults.push(row);
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.idx}</td>
+                    <td style="font-weight: 600;">${row.product}</td>
+                    <td><span class="hsn-pill">Ch ${row.chapter}</span></td>
+                    <td>${row.title}</td>
+                    <td>${Math.round(parseFloat(row.confidence) * 100)}%</td>
+                    <td><span class="status-badge ${row.status === 'PREDICTED' ? 'status-predicted' : 'status-needs-review'}">${row.status}</span></td>
+                `;
+                tbody.appendChild(tr);
+            }
+
+            document.getElementById('batch-count').textContent = batchResults.length;
+            document.getElementById('batch-controls').style.display = 'flex';
+            document.getElementById('batch-table-container').style.display = 'block';
+        }
+
+        function exportBatchCSV() {
+            if (!batchResults.length) return;
+            let csv = 'Index,Product,Chapter,Title,Confidence,Status\n';
+            batchResults.forEach(r => {
+                csv += `"${r.idx}","${r.product}","${r.chapter}","${r.title}","${r.confidence}","${r.status}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'classified_chapters.csv';
+            a.click();
+        }
+    </script>
+</body>
+</html>
+

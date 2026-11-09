@@ -103,13 +103,16 @@ class HSNVerifiedStore:
     def _save_store(self):
         """Persists in-memory cache to Parquet without duplicates."""
         try:
+            cols = ["clean_key", "raw_query", "hsn_code", "formatted_hsn", "description", "gst_rate", "status", "is_perfect_match", "reasoning", "base_hsn", "verified_by", "updated_at"]
             records = list(self.memory_cache.values())
+            self.store_path.parent.mkdir(parents=True, exist_ok=True)
             if not records:
+                pd.DataFrame(columns=cols).to_parquet(self.store_path, index=False)
+                logger.info(f"Persisted empty verified store to {self.store_path}")
                 return
             df = pd.DataFrame(records)
             # Ensure no duplicate clean_key
             df = df.drop_duplicates(subset=["clean_key"], keep="last")
-            self.store_path.parent.mkdir(parents=True, exist_ok=True)
             df.to_parquet(self.store_path, index=False)
             logger.info(f"Persisted {len(df)} verified records to {self.store_path}")
         except Exception as e:
@@ -119,6 +122,7 @@ class HSNVerifiedStore:
         """
         Sub-0.5ms O(1) Cache Hit Lookup.
         Returns the verified record if previously audited in data/hsn_verified_store.parquet.
+        Requires exact normalized trade key match or canonical whitespace/hyphen equivalence.
         """
         clean_key = normalize_trade_key(query)
         if not clean_key:
@@ -138,15 +142,6 @@ class HSNVerifiedStore:
         for k, v in self.memory_cache.items():
             k_alt = re.sub(r"\s+", " ", k.replace("-", " ")).strip()
             if k == clean_key or k == alt_key or k_alt == alt_key or k_alt == clean_key or k == alt_hyphen:
-                res = dict(v)
-                res["is_cache_hit"] = True
-                res["match_type"] = "Already there in the stored file (data/hsn_verified_store.parquet)"
-                return res
-
-        # 3. Substring / containment match for rich trade queries
-        for k, v in self.memory_cache.items():
-            k_alt = re.sub(r"\s+", " ", k.replace("-", " ")).strip()
-            if (len(k) >= 5 and (k in clean_key or clean_key in k)) or (len(k_alt) >= 5 and (k_alt in alt_key or alt_key in k_alt)):
                 res = dict(v)
                 res["is_cache_hit"] = True
                 res["match_type"] = "Already there in the stored file (data/hsn_verified_store.parquet)"
@@ -263,18 +258,67 @@ class HSNVerifiedStore:
             self._save_store()
         return count
 
+    def upsert_algo_batch(self, items: List[Dict[str, Any]]) -> int:
+        """
+        Stores Day 5 dynamic vector algorithm predictions into data/hsn_verified_store.parquet.
+        Allows Qwen layer to subsequently audit whether the algo-predicted HSN is correct or not.
+        """
+        now_iso = datetime.now(timezone.utc).isoformat()
+        count = 0
+        for it in items:
+            q = it.get("raw_description") or it.get("item_description") or it.get("cleaned_description") or it.get("query") or ""
+            key = normalize_trade_key(q)
+            if not key:
+                continue
+            code = it.get("matched_hsn") or it.get("hsn_code") or (it.get("top_match") or {}).get("hsn_code") or ""
+            c_code = re.sub(r"\D", "", str(code))
+            if not c_code:
+                continue
+            desc = it.get("official_description") or it.get("description") or (it.get("top_match") or {}).get("description") or ""
+            rate = it.get("standard_rate") or it.get("gst_rate") or (it.get("top_match") or {}).get("standard_rate") or 18.0
+            dec = str(it.get("decision") or "AUTOMATED_MATCH")
+            conf = it.get("confidence_pct") or 90.0
+            
+            # Save algo prediction
+            self.memory_cache[key] = {
+                "clean_key": key,
+                "raw_query": q.strip(),
+                "hsn_code": c_code,
+                "formatted_hsn": format_hsn(c_code),
+                "description": desc.strip(),
+                "gst_rate": float(rate),
+                "status": "DAY5_ALGO_PREDICTED",
+                "is_perfect_match": bool(dec == "AUTOMATED_MATCH"),
+                "reasoning": f"Day 5 Dynamic Algo Prediction ({conf}% confidence, decision: {dec}). Awaiting Qwen audit.",
+                "base_hsn": c_code,
+                "verified_by": "Day 5 Dynamic Vector Matcher",
+                "updated_at": now_iso
+            }
+            count += 1
+
+        if count > 0:
+            self._save_store()
+        return count
+
     def get_all_records(self) -> List[Dict[str, Any]]:
         """Returns all verified knowledge store records."""
         return list(self.memory_cache.values())
 
+    def get_stats(self) -> Dict[str, Any]:
+        """Returns storage statistics and total verified record count."""
+        records = self.get_all_records()
+        return {
+            "total_verified_records": len(records),
+            "store_path": str(self.store_path)
+        }
+
     def clear(self):
-        """Clears verified store."""
+        """Clears verified store records both in memory and on disk."""
         self.memory_cache = {}
-        if self.store_path.exists():
-            try:
-                self.store_path.unlink()
-            except Exception as e:
-                logger.warning(f"Could not remove store file: {e}")
+        cols = ["clean_key", "raw_query", "hsn_code", "formatted_hsn", "description", "gst_rate", "status", "is_perfect_match", "reasoning", "base_hsn", "verified_by", "updated_at"]
+        self.store_path.parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(columns=cols).to_parquet(self.store_path, index=False)
+        logger.info(f"Emptied verified store at {self.store_path}")
 
 
 _global_verified_store: Optional[HSNVerifiedStore] = None

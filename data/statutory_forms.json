@@ -1,0 +1,27 @@
+[
+  {"term": "roasted", "form_stage": "worked", "canonical": "roasted"},
+  {"term": "unroasted", "form_stage": "raw", "canonical": "unroasted"},
+  {"term": "fresh", "form_stage": "raw", "canonical": "fresh"},
+  {"term": "chilled", "form_stage": "raw", "canonical": "chilled"},
+  {"term": "frozen", "form_stage": "worked", "canonical": "frozen"},
+  {"term": "cooked", "form_stage": "worked", "canonical": "cooked"},
+  {"term": "dried", "form_stage": "worked", "canonical": "dried"},
+  {"term": "salted", "form_stage": "worked", "canonical": "salted"},
+  {"term": "smoked", "form_stage": "worked", "canonical": "smoked"},
+  {"term": "knitted", "form_stage": "worked", "canonical": "knitted"},
+  {"term": "crocheted", "form_stage": "worked", "canonical": "crocheted"},
+  {"term": "woven", "form_stage": "worked", "canonical": "woven"},
+  {"term": "seamless", "form_stage": "worked", "canonical": "seamless"},
+  {"term": "welded", "form_stage": "worked", "canonical": "welded"},
+  {"term": "mounted", "form_stage": "finished_article", "canonical": "mounted"},
+  {"term": "unmounted", "form_stage": "worked", "canonical": "unmounted"},
+  {"term": "unvulcanised", "form_stage": "raw", "canonical": "unvulcanised"},
+  {"term": "unvulcanized", "form_stage": "raw", "canonical": "unvulcanised"},
+  {"term": "vulcanised", "form_stage": "worked", "canonical": "vulcanised"},
+  {"term": "vulcanized", "form_stage": "worked", "canonical": "vulcanised"},
+  {"term": "crude", "form_stage": "raw", "canonical": "crude"},
+  {"term": "refined", "form_stage": "worked", "canonical": "refined"},
+  {"term": "waste", "form_stage": "raw", "canonical": "waste"},
+  {"term": "scrap", "form_stage": "raw", "canonical": "scrap"}
+]
+

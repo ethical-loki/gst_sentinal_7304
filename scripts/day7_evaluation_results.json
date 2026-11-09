@@ -1,0 +1,2151 @@
+{
+  "model_path": "C:\\Users\\User\\OneDrive\\Desktop\\GST_Sentinal\\Questions_answering_bot\\models\\qwen2.5-0.5b-instruct",
+  "num_test_cases": 20,
+  "results_original": [
+    {
+      "id": "CASE-01",
+      "category": "Mechanical fasteners",
+      "input_type": "A. English baseline",
+      "language": "en",
+      "input_text": "SS 304 Hex Bolt M12 x 50 mm",
+      "latency_ms": 40058.38,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"SS 304 Hex Bolt M12 x 50 mm\",\n  \"material\": \"Steel (SS)\",\n  \"product_type\": \"Hardware\",\n  \"model_part_number\": null,\n  \"dimensions\": \"50 mm x 50 mm x 12 mm\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "SS 304 Hex Bolt M12 x 50 mm",
+        "material": "Steel (SS)",
+        "product_type": "Hardware",
+        "model_part_number": null,
+        "dimensions": "50 mm x 50 mm x 12 mm",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": false,
+        "model_part_number": false,
+        "dimensions": true,
+        "engineering_grade": false,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "product_type_mismatch (pred=Hardware, gt=['fastener', 'bolt', 'threaded fastener'])",
+        "model_part_number_mismatch (pred=None, gt=['m12 x 50 mm', 'm12', '50 mm'])",
+        "engineering_grade_mismatch (pred=None, gt=['ss 304', '304'])"
+      ]
+    },
+    {
+      "id": "CASE-02",
+      "category": "Mechanical fasteners",
+      "input_type": "B. Hindi",
+      "language": "hi",
+      "input_text": "एसएस 304 स्टेनलेस स्टील का हेक्स बोल्ट M12 x 50 mm",
+      "latency_ms": 45461.15,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"एसएस 304 स्टेनलेस स्टील\",\n  \"material\": \"एसएस 304 स्टेनलेस\",\n  \"product_type\": \"आयरपायन रिमाह\",\n  \"model_part_number\": \"M12 x 50 mm\",\n  \"dimensions\": \"12 x 50 mm\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": \"mm\",\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "एसएस 304 स्टेनलेस स्टील",
+        "material": "एसएस 304 स्टेनलेस",
+        "product_type": "आयरपायन रिमाह",
+        "model_part_number": "M12 x 50 mm",
+        "dimensions": "12 x 50 mm",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": "mm",
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": false,
+        "material": true,
+        "product_type": false,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": false,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "product_name_mismatch (pred=एसएस 304 स्टेनलेस स्टील, gt=['hex bolt', 'हेक्स बोल्ट', 'bolt', 'बोल्ट'])",
+        "product_type_mismatch (pred=आयरपायन रिमाह, gt=['fastener', 'bolt'])",
+        "engineering_grade_mismatch (pred=None, gt=['ss 304', 'एसएस 304', '304'])"
+      ]
+    },
+    {
+      "id": "CASE-03",
+      "category": "Mechanical fasteners",
+      "input_type": "C. Hinglish",
+      "language": "hi-Latn",
+      "input_text": "SS 304 ka hex bolt M12 x 50 mm",
+      "latency_ms": 39218.36,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"SS 304 ka hex bolt M12 x 50 mm\",\n  \"material\": \"Steel (SS)\",\n  \"product_type\": \"Hardware\",\n  \"model_part_number\": null,\n  \"dimensions\": \"50 mm x 50 mm x 12 mm\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "SS 304 ka hex bolt M12 x 50 mm",
+        "material": "Steel (SS)",
+        "product_type": "Hardware",
+        "model_part_number": null,
+        "dimensions": "50 mm x 50 mm x 12 mm",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": false,
+        "model_part_number": false,
+        "dimensions": true,
+        "engineering_grade": false,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "product_type_mismatch (pred=Hardware, gt=['fastener', 'bolt'])",
+        "model_part_number_mismatch (pred=None, gt=['m12 x 50 mm', 'm12'])",
+        "engineering_grade_mismatch (pred=None, gt=['ss 304', '304'])"
+      ]
+    },
+    {
+      "id": "CASE-04",
+      "category": "Electrical wires and cables",
+      "input_type": "D. Hindi with English technical specifications",
+      "language": "hi",
+      "input_text": "पीवीसी इंसुलेशन के साथ तांबे की बिजली की तार 2.5 sq mm, 415V",
+      "latency_ms": 38575.13,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"Pievisi Insulation\",\n  \"material\": \"Polyethylene\",\n  \"product_type\": \"Insulation\",\n  \"model_part_number\": null,\n  \"dimensions\": \"2.5 sq mm\",\n  \"engineering_grade\": null,\n  \"quantity\": \"415V\",\n  \"measurement_units\": \"mm²\",\n  \"electrical_configuration\": \"Direct Current (DC)\",\n  \"voltage_rating\": null,\n  \"power_rating\": \"2.5 sq mm\",\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "Pievisi Insulation",
+        "material": "Polyethylene",
+        "product_type": "Insulation",
+        "model_part_number": null,
+        "dimensions": "2.5 sq mm",
+        "engineering_grade": null,
+        "quantity": "415V",
+        "measurement_units": "mm²",
+        "electrical_configuration": "Direct Current (DC)",
+        "voltage_rating": null,
+        "power_rating": "2.5 sq mm",
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": false,
+        "material": false,
+        "product_type": false,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": true,
+        "quantity": false,
+        "electrical_configuration": false,
+        "voltage_rating": false,
+        "power_rating": false,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [
+        "power_rating='2.5 sq mm' (not in input)",
+        "electrical_configuration='Direct Current (DC)' (not in input)",
+        "quantity='415V' (not in input)"
+      ],
+      "failures": [
+        "product_name_mismatch (pred=Pievisi Insulation, gt=['wire', 'बिजली की तार', 'तार', 'cable', 'electrical wire'])",
+        "material_mismatch (pred=Polyethylene, gt=['copper', 'तांबा', 'तांबे', 'pvc', 'पीवीसी'])",
+        "product_type_mismatch (pred=Insulation, gt=['wire', 'cable', 'electrical wire'])",
+        "quantity_mismatch (pred=415V, gt=None)",
+        "electrical_configuration_mismatch (pred=Direct Current (DC), gt=None)",
+        "voltage_rating_mismatch (pred=None, gt=['415v', '415 v', '415'])",
+        "power_rating_mismatch (pred=2.5 sq mm, gt=None)"
+      ]
+    },
+    {
+      "id": "CASE-05",
+      "category": "Electrical wires and cables",
+      "input_type": "E. Hinglish electrical product",
+      "language": "hi-Latn",
+      "input_text": "Copper wire 2.5 sq mm hai, 3 phase aur 415V rating ke saath",
+      "latency_ms": 42600.73,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"Copper Wire\",\n  \"material\": \"Copper\",\n  \"product_type\": \"Electrical\",\n  \"model_part_number\": \"\",\n  \"dimensions\": \"2.5 sq mm\",\n  \"engineering_grade\": \"Hai\",\n  \"quantity\": \"3 phase aur 415V rating ke saath\",\n  \"measurement_units\": \"mm²\",\n  \"electrical_configuration\": \"Single-phase\",\n  \"voltage_rating\": \"415V\",\n  \"power_rating\": \"null\",\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "Copper Wire",
+        "material": "Copper",
+        "product_type": "Electrical",
+        "model_part_number": "",
+        "dimensions": "2.5 sq mm",
+        "engineering_grade": "Hai",
+        "quantity": "3 phase aur 415V rating ke saath",
+        "measurement_units": "mm²",
+        "electrical_configuration": "Single-phase",
+        "voltage_rating": "415V",
+        "power_rating": "null",
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": true,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": false,
+        "quantity": false,
+        "electrical_configuration": false,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [
+        "engineering_grade='Hai' (not in input)",
+        "quantity='3 phase aur 415V rating ke saath' (not in input)"
+      ],
+      "failures": [
+        "engineering_grade_mismatch (pred=Hai, gt=None)",
+        "quantity_mismatch (pred=3 phase aur 415V rating ke saath, gt=None)",
+        "electrical_configuration_mismatch (pred=Single-phase, gt=['3 phase', 'three phase'])"
+      ]
+    },
+    {
+      "id": "CASE-06",
+      "category": "Pipe fittings",
+      "input_type": "F. Ambiguous description",
+      "language": "en",
+      "input_text": "Industrial pipe fitting",
+      "latency_ms": 32642.21,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"Industrial Pipe Fitting\",\n  \"material\": null,\n  \"product_type\": \"Pipe fittings\",\n  \"model_part_number\": null,\n  \"dimensions\": null,\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "Industrial Pipe Fitting",
+        "material": null,
+        "product_type": "Pipe fittings",
+        "model_part_number": null,
+        "dimensions": null,
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": true,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": true,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": []
+    },
+    {
+      "id": "CASE-07",
+      "category": "Electrical wires and cables",
+      "input_type": "G. Incomplete description",
+      "language": "en",
+      "input_text": "Copper wire",
+      "latency_ms": 34554.23,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"Copper Wire\",\n  \"material\": \"copper\",\n  \"product_type\": \"Electrical\",\n  \"model_part_number\": null,\n  \"dimensions\": null,\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "Copper Wire",
+        "material": "copper",
+        "product_type": "Electrical",
+        "model_part_number": null,
+        "dimensions": null,
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": true,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": true,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": []
+    },
+    {
+      "id": "CASE-08",
+      "category": "Fluid control valves",
+      "input_type": "H. Unknown or unsupported terminology",
+      "language": "hi",
+      "input_text": "पानी का वाल्व 2 inch ढलाई लोहा",
+      "latency_ms": 32860.0,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"Panna Lava 2 Inch Coconut Milk\",\n  \"material\": \"Coconut milk\",\n  \"product_type\": \"Canned Beverage\",\n  \"model_part_number\": null,\n  \"dimensions\": \"2 inches\",\n  \"engineering_grade\": null,\n  \"quantity\": \"1\",\n  \"measurement_units\": \"ounces\",\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"coconut milk type\",\n    \"engineer's grade\",\n    \"size of can\",\n    \"weight of can\"\n  ]\n}",
+      "parsed": {
+        "product_name": "Panna Lava 2 Inch Coconut Milk",
+        "material": "Coconut milk",
+        "product_type": "Canned Beverage",
+        "model_part_number": null,
+        "dimensions": "2 inches",
+        "engineering_grade": null,
+        "quantity": "1",
+        "measurement_units": "ounces",
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "coconut milk type",
+          "engineer's grade",
+          "size of can",
+          "weight of can"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": false,
+        "material": false,
+        "product_type": false,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": true,
+        "quantity": false,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [
+        "quantity='1' (not in input)"
+      ],
+      "failures": [
+        "product_name_mismatch (pred=Panna Lava 2 Inch Coconut Milk, gt=['water valve', 'valve', 'पानी का वाल्व', 'वाल्व'])",
+        "material_mismatch (pred=Coconut milk, gt=['cast iron', 'ढलाई लोहा', 'लोहा', 'iron'])",
+        "product_type_mismatch (pred=Canned Beverage, gt=['valve', 'fluid valve'])",
+        "quantity_mismatch (pred=1, gt=None)"
+      ]
+    },
+    {
+      "id": "CASE-09",
+      "category": "Machine components",
+      "input_type": "H. Unknown or unsupported terminology",
+      "language": "hi",
+      "input_text": "गियर बक्सा 1400 rpm 5 HP",
+      "latency_ms": 41657.15,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"गियर बक्सा\",\n  \"material\": \"Steel\",\n  \"product_type\": \"Motor\",\n  \"model_part_number\": \"GIR-1400-5HP\",\n  \"dimensions\": \"1400 x 600 mm\",\n  \"engineering_grade\": \"Grade 3\",\n  \"quantity\": \"1\",\n  \"measurement_units\": \"mm\",\n  \"electrical_configuration\": \"AC\",\n  \"voltage_rating\": \"1400 V\",\n  \"power_rating\": \"5 HP\",\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "गियर बक्सा",
+        "material": "Steel",
+        "product_type": "Motor",
+        "model_part_number": "GIR-1400-5HP",
+        "dimensions": "1400 x 600 mm",
+        "engineering_grade": "Grade 3",
+        "quantity": "1",
+        "measurement_units": "mm",
+        "electrical_configuration": "AC",
+        "voltage_rating": "1400 V",
+        "power_rating": "5 HP",
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": false,
+        "product_type": false,
+        "model_part_number": false,
+        "dimensions": false,
+        "engineering_grade": false,
+        "quantity": false,
+        "electrical_configuration": false,
+        "voltage_rating": false,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [
+        "material='Steel' (not in input)",
+        "engineering_grade='Grade 3' (not in input)",
+        "voltage_rating='1400 V' (not in input)",
+        "electrical_configuration='AC' (not in input)",
+        "quantity='1' (not in input)"
+      ],
+      "failures": [
+        "material_mismatch (pred=Steel, gt=None)",
+        "product_type_mismatch (pred=Motor, gt=['gearbox', 'speed reducer', 'transmission'])",
+        "model_part_number_mismatch (pred=GIR-1400-5HP, gt=None)",
+        "dimensions_mismatch (pred=1400 x 600 mm, gt=None)",
+        "engineering_grade_mismatch (pred=Grade 3, gt=None)",
+        "quantity_mismatch (pred=1, gt=None)",
+        "electrical_configuration_mismatch (pred=AC, gt=None)",
+        "voltage_rating_mismatch (pred=1400 V, gt=None)"
+      ]
+    },
+    {
+      "id": "CASE-10",
+      "category": "Pipe fittings",
+      "input_type": "A. English baseline",
+      "language": "en",
+      "input_text": "Industrial pipe fitting SCH 40 Class 150 SS 304 2 inch elbow",
+      "latency_ms": 38729.43,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"Sch 40 Class 150 SS 304\",\n  \"material\": \"SS 304\",\n  \"product_type\": \"pipe fitting\",\n  \"model_part_number\": \"SCH 40 Class 150 SS 304\",\n  \"dimensions\": {\n    \"length\": 2,\n    \"width\": null,\n    \"height\": null\n  },\n  \"engineering_grade\": \"Class 150\",\n  \"quantity\": 1,\n  \"measurement_units\": \"inches\",\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"length\",\n    \"width\",\n    \"height\"\n  ]\n}",
+      "parsed": {
+        "product_name": "Sch 40 Class 150 SS 304",
+        "material": "SS 304",
+        "product_type": "pipe fitting",
+        "model_part_number": "SCH 40 Class 150 SS 304",
+        "dimensions": {
+          "length": 2,
+          "width": null,
+          "height": null
+        },
+        "engineering_grade": "Class 150",
+        "quantity": 1,
+        "measurement_units": "inches",
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "length",
+          "width",
+          "height"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": false,
+        "material": true,
+        "product_type": true,
+        "model_part_number": false,
+        "dimensions": true,
+        "engineering_grade": true,
+        "quantity": false,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [
+        "quantity='1' (not in input)"
+      ],
+      "failures": [
+        "product_name_mismatch (pred=Sch 40 Class 150 SS 304, gt=['elbow', 'pipe fitting elbow', 'pipe fitting'])",
+        "model_part_number_mismatch (pred=SCH 40 Class 150 SS 304, gt=None)",
+        "quantity_mismatch (pred=1, gt=None)"
+      ]
+    },
+    {
+      "id": "CASE-11",
+      "category": "Pipe fittings",
+      "input_type": "B. Hindi",
+      "language": "hi",
+      "input_text": "एसएस 304 औद्योगिक पाइप फिटिंग 2 inch एल्बो SCH 40",
+      "latency_ms": 52762.57,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"एसएस 304 औद्योगिक पाइप फिटिंग 2 inch एल्बो SCH 40\",\n  \"material\": \"एसएस 304 औद्योगिक पाइप फिटिंग\",\n  \"product_type\": \"फिटिंग पाइप\",\n  \"model_part_number\": null,\n  \"dimensions\": \"2 inch\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": \"inches\",\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"product_type\",\n    \"model_part_number\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "एसएस 304 औद्योगिक पाइप फिटिंग 2 inch एल्बो SCH 40",
+        "material": "एसएस 304 औद्योगिक पाइप फिटिंग",
+        "product_type": "फिटिंग पाइप",
+        "model_part_number": null,
+        "dimensions": "2 inch",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": "inches",
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "product_type",
+          "model_part_number",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": false,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": false,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "product_type_mismatch (pred=फिटिंग पाइप, gt=['pipe fitting', 'elbow'])",
+        "engineering_grade_mismatch (pred=None, gt=['ss 304', 'एसएस 304', 'sch 40', '304'])"
+      ]
+    },
+    {
+      "id": "CASE-12",
+      "category": "Transformers and electrical equipment",
+      "input_type": "A. English baseline",
+      "language": "en",
+      "input_text": "10 KVA transformer, 3 phase, 415V step down 50Hz",
+      "latency_ms": 29482.98,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"10 KVA Transformer\",\n  \"material\": \"Iron core\",\n  \"product_type\": \"Power Transformation Equipment\",\n  \"model_part_number\": \"N/A\",\n  \"dimensions\": \"Not specified\",\n  \"engineering_grade\": \"E级\",\n  \"quantity\": \"1\",\n  \"measurement_units\": \"kW\",\n  \"electrical_configuration\": \"三相四线制，电压等级为415V，频率为50Hz\",\n  \"missing_attributes\": [\"material\", \"dimensions\"]\n}",
+      "parsed": {
+        "product_name": "10 KVA Transformer",
+        "material": "Iron core",
+        "product_type": "Power Transformation Equipment",
+        "model_part_number": "N/A",
+        "dimensions": "Not specified",
+        "engineering_grade": "E级",
+        "quantity": "1",
+        "measurement_units": "kW",
+        "electrical_configuration": "三相四线制，电压等级为415V，频率为50Hz",
+        "missing_attributes": [
+          "material",
+          "dimensions"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": false,
+        "product_type": false,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": false,
+        "quantity": false,
+        "electrical_configuration": false,
+        "voltage_rating": false,
+        "power_rating": false,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [
+        "material='Iron core' (not in input)",
+        "engineering_grade='E级' (not in input)",
+        "quantity='1' (not in input)"
+      ],
+      "failures": [
+        "material_mismatch (pred=Iron core, gt=None)",
+        "product_type_mismatch (pred=Power Transformation Equipment, gt=['transformer', 'electrical equipment'])",
+        "engineering_grade_mismatch (pred=E级, gt=None)",
+        "quantity_mismatch (pred=1, gt=None)",
+        "electrical_configuration_mismatch (pred=三相四线制，电压等级为415V，频率为50Hz, gt=['3 phase', 'three phase'])",
+        "voltage_rating_mismatch (pred=None, gt=['415v', '415 v', '415'])",
+        "power_rating_mismatch (pred=None, gt=['10 kva', '10'])"
+      ]
+    },
+    {
+      "id": "CASE-13",
+      "category": "Transformers and electrical equipment",
+      "input_type": "C. Hinglish",
+      "language": "hi-Latn",
+      "input_text": "10 KVA ka transformer 3 phase 415V bijli transformer",
+      "latency_ms": 39663.47,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"10 KVA Ka Transformer\",\n  \"material\": \"Iron Core\",\n  \"product_type\": \"Transformer\",\n  \"model_part_number\": \"N/A\",\n  \"dimensions\": \"Not specified\",\n  \"engineering_grade\": \"E级\",\n  \"quantity\": \"1\",\n  \"measurement_units\": \"kVA\",\n  \"electrical_configuration\": \"Three-phase four-wire\",\n  \"voltage_rating\": \"415V\",\n  \"power_rating\": \"Not specified\",\n  \"missing_attributes\": [\n    \"Material\",\n    \"Dimensions\",\n    \"Engineering Grade\",\n    \"Quantity\",\n    \"Measurement Units\",\n    \"Electrical Configuration\",\n    \"Voltage Rating\",\n    \"Power Rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "10 KVA Ka Transformer",
+        "material": "Iron Core",
+        "product_type": "Transformer",
+        "model_part_number": "N/A",
+        "dimensions": "Not specified",
+        "engineering_grade": "E级",
+        "quantity": "1",
+        "measurement_units": "kVA",
+        "electrical_configuration": "Three-phase four-wire",
+        "voltage_rating": "415V",
+        "power_rating": "Not specified",
+        "missing_attributes": [
+          "Material",
+          "Dimensions",
+          "Engineering Grade",
+          "Quantity",
+          "Measurement Units",
+          "Electrical Configuration",
+          "Voltage Rating",
+          "Power Rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": false,
+        "product_type": true,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": false,
+        "quantity": false,
+        "electrical_configuration": false,
+        "voltage_rating": true,
+        "power_rating": false,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [
+        "material='Iron Core' (not in input)",
+        "engineering_grade='E级' (not in input)",
+        "quantity='1' (not in input)"
+      ],
+      "failures": [
+        "material_mismatch (pred=Iron Core, gt=None)",
+        "engineering_grade_mismatch (pred=E级, gt=None)",
+        "quantity_mismatch (pred=1, gt=None)",
+        "electrical_configuration_mismatch (pred=Three-phase four-wire, gt=['3 phase', 'three phase'])",
+        "power_rating_mismatch (pred=Not specified, gt=['10 kva', '10'])"
+      ]
+    },
+    {
+      "id": "CASE-14",
+      "category": "Bearings and machine components",
+      "input_type": "A. English baseline",
+      "language": "en",
+      "input_text": "Ball Bearing 6204-2RS Chrome Steel 20x47x14 mm",
+      "latency_ms": 38212.38,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"Ball Bearing\",\n  \"material\": \"Chrome Steel\",\n  \"product_type\": \"Industrial\",\n  \"model_part_number\": \"6204-2RS\",\n  \"dimensions\": \"20mm x 47mm x 14mm\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "Ball Bearing",
+        "material": "Chrome Steel",
+        "product_type": "Industrial",
+        "model_part_number": "6204-2RS",
+        "dimensions": "20mm x 47mm x 14mm",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": false,
+        "model_part_number": true,
+        "dimensions": false,
+        "engineering_grade": true,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "product_type_mismatch (pred=Industrial, gt=['bearing', 'ball bearing'])",
+        "dimensions_mismatch (pred=20mm x 47mm x 14mm, gt=['20x47x14 mm', '20x47x14'])"
+      ]
+    },
+    {
+      "id": "CASE-15",
+      "category": "Bearings and machine components",
+      "input_type": "B. Hindi",
+      "language": "hi",
+      "input_text": "बॉल बेयरिंग 6204-2RS क्रोम स्टील 20x47x14 mm",
+      "latency_ms": 46253.11,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"बॉल बेयरिंग 6204-2RS\",\n  \"material\": \"CRM 20x47x14 mm\",\n  \"product_type\": \"क्रोम स्टील\",\n  \"model_part_number\": \"6204-2RS\",\n  \"dimensions\": \"20 x 47 x 14 mm\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "बॉल बेयरिंग 6204-2RS",
+        "material": "CRM 20x47x14 mm",
+        "product_type": "क्रोम स्टील",
+        "model_part_number": "6204-2RS",
+        "dimensions": "20 x 47 x 14 mm",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": false,
+        "product_type": false,
+        "model_part_number": true,
+        "dimensions": false,
+        "engineering_grade": true,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "material_mismatch (pred=CRM 20x47x14 mm, gt=['chrome steel', 'क्रोम स्टील', 'steel'])",
+        "product_type_mismatch (pred=क्रोम स्टील, gt=['bearing', 'ball bearing'])",
+        "dimensions_mismatch (pred=20 x 47 x 14 mm, gt=['20x47x14 mm', '20x47x14'])"
+      ]
+    },
+    {
+      "id": "CASE-16",
+      "category": "Mechanical fasteners",
+      "input_type": "Exploratory Tamil",
+      "language": "ta",
+      "input_text": "துருப்பிடிக்காத எஃகு ஹெக்ஸ் போல்ட் M12 x 50 mm",
+      "latency_ms": 46447.85,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"Thurpikakkattakhehs Phosgene Hekss P12 x 50mm\",\n  \"material\": \"Phosphorus\",\n  \"product_type\": \"Chemical\",\n  \"model_part_number\": \"M12 x 50 mm\",\n  \"dimensions\": \"12 x 50 mm\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "Thurpikakkattakhehs Phosgene Hekss P12 x 50mm",
+        "material": "Phosphorus",
+        "product_type": "Chemical",
+        "model_part_number": "M12 x 50 mm",
+        "dimensions": "12 x 50 mm",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": false,
+        "material": false,
+        "product_type": false,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": true,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "product_name_mismatch (pred=Thurpikakkattakhehs Phosgene Hekss P12 x 50mm, gt=['hex bolt', 'bolt', 'ஹெக்ஸ் போல்ட்'])",
+        "material_mismatch (pred=Phosphorus, gt=['stainless steel', 'துருப்பிடிக்காத எஃகு'])",
+        "product_type_mismatch (pred=Chemical, gt=['fastener', 'bolt'])"
+      ]
+    },
+    {
+      "id": "CASE-17",
+      "category": "Electrical wires and cables",
+      "input_type": "Exploratory Tamil",
+      "language": "ta",
+      "input_text": "செம்பு கம்பி 2.5 sq mm, 415V",
+      "latency_ms": 40318.22,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"செம்பு கம்பி\",\n  \"material\": \"Metal\",\n  \"product_type\": \"Electrical appliance\",\n  \"model_part_number\": \"N/A\",\n  \"dimensions\": \"2.5 sq mm\",\n  \"engineering_grade\": \"CNC\",\n  \"quantity\": \"1\",\n  \"measurement_units\": \"mm^2\",\n  \"electrical_configuration\": \"AC\",\n  \"voltage_rating\": \"415V\",\n  \"power_rating\": \"0W\",\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "செம்பு கம்பி",
+        "material": "Metal",
+        "product_type": "Electrical appliance",
+        "model_part_number": "N/A",
+        "dimensions": "2.5 sq mm",
+        "engineering_grade": "CNC",
+        "quantity": "1",
+        "measurement_units": "mm^2",
+        "electrical_configuration": "AC",
+        "voltage_rating": "415V",
+        "power_rating": "0W",
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": false,
+        "product_type": false,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": false,
+        "quantity": false,
+        "electrical_configuration": false,
+        "voltage_rating": true,
+        "power_rating": false,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [
+        "engineering_grade='CNC' (not in input)",
+        "power_rating='0W' (not in input)",
+        "electrical_configuration='AC' (not in input)",
+        "quantity='1' (not in input)"
+      ],
+      "failures": [
+        "material_mismatch (pred=Metal, gt=['copper', 'செம்பு'])",
+        "product_type_mismatch (pred=Electrical appliance, gt=['electrical wire', 'wire'])",
+        "engineering_grade_mismatch (pred=CNC, gt=None)",
+        "quantity_mismatch (pred=1, gt=None)",
+        "electrical_configuration_mismatch (pred=AC, gt=None)",
+        "power_rating_mismatch (pred=0W, gt=None)"
+      ]
+    },
+    {
+      "id": "CASE-18",
+      "category": "Electrical wires and cables",
+      "input_type": "Exploratory Marathi",
+      "language": "mr",
+      "input_text": "तांब्याची वायर 2.5 sq mm, 3 phase, 415V",
+      "latency_ms": 32962.61,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"वायर\",\n  \"material\": \"वायर\",\n  \"product_type\": \"किलोपैमा गुना किलोपैमा\",\n  \"model_part_number\": null,\n  \"dimensions\": \"2.5 sq mm\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": \"mm²\",\n  \"electrical_configuration\": \"3 phase\",\n  \"voltage_rating\": null,\n  \"power_rating\": \"415V\",\n  \"missing_attributes\": [\n    \"किलोपैमा गुना किलोपैमा\",\n    \"किलोपैमा गुना किलोपैमा\"\n  ]\n}",
+      "parsed": {
+        "product_name": "वायर",
+        "material": "वायर",
+        "product_type": "किलोपैमा गुना किलोपैमा",
+        "model_part_number": null,
+        "dimensions": "2.5 sq mm",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": "mm²",
+        "electrical_configuration": "3 phase",
+        "voltage_rating": null,
+        "power_rating": "415V",
+        "missing_attributes": [
+          "किलोपैमा गुना किलोपैमा",
+          "किलोपैमा गुना किलोपैमा"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": false,
+        "product_type": false,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": true,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": false,
+        "power_rating": false,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [
+        "power_rating='415V' (not in input)"
+      ],
+      "failures": [
+        "material_mismatch (pred=वायर, gt=['copper', 'तांबे', 'तांब्याची'])",
+        "product_type_mismatch (pred=किलोपैमा गुना किलोपैमा, gt=['electrical wire', 'wire'])",
+        "voltage_rating_mismatch (pred=None, gt=['415v', '415 v', '415'])",
+        "power_rating_mismatch (pred=415V, gt=None)"
+      ]
+    },
+    {
+      "id": "CASE-19",
+      "category": "Mechanical fasteners",
+      "input_type": "Exploratory Marathi",
+      "language": "mr",
+      "input_text": "स्टेनलेस स्टील हेक्स बोल्ट M12 x 50 mm",
+      "latency_ms": 28758.4,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"STENEL STHEL BOLT M12 x 50 MM\",\n  \"material\": \"Steel\",\n  \"product_type\": \"Bolt\",\n  \"model_part_number\": \"M12 x 50\",\n  \"dimensions\": \"50 mm x 50 mm\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "STENEL STHEL BOLT M12 x 50 MM",
+        "material": "Steel",
+        "product_type": "Bolt",
+        "model_part_number": "M12 x 50",
+        "dimensions": "50 mm x 50 mm",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": true,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": true,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": []
+    },
+    {
+      "id": "CASE-20",
+      "category": "Mechanical fasteners",
+      "input_type": "A. English baseline (with quantity)",
+      "language": "en",
+      "input_text": "SS 304 Hex Bolt M12 x 50 mm 100 pcs",
+      "latency_ms": 32283.89,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"SS 304 Hex Bolt M12 x 50 mm 100 pcs\",\n  \"material\": \"Steel (SS)\",\n  \"product_type\": \"Bolt\",\n  \"model_part_number\": \"\",\n  \"dimensions\": \"50 mm x 50 mm\",\n  \"engineering_grade\": \"Hexagon\",\n  \"quantity\": \"100 pcs\",\n  \"measurement_units\": \"mm\",\n  \"electrical_configuration\": \"Not specified\",\n  \"voltage_rating\": \"Not specified\",\n  \"power_rating\": \"Not specified\",\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "SS 304 Hex Bolt M12 x 50 mm 100 pcs",
+        "material": "Steel (SS)",
+        "product_type": "Bolt",
+        "model_part_number": "",
+        "dimensions": "50 mm x 50 mm",
+        "engineering_grade": "Hexagon",
+        "quantity": "100 pcs",
+        "measurement_units": "mm",
+        "electrical_configuration": "Not specified",
+        "voltage_rating": "Not specified",
+        "power_rating": "Not specified",
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": true,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": false,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "engineering_grade_mismatch (pred=Hexagon, gt=['ss 304', '304'])"
+      ]
+    }
+  ],
+  "results_normalized": [
+    {
+      "id": "CASE-01",
+      "category": "Mechanical fasteners",
+      "input_type": "A. English baseline",
+      "language": "en",
+      "input_text": "ss 304 hex bolt m12 x 50 mm",
+      "latency_ms": 37926.66,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"SS 304 Hex Bolt M12 x 50 mm\",\n  \"material\": \"Steel (SS)\",\n  \"product_type\": \"Hardware\",\n  \"model_part_number\": null,\n  \"dimensions\": \"50 mm x 50 mm x 12 mm\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "SS 304 Hex Bolt M12 x 50 mm",
+        "material": "Steel (SS)",
+        "product_type": "Hardware",
+        "model_part_number": null,
+        "dimensions": "50 mm x 50 mm x 12 mm",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": false,
+        "model_part_number": false,
+        "dimensions": true,
+        "engineering_grade": false,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "product_type_mismatch (pred=Hardware, gt=['fastener', 'bolt', 'threaded fastener'])",
+        "model_part_number_mismatch (pred=None, gt=['m12 x 50 mm', 'm12', '50 mm'])",
+        "engineering_grade_mismatch (pred=None, gt=['ss 304', '304'])"
+      ]
+    },
+    {
+      "id": "CASE-02",
+      "category": "Mechanical fasteners",
+      "input_type": "B. Hindi",
+      "language": "hi",
+      "input_text": "stainless steel 304 stainless steel of हेक्स bolt m12 x 50 mm",
+      "latency_ms": 37548.55,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"Hékesk Steel M12 x 50mm Stainless Steel Bolt\",\n  \"material\": \"Stainless Steel\",\n  \"product_type\": \"Bolt\",\n  \"model_part_number\": null,\n  \"dimensions\": \"50mm x 50mm x 12mm\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "Hékesk Steel M12 x 50mm Stainless Steel Bolt",
+        "material": "Stainless Steel",
+        "product_type": "Bolt",
+        "model_part_number": null,
+        "dimensions": "50mm x 50mm x 12mm",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": true,
+        "model_part_number": false,
+        "dimensions": false,
+        "engineering_grade": false,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "model_part_number_mismatch (pred=None, gt=['m12 x 50 mm', 'm12'])",
+        "dimensions_mismatch (pred=50mm x 50mm x 12mm, gt=['m12 x 50 mm', 'm12', '50 mm'])",
+        "engineering_grade_mismatch (pred=None, gt=['ss 304', 'एसएस 304', '304'])"
+      ]
+    },
+    {
+      "id": "CASE-03",
+      "category": "Mechanical fasteners",
+      "input_type": "C. Hinglish",
+      "language": "hi-Latn",
+      "input_text": "ss 304 hex bolt m12 x 50 mm",
+      "latency_ms": 38315.21,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"SS 304 Hex Bolt M12 x 50 mm\",\n  \"material\": \"Steel (SS)\",\n  \"product_type\": \"Hardware\",\n  \"model_part_number\": null,\n  \"dimensions\": \"50 mm x 50 mm x 12 mm\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "SS 304 Hex Bolt M12 x 50 mm",
+        "material": "Steel (SS)",
+        "product_type": "Hardware",
+        "model_part_number": null,
+        "dimensions": "50 mm x 50 mm x 12 mm",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": false,
+        "model_part_number": false,
+        "dimensions": true,
+        "engineering_grade": false,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "product_type_mismatch (pred=Hardware, gt=['fastener', 'bolt'])",
+        "model_part_number_mismatch (pred=None, gt=['m12 x 50 mm', 'm12'])",
+        "engineering_grade_mismatch (pred=None, gt=['ss 304', '304'])"
+      ]
+    },
+    {
+      "id": "CASE-04",
+      "category": "Electrical wires and cables",
+      "input_type": "D. Hindi with English technical specifications",
+      "language": "hi",
+      "input_text": "pvc insulation with copper of electrical wire 2.5 sq mm 415v",
+      "latency_ms": 31219.86,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"PVC Insulation\",\n  \"material\": \"PVC\",\n  \"product_type\": \"Electrical Wire\",\n  \"model_part_number\": null,\n  \"dimensions\": \"2.5 sq mm\",\n  \"engineering_grade\": \"E100\",\n  \"quantity\": \"415V\",\n  \"measurement_units\": \"mm²\",\n  \"electrical_configuration\": \"Single-phase\",\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"copper\",\n    \"dimensions\",\n    \"measuring tools\",\n    \"specifications\"\n  ]\n}",
+      "parsed": {
+        "product_name": "PVC Insulation",
+        "material": "PVC",
+        "product_type": "Electrical Wire",
+        "model_part_number": null,
+        "dimensions": "2.5 sq mm",
+        "engineering_grade": "E100",
+        "quantity": "415V",
+        "measurement_units": "mm²",
+        "electrical_configuration": "Single-phase",
+        "power_rating": null,
+        "missing_attributes": [
+          "copper",
+          "dimensions",
+          "measuring tools",
+          "specifications"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": false,
+        "material": true,
+        "product_type": true,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": false,
+        "quantity": false,
+        "electrical_configuration": false,
+        "voltage_rating": false,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [
+        "engineering_grade='E100' (not in input)",
+        "electrical_configuration='Single-phase' (not in input)",
+        "quantity='415V' (not in input)"
+      ],
+      "failures": [
+        "product_name_mismatch (pred=PVC Insulation, gt=['wire', 'बिजली की तार', 'तार', 'cable', 'electrical wire'])",
+        "engineering_grade_mismatch (pred=E100, gt=None)",
+        "quantity_mismatch (pred=415V, gt=None)",
+        "electrical_configuration_mismatch (pred=Single-phase, gt=None)",
+        "voltage_rating_mismatch (pred=None, gt=['415v', '415 v', '415'])"
+      ]
+    },
+    {
+      "id": "CASE-05",
+      "category": "Electrical wires and cables",
+      "input_type": "E. Hinglish electrical product",
+      "language": "hi-Latn",
+      "input_text": "copper wire 2.5 sq mm hai 3 phase aur 415v rating with",
+      "latency_ms": 37161.67,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"copper wire\",\n  \"material\": \"copper\",\n  \"product_type\": \"wire\",\n  \"model_part_number\": \"N/A\",\n  \"dimensions\": \"2.5 sq mm\",\n  \"engineering_grade\": \"HAI\",\n  \"quantity\": \"3\",\n  \"measurement_units\": \"mm²\",\n  \"electrical_configuration\": \"3 phase\",\n  \"voltage_rating\": \"415V\",\n  \"power_rating\": \"null\",\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "copper wire",
+        "material": "copper",
+        "product_type": "wire",
+        "model_part_number": "N/A",
+        "dimensions": "2.5 sq mm",
+        "engineering_grade": "HAI",
+        "quantity": "3",
+        "measurement_units": "mm²",
+        "electrical_configuration": "3 phase",
+        "voltage_rating": "415V",
+        "power_rating": "null",
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": true,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": false,
+        "quantity": false,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [
+        "engineering_grade='HAI' (not in input)",
+        "quantity='3' (not in input)"
+      ],
+      "failures": [
+        "engineering_grade_mismatch (pred=HAI, gt=None)",
+        "quantity_mismatch (pred=3, gt=None)"
+      ]
+    },
+    {
+      "id": "CASE-06",
+      "category": "Pipe fittings",
+      "input_type": "F. Ambiguous description",
+      "language": "en",
+      "input_text": "industrial pipe fitting",
+      "latency_ms": 32409.54,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"Industrial Pipe Fitting\",\n  \"material\": null,\n  \"product_type\": \"Pipe fittings\",\n  \"model_part_number\": null,\n  \"dimensions\": null,\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "Industrial Pipe Fitting",
+        "material": null,
+        "product_type": "Pipe fittings",
+        "model_part_number": null,
+        "dimensions": null,
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": true,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": true,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": []
+    },
+    {
+      "id": "CASE-07",
+      "category": "Electrical wires and cables",
+      "input_type": "G. Incomplete description",
+      "language": "en",
+      "input_text": "copper wire",
+      "latency_ms": 33578.51,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"copper wire\",\n  \"material\": \"copper\",\n  \"product_type\": \"Electrical\",\n  \"model_part_number\": null,\n  \"dimensions\": null,\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "copper wire",
+        "material": "copper",
+        "product_type": "Electrical",
+        "model_part_number": null,
+        "dimensions": null,
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": true,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": true,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": []
+    },
+    {
+      "id": "CASE-08",
+      "category": "Fluid control valves",
+      "input_type": "H. Unknown or unsupported terminology",
+      "language": "hi",
+      "input_text": "पानी of valve 2 inch ढलाई iron",
+      "latency_ms": 33479.61,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"पानी\",\n  \"material\": \"iron\",\n  \"product_type\": \"valve\",\n  \"model_part_number\": null,\n  \"dimensions\": \"2 inches\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "पानी",
+        "material": "iron",
+        "product_type": "valve",
+        "model_part_number": null,
+        "dimensions": "2 inches",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": true,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": true,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": []
+    },
+    {
+      "id": "CASE-09",
+      "category": "Machine components",
+      "input_type": "H. Unknown or unsupported terminology",
+      "language": "hi",
+      "input_text": "गियर बक्सा 1400 rpm 5 hp",
+      "latency_ms": 41841.17,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"गियर बक्सा\",\n  \"material\": \"Steel\",\n  \"product_type\": \"Motor\",\n  \"model_part_number\": \"GIR-1400-5HP\",\n  \"dimensions\": \"179mm x 86mm x 100mm\",\n  \"engineering_grade\": \"A\",\n  \"quantity\": \"1\",\n  \"measurement_units\": \"mm\",\n  \"electrical_configuration\": \"AC\",\n  \"voltage_rating\": \"1400V\",\n  \"power_rating\": \"5hp\",\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "गियर बक्सा",
+        "material": "Steel",
+        "product_type": "Motor",
+        "model_part_number": "GIR-1400-5HP",
+        "dimensions": "179mm x 86mm x 100mm",
+        "engineering_grade": "A",
+        "quantity": "1",
+        "measurement_units": "mm",
+        "electrical_configuration": "AC",
+        "voltage_rating": "1400V",
+        "power_rating": "5hp",
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": false,
+        "product_type": false,
+        "model_part_number": false,
+        "dimensions": false,
+        "engineering_grade": false,
+        "quantity": false,
+        "electrical_configuration": false,
+        "voltage_rating": false,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [
+        "material='Steel' (not in input)",
+        "engineering_grade='A' (not in input)",
+        "voltage_rating='1400V' (not in input)",
+        "electrical_configuration='AC' (not in input)",
+        "quantity='1' (not in input)"
+      ],
+      "failures": [
+        "material_mismatch (pred=Steel, gt=None)",
+        "product_type_mismatch (pred=Motor, gt=['gearbox', 'speed reducer', 'transmission'])",
+        "model_part_number_mismatch (pred=GIR-1400-5HP, gt=None)",
+        "dimensions_mismatch (pred=179mm x 86mm x 100mm, gt=None)",
+        "engineering_grade_mismatch (pred=A, gt=None)",
+        "quantity_mismatch (pred=1, gt=None)",
+        "electrical_configuration_mismatch (pred=AC, gt=None)",
+        "voltage_rating_mismatch (pred=1400V, gt=None)"
+      ]
+    },
+    {
+      "id": "CASE-10",
+      "category": "Pipe fittings",
+      "input_type": "A. English baseline",
+      "language": "en",
+      "input_text": "industrial pipe fitting sch 40 class 150 ss 304 2 inch elbow",
+      "latency_ms": 38224.73,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"Sch 40 Class 150 SS 304 Elbow\",\n  \"material\": \"304 Stainless Steel\",\n  \"product_type\": \"Pipe Fitting\",\n  \"model_part_number\": \"N/A\",\n  \"dimensions\": \"2 inches\",\n  \"engineering_grade\": \"SS 304\",\n  \"quantity\": \"1\",\n  \"measurement_units\": \"inches\",\n  \"electrical_configuration\": \"Not specified\",\n  \"voltage_rating\": \"Not specified\",\n  \"power_rating\": \"Not specified\",\n  \"missing_attributes\": [\n    \"Dimensions\",\n    \"Engineering Grade\",\n    \"Measurement Units\",\n    \"Electrical Configuration\",\n    \"Voltage Rating\",\n    \"Power Rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "Sch 40 Class 150 SS 304 Elbow",
+        "material": "304 Stainless Steel",
+        "product_type": "Pipe Fitting",
+        "model_part_number": "N/A",
+        "dimensions": "2 inches",
+        "engineering_grade": "SS 304",
+        "quantity": "1",
+        "measurement_units": "inches",
+        "electrical_configuration": "Not specified",
+        "voltage_rating": "Not specified",
+        "power_rating": "Not specified",
+        "missing_attributes": [
+          "Dimensions",
+          "Engineering Grade",
+          "Measurement Units",
+          "Electrical Configuration",
+          "Voltage Rating",
+          "Power Rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": true,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": true,
+        "quantity": false,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [
+        "quantity='1' (not in input)"
+      ],
+      "failures": [
+        "quantity_mismatch (pred=1, gt=None)"
+      ]
+    },
+    {
+      "id": "CASE-11",
+      "category": "Pipe fittings",
+      "input_type": "B. Hindi",
+      "language": "hi",
+      "input_text": "stainless steel 304 औद्योगिक pipe fitting 2 inch एल्बो sch 40",
+      "latency_ms": 41270.21,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"stainless steel 304 औद्योगिक pipe fitting 2 inch एल्बो sch 40\",\n  \"material\": \"stainless steel\",\n  \"product_type\": \"pipe fitting\",\n  \"model_part_number\": null,\n  \"dimensions\": {\n    \"length\": \"2 inches\",\n    \"width\": \"null\",\n    \"height\": \"null\"\n  },\n  \"engineering_grade\": \"sch 40\",\n  \"quantity\": null,\n  \"measurement_units\": \"inches\",\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"length\",\n    \"width\",\n    \"height\"\n  ]\n}",
+      "parsed": {
+        "product_name": "stainless steel 304 औद्योगिक pipe fitting 2 inch एल्बो sch 40",
+        "material": "stainless steel",
+        "product_type": "pipe fitting",
+        "model_part_number": null,
+        "dimensions": {
+          "length": "2 inches",
+          "width": "null",
+          "height": "null"
+        },
+        "engineering_grade": "sch 40",
+        "quantity": null,
+        "measurement_units": "inches",
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "length",
+          "width",
+          "height"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": true,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": true,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": []
+    },
+    {
+      "id": "CASE-12",
+      "category": "Transformers and electrical equipment",
+      "input_type": "A. English baseline",
+      "language": "en",
+      "input_text": "10 kva transformer 3 phase 415v step down 50hz",
+      "latency_ms": 39249.93,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"10 kVA Transformer\",\n  \"material\": \"Iron Core\",\n  \"product_type\": \"Power Transformation Equipment\",\n  \"model_part_number\": \"T-10\",\n  \"dimensions\": \"1000mm x 800mm x 600mm\",\n  \"engineering_grade\": \"E级\",\n  \"quantity\": \"1\",\n  \"measurement_units\": \"kW\",\n  \"electrical_configuration\": \"三相四线制\",\n  \"voltage_rating\": \"50Hz\",\n  \"power_rating\": \"10kVA\",\n  \"missing_attributes\": [\n    \"insulation materials\",\n    \"manufacturer information\"\n  ]\n}",
+      "parsed": {
+        "product_name": "10 kVA Transformer",
+        "material": "Iron Core",
+        "product_type": "Power Transformation Equipment",
+        "model_part_number": "T-10",
+        "dimensions": "1000mm x 800mm x 600mm",
+        "engineering_grade": "E级",
+        "quantity": "1",
+        "measurement_units": "kW",
+        "electrical_configuration": "三相四线制",
+        "voltage_rating": "50Hz",
+        "power_rating": "10kVA",
+        "missing_attributes": [
+          "insulation materials",
+          "manufacturer information"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": false,
+        "product_type": false,
+        "model_part_number": false,
+        "dimensions": false,
+        "engineering_grade": false,
+        "quantity": false,
+        "electrical_configuration": false,
+        "voltage_rating": false,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [
+        "material='Iron Core' (not in input)",
+        "engineering_grade='E级' (not in input)",
+        "quantity='1' (not in input)"
+      ],
+      "failures": [
+        "material_mismatch (pred=Iron Core, gt=None)",
+        "product_type_mismatch (pred=Power Transformation Equipment, gt=['transformer', 'electrical equipment'])",
+        "model_part_number_mismatch (pred=T-10, gt=None)",
+        "dimensions_mismatch (pred=1000mm x 800mm x 600mm, gt=None)",
+        "engineering_grade_mismatch (pred=E级, gt=None)",
+        "quantity_mismatch (pred=1, gt=None)",
+        "electrical_configuration_mismatch (pred=三相四线制, gt=['3 phase', 'three phase'])",
+        "voltage_rating_mismatch (pred=50Hz, gt=['415v', '415 v', '415'])"
+      ]
+    },
+    {
+      "id": "CASE-13",
+      "category": "Transformers and electrical equipment",
+      "input_type": "C. Hinglish",
+      "language": "hi-Latn",
+      "input_text": "10 kva transformer 3 phase 415v electrical transformer",
+      "latency_ms": 42248.55,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"10 kVA Transformer\",\n  \"material\": \"Iron Core\",\n  \"product_type\": \"Electrical\",\n  \"model_part_number\": \"N/A\",\n  \"dimensions\": \"10 x 10 x 10 cm\",\n  \"engineering_grade\": \"E级\",\n  \"quantity\": \"1\",\n  \"measurement_units\": \"kVA\",\n  \"electrical_configuration\": \"三相四线制\",\n  \"voltage_rating\": \"415V\",\n  \"power_rating\": \"10kW\",\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "10 kVA Transformer",
+        "material": "Iron Core",
+        "product_type": "Electrical",
+        "model_part_number": "N/A",
+        "dimensions": "10 x 10 x 10 cm",
+        "engineering_grade": "E级",
+        "quantity": "1",
+        "measurement_units": "kVA",
+        "electrical_configuration": "三相四线制",
+        "voltage_rating": "415V",
+        "power_rating": "10kW",
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": false,
+        "product_type": true,
+        "model_part_number": true,
+        "dimensions": false,
+        "engineering_grade": false,
+        "quantity": false,
+        "electrical_configuration": false,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [
+        "material='Iron Core' (not in input)",
+        "engineering_grade='E级' (not in input)",
+        "quantity='1' (not in input)"
+      ],
+      "failures": [
+        "material_mismatch (pred=Iron Core, gt=None)",
+        "dimensions_mismatch (pred=10 x 10 x 10 cm, gt=None)",
+        "engineering_grade_mismatch (pred=E级, gt=None)",
+        "quantity_mismatch (pred=1, gt=None)",
+        "electrical_configuration_mismatch (pred=三相四线制, gt=['3 phase', 'three phase'])"
+      ]
+    },
+    {
+      "id": "CASE-14",
+      "category": "Bearings and machine components",
+      "input_type": "A. English baseline",
+      "language": "en",
+      "input_text": "ball bearing 6204-2rs chrome steel 20x47x14 mm",
+      "latency_ms": 40925.25,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"Ball Bearing\",\n  \"material\": \"Chrome Steel\",\n  \"product_type\": \"Mechanical Components\",\n  \"model_part_number\": \"6204-2rs\",\n  \"dimensions\": \"20mm x 47mm x 14mm\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "Ball Bearing",
+        "material": "Chrome Steel",
+        "product_type": "Mechanical Components",
+        "model_part_number": "6204-2rs",
+        "dimensions": "20mm x 47mm x 14mm",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": false,
+        "model_part_number": true,
+        "dimensions": false,
+        "engineering_grade": true,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "product_type_mismatch (pred=Mechanical Components, gt=['bearing', 'ball bearing'])",
+        "dimensions_mismatch (pred=20mm x 47mm x 14mm, gt=['20x47x14 mm', '20x47x14'])"
+      ]
+    },
+    {
+      "id": "CASE-15",
+      "category": "Bearings and machine components",
+      "input_type": "B. Hindi",
+      "language": "hi",
+      "input_text": "बॉल बेयरिंग 6204-2rs क्रोम स्टील 20x47x14 mm",
+      "latency_ms": 46074.01,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"बॉल बेयरिंग 6204-2rs\",\n  \"material\": \"CRM 20x47x14 mm\",\n  \"product_type\": \"क्रोम स्टील\",\n  \"model_part_number\": \"6204-2rs\",\n  \"dimensions\": \"20 x 47 x 14 mm\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "बॉल बेयरिंग 6204-2rs",
+        "material": "CRM 20x47x14 mm",
+        "product_type": "क्रोम स्टील",
+        "model_part_number": "6204-2rs",
+        "dimensions": "20 x 47 x 14 mm",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": false,
+        "product_type": false,
+        "model_part_number": true,
+        "dimensions": false,
+        "engineering_grade": true,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "material_mismatch (pred=CRM 20x47x14 mm, gt=['chrome steel', 'क्रोम स्टील', 'steel'])",
+        "product_type_mismatch (pred=क्रोम स्टील, gt=['bearing', 'ball bearing'])",
+        "dimensions_mismatch (pred=20 x 47 x 14 mm, gt=['20x47x14 mm', '20x47x14'])"
+      ]
+    },
+    {
+      "id": "CASE-16",
+      "category": "Mechanical fasteners",
+      "input_type": "Exploratory Tamil",
+      "language": "ta",
+      "input_text": "துருப்பிடிக்காத எஃகு ஹெக்ஸ் போல்ட் m12 x 50 mm",
+      "latency_ms": 47920.84,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"Thurpikakkattakhees Plothkettu M12 x 50mm\",\n  \"material\": null,\n  \"product_type\": \"Electrical appliance\",\n  \"model_part_number\": null,\n  \"dimensions\": {\n    \"length\": \"50mm\",\n    \"width\": \"m12\",\n    \"height\": \"null\"\n  },\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "Thurpikakkattakhees Plothkettu M12 x 50mm",
+        "material": null,
+        "product_type": "Electrical appliance",
+        "model_part_number": null,
+        "dimensions": {
+          "length": "50mm",
+          "width": "m12",
+          "height": "null"
+        },
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": false,
+        "material": false,
+        "product_type": false,
+        "model_part_number": false,
+        "dimensions": true,
+        "engineering_grade": true,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "product_name_mismatch (pred=Thurpikakkattakhees Plothkettu M12 x 50mm, gt=['hex bolt', 'bolt', 'ஹெக்ஸ் போல்ட்'])",
+        "material_mismatch (pred=None, gt=['stainless steel', 'துருப்பிடிக்காத எஃகு'])",
+        "product_type_mismatch (pred=Electrical appliance, gt=['fastener', 'bolt'])",
+        "model_part_number_mismatch (pred=None, gt=['m12 x 50 mm', 'm12'])"
+      ]
+    },
+    {
+      "id": "CASE-17",
+      "category": "Electrical wires and cables",
+      "input_type": "Exploratory Tamil",
+      "language": "ta",
+      "input_text": "செம்பு wire 2.5 sq mm 415v",
+      "latency_ms": 276405.72,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"செம்பு\",\n  \"material\": \"wire\",\n  \"product_type\": \"Electrical\",\n  \"model_part_number\": \"\",\n  \"dimensions\": \"2.5 sq mm\",\n  \"engineering_grade\": null,\n  \"quantity\": \"415v\",\n  \"measurement_units\": \"V\",\n  \"electrical_configuration\": \"AC\",\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "செம்பு",
+        "material": "wire",
+        "product_type": "Electrical",
+        "model_part_number": "",
+        "dimensions": "2.5 sq mm",
+        "engineering_grade": null,
+        "quantity": "415v",
+        "measurement_units": "V",
+        "electrical_configuration": "AC",
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": false,
+        "product_type": true,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": true,
+        "quantity": false,
+        "electrical_configuration": false,
+        "voltage_rating": false,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [
+        "electrical_configuration='AC' (not in input)",
+        "quantity='415v' (not in input)"
+      ],
+      "failures": [
+        "material_mismatch (pred=wire, gt=['copper', 'செம்பு'])",
+        "quantity_mismatch (pred=415v, gt=None)",
+        "electrical_configuration_mismatch (pred=AC, gt=None)",
+        "voltage_rating_mismatch (pred=None, gt=['415v', '415 v', '415'])"
+      ]
+    },
+    {
+      "id": "CASE-18",
+      "category": "Electrical wires and cables",
+      "input_type": "Exploratory Marathi",
+      "language": "mr",
+      "input_text": "तांब्याची वायर 2.5 sq mm 3 phase 415v",
+      "latency_ms": 31939.79,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"वायर\",\n  \"material\": \"वायर\",\n  \"product_type\": \"किलोपैमा गुना किलोपैमा\",\n  \"model_part_number\": null,\n  \"dimensions\": \"2.5 sq mm\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": \"mm²\",\n  \"electrical_configuration\": \"3 phase\",\n  \"voltage_rating\": \"415v\",\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"किलोपैमा गुना किलोपैमा\",\n    \"किलोपैमा गुना किलोपैमा\"\n  ]\n}",
+      "parsed": {
+        "product_name": "वायर",
+        "material": "वायर",
+        "product_type": "किलोपैमा गुना किलोपैमा",
+        "model_part_number": null,
+        "dimensions": "2.5 sq mm",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": "mm²",
+        "electrical_configuration": "3 phase",
+        "voltage_rating": "415v",
+        "power_rating": null,
+        "missing_attributes": [
+          "किलोपैमा गुना किलोपैमा",
+          "किलोपैमा गुना किलोपैमा"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": false,
+        "product_type": false,
+        "model_part_number": true,
+        "dimensions": true,
+        "engineering_grade": true,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "material_mismatch (pred=वायर, gt=['copper', 'तांबे', 'तांब्याची'])",
+        "product_type_mismatch (pred=किलोपैमा गुना किलोपैमा, gt=['electrical wire', 'wire'])"
+      ]
+    },
+    {
+      "id": "CASE-19",
+      "category": "Mechanical fasteners",
+      "input_type": "Exploratory Marathi",
+      "language": "mr",
+      "input_text": "stainless steel हेक्स bolt m12 x 50 mm",
+      "latency_ms": 27404.62,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"Hékesk Steel M12 x 50mm Stainless Steel Bolt\",\n  \"material\": \"Stainless Steel\",\n  \"product_type\": \"Hardware\",\n  \"model_part_number\": null,\n  \"dimensions\": \"50mm x 50mm x 12mm\",\n  \"engineering_grade\": null,\n  \"quantity\": null,\n  \"measurement_units\": null,\n  \"electrical_configuration\": null,\n  \"voltage_rating\": null,\n  \"power_rating\": null,\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "Hékesk Steel M12 x 50mm Stainless Steel Bolt",
+        "material": "Stainless Steel",
+        "product_type": "Hardware",
+        "model_part_number": null,
+        "dimensions": "50mm x 50mm x 12mm",
+        "engineering_grade": null,
+        "quantity": null,
+        "measurement_units": null,
+        "electrical_configuration": null,
+        "voltage_rating": null,
+        "power_rating": null,
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": false,
+        "model_part_number": false,
+        "dimensions": false,
+        "engineering_grade": true,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "product_type_mismatch (pred=Hardware, gt=['fastener', 'bolt'])",
+        "model_part_number_mismatch (pred=None, gt=['m12 x 50 mm', 'm12'])",
+        "dimensions_mismatch (pred=50mm x 50mm x 12mm, gt=['m12 x 50 mm', 'm12', '50 mm'])"
+      ]
+    },
+    {
+      "id": "CASE-20",
+      "category": "Mechanical fasteners",
+      "input_type": "A. English baseline (with quantity)",
+      "language": "en",
+      "input_text": "ss 304 hex bolt m12 x 50 mm 100 pcs",
+      "latency_ms": 30165.73,
+      "is_valid_json": true,
+      "error": "",
+      "raw_output": "{\n  \"product_name\": \"SS 304 Hex Bolt M12 x 50mm\",\n  \"material\": \"Steel\",\n  \"product_type\": \"Hardware\",\n  \"model_part_number\": \"N/A\",\n  \"dimensions\": \"100pcs x 12mm x 50mm\",\n  \"engineering_grade\": \"HBS\",\n  \"quantity\": 100,\n  \"measurement_units\": \"mm\",\n  \"electrical_configuration\": \"Not specified\",\n  \"voltage_rating\": \"Not specified\",\n  \"power_rating\": \"Not specified\",\n  \"missing_attributes\": [\n    \"material\",\n    \"dimensions\",\n    \"engineering_grade\",\n    \"quantity\",\n    \"measurement_units\",\n    \"electrical_configuration\",\n    \"voltage_rating\",\n    \"power_rating\"\n  ]\n}",
+      "parsed": {
+        "product_name": "SS 304 Hex Bolt M12 x 50mm",
+        "material": "Steel",
+        "product_type": "Hardware",
+        "model_part_number": "N/A",
+        "dimensions": "100pcs x 12mm x 50mm",
+        "engineering_grade": "HBS",
+        "quantity": 100,
+        "measurement_units": "mm",
+        "electrical_configuration": "Not specified",
+        "voltage_rating": "Not specified",
+        "power_rating": "Not specified",
+        "missing_attributes": [
+          "material",
+          "dimensions",
+          "engineering_grade",
+          "quantity",
+          "measurement_units",
+          "electrical_configuration",
+          "voltage_rating",
+          "power_rating"
+        ]
+      },
+      "attribute_scores": {
+        "product_name": true,
+        "material": true,
+        "product_type": false,
+        "model_part_number": false,
+        "dimensions": false,
+        "engineering_grade": false,
+        "quantity": true,
+        "electrical_configuration": true,
+        "voltage_rating": true,
+        "power_rating": true,
+        "missing_attribute_detection": true
+      },
+      "hallucinations": [],
+      "failures": [
+        "product_type_mismatch (pred=Hardware, gt=['fastener', 'bolt'])",
+        "model_part_number_mismatch (pred=N/A, gt=['m12 x 50 mm', 'm12'])",
+        "dimensions_mismatch (pred=100pcs x 12mm x 50mm, gt=['m12 x 50 mm', 'm12', '50 mm'])",
+        "engineering_grade_mismatch (pred=HBS, gt=['ss 304', '304'])"
+      ]
+    }
+  ]
+}

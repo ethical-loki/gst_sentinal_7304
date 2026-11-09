@@ -1,12 +1,11 @@
 """
 Universal Tariff Ingestion Pipeline: scripts/ingest_tariff.py
-Parses and normalizes the comprehensive 8-digit statutory ITC-HS tariff schedule
-(all 98 chapters, ~12,000+ tariff lines), enriches with official chapter titles and
-statutory trade sub-heading search contexts, resolves central/state GST rates and
-Section 17(5) blocked ITC rules, and persists to data/tariff_master.parquet.
+Parses and normalizes the official HSN & SAC Master Schedule from data/raw/HSN_SAC (1).xlsx
+(both HSN_MSTR and SAC_MSTR sheets, reconstructing full hierarchical descriptions from
+2-digit/4-digit/6-digit ancestors down to 8-digit HSN and 6-digit SAC codes, with standard_rate=None/null),
+and persists to data/tariff_master.parquet and data/raw/tariff_master.parquet.
 """
 
-import json
 import os
 import re
 from pathlib import Path
@@ -15,10 +14,9 @@ import numpy as np
 import pandas as pd
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-RAW_ITC_HS_JSON = ROOT_DIR / "data" / "raw" / "itc_hs_codes.json"
-RAW_GST_RATES_JSON = ROOT_DIR / "data" / "raw" / "gst_rates.json"
-RAW_EXCEL_PATH = ROOT_DIR / "data" / "raw" / "Final_hsn_sac_copy.xlsx"
+RAW_EXCEL_PATH = ROOT_DIR / "data" / "raw" / "Final_Copy_hsn_7304.xlsx"
 OUTPUT_PARQUET_PATH = ROOT_DIR / "data" / "tariff_master.parquet"
+RAW_OUTPUT_PARQUET_PATH = ROOT_DIR / "data" / "raw" / "tariff_master.parquet"
 
 # Section 17(5) Blocked ITC rules
 BLOCKED_17_5_CHAPTERS = {
@@ -129,7 +127,8 @@ CHAPTER_TITLES: Dict[str, str] = {
     "95": "Toys, games and sports requisites, parts and accessories thereof",
     "96": "Miscellaneous manufactured articles, pens, brushes, buttons, slide fasteners",
     "97": "Works of art, collectors pieces and antiques",
-    "98": "Project imports, laboratory chemicals, passengers baggage"
+    "98": "Project imports, laboratory chemicals, passengers baggage",
+    "99": "Services (SAC - Services Accounting Code), construction, IT, transport, financial, professional services"
 }
 
 HEADING_SYNONYMS: Dict[str, str] = {
@@ -154,11 +153,13 @@ HEADING_SYNONYMS: Dict[str, str] = {
 
 
 def clean_text_description(text: object) -> str:
-    """Cleans statutory text description: lowercases and normalizes whitespace."""
+    """Cleans statutory text description: normalizes whitespace."""
     if text is None or (isinstance(text, float) and pd.isna(text)):
         return ""
     text_str = str(text).strip()
     text_str = re.sub(r"[\x00-\x1f\x7f-\x9f\u200b-\u200d\ufeff]", " ", text_str)
+    # Remove spreadsheet artifact like '+L14152'
+    text_str = re.sub(r"\+L\d+", "", text_str)
     return re.sub(r"\s+", " ", text_str).strip()
 
 
@@ -168,61 +169,182 @@ def normalize_clean_description(text: str) -> str:
     return re.sub(r"\s+", " ", cleaned).strip()
 
 
+def normalize_hsn_sac_code(raw_code: object) -> str:
+    """Normalizes HSN/SAC code string into 2, 4, 6, or 8 digits."""
+    if raw_code is None or (isinstance(raw_code, float) and pd.isna(raw_code)):
+        return ""
+    digits = re.sub(r"\D", "", str(raw_code).strip())
+    if not digits:
+        return ""
+    if len(digits) == 3:
+        digits = digits.zfill(4)
+    elif len(digits) == 5:
+        digits = digits.zfill(6)
+    elif len(digits) == 7:
+        digits = digits.zfill(8)
+    return digits
+
+
+def parse_hsn_sac_master_excel(excel_path: Path = RAW_EXCEL_PATH) -> List[Dict]:
+    """
+    Parses official HSN & SAC Master from data/raw/Final_Copy_hsn_7304.xlsx
+    (or dual-sheet HSN_MSTR / SAC_MSTR if present).
+    Reconstructs full hierarchical context descriptions for 6-digit and 8-digit codes
+    from their 4-digit and 6-digit parent rows so every leaf item is self-contained.
+    """
+    if not excel_path.exists():
+        fallback = ROOT_DIR / "data" / "raw" / "HSN_SAC (1).xlsx"
+        if fallback.exists():
+            excel_path = fallback
+        else:
+            raise FileNotFoundError(f"Tariff Excel file not found at {excel_path}")
+
+    xl = pd.ExcelFile(excel_path)
+    sheet_names = xl.sheet_names
+    raw_rows: List[Tuple[str, str, str]] = []
+
+    if "HSN_MSTR" in sheet_names and "SAC_MSTR" in sheet_names:
+        df_hsn = xl.parse("HSN_MSTR", dtype=str)
+        df_sac = xl.parse("SAC_MSTR", dtype=str)
+
+        for _, row in df_hsn.iterrows():
+            c = normalize_hsn_sac_code(row.iloc[0])
+            d = clean_text_description(row.iloc[1])
+            if c and d and len(c) in (2, 4, 6, 8):
+                raw_rows.append((c, d, "HSN"))
+
+        for _, row in df_sac.iterrows():
+            c = normalize_hsn_sac_code(row.iloc[0])
+            d = clean_text_description(row.iloc[1])
+            if c and d and len(c) in (2, 4, 6, 8):
+                raw_rows.append((c, d, "SAC"))
+    else:
+        # Single-sheet structure (e.g. Final_Copy_hsn_7304.xlsx)
+        df_master = xl.parse(sheet_names[0], dtype=str)
+        code_col_idx = 0
+        desc_col_idx = 1
+        for idx, col in enumerate(df_master.columns):
+            c_low = str(col).lower()
+            if "desc" in c_low:
+                desc_col_idx = idx
+            elif "code" in c_low or "hsn" in c_low:
+                code_col_idx = idx
+
+        for _, row in df_master.iterrows():
+            c = normalize_hsn_sac_code(row.iloc[code_col_idx])
+            d = clean_text_description(row.iloc[desc_col_idx])
+            if c and d and len(c) in (2, 4, 6, 8):
+                code_type = "SAC" if c.startswith("99") else "HSN"
+                raw_rows.append((c, d, code_type))
+
+    # First pass: build lookup of 2-digit, 4-digit, 5-digit group, and 6-digit parent descriptions
+    desc_4d: Dict[str, str] = {}
+    desc_5d: Dict[str, str] = {}
+    desc_6d: Dict[str, str] = {}
+    has_children_6d: Set[str] = set()
+
+    for c, d, _ in raw_rows:
+        if len(c) == 4 and c not in desc_4d:
+            desc_4d[c] = d.rstrip(" :.-")
+        elif len(c) == 6 and c not in desc_6d:
+            desc_6d[c] = d.rstrip(" :.-")
+        elif len(c) == 8:
+            has_children_6d.add(c[:6])
+            # Extract intermediate 5-digit group title from 8-digit rows that contain " - <GROUP TITLE> :"
+            g5 = c[:5]
+            if g5 not in desc_5d and " - " in d:
+                after_dash = d.split(" - ", 1)[1]
+                if ":" in after_dash:
+                    grp_title = after_dash.split(":", 1)[0].strip(" :.-")
+                    if len(grp_title) > 4:
+                        desc_5d[g5] = grp_title
+
+    # Second pass: assemble enriched records for all HSNs and SACs from HSN_SAC (1).xlsx
+    expanded_rows: List[Dict] = []
+    for c, d, code_type in raw_rows:
+        h4 = c[:4] if len(c) >= 4 else c.zfill(4)
+        g5 = c[:5] if len(c) >= 6 else ""
+        s6 = c[:6] if len(c) >= 6 else ""
+        p4 = desc_4d.get(h4, "")
+        p5 = desc_5d.get(g5, "") if g5 else ""
+        p6 = desc_6d.get(s6, "") if s6 else ""
+
+        if len(c) == 8:
+            # Build hierarchical description: [4-digit Heading] - [5-digit Group] : -- [6-digit Subheading] : --- [8-digit Leaf]
+            d_low = d.lower()
+            parts: List[str] = []
+            if p4 and p4.lower()[:25] not in d_low:
+                parts.append(p4)
+            if p5 and p5.lower()[:20] not in d_low and (not p6 or p5.lower()[:20] not in p6.lower()):
+                parts.append(p5)
+            if p6 and p6.lower() not in d_low and (not p4 or p6.lower() != p4.lower()):
+                parts.append(f"-- {p6}")
+            parts.append(d)
+            if len(parts) == 1:
+                full_desc = parts[0]
+            elif len(parts) == 2:
+                full_desc = f"{parts[0]} - {parts[1]}"
+            else:
+                full_desc = f"{parts[0]} - {' : '.join(parts[1:-1])} : --- {parts[-1]}"
+        elif len(c) == 6:
+            if p4 and p4.lower()[:25] not in d.lower():
+                full_desc = f"{p4} - {d}"
+            else:
+                full_desc = d
+        else:
+            full_desc = d
+
+        expanded_rows.append({
+            "hsn_code": c,
+            "description": full_desc,
+            "raw_leaf_description": d,
+            "code_type": code_type,
+            "standard_rate": None,
+        })
+
+    return expanded_rows
+
+
 def ingest_universal_tariff(
-    json_path: Path = RAW_ITC_HS_JSON,
-    rates_path: Path = RAW_GST_RATES_JSON,
+    excel_path: Path = RAW_EXCEL_PATH,
     out_path: Path = OUTPUT_PARQUET_PATH,
+    raw_out_path: Path = RAW_OUTPUT_PARQUET_PATH,
 ) -> pd.DataFrame:
-    """Ingests the comprehensive 8-digit ITC-HS tariff master and serializes to parquet."""
+    """Ingests the official HSN & SAC Master Schedule from HSN_SAC (1).xlsx and serializes to parquet."""
     print("=" * 70)
-    print("   UNIVERSAL 8-DIGIT ITC-HS STATUTORY TARIFF INGESTION PIPELINE   ")
+    print("   OFFICIAL HSN & SAC MASTER SCHEDULE INGESTION (HSN_SAC (1).xlsx)   ")
     print("=" * 70)
 
-    if not json_path.exists():
-        raise FileNotFoundError(f"Universal ITC-HS JSON file not found at {json_path}")
-
-    print(f"[*] Reading comprehensive ITC-HS codes from {json_path}...")
-    with open(json_path, "r", encoding="utf-8") as f:
-        itc_hs_data = json.load(f)
-
-    rates_map: Dict[str, float] = {}
-    if rates_path.exists():
-        print(f"[*] Reading GST rates from {rates_path}...")
-        with open(rates_path, "r", encoding="utf-8") as f:
-            rates_data = json.load(f)
-        for r in rates_data:
-            c = str(r.get("code", "")).zfill(8)
-            rates_map[c] = float(r.get("igstRate", 18.0))
+    print(f"[*] Reading and parsing HSN_MSTR and SAC_MSTR from {excel_path}...")
+    expanded_rows = parse_hsn_sac_master_excel(excel_path)
+    print(f"[*] Extracted {len(expanded_rows):,} hierarchical HSN/SAC entries from {excel_path.name}")
 
     records: List[Dict] = []
     seen_keys: Set[str] = set()
 
-    for item in itc_hs_data:
-        raw_code = str(item.get("code", "")).strip()
-        desc = clean_text_description(item.get("description", ""))
-        if not raw_code or not desc:
+    for item in expanded_rows:
+        hsn_code = str(item["hsn_code"]).strip()
+        desc = clean_text_description(item["description"])
+        if not hsn_code or not desc:
             continue
 
-        hsn_8d = raw_code.zfill(8)
-        chapter = hsn_8d[:2]
-        heading = hsn_8d[:4]
+        chapter = hsn_code[:2].zfill(2)
+        heading = hsn_code[:4] if len(hsn_code) >= 4 else hsn_code.zfill(4)
 
         ch_title = CHAPTER_TITLES.get(chapter, "")
         heading_syn = HEADING_SYNONYMS.get(heading, "")
 
-        # Assemble rich search_text
         search_components = [
             f"Chapter {chapter} - {ch_title}",
             f"Heading {heading} - {heading_syn}" if heading_syn else f"Heading {heading}",
-            f"{hsn_8d} {desc}",
+            f"{hsn_code} {desc}",
         ]
         search_text = " | ".join(search_components)
 
-        rate = rates_map.get(hsn_8d, 18.0)
         is_blocked = 1 if heading in BLOCKED_17_5_CHAPTERS else 0
         blocked_reason = BLOCKED_17_5_CHAPTERS.get(heading, "Eligible: General ITC")
 
-        key = f"{hsn_8d}_{desc[:40]}"
+        key = hsn_code
         if key in seen_keys:
             continue
         seen_keys.add(key)
@@ -230,62 +352,33 @@ def ingest_universal_tariff(
         clean_desc = normalize_clean_description(f"{desc} {heading_syn}")
 
         records.append({
-            "hsn_code": hsn_8d,
+            "hsn_code": hsn_code,
             "heading": heading,
             "hsn_4digit": heading,
             "chapter": chapter,
             "description": desc,
+            "hsn_description": desc,
             "search_text": search_text,
             "clean_description": clean_desc,
-            "standard_rate": float(rate),
+            "standard_rate": None,
             "is_blocked_17_5": int(is_blocked),
             "blocked_17_5_reason": blocked_reason,
             "effective_date": "2025-09-22",
         })
 
-    # Also generate aggregate 4-digit heading level entries
-    heading_groups = {}
-    for r in records:
-        h = r["heading"]
-        if h not in heading_groups:
-            heading_groups[h] = []
-        heading_groups[h].append(r)
-
-    for h, group in heading_groups.items():
-        ch = h[:2]
-        ch_title = CHAPTER_TITLES.get(ch, "")
-        heading_syn = HEADING_SYNONYMS.get(h, "")
-        combined_descs = " ; ".join(g["description"] for g in group[:5])
-        agg_desc = f"{heading_syn.title() if heading_syn else 'Heading ' + h} - {combined_descs}"
-        
-        search_text = f"Chapter {ch} - {ch_title} | Heading {h} - {heading_syn} | {combined_descs}"
-        clean_desc = normalize_clean_description(f"{heading_syn} {combined_descs}")
-
-        records.append({
-            "hsn_code": h,
-            "heading": h,
-            "hsn_4digit": h,
-            "chapter": ch,
-            "description": agg_desc[:300],
-            "search_text": search_text,
-            "clean_description": clean_desc,
-            "standard_rate": float(group[0]["standard_rate"]),
-            "is_blocked_17_5": int(group[0]["is_blocked_17_5"]),
-            "blocked_17_5_reason": group[0]["blocked_17_5_reason"],
-            "effective_date": "2025-09-22",
-        })
-
     df = pd.DataFrame(records)
-
-    # Deduplicate and sort deterministically
+    df["standard_rate"] = pd.Series([None] * len(df), dtype="float64")
     df = df.drop_duplicates(subset=["hsn_code", "description"]).reset_index(drop=True)
     df = df.sort_values(by=["chapter", "heading", "hsn_code"]).reset_index(drop=True)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(out_path, engine="pyarrow", index=False)
 
-    print(f"[OK] Ingestion complete. Serialized {len(df):,} universal tariff records to {out_path}")
-    print(f"     Chapters: {df['chapter'].nunique()} | 4-digit Headings: {df['heading'].nunique()} | Unique HSNs: {df['hsn_code'].nunique()}")
+    raw_out_path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(raw_out_path, engine="pyarrow", index=False)
+
+    print(f"[OK] Ingestion complete. Serialized {len(df):,} official HSN/SAC records to {out_path} and {raw_out_path}")
+    print(f"     Chapters: {df['chapter'].nunique()} | 4-digit Headings: {df['heading'].nunique()} | Unique HSN/SACs: {df['hsn_code'].nunique()}")
     return df
 
 

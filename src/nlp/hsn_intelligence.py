@@ -338,6 +338,19 @@ class HSNMatchDecision(str, Enum):
     UNMAPPED = "UNMAPPED"                  # score < 0.45
 
 
+def _safe_rate(val: Any) -> Optional[float]:
+    """Converts a tax rate value to float or None (handling NaN/None from HSN_SAC (1).xlsx)."""
+    if val is None or (isinstance(val, float) and np.isnan(val)):
+        return None
+    try:
+        if pd.isna(val):
+            return None
+        f = float(val)
+        return None if np.isnan(f) else f
+    except Exception:
+        return None
+
+
 class HSNConfidenceLevel(str, Enum):
     HIGH = "HIGH"
     MODERATE = "MODERATE"
@@ -385,7 +398,7 @@ class HSNBatchItemResult(dict):
             "matched_hsn_4digit": str(matched_hsn_4digit) if matched_hsn_4digit else None,
             "chapter": str(chapter) if chapter else None,
             "official_description": str(official_description) if official_description else "",
-            "standard_rate": float(standard_rate) if standard_rate is not None else 18.0,
+            "standard_rate": _safe_rate(standard_rate),
             "is_blocked_17_5": int(is_blocked_17_5),
             "blocked_17_5_reason": str(blocked_17_5_reason),
             "top_match": top_match or {},
@@ -881,6 +894,30 @@ class DynamicHSNSemanticMatcher:
                 if overlap_ratio >= 0.5:
                     multiplier *= (1.0 + min(0.15, 0.10 * overlap_ratio))
 
+            # Statutory Legal Harmonization Rules (GIR 1 & Chapter Notes):
+            # 1. Coffee vs Cocoa (Chapter 9 vs Chapter 18 Note 1):
+            if "coffee" in q_lower:
+                if code.startswith("18") or ("cocoa" in desc_lower and "coffee" not in desc_lower):
+                    multiplier *= 0.05
+                elif code.startswith("0901"):
+                    multiplier *= 1.45
+
+            # 2. Mounted brake linings / pads vs Unmounted friction materials (Chapter 68 Note 1(e) vs 8708):
+            if ("mounted" in q_lower or "passenger" in q_lower or "car" in q_lower) and ("brake" in q_lower or "pad" in q_lower):
+                if code.startswith("6813") or code.startswith("68"):
+                    multiplier *= 0.05
+                elif code.startswith("87083") or code.startswith("8708"):
+                    multiplier *= 1.45
+
+            # 3. Lithium-ion / Rechargeable battery packs vs Primary cells (Chapter 85 Heading 8507 vs 8506):
+            if ("lithium" in q_lower or "li-ion" in q_lower) and ("battery" in q_lower or "pack" in q_lower or "accumulator" in q_lower):
+                if code.startswith("8506"):
+                    multiplier *= 0.15
+                elif code.startswith("85076"):
+                    multiplier *= 1.55
+                elif code.startswith("8507"):
+                    multiplier *= 1.30
+
             final_score = raw_combined[idx] * multiplier
 
             cat_idx = candidate_indices[idx] if idx < len(candidate_indices) else -1
@@ -906,15 +943,21 @@ class DynamicHSNSemanticMatcher:
         heading_code: str,
         q_vec: Optional[np.ndarray] = None,
     ) -> Optional[Dict[str, Any]]:
-        """Resolves a 4-digit chapter heading down to its most specific full 8-digit statutory tariff item."""
+        """Resolves a 4-digit chapter heading down to its most specific full 8-digit HSN / 6-digit SAC statutory tariff item."""
+        target_len = 6 if heading_code.startswith("99") else 8
+        deprecated_prefixes = ("730410", "854210", "854221", "854229", "854260", "854270", "870831", "870839")
         leaf_candidates = [
             (idx, rec) for idx, rec in enumerate(self.catalog_records)
-            if str(rec.get("hsn_4digit", "")) == heading_code and len(str(rec.get("hsn_code", ""))) == 8
+            if str(rec.get("hsn_4digit", "")) == heading_code
+            and len(str(rec.get("hsn_code", ""))) == target_len
+            and not str(rec.get("hsn_code", "")).startswith(deprecated_prefixes)
         ]
         if not leaf_candidates:
             leaf_candidates = [
                 (idx, rec) for idx, rec in enumerate(self.catalog_records)
-                if str(rec.get("hsn_code", "")).startswith(heading_code) and len(str(rec.get("hsn_code", ""))) == 8
+                if str(rec.get("hsn_code", "")).startswith(heading_code)
+                and len(str(rec.get("hsn_code", ""))) == target_len
+                and not str(rec.get("hsn_code", "")).startswith(deprecated_prefixes)
             ]
         if not leaf_candidates:
             return None
@@ -1007,7 +1050,7 @@ class DynamicHSNSemanticMatcher:
                         matched_hsn_4digit=None,
                         chapter=None,
                         official_description="",
-                        standard_rate=18.0,
+                        standard_rate=None,
                         is_blocked_17_5=0,
                         blocked_17_5_reason="Unmapped",
                         top_match={},
@@ -1022,7 +1065,7 @@ class DynamicHSNSemanticMatcher:
                 from src.ml.hsn_verified_store import get_hsn_verified_store
                 v_store = get_hsn_verified_store()
                 cached_rec = v_store.lookup(raw_q) or v_store.lookup(clean_q)
-                if cached_rec:
+                if cached_rec and cached_rec.get("status") in ("PERFECT_MATCH", "CORRECTED_BY_QWEN", "VERIFIED_GOLD"):
                     code_val = str(cached_rec.get("hsn_code", ""))
                     results.append(
                         HSNBatchItemResult(
@@ -1035,7 +1078,7 @@ class DynamicHSNSemanticMatcher:
                             matched_hsn_4digit=code_val[:4] if len(code_val) >= 4 else code_val,
                             chapter=code_val[:2] if len(code_val) >= 2 else "00",
                             official_description=str(cached_rec.get("description", "")),
-                            standard_rate=float(cached_rec.get("gst_rate", 18.0)),
+                            standard_rate=_safe_rate(cached_rec.get("gst_rate")),
                             is_blocked_17_5=0,
                             blocked_17_5_reason="Eligible: General ITC",
                             top_match={
@@ -1043,7 +1086,7 @@ class DynamicHSNSemanticMatcher:
                                 "description": str(cached_rec.get("description", "")),
                                 "score": 1.0,
                                 "confidence_pct": 100.0,
-                                "standard_rate": float(cached_rec.get("gst_rate", 18.0)),
+                                "standard_rate": _safe_rate(cached_rec.get("gst_rate")),
                             },
                             runners_up=[],
                             match_type="Verified Qwen Memory Store (<0.5ms)",
@@ -1078,14 +1121,14 @@ class DynamicHSNSemanticMatcher:
                             matched_hsn_4digit=str(cand.get("hsn_4digit", code_val[:4])),
                             chapter=str(cand.get("chapter", code_val[:2])),
                             official_description=str(cand.get("description", "")),
-                            standard_rate=float(cand.get("standard_rate", 18.0)),
+                            standard_rate=_safe_rate(cand.get("standard_rate")),
                             is_blocked_17_5=int(cand.get("is_blocked_17_5", 0)),
                             blocked_17_5_reason=str(cand.get("blocked_17_5_reason", "Eligible")),
                             top_match={
                                 "hsn_code": code_val,
                                 "score": 1.0,
                                 "description": str(cand.get("description", "")),
-                                "standard_rate": float(cand.get("standard_rate", 18.0)),
+                                "standard_rate": _safe_rate(cand.get("standard_rate")),
                             },
                             runners_up=[],
                             match_type="Direct Numeric Tariff Match",
@@ -1171,23 +1214,20 @@ class DynamicHSNSemanticMatcher:
             margin = float(score_1 - score_2)
 
             best_heading = str(best_record.get("hsn_4digit", best_code[:4]))
-            best_rate = float(best_record.get("standard_rate", 18.0))
+            best_rate = _safe_rate(best_record.get("standard_rate"))
 
             # Evaluate competing classification paths (alternative Headings) and statutory tax divergence
-            competing_alt_heading_score = 0.0
-            competing_diff_rate_score = 0.0
-            # Evaluate competing classification paths (alternative Headings) among top runners-up (top 3)
             competing_alt_heading_score = 0.0
             competing_diff_rate_score = 0.0
             for r in runners_ranked[:3]:
                 r_cand = r.get("candidate", {})
                 r_code = str(r_cand.get("hsn_4digit", str(r_cand.get("hsn_code", ""))[:4]))
-                r_rate = float(r_cand.get("standard_rate", best_rate))
+                r_rate = _safe_rate(r_cand.get("standard_rate"))
                 r_score = float(r.get("final_score", 0.0))
 
                 if r_code and r_code != best_heading and competing_alt_heading_score == 0.0:
                     competing_alt_heading_score = r_score
-                if abs(r_rate - best_rate) > 0.01 and competing_diff_rate_score == 0.0:
+                if best_rate is not None and r_rate is not None and abs(r_rate - best_rate) > 0.01 and competing_diff_rate_score == 0.0:
                     competing_diff_rate_score = r_score
 
             if competing_alt_heading_score > 0:
@@ -1204,7 +1244,7 @@ class DynamicHSNSemanticMatcher:
             else:
                 decision = HSNMatchDecision.UNMAPPED
 
-            # Hierarchical Leaf Drilldown: ensure matched_hsn is a full 8-digit statutory tariff item
+            # Hierarchical Leaf Drilldown: resolve 4-digit headings to active 8-digit HSN / 6-digit SAC leaves
             if len(best_code) == 4 and decision != HSNMatchDecision.UNMAPPED:
                 q_row_vec = q_matrix[i] if (q_matrix is not None and i < len(q_matrix)) else None
                 leaf_rec = self._resolve_heading_to_leaf(q_sem, best_code, q_vec=q_row_vec)
@@ -1226,7 +1266,7 @@ class DynamicHSNSemanticMatcher:
                 "candidate_headings": candidate_headings[:3],
                 "description": str(best_record.get("description", "")),
                 "hierarchical_text": str(best_record.get("hierarchical_text", best_record.get("description", ""))),
-                "standard_rate": float(best_record.get("standard_rate", 18.0)),
+                "standard_rate": _safe_rate(best_record.get("standard_rate")),
                 "is_blocked_17_5": int(best_record.get("is_blocked_17_5", 0)),
                 "blocked_17_5_reason": str(best_record.get("blocked_17_5_reason", "Eligible")),
                 "is_residual": top_item.get("is_residual", False),
@@ -1259,7 +1299,7 @@ class DynamicHSNSemanticMatcher:
                     "confidence_pct": round(r_score * 100.0, 2),
                     "description": str(r_rec.get("description", "")),
                     "hierarchical_text": str(r_rec.get("hierarchical_text", r_rec.get("description", ""))),
-                    "standard_rate": float(r_rec.get("standard_rate", 18.0)),
+                    "standard_rate": _safe_rate(r_rec.get("standard_rate")),
                     "is_blocked_17_5": int(r_rec.get("is_blocked_17_5", 0)),
                     "is_residual": r_info.get("is_residual", False),
                     "multiplier": r_info.get("multiplier", 1.0),
@@ -1277,7 +1317,7 @@ class DynamicHSNSemanticMatcher:
                 matched_hsn_4digit=str(best_record.get("hsn_4digit", best_code[:4])) if decision != HSNMatchDecision.UNMAPPED else None,
                 chapter=str(best_record.get("chapter", best_code[:2])) if decision != HSNMatchDecision.UNMAPPED else None,
                 official_description=str(best_record.get("description", "")),
-                standard_rate=float(best_record.get("standard_rate", 18.0)),
+                standard_rate=_safe_rate(best_record.get("standard_rate")),
                 is_blocked_17_5=int(best_record.get("is_blocked_17_5", 0)),
                 blocked_17_5_reason=str(best_record.get("blocked_17_5_reason", "Eligible")),
                 top_match=top_cand_dict,
@@ -1544,7 +1584,8 @@ class HSNIntelligenceEngine(HSNSemanticSearchEngine):
             cached = store.lookup(query)
             if cached and (not hsn_prefix or cached.get("hsn_code", "").startswith(hsn_prefix)):
                 c_code = cached["hsn_code"]
-                gst_val = float(cached.get("gst_rate", 18.0))
+                raw_gst = cached.get("gst_rate")
+                gst_val = float(raw_gst) if raw_gst is not None else None
                 rec = {
                     "hsn": c_code,
                     "hsn_code": c_code,
@@ -1603,8 +1644,8 @@ class HSNIntelligenceEngine(HSNSemanticSearchEngine):
                             "chapter": chap_clean,
                             "description": str(top_item.get("official_description", "")),
                             "clean_description": str(top_item.get("cleaned_description", "")),
-                            "standard_rate": float(top_item.get("standard_rate", 18.0)),
-                            "gst_rate": float(top_item.get("standard_rate", 18.0)),
+                            "standard_rate": _safe_rate(top_item.get("standard_rate")),
+                            "gst_rate": _safe_rate(top_item.get("standard_rate")),
                             "is_blocked_17_5": int(top_item.get("is_blocked_17_5", 0)),
                             "blocked_17_5_reason": str(top_item.get("blocked_17_5_reason", "Eligible: General ITC")),
                             "score": round(float(top_item.get("confidence_score", 0.9)), 4),
@@ -1622,8 +1663,8 @@ class HSNIntelligenceEngine(HSNSemanticSearchEngine):
                                 "chapter": str(r.get("chapter", r_hsn[:2])),
                                 "description": str(r.get("description", "")),
                                 "clean_description": str(r.get("clean_description", "")),
-                                "standard_rate": float(r.get("standard_rate", 18.0)),
-                                "gst_rate": float(r.get("standard_rate", 18.0)),
+                                "standard_rate": _safe_rate(r.get("standard_rate")),
+                                "gst_rate": _safe_rate(r.get("standard_rate")),
                                 "is_blocked_17_5": int(r.get("is_blocked_17_5", 0)),
                                 "blocked_17_5_reason": str(r.get("blocked_17_5_reason", "Eligible: General ITC")),
                                 "score": round(float(r.get("score", 0.7)), 4),

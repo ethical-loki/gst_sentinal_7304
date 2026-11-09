@@ -829,14 +829,6 @@ def get_hsn_dataframe():
     if _hsn_df_cache is not None:
         return _hsn_df_cache
 
-    engine = get_converter_hsn_search_engine()
-    if engine is not None and engine.tariff_df is not None:
-        df = engine.tariff_df.copy()
-        hsn_col = "hsn_code"
-        desc_col = "description"
-        _hsn_df_cache = (df, hsn_col, desc_col)
-        return _hsn_df_cache
-
     parquet_path = BASE_DIR / "data" / "tariff_master.parquet"
     if parquet_path.exists():
         try:
@@ -848,6 +840,14 @@ def get_hsn_dataframe():
             return _hsn_df_cache
         except Exception as e:
             print(f"[WARN] Could not load tariff parquet in converter_service: {e}")
+
+    engine = get_converter_hsn_search_engine()
+    if engine is not None and engine.tariff_df is not None:
+        df = engine.tariff_df.copy()
+        hsn_col = "hsn_code"
+        desc_col = "description"
+        _hsn_df_cache = (df, hsn_col, desc_col)
+        return _hsn_df_cache
 
     return None
 
@@ -884,7 +884,8 @@ def lookup_hsn_by_description(product_name: str, product_desc: str = "", top_k: 
                 # If query is for a motor car / vehicle, suppress Chapter 85 electric motors
                 if is_vehicle and (code.startswith("8501") or code.startswith("85")):
                     continue
-                rate = float(m.get("standard_rate", 18.0))
+                _sr = m.get("standard_rate")
+                rate = float(_sr) if _sr is not None else 18.0
                 heading = str(m.get("heading", m.get("hsn_4digit", code[:4])))
                 formatted.append({
                     "hsn_code": code,
@@ -941,7 +942,8 @@ def lookup_hsn_by_description(product_name: str, product_desc: str = "", top_k: 
     for _, row in matches_df.head(top_k).iterrows():
         cd = str(row[hsn_col])
         desc = str(row[desc_col])
-        igst_rate = float(row.get("standard_rate", row.get("gst_rate", 18.0)))
+        _sr = row.get("standard_rate") if pd.notna(row.get("standard_rate")) else row.get("gst_rate")
+        igst_rate = float(_sr) if _sr is not None and pd.notna(_sr) else 18.0
         results.append({
             "hsn_code": cd,
             "hsn_4digit": cd[:4],
@@ -1073,7 +1075,8 @@ def match_and_patch_product_hsns(
                     rec = matches[0]
             if rec:
                 chosen_desc = rec.get("description", rec.get("clean_description", f"HSN {chosen_hsn}"))
-                chosen_igst = float(rec.get("standard_rate", rec.get("gst_rate", rec.get("igst_rate", 18.0))))
+                _sr = rec.get("standard_rate") if pd.notna(rec.get("standard_rate")) else rec.get("gst_rate")
+                chosen_igst = float(_sr) if _sr is not None and pd.notna(_sr) else float(rec.get("igst_rate", 18.0) or 18.0)
             else:
                 chosen_desc = f"Statutory Tariff Code {chosen_hsn}"
                 chosen_igst = 18.0
@@ -1108,7 +1111,8 @@ def match_and_patch_product_hsns(
                     chosen = next((m for m in matches if len(m["hsn_code"]) in [6, 8]), matches[0])
                     chosen_hsn = chosen["hsn_code"]
                     chosen_desc = chosen["description"]
-                    chosen_igst = float(chosen.get("standard_rate", chosen.get("igst_rate", 18.0)))
+                    _sr = chosen.get("standard_rate") if pd.notna(chosen.get("standard_rate")) else chosen.get("igst_rate")
+                    chosen_igst = float(_sr) if _sr is not None and pd.notna(_sr) else 18.0
                     chosen_cgst = round(chosen_igst / 2.0, 2)
                     chosen_sgst = round(chosen_igst / 2.0, 2)
                 else:

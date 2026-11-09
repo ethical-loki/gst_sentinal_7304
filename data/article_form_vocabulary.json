@@ -1,0 +1,2165 @@
+[
+  {
+    "term": "artwork",
+    "type": "article",
+    "family": "art_and_antiques",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "97"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "painting",
+    "type": "article",
+    "family": "art_and_antiques",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "97"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "beer",
+    "type": "article",
+    "family": "beverages",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "22"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "drinking water",
+    "type": "article",
+    "family": "beverages",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "22"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "mineral water",
+    "type": "article",
+    "family": "beverages",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "22"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "water",
+    "type": "article",
+    "family": "beverages",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "22"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "corn",
+    "type": "article",
+    "family": "cereals",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "10"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "maize",
+    "type": "article",
+    "family": "cereals",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "10"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "oats",
+    "type": "article",
+    "family": "cereals",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "11"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "rice",
+    "type": "article",
+    "family": "cereals",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "10",
+      "11"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "wheat",
+    "type": "article",
+    "family": "cereals",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "10",
+      "11"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "wheat flour",
+    "type": "article",
+    "family": "cereals",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "11"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "wheat grains",
+    "type": "article",
+    "family": "cereals",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "10"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "activated carbon",
+    "type": "article",
+    "family": "chemical_products",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "38"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "insecticide",
+    "type": "article",
+    "family": "chemical_products",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "38"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "sanitizer",
+    "type": "article",
+    "family": "chemical_products",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "38"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "acetic acid",
+    "type": "article",
+    "family": "chemicals",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "29"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "ethanol",
+    "type": "article",
+    "family": "chemicals",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "22",
+      "29"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "ethyl alcohol",
+    "type": "article",
+    "family": "chemicals",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "22",
+      "29"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "methanol",
+    "type": "article",
+    "family": "chemicals",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "29"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "clock",
+    "type": "article",
+    "family": "clocks",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "91",
+      "97"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "coffee",
+    "type": "article",
+    "family": "coffee_and_tea",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "09",
+      "21"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "coffee beans",
+    "type": "article",
+    "family": "coffee_and_tea",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "09"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "tea",
+    "type": "article",
+    "family": "coffee_and_tea",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "09"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "tea leaves",
+    "type": "article",
+    "family": "coffee_and_tea",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "09"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "bag",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "42",
+      "48",
+      "63"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "bags",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "42",
+      "48",
+      "63"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "bottle",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "70"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "bottles",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "70"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "box",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "44",
+      "48",
+      "73"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "boxes",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "44",
+      "48",
+      "73"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "can",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "73",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "cans",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "73",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "carboys",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "70"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "cup",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "48",
+      "69",
+      "70",
+      "73"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "cups",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "48",
+      "69",
+      "70",
+      "73"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "drums",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "44",
+      "73",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "flasks",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "70",
+      "96"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "jar",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "69",
+      "70"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "jars",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "69",
+      "70"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "mug",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "69",
+      "70",
+      "73"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "mugs",
+    "type": "article",
+    "family": "containers",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "69",
+      "70",
+      "73"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "lipstick",
+    "type": "article",
+    "family": "cosmetics",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "33"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "perfume",
+    "type": "article",
+    "family": "cosmetics",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "33"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "cheese",
+    "type": "article",
+    "family": "dairy_and_animal",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "04"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "honey",
+    "type": "article",
+    "family": "dairy_and_animal",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "04"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "cable",
+    "type": "article",
+    "family": "electrical",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "wire cable",
+    "type": "article",
+    "family": "electrical",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "accumulators",
+    "type": "article",
+    "family": "electronics_and_appliances",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "batteries",
+    "type": "article",
+    "family": "electronics_and_appliances",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "diodes",
+    "type": "article",
+    "family": "electronics_and_appliances",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "integrated circuit",
+    "type": "article",
+    "family": "electronics_and_appliances",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "integrated circuits",
+    "type": "article",
+    "family": "electronics_and_appliances",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "memories",
+    "type": "article",
+    "family": "electronics_and_appliances",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "microprocessor",
+    "type": "article",
+    "family": "electronics_and_appliances",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "microprocessors",
+    "type": "article",
+    "family": "electronics_and_appliances",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "mobile phone",
+    "type": "article",
+    "family": "electronics_and_appliances",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "semiconductor",
+    "type": "article",
+    "family": "electronics_and_appliances",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "transformers",
+    "type": "article",
+    "family": "electronics_and_appliances",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "transistors",
+    "type": "article",
+    "family": "electronics_and_appliances",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "matches",
+    "type": "article",
+    "family": "explosives",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "36"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "bolt",
+    "type": "article",
+    "family": "fasteners",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "bolts",
+    "type": "article",
+    "family": "fasteners",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "cotters",
+    "type": "article",
+    "family": "fasteners",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "73"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "nails",
+    "type": "article",
+    "family": "fasteners",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "nut",
+    "type": "article",
+    "family": "fasteners",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "nuts",
+    "type": "article",
+    "family": "fasteners",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "pins",
+    "type": "article",
+    "family": "fasteners",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "73",
+      "96"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "rivets",
+    "type": "article",
+    "family": "fasteners",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "73",
+      "74",
+      "76",
+      "83"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "screw",
+    "type": "article",
+    "family": "fasteners",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "screws",
+    "type": "article",
+    "family": "fasteners",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "washer",
+    "type": "article",
+    "family": "fasteners",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "washers",
+    "type": "article",
+    "family": "fasteners",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "bends",
+    "type": "article",
+    "family": "fittings",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "blind flange",
+    "type": "article",
+    "family": "fittings",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "couplings",
+    "type": "article",
+    "family": "fittings",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "73",
+      "74",
+      "76",
+      "84"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "elbows",
+    "type": "article",
+    "family": "fittings",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "flange",
+    "type": "article",
+    "family": "fittings",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "flanges",
+    "type": "article",
+    "family": "fittings",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "pipe fitting",
+    "type": "article",
+    "family": "fittings",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "pipe fittings",
+    "type": "article",
+    "family": "fittings",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "sleeves",
+    "type": "article",
+    "family": "fittings",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "39",
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "valve",
+    "type": "article",
+    "family": "fittings",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "84"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "valves",
+    "type": "article",
+    "family": "fittings",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "84"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "french fries",
+    "type": "article",
+    "family": "food_preparations",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "20"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "french fry",
+    "type": "article",
+    "family": "food_preparations",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "20"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "apple",
+    "type": "article",
+    "family": "fruits",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "08"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "apples",
+    "type": "article",
+    "family": "fruits",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "08"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "almirah",
+    "type": "article",
+    "family": "furniture",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "94"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "cabinet",
+    "type": "article",
+    "family": "furniture",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "94"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "cabinets",
+    "type": "article",
+    "family": "furniture",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "94"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "chair",
+    "type": "article",
+    "family": "furniture",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "94"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "chairs",
+    "type": "article",
+    "family": "furniture",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "94"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "furniture",
+    "type": "article",
+    "family": "furniture",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "94"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "table",
+    "type": "article",
+    "family": "furniture",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "94"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "dress",
+    "type": "article",
+    "family": "garments_and_apparel",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "61",
+      "62"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "footwear",
+    "type": "article",
+    "family": "garments_and_apparel",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "64"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "jacket",
+    "type": "article",
+    "family": "garments_and_apparel",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "42",
+      "61",
+      "62"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "jackets",
+    "type": "article",
+    "family": "garments_and_apparel",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "42",
+      "61",
+      "62"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "overcoat",
+    "type": "article",
+    "family": "garments_and_apparel",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "61",
+      "62"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "overcoats",
+    "type": "article",
+    "family": "garments_and_apparel",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "61",
+      "62"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "shirt",
+    "type": "article",
+    "family": "garments_and_apparel",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "61",
+      "62"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "shirts",
+    "type": "article",
+    "family": "garments_and_apparel",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "61",
+      "62"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "shoes",
+    "type": "article",
+    "family": "garments_and_apparel",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "64"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "suit",
+    "type": "article",
+    "family": "garments_and_apparel",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "61",
+      "62"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "t-shirt",
+    "type": "article",
+    "family": "garments_and_apparel",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "61"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "t-shirts",
+    "type": "article",
+    "family": "garments_and_apparel",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "61"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "trousers",
+    "type": "article",
+    "family": "garments_and_apparel",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "61",
+      "62"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "shellac",
+    "type": "article",
+    "family": "gums_and_resins",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "13"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "multimeter",
+    "type": "article",
+    "family": "instruments",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "90"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "scalpel",
+    "type": "article",
+    "family": "instruments",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "90"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "computer",
+    "type": "article",
+    "family": "machinery",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "84"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "laptop",
+    "type": "article",
+    "family": "machinery",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "84"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "motherboard",
+    "type": "article",
+    "family": "machinery",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "84"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "refrigerator",
+    "type": "article",
+    "family": "machinery",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "84"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "gasoline",
+    "type": "article",
+    "family": "mineral_fuels",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "27"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "grease",
+    "type": "article",
+    "family": "mineral_fuels",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "27"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "lubricant",
+    "type": "article",
+    "family": "mineral_fuels",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "27"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "lubricating oil",
+    "type": "article",
+    "family": "mineral_fuels",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "27"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "petrol",
+    "type": "article",
+    "family": "mineral_fuels",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "27"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "cement",
+    "type": "article",
+    "family": "minerals",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "25"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "ball point pen",
+    "type": "article",
+    "family": "miscellaneous",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "96"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "pen",
+    "type": "article",
+    "family": "miscellaneous",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "96"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "toothbrush",
+    "type": "article",
+    "family": "miscellaneous",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "96"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "soyabean",
+    "type": "article",
+    "family": "oil_seeds",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "12"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "soyabeans",
+    "type": "article",
+    "family": "oil_seeds",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "12"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "paint",
+    "type": "article",
+    "family": "paints",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "32"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "diary",
+    "type": "article",
+    "family": "paper_articles",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "48"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "exercise book",
+    "type": "article",
+    "family": "paper_articles",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "48"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "notebook",
+    "type": "article",
+    "family": "paper_articles",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "48"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "notebooks",
+    "type": "article",
+    "family": "paper_articles",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "48"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "amoxicillin",
+    "type": "article",
+    "family": "pharmaceuticals",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "30"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "paracetamol",
+    "type": "article",
+    "family": "pharmaceuticals",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "30"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "vaccine",
+    "type": "article",
+    "family": "pharmaceuticals",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "30"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "casing",
+    "type": "article",
+    "family": "pipes_and_tubes",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "73",
+      "84"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "hollow profiles",
+    "type": "article",
+    "family": "pipes_and_tubes",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "39",
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "line pipe",
+    "type": "article",
+    "family": "pipes_and_tubes",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "73"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "pipe",
+    "type": "article",
+    "family": "pipes_and_tubes",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "39",
+      "68",
+      "69",
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "pipes",
+    "type": "article",
+    "family": "pipes_and_tubes",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "39",
+      "68",
+      "69",
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "tube",
+    "type": "article",
+    "family": "pipes_and_tubes",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "39",
+      "70",
+      "73",
+      "74",
+      "76",
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "tubes",
+    "type": "article",
+    "family": "pipes_and_tubes",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "39",
+      "70",
+      "73",
+      "74",
+      "76",
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "tubing",
+    "type": "article",
+    "family": "pipes_and_tubes",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "39",
+      "73",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "jewellery",
+    "type": "article",
+    "family": "precious_metals",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "71"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "diamond",
+    "type": "article",
+    "family": "precious_stones",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "71"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "diamonds",
+    "type": "article",
+    "family": "precious_stones",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "71"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "fish",
+    "type": "article",
+    "family": "seafood",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "03",
+      "16"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "prawns",
+    "type": "article",
+    "family": "seafood",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "03",
+      "16"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "detergent",
+    "type": "article",
+    "family": "soaps",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "34"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "washing powder",
+    "type": "article",
+    "family": "soaps",
+    "form_stage": "finished_article",
+    "candidate_chapters": [
+      "34"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "cane sticks",
+    "type": "article",
+    "family": "vegetable_materials",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "14"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "onion",
+    "type": "article",
+    "family": "vegetables",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "07"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "onions",
+    "type": "article",
+    "family": "vegetables",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "07"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "potato",
+    "type": "article",
+    "family": "vegetables",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "07"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "potatoes",
+    "type": "article",
+    "family": "vegetables",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "07"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "fabric",
+    "type": "article",
+    "family": "yarns_and_fabrics",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "50",
+      "51",
+      "52",
+      "54",
+      "55",
+      "59",
+      "60"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "thread",
+    "type": "article",
+    "family": "yarns_and_fabrics",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "52",
+      "54",
+      "55"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "yarn",
+    "type": "article",
+    "family": "yarns_and_fabrics",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "50",
+      "51",
+      "52",
+      "53",
+      "54",
+      "55"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "bar",
+    "type": "form",
+    "family": "raw_metals_and_minerals",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "72",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "bars",
+    "type": "form",
+    "family": "raw_metals_and_minerals",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "72",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "billet",
+    "type": "form",
+    "family": "raw_metals_and_minerals",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "72",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "billets",
+    "type": "form",
+    "family": "raw_metals_and_minerals",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "72",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "blooms",
+    "type": "form",
+    "family": "raw_metals_and_minerals",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "72"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "coil",
+    "type": "form",
+    "family": "raw_metals_and_minerals",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "72",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "coils",
+    "type": "form",
+    "family": "raw_metals_and_minerals",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "72",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "ingot",
+    "type": "form",
+    "family": "raw_metals_and_minerals",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "72",
+      "74",
+      "76",
+      "78",
+      "79",
+      "80"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "ingots",
+    "type": "form",
+    "family": "raw_metals_and_minerals",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "72",
+      "74",
+      "76",
+      "78",
+      "79",
+      "80"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "rod",
+    "type": "form",
+    "family": "raw_metals_and_minerals",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "39",
+      "70",
+      "72",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "rods",
+    "type": "form",
+    "family": "raw_metals_and_minerals",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "39",
+      "70",
+      "72",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "scrap",
+    "type": "form",
+    "family": "raw_metals_and_minerals",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "39",
+      "40",
+      "47",
+      "72",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "slabs",
+    "type": "form",
+    "family": "raw_metals_and_minerals",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "68",
+      "72"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "waste",
+    "type": "form",
+    "family": "raw_metals_and_minerals",
+    "form_stage": "raw",
+    "candidate_chapters": [
+      "39",
+      "40",
+      "47",
+      "52",
+      "72",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "wire",
+    "type": "form",
+    "family": "raw_metals_and_minerals",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "72",
+      "74",
+      "76",
+      "85"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "foil",
+    "type": "form",
+    "family": "sheets_and_plates",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "plate",
+    "type": "form",
+    "family": "sheets_and_plates",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "39",
+      "69",
+      "70",
+      "72",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "plates",
+    "type": "form",
+    "family": "sheets_and_plates",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "39",
+      "69",
+      "70",
+      "72",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "sheet",
+    "type": "form",
+    "family": "sheets_and_plates",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "39",
+      "40",
+      "48",
+      "70",
+      "72",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "sheets",
+    "type": "form",
+    "family": "sheets_and_plates",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "39",
+      "40",
+      "48",
+      "70",
+      "72",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "strip",
+    "type": "form",
+    "family": "sheets_and_plates",
+    "form_stage": "worked",
+    "candidate_chapters": [
+      "39",
+      "40",
+      "72",
+      "74",
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "ceramic",
+    "type": "material",
+    "family": "ceramics",
+    "form_stage": "not_applicable",
+    "candidate_chapters": [
+      "69"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "porcelain",
+    "type": "material",
+    "family": "ceramics",
+    "form_stage": "not_applicable",
+    "candidate_chapters": [
+      "69"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "glass",
+    "type": "material",
+    "family": "glass",
+    "form_stage": "not_applicable",
+    "candidate_chapters": [
+      "70"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "leather",
+    "type": "material",
+    "family": "leather",
+    "form_stage": "not_applicable",
+    "candidate_chapters": [
+      "41",
+      "42"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "aluminium",
+    "type": "material",
+    "family": "metals",
+    "form_stage": "not_applicable",
+    "candidate_chapters": [
+      "76"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "copper",
+    "type": "material",
+    "family": "metals",
+    "form_stage": "not_applicable",
+    "candidate_chapters": [
+      "74"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "iron",
+    "type": "material",
+    "family": "metals",
+    "form_stage": "not_applicable",
+    "candidate_chapters": [
+      "72",
+      "73"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "stainless steel",
+    "type": "material",
+    "family": "metals",
+    "form_stage": "not_applicable",
+    "candidate_chapters": [
+      "72",
+      "73"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "steel",
+    "type": "material",
+    "family": "metals",
+    "form_stage": "not_applicable",
+    "candidate_chapters": [
+      "72",
+      "73"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "paper",
+    "type": "material",
+    "family": "paper",
+    "form_stage": "not_applicable",
+    "candidate_chapters": [
+      "48"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "plastic",
+    "type": "material",
+    "family": "polymers",
+    "form_stage": "not_applicable",
+    "candidate_chapters": [
+      "39"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "rubber",
+    "type": "material",
+    "family": "polymers",
+    "form_stage": "not_applicable",
+    "candidate_chapters": [
+      "40"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "cotton",
+    "type": "material",
+    "family": "textiles",
+    "form_stage": "not_applicable",
+    "candidate_chapters": [
+      "52"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "silk",
+    "type": "material",
+    "family": "textiles",
+    "form_stage": "not_applicable",
+    "candidate_chapters": [
+      "50"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "wool",
+    "type": "material",
+    "family": "textiles",
+    "form_stage": "not_applicable",
+    "candidate_chapters": [
+      "51"
+    ],
+    "source": "curated_statutory"
+  },
+  {
+    "term": "wood",
+    "type": "material",
+    "family": "wood",
+    "form_stage": "not_applicable",
+    "candidate_chapters": [
+      "44"
+    ],
+    "source": "curated_statutory"
+  }
+]

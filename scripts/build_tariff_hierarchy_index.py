@@ -71,17 +71,22 @@ def build_hierarchical_entry(row: pd.Series, heading_map: dict) -> tuple:
     # 2. Heading title
     head_title = heading_map.get(head, f"Heading {head}").strip()
 
-    # 3. Item leaf description
-    if len(code) == 4:
-        h_text = f"{chap_title} -> {head_title}"
+    # 3. Item description from Final_hsn_sac_copy.xlsx
+    clean_desc = re.sub(r"^Heading\s+\d{4}\s*-\s*", "", raw_desc, flags=re.I)
+    clean_desc_no_excl = re.sub(r"\[.*?\]", " ", clean_desc).strip()
+    clean_desc_no_excl = re.sub(r"\((?:other than|except).*?\)", " ", clean_desc_no_excl, flags=re.I).strip()
+    clean_desc_no_excl = re.sub(r"\s+", " ", clean_desc_no_excl).strip()
+
+    if len(code) <= 4:
+        leaf_desc = clean_desc_no_excl if clean_desc_no_excl else head_title
+        h_text = f"{chap_title} -> {leaf_desc}"
         is_residual = False
-        raw_words = re.findall(r"\b[a-zA-Z]{3,}\b", head_title.lower())
-        distinctive = [w for w in raw_words if w not in STOP_GENERIC_TOKENS]
+        all_text = f"{leaf_desc} {head_title}".lower()
+        words = re.findall(r"\b[a-zA-Z]{3,}\b", all_text)
+        distinctive = list(dict.fromkeys([w for w in words if w not in STOP_GENERIC_TOKENS]))
         return h_text, is_residual, distinctive
 
-    clean_desc = re.sub(r"^Heading\s+\d{4}\s*-\s*", "", raw_desc, flags=re.I)
-    clean_desc = re.sub(r"\[.*?\]", "", clean_desc).strip()
-    parts = re.split(r"\s*[:\-]\s*", clean_desc)
+    parts = re.split(r"\s*[:\-]\s*", clean_desc_no_excl)
     parts = [p.strip() for p in parts if p.strip()]
 
     leaf_parts = []
@@ -92,26 +97,21 @@ def build_hierarchical_entry(row: pd.Series, heading_map: dict) -> tuple:
             leaf_parts.append(p_clean)
 
     if not leaf_parts:
-        leaf_desc = parts[-1] if parts else clean_desc
+        leaf_desc = parts[-1] if parts else clean_desc_no_excl
     else:
         leaf_desc = " -> ".join(leaf_parts)
 
     leaf_desc = leaf_desc.title()
     leaf_words = leaf_desc.split()
-    if len(leaf_words) > 25:
-        leaf_desc = " ".join(leaf_words[:25])
+    if len(leaf_words) > 35:
+        leaf_desc = " ".join(leaf_words[:35])
     if not leaf_desc.endswith("."):
         leaf_desc += "."
 
     h_text = f"{chap_title} -> {head_title} -> {leaf_desc}"
 
-    # Residual detection (GIR 3(a)):
-    # A tariff item is residual only if its leaf description is a generic catch-all
-    # (e.g. "Other", "Others", "Other parts", "Not elsewhere specified").
-    # Specific commodities and headings are never residual.
     is_residual = bool(re.match(r"^(other|others|other parts|not elsewhere)\b", leaf_desc.strip(), re.I))
 
-    # Distinctive tokens extraction
     all_text = f"{leaf_desc} {head_title}".lower()
     words = re.findall(r"\b[a-zA-Z]{3,}\b", all_text)
     distinctive = list(dict.fromkeys([w for w in words if w not in STOP_GENERIC_TOKENS]))

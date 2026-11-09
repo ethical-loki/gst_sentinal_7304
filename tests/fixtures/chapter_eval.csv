@@ -1,0 +1,179 @@
+product_name,expected_chapter,category
+Whole Roasted Coffee Beans,09,Seed Examples
+Microprocessor,85,Seed Examples
+Memories,85,Seed Examples
+Wheat flour,11,Seed Examples
+Cotton yarn,52,Seed Examples
+Ball point pen,96,Seed Examples
+Mobile phone,85,Seed Examples
+Frozen prawns,03,Seed Examples
+Rice,10,Seed Examples
+Gold jewellery,71,Seed Examples
+Cement,25,Seed Examples
+Raw unroasted coffee beans,09,Negation & State Pairs
+Roasted coffee beans decaffeinated,09,Negation & State Pairs
+Fresh chilled salmon fish,03,Negation & State Pairs
+Frozen mackerel fillets,03,Negation & State Pairs
+Cooked crab meat canned,16,Negation & State Pairs
+Raw live mud crabs,03,Negation & State Pairs
+Unvulcanised natural rubber sheets,40,Negation & State Pairs
+Vulcanised rubber transmission belts,40,Negation & State Pairs
+Mounted brake linings for passenger cars,87,Negation & State Pairs
+Unmounted brake linings of friction material,68,Negation & State Pairs
+Knitted cotton t-shirt,61,Negation & State Pairs
+Woven cotton formal shirt,62,Negation & State Pairs
+Knitted woollen pullover,61,Negation & State Pairs
+Woven woollen overcoat,62,Negation & State Pairs
+Crude palm oil,15,Negation & State Pairs
+Refined sunflower cooking oil,15,Negation & State Pairs
+Fresh apples,08,Negation & State Pairs
+Dried apples dehydrated,08,Negation & State Pairs
+Fresh potatoes,07,Negation & State Pairs
+Frozen french fry potatoes,20,Negation & State Pairs
+Unprocessed whole wheat grains,10,Negation & State Pairs
+Cooked pasta macaroni noodles,19,Negation & State Pairs
+Unworked raw human hair,05,Negation & State Pairs
+Wigs and false beards of human hair,67,Negation & State Pairs
+Rough unworked diamond stones,71,Negation & State Pairs
+Cut and polished diamond jewellery stones,71,Negation & State Pairs
+Men cotton shirt,62,Finished Article vs Material
+Cotton yarn single combed,52,Finished Article vs Material
+Raw cotton ginned,52,Finished Article vs Material
+Steel almirah office cabinet,94,Finished Article vs Material
+Cold rolled stainless steel sheets,72,Finished Article vs Material
+Stainless steel seamless pipe,73,Finished Article vs Material
+Plastic dining chair,94,Finished Article vs Material
+Polyethylene granules in primary forms,39,Finished Article vs Material
+Plastic storage container box,39,Finished Article vs Material
+Leather shoes formal,64,Finished Article vs Material
+Raw bovine hide leather tanned,41,Finished Article vs Material
+Leather handbag purse,42,Finished Article vs Material
+Wooden dining table,94,Finished Article vs Material
+Sawn oak timber wood planks,44,Finished Article vs Material
+Paper notebook diary exercise book,48,Finished Article vs Material
+Wood pulp chemical dissolving grade,47,Finished Article vs Material
+Glass drinking tumbler,70,Finished Article vs Material
+Float glass sheets untempered,70,Finished Article vs Material
+Ceramic coffee mug cup,69,Finished Article vs Material
+Refractory ceramic building bricks,69,Finished Article vs Material
+Aluminium beverage cans,76,Finished Article vs Material
+Unwrought aluminium ingots,76,Finished Article vs Material
+Copper electrical wire cable,85,Finished Article vs Material
+Refined copper cathode wire bar,74,Finished Article vs Material
+Silk saree woven,50,Finished Article vs Material
+Raw mulberry silk yarn,50,Finished Article vs Material
+Microcontroller Integrated Circuits 32-bit,85,Technical & Electronics
+DRAM Memory Module Integrated Circuit,85,Technical & Electronics
+Laptop notebook computer,84,Technical & Electronics
+Computer server motherboard PCB,84,Technical & Electronics
+Lithium-ion rechargeable battery pack,85,Technical & Electronics
+Primary alkaline AA dry cell battery,85,Technical & Electronics
+Solar photovoltaic panel module,85,Technical & Electronics
+Static power inverter solar 5kw,85,Technical & Electronics
+Liquid crystal display LCD television monitor,85,Technical & Electronics
+Optical fibre communication cables,85,Technical & Electronics
+Electric ceiling fan,84,Technical & Electronics
+Air conditioning machine split 1.5 ton,84,Technical & Electronics
+Household refrigerator frost free,84,Technical & Electronics
+Centrifugal water pump with motor,84,Technical & Electronics
+Hydraulic ball valve 2 inch,84,Technical & Electronics
+Hex bolt with nut M12 threaded,73,Technical & Electronics
+Electronic digital multimeter,90,Technical & Electronics
+Medical ultrasound scanning apparatus,90,Technical & Electronics
+Clinical surgical scalpel blade,90,Technical & Electronics
+Wristwatch quartz analogue,91,Technical & Electronics
+Acoustic guitar wooden musical instrument,92,Technical & Electronics
+Revolver pistol firearm,93,Technical & Electronics
+Plastic toy action figure,95,Technical & Electronics
+Video game console controller,95,Technical & Electronics
+Chai patti 500g pkt,09,Abbreviations & Colloquial
+Atta 10kg bag,11,Abbreviations & Colloquial
+Maida refined flour 1kg,11,Abbreviations & Colloquial
+Chawal basmati rice 25kg,10,Abbreviations & Colloquial
+Cheeni white crystal sugar 5kg,17,Abbreviations & Colloquial
+Haldi powder turmeric 200g,09,Abbreviations & Colloquial
+Jeera cumin seeds 100g,09,Abbreviations & Colloquial
+Cotton shirt w/o sleeves 10 pcs,62,Abbreviations & Colloquial
+SS 304 seamless pipe 6 mtr,73,Abbreviations & Colloquial
+MS hex bolt w/ nut 50 nos,73,Abbreviations & Colloquial
+PVC conduit pipe 20mm 100 mtr,39,Abbreviations & Colloquial
+Alu foil roll 9 mtr,76,Abbreviations & Colloquial
+Auto brake pads 4 pcs,87,Abbreviations & Colloquial
+Li-ion battery pack 12v,85,Abbreviations & Colloquial
+GI wire mesh roll,73,Abbreviations & Colloquial
+Diesel engine lubricant oil 5 ltr,27,Abbreviations & Colloquial
+Hand sanitizer liquid 500 ml,38,Abbreviations & Colloquial
+Paracetamol tablets 500mg IP,30,Chemicals & Pharma
+Amoxicillin antibiotic capsules,30,Chemicals & Pharma
+COVID-19 human vaccine injection,30,Chemicals & Pharma
+Sulphuric acid 98% industrial grade,28,Chemicals & Pharma
+Caustic soda sodium hydroxide flakes,28,Chemicals & Pharma
+Ethyl alcohol ethanol 99% pure,22,Chemicals & Pharma
+Methanol methyl alcohol industrial,29,Chemicals & Pharma
+Acetic acid glacial,29,Chemicals & Pharma
+Urea fertilizer 46% nitrogen,31,Chemicals & Pharma
+NPK agricultural chemical fertilizer,31,Chemicals & Pharma
+Synthetic organic dye reactive blue,32,Chemicals & Pharma
+Exterior acrylic wall paint emulsion,32,Chemicals & Pharma
+Printing ink black offset,32,Chemicals & Pharma
+Perfume eau de parfum spray,33,Chemicals & Pharma
+Lipstick makeup cosmetic preparation,33,Chemicals & Pharma
+Toilet soap bathing bar,34,Chemicals & Pharma
+Laundry detergent washing powder,34,Chemicals & Pharma
+Industrial lubricating grease,27,Chemicals & Pharma
+Industrial enzyme amylase,35,Chemicals & Pharma
+Epoxy resin adhesive glue,35,Chemicals & Pharma
+Safety matches wooden box,36,Chemicals & Pharma
+Industrial explosive dynamite,36,Chemicals & Pharma
+X-ray photographic film sensitised,37,Chemicals & Pharma
+Activated carbon granules,38,Chemicals & Pharma
+Insecticide spray aerosol,38,Chemicals & Pharma
+Live dairy cow bovine cattle,01,Food & Agriculture
+Fresh mutton goat meat carcass,02,Food & Agriculture
+Frozen chicken poultry breast meat,02,Food & Agriculture
+Natural honey pure apiary,04,Food & Agriculture
+Fresh pasteurised cows milk,04,Food & Agriculture
+Cheddar cheese dairy block,04,Food & Agriculture
+Hen chicken eggs fresh in shell,04,Food & Agriculture
+Live ornamental freshwater aquarium fish,03,Food & Agriculture
+Fresh cut rose flowers for bouquet,06,Food & Agriculture
+Fresh onion vegetable bulbs,07,Food & Agriculture
+Fresh ginger root rhizome,09,Food & Agriculture
+Black pepper whole peppercorns,09,Food & Agriculture
+Green cardamom pods,09,Food & Agriculture
+Yellow corn maize grains,10,Food & Agriculture
+Rolled oats cereal breakfast,11,Food & Agriculture
+Soyabean seeds for oil extraction,12,Food & Agriculture
+Natural raw shellac flakes,13,Food & Agriculture
+Natural gum arabic acacia,13,Food & Agriculture
+Bamboo plaiting cane sticks,14,Food & Agriculture
+Pure dairy butter ghee,04,Food & Agriculture
+Raw cane sugar unrefined,17,Food & Agriculture
+Cocoa powder unsweetened,18,Food & Agriculture
+Dark chocolate confectionery bar,18,Food & Agriculture
+Sweet biscuit cookies bakery,19,Food & Agriculture
+Tomato ketchup table sauce,21,Food & Agriculture
+Instant dry active bakers yeast,21,Food & Agriculture
+Mineral water bottled drinking water,22,Food & Agriculture
+Malted barley beer beverage bottle,22,Food & Agriculture
+Scotch whisky distilled spirit,22,Food & Agriculture
+Animal poultry cattle feed mash,23,Food & Agriculture
+Cigarettes containing tobacco filter,24,Food & Agriculture
+Common edible table salt,25,Minerals & Heavy Articles
+Portland grey construction cement,25,Minerals & Heavy Articles
+Natural marble stone slabs polished,25,Minerals & Heavy Articles
+Iron ore hematite lumps,26,Minerals & Heavy Articles
+Thermal coal bituminous steam coal,27,Minerals & Heavy Articles
+Crude petroleum mineral oil,27,Minerals & Heavy Articles
+Motor spirit automotive petrol gasoline,27,Minerals & Heavy Articles
+High speed diesel fuel HSD,27,Minerals & Heavy Articles
+TMT steel reinforcement rebar rods,72,Minerals & Heavy Articles
+Galvanized steel corrugated roofing sheets,72,Minerals & Heavy Articles
+Steel wire rope stranded cables,73,Minerals & Heavy Articles
+Sanitary towel diaper sanitary pads,96,Minerals & Heavy Articles
+Toothbrush nylon bristles manual,96,Minerals & Heavy Articles
+Vacuum flask stainless steel bottle insulated,96,Minerals & Heavy Articles
+Original oil painting framed artwork,97,Minerals & Heavy Articles
+Antique wooden grandfather clock over 100 yrs,97,Minerals & Heavy Articles
+Commercial freight transport service by road,99,Services SAC
+Software consulting and IT implementation service,99,Services SAC

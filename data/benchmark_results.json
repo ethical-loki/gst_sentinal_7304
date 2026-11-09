@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Repeat English Product",
+    "query": "SS 304 hex nipple 1/2 inch",
+    "pred_without": 1,
+    "pred_with": 0,
+    "qwen_without": 1,
+    "qwen_with": 0,
+    "lat_without": 7607.62,
+    "lat_with": 2.85,
+    "speedup": 2666.3,
+    "hsn_without": "73072100",
+    "hsn_with": "73072200",
+    "match_type": "Verified Qwen Memory Store (<0.5ms)"
+  },
+  {
+    "name": "Multilingual Hindi Product",
+    "query": "\u0914\u0926\u094d\u092f\u094b\u0917\u093f\u0915 \u0938\u0930\u094d\u0935\u094b \u092e\u094b\u091f\u0930",
+    "pred_without": 1,
+    "pred_with": 0,
+    "qwen_without": 1,
+    "qwen_with": 0,
+    "lat_without": 5428.66,
+    "lat_with": 2.14,
+    "speedup": 2533.7,
+    "hsn_without": "85015320",
+    "hsn_with": "85015290",
+    "match_type": "Verified Qwen Memory Store (<0.5ms)"
+  },
+  {
+    "name": "Multilingual Hinglish Product",
+    "query": "copper taar 2.5 sq mm chahiye",
+    "pred_without": 1,
+    "pred_with": 1,
+    "qwen_without": 1,
+    "qwen_with": 1,
+    "lat_without": 6903.3,
+    "lat_with": 6137.07,
+    "speedup": 1.1,
+    "hsn_without": "74082910",
+    "hsn_with": "74082910",
+    "match_type": "Two-Stage BGE-Small + Cross-Encoder Rerank (GIR 3(a))"
+  },
+  {
+    "name": "Different Specification (5 HP Motor)",
+    "query": "industrial servo motor 5 HP",
+    "pred_without": 1,
+    "pred_with": 1,
+    "qwen_without": 1,
+    "qwen_with": 1,
+    "lat_without": 5886.71,
+    "lat_with": 5888.41,
+    "speedup": 1.0,
+    "hsn_without": "85015320",
+    "hsn_with": "85015320",
+    "match_type": "Two-Stage BGE-Small + Cross-Encoder Rerank (GIR 3(a))"
+  }
+]
