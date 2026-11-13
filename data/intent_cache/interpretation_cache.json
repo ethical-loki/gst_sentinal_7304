@@ -3927,5 +3927,2204 @@
     "synthesized_search_string": "bottle | Material: stainless steel | Terms: household articles, stainless steel",
     "is_cache_hit": false,
     "clarification_merged": false
+  },
+  "e5319b68c0eb9ab522f185d6bc4440a59847ecb6f3b9c87aa73e7594edf233ef": {
+    "raw_query": "cast iron kitchen tawa",
+    "physical_product": "cast iron kitchen",
+    "material": "steel",
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "steel"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of iron or steel | OTHER CAST ARTICLES OF IRON OR STEEL",
+      "Articles of iron or steel | STOVES, RANGES, GRATES, COOKERS (INCLUDING THOSE WITH SUBSIDIARY BOILERS FOR CENTRAL HEATING), BARBECUES, BRAZIERS, GAS-RINGS, PLATE WARMERS AND SIMILAR NON-ELECTRIC DOMESTIC APPLIANCES, AND PARTS THEREOF, OF IRON OR STEEL - COOKING APPLIANCES AND PLATE",
+      "Articles of iron or steel | TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PARTS THEREOF, OF IRON OR STEEL",
+      "Articles of iron or steel | TUBES, PIPES AND HOLLOW PROFILES, OF CAST IRON",
+      "Articles of iron or steel | OTHER ARTICLES OF IRON OR STEEL - FORGED OR STAMPED, BUT NOT FURTHER WORKED"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "cast iron kitchen | Material: steel | Terms: steel",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "9a58b46db7baf19c50c4e9e495e5cbdf72e3b9d7533b888d6cac478d84c76d6e": {
+    "raw_query": "electric ceiling fan with regulator",
+    "physical_product": "electric ceiling fan",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "air conditioning machines",
+      "comprising motor",
+      "driven fan elements ..."
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | AIR CONDITIONING MACHINES, COMPRISING A MOTOR- DRIVEN FAN AND ELEMENTS FOR CHANGING THE TEMPERATURE AND HUMIDITY, INCLUDING THOSE MACHINES IN WHICH THE HUMIDITY CANNOT BE SEPARATELY REGULATED",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | AIR OR VACUUM PUMPS, AIR OR OTHER GAS COMPRESSORS AND FANS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | CENTRIFUGES, INCLUDING CENTRIFUGAL DRYERS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | TURBO-JETS, TURBO-PROPELLERS AND OTHER GAS TURBINES - TURBO-JETS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | PRODUCER GAS OR WATER GAS GENERATORS, WITH OR WITHOUT THEIR PURIFIERS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "electric ceiling fan | Terms: air conditioning machines, comprising motor, driven fan elements ...",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "352c87b96de7d6fc1784f46472f024503fdf26a965afe0806be2c78f98bff95b": {
+    "raw_query": "knitted cotton socks for women",
+    "physical_product": "knitted cotton socks",
+    "material": "cotton",
+    "construction": "knitted",
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "cotton",
+      "knitted"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, knitted or crocheted | PANTYHOSE, TIGHTS, STOCKINGS, SOCKS AND OTHER HOSIERY,INCLUDING GRADUATED COMPRE SSION HOSIERY (FOR EXAMPLE, STOCKINGS FOR VARICOSE VEINS) AND FOOTWEAR WITHOUT APPLIED SOLES, KNITTED OR CROCHETED",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'S OR GIRLS SLIPS, PETTICOATS, BRIEFS, PANTIES, NIGHT DRESSES, PYJAMAS, NEGLIGEES, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES, KNITTED OR CROCHETED ---- SLIPS AND PETTICOATS",
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS SHIRTS, KNITTED OR CROCHETED",
+      "Articles of apparel and clothing accessories, knitted or crocheted | GLOVES, MITTENS AND MITTS, KNITTED OR CROCHETED"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "knitted cotton socks | Material: cotton | Construction: knitted | Terms: cotton, knitted",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "980f93c402fff6a18b6390e0d813a42483ba6ae4d89bcbd94db7a69ac22134a0": {
+    "raw_query": "insulated plastic ice box container",
+    "physical_product": "insulated plastic ice",
+    "material": "plastics",
+    "construction": "insulated",
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "plastics",
+      "insulated"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Plastics and articles thereof | ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS",
+      "Plastics and articles thereof | BUILDERS WARE OF PLASTICS, NOT ELSEWHERE SPECIFIED OR INCLUDED",
+      "Articles of iron or steel | TANKS, CASKS, DRUMS, CANS, BOXES AND SIMILAR CONTAINERS, FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY NOT EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUI",
+      "Plastics and articles thereof | POLYMERS OF ETHYLENE, IN PRIMARY FORMS",
+      "Plastics and articles thereof | OTHER PLATES, SHEETS, FILM, FOIL AND STRIP, OF PLASTICS - CELLULAR :"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "insulated plastic ice | Material: plastics | Construction: insulated | Terms: plastics, insulated",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "4b5ae08d15db2a60675e848356cfe8bb1c56a32b1fbf931a9db2fe760b4062f7": {
+    "raw_query": "welded structural steel square hollow tube",
+    "physical_product": "pipe",
+    "material": "steel",
+    "construction": "welded",
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "tubes and pipes",
+      "steel",
+      "welded"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of iron or steel | OTHER TUBES, PIPES AND HOLLOW PROFILES (FOR EXAMPLE, OPEN SEAM OR WELDED, RIVETED OR SIMILARLY CLOSED), OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES",
+      "Articles of iron or steel | TUBES, PIPES AND HOLLOW PROFILES, OF CAST IRON",
+      "Articles of iron or steel | OTHER TUBES AND PIPES (FOR EXAMPLE, WELDED, RIVETED OR SIMILARLY CLOSED), HAVING CIRCULAR CROSS-SECTIONS, THE EXTERNAL DIAMETER OF WHICH EXCEEDS 406.4 MM, OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES",
+      "Articles of iron or steel | TUBES, PIPES AND HOLLOW PROFILES, SEAMLESS, OF IRON (OTHER THAN CAST IRON) OR STEEL - LINE PIPE OF A KIND USED FOR OIL AND GAS PIPELINES",
+      "Articles of iron or steel | TUBE OR PIPE FITTINGS (FOR EXAMPLE, COUPLINGS, ELBOWS, SLEEVES), OF IRON OR STEEL - CAST FITTINGS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "pipe | Material: steel | Construction: welded | Terms: tubes and pipes, steel, welded",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "6c2ff9f2387766136b2fea3274fa585327125670ba12386530adef36917e00a8": {
+    "raw_query": "printed cotton woven nightwear pyjamas",
+    "physical_product": "printed cotton woven",
+    "material": "cotton",
+    "construction": "woven",
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "cotton",
+      "woven"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, not knitted or crocheted | MEN'S OR BOYS SINGLETS AND OTHER VESTS, UNDERPANTS, BRIEFS, NIGHTSHIRTS, PYJAMAS, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES ---- UNDERPANTS AND BRIF",
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS UNDERPANTS, BRIEFS, NIGHTSHIRTS, PYJAMAS, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES, KNITTED OR CROCHETED ---- UNDERPANTS AND BRIEFS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS SINGLETS AND OTHER VESTS, SLIPS, PETTICOATS, BRIEFS, PANTIES, NIGHTDRESSES, PYJAMAS, NEGLIGES, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES ---- SLIPS AND PETTICOATS",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'S OR GIRLS SLIPS, PETTICOATS, BRIEFS, PANTIES, NIGHT DRESSES, PYJAMAS, NEGLIGEES, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES, KNITTED OR CROCHETED ---- SLIPS AND PETTICOATS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | SHAWLS, SCARVES, MUFFLERS, MANTILLAS, VEILS AND THE LIKE"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "printed cotton woven | Material: cotton | Construction: woven | Terms: cotton, woven",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "a38d24e8124033d74e093b49815929a551f3db7d7b59e15e10e40aee48014275": {
+    "raw_query": "solar photovoltaic module panel",
+    "physical_product": "solar photovoltaic module",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "flat panel display modules",
+      "whether incorporating touch"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "sensitive sc...",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'sc'"
+      }
+    ],
+    "top_headings_shown": [
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | FLAT PANEL DISPLAY MODULES, WHETHER OR NOT INCORPORATING TOUCH-SENSITIVE SCREENS TELEVISION CAMERAS, DIGITAL CAMERAS AND VIDEO CAMERA RECORDERS:",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MACHINES AND APPARATUS OF A KIND USED SOLELY SEMICONDUCTOR BOULES OR WAFERS, SEMICONDUCTOR DEVICES, ELECTRONIC INTEGRATED CIRCUITS OR FLAT PANEL DISPLAYS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | AUXILIARY PLANT FOR USE WITH BOILERS OF HEADING 8402 OR 8403 (FOR EXAMPLE, ECONOMISERS, SUPER-HEATERS, SOOT REMOVERS, GAS RECOVERERS)",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | ELECTR I C F ILAM ENT OR DIS CH ARGE LAMPS INCLUDING SEALED BEAM LAMP UNITS AND ULTRAVIOLET OR INFRA-RED LAMPS, ARC-LAMPS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MACHINERY FOR MAKING PULP OF FIBROUS CELLULOSIC MATERIAL OR FOR MAKING OR FINISHING PAPER OR PAPERBOARD"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "solar photovoltaic module | Terms: flat panel display modules, whether incorporating touch",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "8a1920e468f3b190df309c189db11b29a9126c10923813a2b8abe216537c4afa": {
+    "raw_query": "hardened steel machine screws",
+    "physical_product": "fasteners",
+    "material": "steel",
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "screws",
+      "bolts",
+      "nuts",
+      "steel"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of iron or steel | SCREWS, BOLTS, NUTS, COACH-SCREWS, SCREW HOOKS, RIVETS, COTTERS, COTTER-PINS, WASHERS (INCLUDING SPRING WASHERS) AND SIMILAR ARTICLES, OF IRON OR STEEL - THREADED ARTICLES",
+      "Articles of iron or steel | SHEET PILING OF IRON OR STEEL, WHETHER OR NOT DRILLED, PUNCHED OR MADE FROM ASSEMBLED ELEMENTS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MACHINE-TOOLS (INCLUDING PRESSES) FOR WORKING METAL BY FORGING, HAMMERING OR DIE FORGING (EXCLUDING ROLLING MILLS)",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MACHINE-TOOLS (INCLUDING MACHINES FOR NAILING, STAPLING, GLUEING OR OTHERWISE ASSEMBLING) FOR WORKING WOOD, CORK, BONE, HARD RUBBER, HARD PLASTICS OR SIMILAR HARD MATERIALS",
+      "Articles of iron or steel | ANCHORS, GRAPNELS AND PARTS THEREOF, OF IRON OR STEEL"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "fasteners | Material: steel | Terms: screws, bolts, nuts, steel",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "183419f825d5003dd7059693586c79949dc0140220a335c4ccca08641b649d1a": {
+    "raw_query": "Dell Inspiron 15 laptop computer",
+    "physical_product": "portable automatic data processing machine",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "automatic data processing machines"
+    ],
+    "unstated_attributes": [
+      "weight (under or over 10 kg)",
+      "display screen size",
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "portable automatic data processing machines",
+        "field_source": "search_terms",
+        "reason": "exceeds_4_words"
+      }
+    ],
+    "top_headings_shown": [
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | SEMICONDUCTOR DEVICES (FOR EXAMPLE, DIODES, TRANSISTORS, SEMICONDUCTOR BASED TRANSDUCERS)",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MACHINES AND APPARATUS OF A KIND USED SOLELY SEMICONDUCTOR BOULES OR WAFERS, SEMICONDUCTOR DEVICES, ELECTRONIC INTEGRATED CIRCUITS OR FLAT PANEL DISPLAYS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | SEWING MACHINES, OTHER THAN BOOK-SEWING MACHINES OF HEADING 8440",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | PRIMARY CELLS AND PRIMARY BATTERIES",
+      "Plastics and articles thereof | SILICONES IN PRIMARY FORMS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "portable automatic data processing machine | Terms: automatic data processing machines",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "1a988b3ea2addb36d588d757fa96ff453248e6cbf2803b5f00114db307b0f227": {
+    "raw_query": "Prestige stainless steel pressure cooker 5 litre",
+    "physical_product": "household articles",
+    "material": "stainless steel",
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "household articles",
+      "stainless steel"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [
+      {
+        "term": "table kitchen or other household articles",
+        "field_source": "search_terms",
+        "reason": "exceeds_4_words"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of iron or steel | TANKS, CASKS, DRUMS, CANS, BOXES AND SIMILAR CONTAINERS, FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY NOT EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUI",
+      "Articles of iron or steel | RESERVOIRS, TANKS, VATS AND SIMILAR CONTAINERS FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUIPMENT",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | PUMPS FOR LIQUIDS, WHETHER OR NOT FITTED WITH A MEASURING DEVICE",
+      "Articles of iron or steel | CONTAINERS FOR COMPRESSED OR LIQUEFIED GAS, OF IRON OR STEEL",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MOULDING BOXES FOR METAL FOUNDRY"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "household articles | Material: stainless steel | Terms: household articles, stainless steel",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "8ad97c7e53746a2abfb08763a9e84b3e70c0d01f6f0a8bc24d60ee5006d07244": {
+    "raw_query": "Crompton electric table fan",
+    "physical_product": "crompton electric table",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "electric accumulators",
+      "including separators therefor"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "whether rectan...",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'rectan'"
+      }
+    ],
+    "top_headings_shown": [
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | ELECTRIC ACCUMULATORS, INCLUDING SEPARATORS THEREFOR, WHETHER OR NOT RECTANGULAR (INCLUDING SQUARE)",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | ELECTRO-MAGNETS",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | CARBON ELECTRODES, CARBON BRUSHES, LAMP CARBONS, BATTERY CARBONS AND OTHER ARTICLES OF GRAPHITE OR OTHER CARBON, WITH OR WITHOUT METAL, OF A KIND USED FOR ELECTRICAL PURPOSES ELECTRODES",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | ELECTRICAL RESISTORS (INCLUDING RHEOSTATS AND POTENTIOMETERS), OTHER THAN HEATING RESISTORS",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | ELECTRIC (INCLUDING ELECTRICALLY HEATED GAS), LASER OR OTHER LIGHT OR PHOTO BEAM, ULTRASONIC, ELECTRON BEAM, MAGNETIC PULSE OR PLASMA ARC SOLDERING, BRAZING OR WELDING MACHINES AND APPARATUS, WHETHER OR NOT CAPABLE OF CUTTING"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "crompton electric table | Terms: electric accumulators, including separators therefor",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "2cd25263e47f723da9d3019cf14ee76b4477f29c7ea8188ad4e91b940d38baae": {
+    "raw_query": "Amul spray milk powder tin",
+    "physical_product": "amul spray milk",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "OUT_OF_SCHEDULE",
+    "grounded_search_terms": [
+      "form flake..."
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | TAPIOCA AND SUBSTITUTES THEREFOR PREPARED FROM STARCH, IN THE FORM OF FLAKES, GRAINS, PEARLS, SIFTINGS OR IN SIMILAR FORMS",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | MALT EXTRACT",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MECHANICAL APPLIANCES (WHETHER OR NOT HANDOPERATED) FOR PROJECTING, DISPERSING OR SPRAYING LIQUIDS OR POWDERS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MACHINERY FOR THE MANUFACTURE OR FINISHING OF FELT OR NONWOVENS IN THE PIECE OR IN SHAPES, INCLUDING MACHINERY FOR MAKING FELT HATS",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | BREAD, PASTRY, CAKES, BISCUITS AND OTHER BAKERS WARES, WHETHER OR NOT CONTAINING COCOA"
+    ],
+    "is_valid": true,
+    "error_message": "Recognized product 'milk', but statutory classification falls under Chapter 04 (Dairy produce; birds eggs; natural honey), which is outside the active Master file schedule (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94).",
+    "retries_used": 0,
+    "synthesized_search_string": "amul spray milk | Terms: form flake...",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "10cf02b3c3e59a9769bc575247cb32f58702cc875fefccaafddef19f6f6142c5": {
+    "raw_query": "Raymond woven wool blazer coat",
+    "physical_product": "raymond woven wool",
+    "material": null,
+    "construction": "woven",
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "woven"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS OVERCOATS, CARCOATS, CAPES, CLOAKS, ANORAKS (INCLUDING SKIJACKETS), WIND-CHEATERS, WINDJACKETS AND SIMILAR ARTICLES, KNITTED OR CROCHETED, OTHER THAN THOSE OF HEADING 6103",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | MEN'S OR BOYS OVERCOATS, CAR-COATS, CLOAKS, ANORAKS (INCLUDING SKI-JACKETS), WINDCHEATERS, WIND-JACKETS AND SIMILAR ARTICLES OTHER THAN THOSE OF HEADING 6203 ---- OVERCOATS, RAINCOATS, CAR-COATS, CAPES, CLOAKS AND SIMILAR ARTICLES",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS OVERCOATS,CAR-COATS, CAPES, CLOAKS,ANORAKS (INCLUDING SKIJACKETS), WIND-CHEATERS, WINDJACKETS AND SIMILAR ARTICLES, NITTED OR CROCHETED, OTHER HAN THOSE OF HEADING 6104",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'S OR GIRLS OVERCOATS, CAR-COATS, CAPES, CLOAKS, ANORAKS (INCLUDING SKIJACKETS), WIND-CHEATERS, WIND-JACKETS AND SIMILAR ARTICLES, OTHER THAN THOSE OF HEADING 6204 ---- OVERCOATS, RAINCOATS, CAR-COATS, CAPES, CLOAKS AND SIMILAR ARTICLES",
+      "Articles of apparel and clothing accessories, knitted or crocheted | JERSEYS, PULLOVERS, CARDIGANS, WAISTCOATS AND SIMILAR ARTICLES, KNITTED OR CROCHETED ---- OF WOOL OR FINE ANIMAL HAIR"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "raymond woven wool | Construction: woven | Terms: woven",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "8fcd853437c3e6b4b040e0974ef294dee796c0fe900b3de854a9320a6d7deecb": {
+    "raw_query": "Luminous solar inverter battery",
+    "physical_product": "electric accumulator",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "accumulators"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | ELECTR I C F ILAM ENT OR DIS CH ARGE LAMPS INCLUDING SEALED BEAM LAMP UNITS AND ULTRAVIOLET OR INFRA-RED LAMPS, ARC-LAMPS",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | PORTABLE ELECTRIC LAMPS DESIGNED TO FUNCTION BY THEIR OWN SOURCE OF ENERGY (FOR EXAMPLE, DRY BATTERIES, ACCUMULATORS, MAGNETOS), OTHER THAN LIGHTING EQUIPMENT OF HEADING 8512",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | PRIMARY CELLS AND PRIMARY BATTERIES",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | WASTE AND SCRAP OF PRIMARY CELLS, PRIMARY BATTERIES AND ELECTRIC ACCUMULATORS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | AUXILIARY PLANT FOR USE WITH BOILERS OF HEADING 8402 OR 8403 (FOR EXAMPLE, ECONOMISERS, SUPER-HEATERS, SOOT REMOVERS, GAS RECOVERERS)"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "electric accumulator | Terms: accumulators",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "3207482c3bd75c3684b4c080f76a6934821fbf11f259f677c812b4ac20ac6d52": {
+    "raw_query": "Astral CPVC hot water plumbing pipe",
+    "physical_product": "pipe",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "AMBIGUOUS_MATERIAL",
+    "grounded_search_terms": [
+      "tubes and pipes"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)",
+      "manufacturing process (seamless vs welded)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | TAPS, COCKS, VALVES AND SIMILAR APPLIANCES FOR PIPES, BOILER SHELLS, TANKS, VATS OR THE LIKE, INCLUDING PRESSURE-REDUCING VALVES AND THE RMOSTATICALLY CONTROLLED VALVES",
+      "Articles of iron or steel | TUBES, PIPES AND HOLLOW PROFILES, SEAMLESS, OF IRON (OTHER THAN CAST IRON) OR STEEL - LINE PIPE OF A KIND USED FOR OIL AND GAS PIPELINES",
+      "Articles of iron or steel | OTHER TUBES AND PIPES (FOR EXAMPLE, WELDED, RIVETED OR SIMILARLY CLOSED), HAVING CIRCULAR CROSS-SECTIONS, THE EXTERNAL DIAMETER OF WHICH EXCEEDS 406.4 MM, OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES",
+      "Plastics and articles thereof | TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - ARTIFICIAL GUTS (SAUSAGE CASINGS) OF HARDENED PROTEIN OR OF CELLULOSIC MATERIALS:",
+      "Articles of iron or steel | OTHER TUBES, PIPES AND HOLLOW PROFILES (FOR EXAMPLE, OPEN SEAM OR WELDED, RIVETED OR SIMILARLY CLOSED), OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES"
+    ],
+    "is_valid": true,
+    "error_message": "Statutory classification depends on constituent material and construction. Product 'Astral CPVC hot water plumbing pipe' exists across multiple chapters (e.g. Chapter 39 Plastics vs Chapter 73 Steel). Material is required.",
+    "retries_used": 0,
+    "synthesized_search_string": "pipe | Terms: tubes and pipes",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "055163361211b75d77d1dbb8dd8ccf8985475ec97571e8299efc5f750b2b6736": {
+    "raw_query": "Godrej double door frost free refrigerator",
+    "physical_product": "godrej double door",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "double",
+      "door"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "godrej",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'godrej'"
+      }
+    ],
+    "top_headings_shown": [
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | REFRIGERATORS, FREEZERS AND OTHER REFRIGERATING OR FREEZING EQUIPMENT, ELECTRIC OR OTHER",
+      "Articles of iron or steel | STRUCTURES (EXCLUDING PREFABRICATED BUILDINGS OF HEADING 9406) AND PARTS OF STRUCTURES (FOR EXAMPLE, BRIDGES AND BRIDGE-SECTIONS, LOCK- GATES, TOWERS, LATTICE MASTS, ROOFS, ROOFING FRAME-WORKS, DOORS AND WINDOWS AND THEIR FRAMES AND THRESHOLDS FOR DOORS,",
+      "Articles of iron or steel | TANKS, CASKS, DRUMS, CANS, BOXES AND SIMILAR CONTAINERS, FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY NOT EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUI",
+      "Articles of iron or steel | CONTAINERS FOR COMPRESSED OR LIQUEFIED GAS, OF IRON OR STEEL",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | AUTOMATIC GOODS-VENDING MACHINES (FOR EXAMPLE, POSTAGE STAMPS, CIGARETTE, FOOD OR BEVERAGE MACHINES), INCLUDING MONEY CHANGING MACHINES - AUTOMATIC BEVERAGE-VENDING MACHINES"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "godrej double door | Terms: double, door",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "ed777d95eefdc0408907e2c7100f18fc2b8efd516c800372a8019a8333cbbb89": {
+    "raw_query": "seamless cold drawn carbon steel boiler tube ASTM A179",
+    "physical_product": "pipe",
+    "material": "steel",
+    "construction": "seamless",
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "tubes and pipes",
+      "steel",
+      "seamless"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of iron or steel | TUBES, PIPES AND HOLLOW PROFILES, SEAMLESS, OF IRON (OTHER THAN CAST IRON) OR STEEL - LINE PIPE OF A KIND USED FOR OIL AND GAS PIPELINES",
+      "Articles of iron or steel | TUBE OR PIPE FITTINGS (FOR EXAMPLE, COUPLINGS, ELBOWS, SLEEVES), OF IRON OR STEEL - CAST FITTINGS",
+      "Articles of iron or steel | OTHER TUBES AND PIPES (FOR EXAMPLE, WELDED, RIVETED OR SIMILARLY CLOSED), HAVING CIRCULAR CROSS-SECTIONS, THE EXTERNAL DIAMETER OF WHICH EXCEEDS 406.4 MM, OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES",
+      "Articles of iron or steel | OTHER TUBES, PIPES AND HOLLOW PROFILES (FOR EXAMPLE, OPEN SEAM OR WELDED, RIVETED OR SIMILARLY CLOSED), OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES",
+      "Articles of iron or steel | TUBES, PIPES AND HOLLOW PROFILES, OF CAST IRON"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "pipe | Material: steel | Construction: seamless | Terms: tubes and pipes, steel, seamless",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "11488b745e8b822ee8c5453758e085866b239c893ce98d50705f303aace2cb1a": {
+    "raw_query": "men knitted athletic vest 100 percent cotton",
+    "physical_product": "men knitted athletic",
+    "material": "cotton",
+    "construction": "knitted",
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "cotton",
+      "knitted"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS SHIRTS, KNITTED OR CROCHETED",
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS' SUITS, ENSEMBLES, JACKETS, BLAZERS,TROUSERS, BIBAND BRACE OVERALLS, BREECHES AND SHORTS (OTHER THAN SWIM WEAR), KNITTED OR CROCHETED",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | MEN'S OR BOYS SHIRTS",
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS OVERCOATS, CARCOATS, CAPES, CLOAKS, ANORAKS (INCLUDING SKIJACKETS), WIND-CHEATERS, WINDJACKETS AND SIMILAR ARTICLES, KNITTED OR CROCHETED, OTHER THAN THOSE OF HEADING 6103",
+      "Articles of apparel and clothing accessories, knitted or crocheted | T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "men knitted athletic | Material: cotton | Construction: knitted | Terms: cotton, knitted",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "e5f1f3d5ba17fef0f4c1895dd307fcf3e476f576949257102aa20d8369330b55": {
+    "raw_query": "deep freezer commercial refrigeration unit 400 litre",
+    "physical_product": "deep freezer commercial",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "refrigeration",
+      "deep",
+      "unit"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | REFRIGERATORS, FREEZERS AND OTHER REFRIGERATING OR FREEZING EQUIPMENT, ELECTRIC OR OTHER",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | PUMPS FOR LIQUIDS, WHETHER OR NOT FITTED WITH A MEASURING DEVICE",
+      "Articles of iron or steel | TANKS, CASKS, DRUMS, CANS, BOXES AND SIMILAR CONTAINERS, FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY NOT EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUI",
+      "Articles of iron or steel | RESERVOIRS, TANKS, VATS AND SIMILAR CONTAINERS FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUIPMENT",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | PRODUCER GAS OR WATER GAS GENERATORS, WITH OR WITHOUT THEIR PURIFIERS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "deep freezer commercial | Terms: refrigeration, deep, unit",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "b49aa3cb6901130910aed9751b7b0c5088629d4921338f8bfb10da49dba4c232": {
+    "raw_query": "high tensile hex head galvanized bolts grade 8.8",
+    "physical_product": "fasteners",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "screws",
+      "bolts",
+      "nuts"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of iron or steel | SCREWS, BOLTS, NUTS, COACH-SCREWS, SCREW HOOKS, RIVETS, COTTERS, COTTER-PINS, WASHERS (INCLUDING SPRING WASHERS) AND SIMILAR ARTICLES, OF IRON OR STEEL - THREADED ARTICLES",
+      "Articles of iron or steel | SHEET PILING OF IRON OR STEEL, WHETHER OR NOT DRILLED, PUNCHED OR MADE FROM ASSEMBLED ELEMENTS",
+      "Articles of iron or steel | TUBE OR PIPE FITTINGS (FOR EXAMPLE, COUPLINGS, ELBOWS, SLEEVES), OF IRON OR STEEL - CAST FITTINGS",
+      "Articles of iron or steel | OTHER TUBES AND PIPES (FOR EXAMPLE, WELDED, RIVETED OR SIMILARLY CLOSED), HAVING CIRCULAR CROSS-SECTIONS, THE EXTERNAL DIAMETER OF WHICH EXCEEDS 406.4 MM, OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES",
+      "Articles of iron or steel | NAILS, TACKS, DRAWING PINS, CORRUGATED NAILS, STAPLES (OTHER THAN THOSE OF HEADING 8305) AND SIMILAR ARTICLES, OF IRON OR STEEL, WHETHER OR NOT WITH HEADS OF OTHER MATERIAL, BUT EXCLUDING SUCH ARTICLES WITH HEADS OF COPPER"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "fasteners | Terms: screws, bolts, nuts",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "0eb6bec620cf23c9f7ff315931a031f73682810547dc0addb740835391e4824a": {
+    "raw_query": "knitted circular jersey fabric cotton spandex polo",
+    "physical_product": "knitted circular jersey",
+    "material": "cotton",
+    "construction": "knitted",
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "cotton",
+      "knitted"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, knitted or crocheted | JERSEYS, PULLOVERS, CARDIGANS, WAISTCOATS AND SIMILAR ARTICLES, KNITTED OR CROCHETED ---- OF WOOL OR FINE ANIMAL HAIR",
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS SHIRTS, KNITTED OR CROCHETED",
+      "Articles of apparel and clothing accessories, knitted or crocheted | GARMENTS, MADE UP OF KNITTED OR CROCHETED FABRICS OF HEADING 5903, 5906 OR 5907",
+      "Articles of apparel and clothing accessories, knitted or crocheted | T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "knitted circular jersey | Material: cotton | Construction: knitted | Terms: cotton, knitted",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "1969c5b8e9391d4f00e1666380f6f657aeeae0c334175fe6613db60dd49b61e7": {
+    "raw_query": "rotary positive displacement oil gear pump",
+    "physical_product": "pump",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "pumps for liquids",
+      "pumps"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | ELECTRIC GENERATING SETS AND ROTARY CONVERTERS - GENERATING SETS WITH COMPRESSION-IGNITION INTERNAL COMBUSTION PISTON ENGINES (DIESEL OR SEMI-DIESEL ENGINES)",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | PUMPS FOR LIQUIDS, WHETHER OR NOT FITTED WITH A MEASURING DEVICE",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | TRACTORS (OTHER THAN TRACTORS OF HEADING 8709)",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | TOOLS FOR WORKING IN THE HAND, PNEUMATIC, HYDRAULIC OR WITH SELF- CONTAINED ELECTRIC OR NON-ELECTRIC MOTOR - PNEUMATIC",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | MOTORCYCLES (INCLUDING MOPEDS) AND CYCLES FITTED WITH AN AUXILIARY MOTOR, WITH OR WITHOUT SIDE-CARS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "pump | Terms: pumps for liquids, pumps",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "1049d0b88cfa5c3e4f4593039af032098749cb208aa269e9f9905b91dabf06d1": {
+    "raw_query": "polypropylene woven sack bag for grain packaging",
+    "physical_product": "polypropylene woven sack",
+    "material": null,
+    "construction": "woven",
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "woven"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Plastics and articles thereof | ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS",
+      "Plastics and articles thereof | SELF-ADHESIVE PLATES, SHEETS, FILM, FOIL, TAPE, STRIP AND OTHER FLAT SHAPES, OF PLASTICS, WHETHER OR NOT IN ROLLS",
+      "Articles of iron or steel | TANKS, CASKS, DRUMS, CANS, BOXES AND SIMILAR CONTAINERS, FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY NOT EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUI",
+      "Plastics and articles thereof | TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - ARTIFICIAL GUTS (SAUSAGE CASINGS) OF HARDENED PROTEIN OR OF CELLULOSIC MATERIALS:",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | OTHER MADE UP CLOTHING ACCESSORIES"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "polypropylene woven sack | Construction: woven | Terms: woven",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "24df2721324931fd377cf562dd6768f6ec75c5af9a2d965c4344812148f055d2": {
+    "raw_query": "stationary lithium iron phosphate energy storage battery",
+    "physical_product": "electric accumulator",
+    "material": "steel",
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "accumulators",
+      "steel"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of iron or steel | RESERVOIRS, TANKS, VATS AND SIMILAR CONTAINERS FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUIPMENT",
+      "Articles of iron or steel | CONTAINERS FOR COMPRESSED OR LIQUEFIED GAS, OF IRON OR STEEL",
+      "Articles of iron or steel | TANKS, CASKS, DRUMS, CANS, BOXES AND SIMILAR CONTAINERS, FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY NOT EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUI",
+      "Articles of iron or steel | OTHER ARTICLES OF IRON OR STEEL - FORGED OR STAMPED, BUT NOT FURTHER WORKED",
+      "Articles of iron or steel | SPRINGS AND LEAVES FOR SPRINGS, OF IRON OR STEEL"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "electric accumulator | Material: steel | Terms: accumulators, steel",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "e61c83856bedeb24f485039bef1a28bb31de720257adf581a895420357295435": {
+    "raw_query": "presure kooker stainles stel",
+    "physical_product": "presure kooker stainles",
+    "material": "stainless steel",
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "stainless steel"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | MALT EXTRACT",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | ELECTR I C F ILAM ENT OR DIS CH ARGE LAMPS INCLUDING SEALED BEAM LAMP UNITS AND ULTRAVIOLET OR INFRA-RED LAMPS, ARC-LAMPS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES",
+      "Plastics and articles thereof | POLYMERS OF VINYL ACETATE OR OF OTHER VINYL ESTERS, IN PRIMARY FORMS",
+      "Furniture; bedding, mattresses, mattress supports, cushions and similar stuffed furnishing; lamps and lighting fittings, not elsewhere specified or included; illuminated signs, illuminated name-plates and the like; prefabricated building | PREFABRICATED BUILDINGS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "presure kooker stainles | Material: stainless steel | Terms: stainless steel",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "272697d406addab65337ff01a1b378856b3d183e4f84ee3d7d5d3e2c22ecc869": {
+    "raw_query": "seling fan eletrical",
+    "physical_product": "seling fan eletrical",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "air conditioning machines",
+      "comprising motor",
+      "driven fan elements ..."
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of iron or steel | RADIATORS FOR CENTRAL HEATING, NOT ELECTRICALLY HEATED, AND PARTS THEREOF, OF IRON OR STEEL",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | SHAVERS, HAIR CLIPPERS AND HAIR-REMOVING APPLIANCES, WITH SELF-CONTAINED ELECTRIC MOTOR",
+      "Articles of iron or steel | CLOTH (INCLUDING ENDLESS BANDS), GRILL, NETTING AND FENCING, OF IRON OR STEEL WIRE",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS OVERCOATS,CAR-COATS, CAPES, CLOAKS,ANORAKS (INCLUDING SKIJACKETS), WIND-CHEATERS, WINDJACKETS AND SIMILAR ARTICLES, NITTED OR CROCHETED, OTHER HAN THOSE OF HEADING 6104",
+      "Articles of iron or steel | STRANDED WIRE, ROPES, CABLES, PLAITED BANDS, SLINGS AND THE LIKE, OF IRON OR STEEL, NOT ELECTRICALLY INSULATED"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "seling fan eletrical | Terms: air conditioning machines, comprising motor, driven fan elements ...",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "b7f5532fab50ccaa1bae48d87dcf455f115846067a61e78a6688c377313987a9": {
+    "raw_query": "plastek dranege ppe 4in",
+    "physical_product": "pipe",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "tubes and pipes"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)",
+      "manufacturing process (seamless vs welded)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Plastics and articles thereof | POLYMERS OF STYRENE, IN PRIMARY FORMS - POLYSTYRENE:",
+      "Plastics and articles thereof | POLYMERS OF PROPYLENE OR OF OTHER OLEFINS, IN PRIMARY FORMS",
+      "Plastics and articles thereof | P ETROLEUM RESINS , COUMARONE -INDENE RESINS , POLYTERPENES, POLYSULPHIDES, POLYSULPHONES AND OTHER PRODUCTS SPECIFIED IN NOTE 3 TO THIS CHAPTER, NOT ELSEWHERE SPECIFIED OR INCLUDED, IN PRIMARY FORMS",
+      "Plastics and articles thereof | WASTE, PARINGS AND SCRAP, OF PLASTICS",
+      "Plastics and articles thereof | MONOFILAMENT OF WHICH ANY CROSS-SECTIONAL DIMENSION EXCEEDS 1 MM, RODS, STICKS AND PROFILE SHAPES, WHETHER OR NOT SURFACE-WORKED BUT NOT OTHERWISE WORKED, OF PLASTICS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "pipe | Terms: tubes and pipes",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "e8fe4810de40d6b62be10013a421c556534d39f95ba57541a528408c5c143689": {
+    "raw_query": "men wovn cottn dreas shrt",
+    "physical_product": "men wovn cottn",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "men's boys singlets vests",
+      "underpants",
+      "briefs"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, not knitted or crocheted | MEN'S OR BOYS SINGLETS AND OTHER VESTS, UNDERPANTS, BRIEFS, NIGHTSHIRTS, PYJAMAS, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES ---- UNDERPANTS AND BRIF",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | SHAWLS, SCARVES, MUFFLERS, MANTILLAS, VEILS AND THE LIKE",
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS UNDERPANTS, BRIEFS, NIGHTSHIRTS, PYJAMAS, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES, KNITTED OR CROCHETED ---- UNDERPANTS AND BRIEFS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS SINGLETS AND OTHER VESTS, SLIPS, PETTICOATS, BRIEFS, PANTIES, NIGHTDRESSES, PYJAMAS, NEGLIGES, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES ---- SLIPS AND PETTICOATS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | MEN'S OR BOYS SHIRTS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "men wovn cottn | Terms: men's boys singlets vests, underpants, briefs",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "ab9d78160a2d9d35c91384669c7a930c8803dcd7dcf166ef1f0074d7befb1a4c": {
+    "raw_query": "laptopp notebuk persnal computr",
+    "physical_product": "laptopp notebuk persnal",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "UNRECOGNIZED",
+    "grounded_search_terms": [],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "computr",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'computr'"
+      },
+      {
+        "term": "notebuk",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'notebuk'"
+      },
+      {
+        "term": "laptopp",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'laptopp'"
+      }
+    ],
+    "top_headings_shown": [
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | TELEPHONE SETS, SMARTPHONES AND OTHER TELEPHONES FOR CELLULAR NETWORKS OR FOR OTHER WIRELESS N ETWO R KS : O THE R APPARAT US F OR THE TRANSMISSION OR RECEPTION OF VICE, IMAGES OR O T HE R D ATA , IN CL U DI NG A P PA RAT US FOR COMMUNICATION IN A WIRED OR WIRELESS NETWORK (SUCH AS A LOCAL OR WIDE AREA NETWORK), OTHER THAN TRANSMISSION OR RECEPTION APPARATUS OF HEADING 8443, 8525, 8527 OR 8528",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | FLAT PANEL DISPLAY MODULES, WHETHER OR NOT INCORPORATING TOUCH-SENSITIVE SCREENS TELEVISION CAMERAS, DIGITAL CAMERAS AND VIDEO CAMERA RECORDERS:",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | MICROPHONES AND STANDS THEREFOR: LOUDSPEAKERS, WHETHER OR NOT MOUNTED IN THEIR ENCLOSURES: HEADPHONES AND EARPHONES, WHETHER OR NOT COMBINED WITH A MICROPHONE, AND SETS CONSISTING OF A MICROPHONE AND ONE OR MORE LUUDSPEAKERS: AUDIO-FREQUENCY ELECTRIC AMPL",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | OTHER OFFICE MACHINES (FOR EXAMPLE, HECTOGRAPH OR STENCIL DUPLICATING MACHINES, ADDRESSING MACHINES, AUTOMATIC BANKNOTE DISPENSERS, COIN SORTING MACHINES, COIN COUNTING OR WRAPPING MACHINES, PENCILSHARPENING MACHINES, PERFORATING OR STAPLING MACHINES)",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | PRIMARY CELLS AND PRIMARY BATTERIES"
+    ],
+    "is_valid": false,
+    "error_message": "All candidate search terms failed strict row-level customs grounding. Progress halted under GIR compliance.",
+    "retries_used": 0,
+    "synthesized_search_string": "laptopp notebuk persnal",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "890997fb150f2e9894fa00d54082de9decaa83b06c22e8c38a0bf802b7258aa6": {
+    "raw_query": "led acid autumotive batree",
+    "physical_product": "led acid autumotive",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "led",
+      "acid"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "autumotive",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'autumotive'"
+      }
+    ],
+    "top_headings_shown": [
+      "Plastics and articles thereof | ION-EXCHANGERS BASED ON POLYMERS OF HEADINGS 3901 TO 3913, IN PRIMARY FORMS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MACHINERY FOR PREPARING OR MAKING UP TOBACCO , NOT SPECIFIED O R INCLUDED ELSEWHERE IN THIS CHAPTER",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | ELECTR I C F ILAM ENT OR DIS CH ARGE LAMPS INCLUDING SEALED BEAM LAMP UNITS AND ULTRAVIOLET OR INFRA-RED LAMPS, ARC-LAMPS",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | CARBON ELECTRODES, CARBON BRUSHES, LAMP CARBONS, BATTERY CARBONS AND OTHER ARTICLES OF GRAPHITE OR OTHER CARBON, WITH OR WITHOUT METAL, OF A KIND USED FOR ELECTRICAL PURPOSES ELECTRODES",
+      "Plastics and articles thereof | ACRYLIC POLYMERS IN PRIMARY FORMS - POLY (METHYL METHACRYLATE):"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "led acid autumotive | Terms: led, acid",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "3fae40f14eba890d151fba46c62fd7c50640b4892a436934b8d18508e71d68e9": {
+    "raw_query": "biscut wfr chocolate",
+    "physical_product": "biscut wfr chocolate",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "chocolate"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "biscut",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'biscut'"
+      },
+      {
+        "term": "wfr",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'wfr'"
+      }
+    ],
+    "top_headings_shown": [
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | BREAD, PASTRY, CAKES, BISCUITS AND OTHER BAKERS WARES, WHETHER OR NOT CONTAINING COCOA",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | MALT EXTRACT",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | TAPIOCA AND SUBSTITUTES THEREFOR PREPARED FROM STARCH, IN THE FORM OF FLAKES, GRAINS, PEARLS, SIFTINGS OR IN SIMILAR FORMS",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | PASTA, WHETHER OR NOT COOKED OR STUFFED (WITH MEAT OR OTHER SUBSTANCES) OR OTHERWISE PREPARED, SUCH AS SPAGHETTI, MACARONI, NOODLES, LASAGNE, GNOCCHI, RAVIOLI, CANNELLONI",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | PREPARED FOODS OBTAINED BY THE SWELLING OR ROASTING OF CEREALS OR CEREAL PRODUCTS (FOR EXAMPLE, CORN FLAKES)"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "biscut wfr chocolate | Terms: chocolate",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "15d7f64c39a220fc49772d2ada8bf2a8a419112c29b418a7d15d5cb8578136d5": {
+    "raw_query": "semles ss pipe astm",
+    "physical_product": "pipe",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "AMBIGUOUS_MATERIAL",
+    "grounded_search_terms": [
+      "tubes and pipes"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)",
+      "manufacturing process (seamless vs welded)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of iron or steel | TUBES, PIPES AND HOLLOW PROFILES, SEAMLESS, OF IRON (OTHER THAN CAST IRON) OR STEEL - LINE PIPE OF A KIND USED FOR OIL AND GAS PIPELINES",
+      "Articles of iron or steel | OTHER TUBES, PIPES AND HOLLOW PROFILES (FOR EXAMPLE, OPEN SEAM OR WELDED, RIVETED OR SIMILARLY CLOSED), OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES",
+      "Articles of iron or steel | OTHER TUBES AND PIPES (FOR EXAMPLE, WELDED, RIVETED OR SIMILARLY CLOSED), HAVING CIRCULAR CROSS-SECTIONS, THE EXTERNAL DIAMETER OF WHICH EXCEEDS 406.4 MM, OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES",
+      "Articles of iron or steel | TUBE OR PIPE FITTINGS (FOR EXAMPLE, COUPLINGS, ELBOWS, SLEEVES), OF IRON OR STEEL - CAST FITTINGS",
+      "Plastics and articles thereof | TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - ARTIFICIAL GUTS (SAUSAGE CASINGS) OF HARDENED PROTEIN OR OF CELLULOSIC MATERIALS:"
+    ],
+    "is_valid": true,
+    "error_message": "Statutory classification depends on constituent material and construction. Product 'semles ss pipe astm' exists across multiple chapters (e.g. Chapter 39 Plastics vs Chapter 73 Steel). Material is required.",
+    "retries_used": 0,
+    "synthesized_search_string": "pipe | Terms: tubes and pipes",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "d56d3b76d480fe8771516d6531cbf5d98bb4ee9ca57a68ff6d5ca90acfeb2511": {
+    "raw_query": "bijli ka chhat wala pankha",
+    "physical_product": "bijli ka chhat",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "UNRECOGNIZED",
+    "grounded_search_terms": [],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "pankha",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'pankha'"
+      },
+      {
+        "term": "wala",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'wala'"
+      },
+      {
+        "term": "chhat",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'chhat'"
+      }
+    ],
+    "top_headings_shown": [
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | MALT EXTRACT",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | TIES, BOW TIES AND CRAVATS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | BABIES GARMENTS AND CLOTHING ACCESSORIES",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED"
+    ],
+    "is_valid": false,
+    "error_message": "All candidate search terms failed strict row-level customs grounding. Progress halted under GIR compliance.",
+    "retries_used": 0,
+    "synthesized_search_string": "bijli ka chhat",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "39eba96bf006d2413eb9226679488111b3bb0ea8b323e301f15fc6d0ee1b70a1": {
+    "raw_query": "lohe ka tava bartan",
+    "physical_product": "household articles",
+    "material": "steel",
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "household articles",
+      "steel"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [
+      {
+        "term": "table kitchen or other household articles",
+        "field_source": "search_terms",
+        "reason": "exceeds_4_words"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | TIES, BOW TIES AND CRAVATS",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS OVERCOATS,CAR-COATS, CAPES, CLOAKS,ANORAKS (INCLUDING SKIJACKETS), WIND-CHEATERS, WINDJACKETS AND SIMILAR ARTICLES, NITTED OR CROCHETED, OTHER HAN THOSE OF HEADING 6104",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | TRACK SUITS, SKI SUITS AND SWIMWEAR"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "household articles | Material: steel | Terms: household articles, steel",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "c246b89dec9df482834a6083470f244d253fff4ea98ef0dcdc99e60d020fb51c": {
+    "raw_query": "plastic ki balti bucket",
+    "physical_product": "plastic ki balti",
+    "material": "plastics",
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "plastics"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Plastics and articles thereof | TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - ARTIFICIAL GUTS (SAUSAGE CASINGS) OF HARDENED PROTEIN OR OF CELLULOSIC MATERIALS:",
+      "Plastics and articles thereof | BATHS, SHOWER-BATHS, SINKS, WASH-BASINS, BIDETS, LAVATORY PANS, SEATS AND COVERS, FLUSHING CISTERNS AND SIMILAR SANITARY WARE, OF PLASTICS",
+      "Plastics and articles thereof | ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS",
+      "Plastics and articles thereof | BUILDERS WARE OF PLASTICS, NOT ELSEWHERE SPECIFIED OR INCLUDED",
+      "Plastics and articles thereof | WASTE, PARINGS AND SCRAP, OF PLASTICS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "plastic ki balti | Material: plastics | Terms: plastics",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "e31cd16bbd388607c803b7f98bbd360df97592544f75e378cc44705851190bc0": {
+    "raw_query": "chai ki patti tea leaf",
+    "physical_product": "chai ki patti",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "OUT_OF_SCHEDULE",
+    "grounded_search_terms": [
+      "leaf",
+      "tea"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "chai",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'chai'"
+      }
+    ],
+    "top_headings_shown": [
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | MALT EXTRACT",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | TAPIOCA AND SUBSTITUTES THEREFOR PREPARED FROM STARCH, IN THE FORM OF FLAKES, GRAINS, PEARLS, SIFTINGS OR IN SIMILAR FORMS",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | PASTA, WHETHER OR NOT COOKED OR STUFFED (WITH MEAT OR OTHER SUBSTANCES) OR OTHERWISE PREPARED, SUCH AS SPAGHETTI, MACARONI, NOODLES, LASAGNE, GNOCCHI, RAVIOLI, CANNELLONI",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | BREAD, PASTRY, CAKES, BISCUITS AND OTHER BAKERS WARES, WHETHER OR NOT CONTAINING COCOA",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | PREPARED FOODS OBTAINED BY THE SWELLING OR ROASTING OF CEREALS OR CEREAL PRODUCTS (FOR EXAMPLE, CORN FLAKES)"
+    ],
+    "is_valid": true,
+    "error_message": "Recognized product 'tea', but statutory classification falls under Chapter 09 (Coffee, tea, mate and spices), which is outside the active Master file schedule (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94).",
+    "retries_used": 0,
+    "synthesized_search_string": "chai ki patti | Terms: leaf, tea",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "a9b3b3086d998b4255346706d801aa07ad17eb713aafaec63fc9755a3396892c": {
+    "raw_query": "gaadi ka brake liner pad",
+    "physical_product": "gaadi ka brake",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "brake",
+      "pad"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "gaadi",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'gaadi'"
+      }
+    ],
+    "top_headings_shown": [
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | BABY CARRIAGES AND PARTS THEREOF",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | -",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | PARTS AND ACCESSORIES OF VEHICLES OF HEADINGS 8711 TO 8713",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | MOTOR VEHICLES FOR THE TRANSPORT OF TEN OR MORE PERSONS, INCLUDING THE DRIVER",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | BODIES (INCLUDING CABS), FOR THE MOTOR VEHICLES OF HEADINGS 8701 TO 8705"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "gaadi ka brake | Terms: brake, pad",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "2cf62637f77839df8eac049f4d3ae71591d9abb86c13c6773e9f7bf0b1814fd9": {
+    "raw_query": "lohe ka nut kabil fasteners",
+    "physical_product": "fasteners",
+    "material": "steel",
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "screws",
+      "bolts",
+      "nuts",
+      "steel"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | MALT EXTRACT",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MACHINES FOR CLEANING, SORTING OR GRADING SEED, GRAIN OR DRIED LEGUMINOUS VEGETABLES",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | PREPARED FOODS OBTAINED BY THE SWELLING OR ROASTING OF CEREALS OR CEREAL PRODUCTS (FOR EXAMPLE, CORN FLAKES)",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | TAPIOCA AND SUBSTITUTES THEREFOR PREPARED FROM STARCH, IN THE FORM OF FLAKES, GRAINS, PEARLS, SIFTINGS OR IN SIMILAR FORMS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | SELF-PROPELLED BULLDOZERS, ANGLEDOZERS, GRADERS, LEVELLERS, SCRAPERS, MECHANICAL SHOVELS, EXCAVATORS, SHOVEL LOADERS, TAMPING MACHINES AND ROAD ROLLERS - BULLDOZERS AND ANGLEDOZERS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "fasteners | Material: steel | Terms: screws, bolts, nuts, steel",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "61c98905e94b18e3c6c0a0570b27f66cd8f548ea0612ed79413fedc1ec69331f": {
+    "raw_query": "pani ka khet wala motor pump",
+    "physical_product": "pump",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "pumps for liquids",
+      "pumps"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | PUMPS FOR LIQUIDS, WHETHER OR NOT FITTED WITH A MEASURING DEVICE",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | TOOLS FOR WORKING IN THE HAND, PNEUMATIC, HYDRAULIC OR WITH SELF- CONTAINED ELECTRIC OR NON-ELECTRIC MOTOR - PNEUMATIC",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | AIR OR VACUUM PUMPS, AIR OR OTHER GAS COMPRESSORS AND FANS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MILKING MACHINES AND DAIRY MACHINERY",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | HYDRAULIC TURBINES, WATER WHEELS, ANDREGULATORS THEREFOR - HYDRAULIC TURBINES AND WATER WHEELS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "pump | Terms: pumps for liquids, pumps",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "bc8b7cd6249201672144b92043659196b9521d0732b64d649d2bfda4c834fb0c": {
+    "raw_query": "sooti cotton underwear baniyan",
+    "physical_product": "t-shirt",
+    "material": "cotton",
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "t-shirts",
+      "cotton"
+    ],
+    "unstated_attributes": [
+      "construction (knitted or crocheted vs woven)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS UNDERPANTS, BRIEFS, NIGHTSHIRTS, PYJAMAS, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES, KNITTED OR CROCHETED ---- UNDERPANTS AND BRIEFS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | MEN'S OR BOYS SINGLETS AND OTHER VESTS, UNDERPANTS, BRIEFS, NIGHTSHIRTS, PYJAMAS, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES ---- UNDERPANTS AND BRIF",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS SINGLETS AND OTHER VESTS, SLIPS, PETTICOATS, BRIEFS, PANTIES, NIGHTDRESSES, PYJAMAS, NEGLIGES, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES ---- SLIPS AND PETTICOATS",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'S OR GIRLS SLIPS, PETTICOATS, BRIEFS, PANTIES, NIGHT DRESSES, PYJAMAS, NEGLIGEES, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES, KNITTED OR CROCHETED ---- SLIPS AND PETTICOATS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "t-shirt | Material: cotton | Terms: t-shirts, cotton",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "99af6782f0ea389940bdd9d94d9adde3b5fdf564433fcbc3a8c186ccc7d9d77c": {
+    "raw_query": "office lunch box",
+    "physical_product": "office lunch box",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "AMBIGUOUS_MATERIAL",
+    "grounded_search_terms": [
+      "office machines (for example",
+      "hectograph stencil duplicating machi..."
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | PASTA, WHETHER OR NOT COOKED OR STUFFED (WITH MEAT OR OTHER SUBSTANCES) OR OTHERWISE PREPARED, SUCH AS SPAGHETTI, MACARONI, NOODLES, LASAGNE, GNOCCHI, RAVIOLI, CANNELLONI",
+      "Plastics and articles thereof | TABLEWARE, KITCHENWARE, OTHER HOUSEHOLD ARTICLES AND HYGIENIC OR TOILET ARTICLES, OF PLASTICS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | SHAWLS, SCARVES, MUFFLERS, MANTILLAS, VEILS AND THE LIKE",
+      "Plastics and articles thereof | ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | TIES, BOW TIES AND CRAVATS"
+    ],
+    "is_valid": true,
+    "error_message": "Statutory classification depends on constituent material and construction. Product 'office lunch box' exists across multiple chapters (e.g. Chapter 39 Plastics vs Chapter 73 Steel). Material is required.",
+    "retries_used": 0,
+    "synthesized_search_string": "office lunch box | Terms: office machines (for example, hectograph stencil duplicating machi...",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "3959cc57b5508bad8b2f605390f34edfa5c6f1d618d772aff97eca79dfa0a6e5": {
+    "raw_query": "insulated beverage tumbler",
+    "physical_product": "bottle",
+    "material": null,
+    "construction": "insulated",
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "bottles",
+      "insulated"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | PRESSES, CRUSHERS AND SIMILAR MACHINERY USED IN THE MANUFACTURE OF WINE, CIDER, FRUIT JUICES OR SIMILAR BEVERAGES",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | AUTOMATIC GOODS-VENDING MACHINES (FOR EXAMPLE, POSTAGE STAMPS, CIGARETTE, FOOD OR BEVERAGE MACHINES), INCLUDING MONEY CHANGING MACHINES - AUTOMATIC BEVERAGE-VENDING MACHINES",
+      "Articles of iron or steel | TANKS, CASKS, DRUMS, CANS, BOXES AND SIMILAR CONTAINERS, FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY NOT EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUI",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | INSULATED (INCLUDING ENAMELLED OR ANODISED) WIRE, CABLE (INCLUDING CO-AXIAL CABLE) AND OTHER INSULATED ELECTRIC CONDUCTORS, WHETHER OR NOT FITTED WITH CONNECTORS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | HARVESTING OR THRESHING MACHINERY, INCLUDING STRAW OR FODDER BALERS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "bottle | Construction: insulated | Terms: bottles, insulated",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "447c6cc380742fe221619e560918686a9cbb54cf25bafbdca78de020530d07a6": {
+    "raw_query": "chemical conduit tubing",
+    "physical_product": "pipe",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "tubes and pipes"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)",
+      "manufacturing process (seamless vs welded)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Plastics and articles thereof | TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - ARTIFICIAL GUTS (SAUSAGE CASINGS) OF HARDENED PROTEIN OR OF CELLULOSIC MATERIALS:",
+      "Articles of iron or steel | TUBE OR PIPE FITTINGS (FOR EXAMPLE, COUPLINGS, ELBOWS, SLEEVES), OF IRON OR STEEL - CAST FITTINGS",
+      "Articles of iron or steel | TUBES, PIPES AND HOLLOW PROFILES, SEAMLESS, OF IRON (OTHER THAN CAST IRON) OR STEEL - LINE PIPE OF A KIND USED FOR OIL AND GAS PIPELINES",
+      "Articles of iron or steel | OTHER TUBES, PIPES AND HOLLOW PROFILES (FOR EXAMPLE, OPEN SEAM OR WELDED, RIVETED OR SIMILARLY CLOSED), OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES",
+      "Articles of iron or steel | OTHER TUBES AND PIPES (FOR EXAMPLE, WELDED, RIVETED OR SIMILARLY CLOSED), HAVING CIRCULAR CROSS-SECTIONS, THE EXTERNAL DIAMETER OF WHICH EXCEEDS 406.4 MM, OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "pipe | Terms: tubes and pipes",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "1e76b547e9769ead612b7884e849f902b45b9b4cdcb02ff8f46ec557c03ecb31": {
+    "raw_query": "industrial safety gloves",
+    "physical_product": "industrial safety gloves",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "AMBIGUOUS_MATERIAL",
+    "grounded_search_terms": [
+      "gloves",
+      "mittens mitts"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, not knitted or crocheted | GLOVES, MITTENS AND MITTS",
+      "Articles of iron or steel | SEWING NEEDLES, KNITTING NEEDLES, BODKINS, CROCHET HOOKS, EMBROIDERY STILETTOS AND SIMILAR ARTICLES, FOR USE IN THE HAND, OF IRON OR STEEL",
+      "Articles of apparel and clothing accessories, knitted or crocheted | GLOVES, MITTENS AND MITTS, KNITTED OR CROCHETED",
+      "Articles of iron or steel | SANITARY WARE AND PARTS THEREOF, OF IRON OR STEEL",
+      "Articles of iron or steel | NAILS, TACKS, DRAWING PINS, CORRUGATED NAILS, STAPLES (OTHER THAN THOSE OF HEADING 8305) AND SIMILAR ARTICLES, OF IRON OR STEEL, WHETHER OR NOT WITH HEADS OF OTHER MATERIAL, BUT EXCLUDING SUCH ARTICLES WITH HEADS OF COPPER"
+    ],
+    "is_valid": true,
+    "error_message": "Statutory classification depends on constituent material and construction. Product 'industrial safety gloves' exists across multiple chapters (e.g. Chapter 39 Plastics vs Chapter 73 Steel). Material is required.",
+    "retries_used": 0,
+    "synthesized_search_string": "industrial safety gloves | Terms: gloves, mittens mitts",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "837cb840d8b0c8687f41119b47f1b17ac3190749048d2d7f08700ccf158d6051": {
+    "raw_query": "liquid storage container 50L",
+    "physical_product": "liquid storage container",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "AMBIGUOUS_MATERIAL",
+    "grounded_search_terms": [
+      "storage",
+      "container"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "50l",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: '50l'"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of iron or steel | TANKS, CASKS, DRUMS, CANS, BOXES AND SIMILAR CONTAINERS, FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY NOT EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUI",
+      "Articles of iron or steel | CONTAINERS FOR COMPRESSED OR LIQUEFIED GAS, OF IRON OR STEEL",
+      "Articles of iron or steel | RESERVOIRS, TANKS, VATS AND SIMILAR CONTAINERS FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUIPMENT",
+      "Plastics and articles thereof | ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | PUMPS FOR LIQUIDS, WHETHER OR NOT FITTED WITH A MEASURING DEVICE"
+    ],
+    "is_valid": true,
+    "error_message": "Statutory classification depends on constituent material and construction. Product 'liquid storage container 50L' exists across multiple chapters (e.g. Chapter 39 Plastics vs Chapter 73 Steel). Material is required.",
+    "retries_used": 0,
+    "synthesized_search_string": "liquid storage container | Terms: storage, container",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "dfe0647c05fea22175875cdbeb68a68605b1e271b1df1642e112f8a0166cf104": {
+    "raw_query": "household water jug",
+    "physical_product": "household water jug",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "household laundry",
+      "type washing machines",
+      "including machines which w..."
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | PUMPS FOR LIQUIDS, WHETHER OR NOT FITTED WITH A MEASURING DEVICE",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | HOUSEHOLD OR LAUNDRY-TYPE WASHING MACHINES, INCLUDING MACHINES WHICH BOTH WASH AND DRY - MACHINES, EACH OF A DRY LINEN CAPACITY NOT EXCEEDING 10 KG",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | HARVESTING OR THRESHING MACHINERY, INCLUDING STRAW OR FODDER BALERS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | AUTOMATIC GOODS-VENDING MACHINES (FOR EXAMPLE, POSTAGE STAMPS, CIGARETTE, FOOD OR BEVERAGE MACHINES), INCLUDING MONEY CHANGING MACHINES - AUTOMATIC BEVERAGE-VENDING MACHINES",
+      "Plastics and articles thereof | BATHS, SHOWER-BATHS, SINKS, WASH-BASINS, BIDETS, LAVATORY PANS, SEATS AND COVERS, FLUSHING CISTERNS AND SIMILAR SANITARY WARE, OF PLASTICS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "household water jug | Terms: household laundry, type washing machines, including machines which w...",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "a46fa83540cdc52aaf16f46caaf5c9791da18cfa7ce130795901bec4036a926e": {
+    "raw_query": "flanged gas pipe",
+    "physical_product": "pipe",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "AMBIGUOUS_MATERIAL",
+    "grounded_search_terms": [
+      "tubes and pipes"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)",
+      "manufacturing process (seamless vs welded)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of iron or steel | OTHER TUBES AND PIPES (FOR EXAMPLE, WELDED, RIVETED OR SIMILARLY CLOSED), HAVING CIRCULAR CROSS-SECTIONS, THE EXTERNAL DIAMETER OF WHICH EXCEEDS 406.4 MM, OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES",
+      "Articles of iron or steel | TUBES, PIPES AND HOLLOW PROFILES, SEAMLESS, OF IRON (OTHER THAN CAST IRON) OR STEEL - LINE PIPE OF A KIND USED FOR OIL AND GAS PIPELINES",
+      "Articles of iron or steel | OTHER TUBES, PIPES AND HOLLOW PROFILES (FOR EXAMPLE, OPEN SEAM OR WELDED, RIVETED OR SIMILARLY CLOSED), OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES",
+      "Articles of iron or steel | TUBE OR PIPE FITTINGS (FOR EXAMPLE, COUPLINGS, ELBOWS, SLEEVES), OF IRON OR STEEL - CAST FITTINGS",
+      "Plastics and articles thereof | TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - ARTIFICIAL GUTS (SAUSAGE CASINGS) OF HARDENED PROTEIN OR OF CELLULOSIC MATERIALS:"
+    ],
+    "is_valid": true,
+    "error_message": "Statutory classification depends on constituent material and construction. Product 'flanged gas pipe' exists across multiple chapters (e.g. Chapter 39 Plastics vs Chapter 73 Steel). Material is required.",
+    "retries_used": 0,
+    "synthesized_search_string": "pipe | Terms: tubes and pipes",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "66443755190329a31f5fe05d722c413ff899110a859309ee87b605dca91504f5": {
+    "raw_query": "chemical storage carboy drum",
+    "physical_product": "bottle",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "bottles"
+    ],
+    "unstated_attributes": [
+      "thermal insulation status (vacuum insulated vs non-insulated)",
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of iron or steel | TANKS, CASKS, DRUMS, CANS, BOXES AND SIMILAR CONTAINERS, FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY NOT EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUI",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | -",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | ELECTRICAL AND ELECTRONIC WASTE AND SCRAP",
+      "Plastics and articles thereof | ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS",
+      "Plastics and articles thereof | POLYMERS OF VINYL ACETATE OR OF OTHER VINYL ESTERS, IN PRIMARY FORMS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "bottle | Terms: bottles",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "6f8445d9c0b1a58cd6f647223e0da41b3f331249676e5b96cfaf25e9568c82c3": {
+    "raw_query": "glass water bottle 1 litre",
+    "physical_product": "bottle",
+    "material": "glass",
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "OUT_OF_SCHEDULE",
+    "grounded_search_terms": [
+      "bottles",
+      "glass"
+    ],
+    "unstated_attributes": [
+      "thermal insulation status (vacuum insulated vs non-insulated)",
+      "thermal insulation status (vacuum insulated vs non-insulated)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | PUMPS FOR LIQUIDS, WHETHER OR NOT FITTED WITH A MEASURING DEVICE",
+      "Plastics and articles thereof | BATHS, SHOWER-BATHS, SINKS, WASH-BASINS, BIDETS, LAVATORY PANS, SEATS AND COVERS, FLUSHING CISTERNS AND SIMILAR SANITARY WARE, OF PLASTICS",
+      "Articles of iron or steel | RESERVOIRS, TANKS, VATS AND SIMILAR CONTAINERS FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUIPMENT",
+      "Plastics and articles thereof | ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS",
+      "Articles of iron or steel | TANKS, CASKS, DRUMS, CANS, BOXES AND SIMILAR CONTAINERS, FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY NOT EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUI"
+    ],
+    "is_valid": true,
+    "error_message": "Recognized product 'glass', but statutory classification falls under Chapter 70 (Glass and glassware), which is outside the active Master file schedule (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94).",
+    "retries_used": 0,
+    "synthesized_search_string": "bottle | Material: glass | Terms: bottles, glass",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "4c383872316d7e0b8633277748db74b4c164e4d996c4849b6fcc89e84d269341": {
+    "raw_query": "genuine leather travel jacket",
+    "physical_product": "genuine leather travel",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "OUT_OF_SCHEDULE",
+    "grounded_search_terms": [
+      "travel",
+      "jacket",
+      "leather"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)",
+      "construction (knitted or crocheted vs woven)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, not knitted or crocheted | MEN'S OR BOYS SUITS, ENSEMBLES, JACKETS, BLAZERS, TROUSERS, BIB AND BRACE OVEB RALLS, BREECHES AND SHORTS (OTHER THAN SWIMWEAR) ---- SUITS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | MEN'S OR BOYS OVERCOATS, CAR-COATS, CLOAKS, ANORAKS (INCLUDING SKI-JACKETS), WINDCHEATERS, WIND-JACKETS AND SIMILAR ARTICLES OTHER THAN THOSE OF HEADING 6203 ---- OVERCOATS, RAINCOATS, CAR-COATS, CAPES, CLOAKS AND SIMILAR ARTICLES",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'S OR GIRLS OVERCOATS, CAR-COATS, CAPES, CLOAKS, ANORAKS (INCLUDING SKIJACKETS), WIND-CHEATERS, WIND-JACKETS AND SIMILAR ARTICLES, OTHER THAN THOSE OF HEADING 6204 ---- OVERCOATS, RAINCOATS, CAR-COATS, CAPES, CLOAKS AND SIMILAR ARTICLES",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS SUITS, ENSEMBLES, JACKETS, BLAZERS, DRESSES, SKIRTS, DIVIDED SKIRTS, TROUSERS, BIB AND BRACE OVERALLS, BREECHES AND SHORTS (OTHER THAN SWIMWEAR) ---- SUITS",
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS OVERCOATS, CARCOATS, CAPES, CLOAKS, ANORAKS (INCLUDING SKIJACKETS), WIND-CHEATERS, WINDJACKETS AND SIMILAR ARTICLES, KNITTED OR CROCHETED, OTHER THAN THOSE OF HEADING 6103"
+    ],
+    "is_valid": true,
+    "error_message": "Recognized product 'leather', but statutory classification falls under Chapter 42 (Articles of leather; saddlery and harness; travel goods), which is outside the active Master file schedule (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94).",
+    "retries_used": 0,
+    "synthesized_search_string": "genuine leather travel | Terms: travel, jacket, leather",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "2d849b05c0667d053d41d832799e3e1f90ccc201d04108dbe3ecb1a6708aa069": {
+    "raw_query": "solid teak wood dining table",
+    "physical_product": "solid teak wood",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "table",
+      "iron st..."
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of iron or steel | TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PARTS THEREOF, OF IRON OR STEEL",
+      "Furniture; bedding, mattresses, mattress supports, cushions and similar stuffed furnishing; lamps and lighting fittings, not elsewhere specified or included; illuminated signs, illuminated name-plates and the like; prefabricated building | MEDICAL, SURGICAL, DENTAL OR VETERINARY FURNITURE (FOR EXAMPLE, OPERATING TABLES, EXAMINATION TABLES, HOSPITAL BEDS WITH MECHANICAL FITTINGS, DENTISTS' CHAIRS)",
+      "Plastics and articles thereof | TABLEWARE, KITCHENWARE, OTHER HOUSEHOLD ARTICLES AND HYGIENIC OR TOILET ARTICLES, OF PLASTICS",
+      "Furniture; bedding, mattresses, mattress supports, cushions and similar stuffed furnishing; lamps and lighting fittings, not elsewhere specified or included; illuminated signs, illuminated name-plates and the like; prefabricated building | OTHER FURNITURE AND PARTS THEREOF",
+      "Articles of iron or steel | TANKS, CASKS, DRUMS, CANS, BOXES AND SIMILAR CONTAINERS, FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY NOT EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUI"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "solid teak wood | Terms: table, iron st...",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "1bde1fc1230fb88c69f8b46dea39f5d82d3f2c4a8f2744de5c7c420261d91e98": {
+    "raw_query": "fresh nagpur oranges",
+    "physical_product": "fresh nagpur oranges",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "fresh"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "nagpur",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'nagpur'"
+      },
+      {
+        "term": "oranges",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'oranges'"
+      }
+    ],
+    "top_headings_shown": [
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | PASTA, WHETHER OR NOT COOKED OR STUFFED (WITH MEAT OR OTHER SUBSTANCES) OR OTHERWISE PREPARED, SUCH AS SPAGHETTI, MACARONI, NOODLES, LASAGNE, GNOCCHI, RAVIOLI, CANNELLONI",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | BREAD, PASTRY, CAKES, BISCUITS AND OTHER BAKERS WARES, WHETHER OR NOT CONTAINING COCOA",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | MALT EXTRACT",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MACHINES FOR CLEANING, SORTING OR GRADING SEED, GRAIN OR DRIED LEGUMINOUS VEGETABLES",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | PREPARED FOODS OBTAINED BY THE SWELLING OR ROASTING OF CEREALS OR CEREAL PRODUCTS (FOR EXAMPLE, CORN FLAKES)"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "fresh nagpur oranges | Terms: fresh",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "1b2cb2d7b208eed06b006bfb88d0c396e7ad5d39b847aafd9530090ce2b89e06": {
+    "raw_query": "glass beverage tumbler set",
+    "physical_product": "bottle",
+    "material": "glass",
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "OUT_OF_SCHEDULE",
+    "grounded_search_terms": [
+      "bottles",
+      "glass"
+    ],
+    "unstated_attributes": [
+      "thermal insulation status (vacuum insulated vs non-insulated)",
+      "thermal insulation status (vacuum insulated vs non-insulated)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | PRESSES, CRUSHERS AND SIMILAR MACHINERY USED IN THE MANUFACTURE OF WINE, CIDER, FRUIT JUICES OR SIMILAR BEVERAGES",
+      "Articles of iron or steel | TANKS, CASKS, DRUMS, CANS, BOXES AND SIMILAR CONTAINERS, FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY NOT EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUI",
+      "Plastics and articles thereof | TABLEWARE, KITCHENWARE, OTHER HOUSEHOLD ARTICLES AND HYGIENIC OR TOILET ARTICLES, OF PLASTICS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | AUTOMATIC GOODS-VENDING MACHINES (FOR EXAMPLE, POSTAGE STAMPS, CIGARETTE, FOOD OR BEVERAGE MACHINES), INCLUDING MONEY CHANGING MACHINES - AUTOMATIC BEVERAGE-VENDING MACHINES",
+      "Articles of iron or steel | CONTAINERS FOR COMPRESSED OR LIQUEFIED GAS, OF IRON OR STEEL"
+    ],
+    "is_valid": true,
+    "error_message": "Recognized product 'glass', but statutory classification falls under Chapter 70 (Glass and glassware), which is outside the active Master file schedule (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94).",
+    "retries_used": 0,
+    "synthesized_search_string": "bottle | Material: glass | Terms: bottles, glass",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "03ce8411624fccbbcc554e2dbad990d1edfa054032b5ed08c1533e5d43ea625a": {
+    "raw_query": "raw timber logs for sawmill",
+    "physical_product": "raw timber logs",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "OUT_OF_SCHEDULE",
+    "grounded_search_terms": [
+      "raw",
+      "logs"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "sawmill",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'sawmill'"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of iron or steel | CLOTH (INCLUDING ENDLESS BANDS), GRILL, NETTING AND FENCING, OF IRON OR STEEL WIRE",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MACHINERY FOR MAKING PULP OF FIBROUS CELLULOSIC MATERIAL OR FOR MAKING OR FINISHING PAPER OR PAPERBOARD",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | OTHER MACHINERY FOR MAKING UP PAPER PULP, PAPER OR PAPERBOARD, INCLUDING CUTTING MACHINES OF ALL KINDS",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | HARVESTING OR THRESHING MACHINERY, INCLUDING STRAW OR FODDER BALERS",
+      "Articles of iron or steel | TUBES, PIPES AND HOLLOW PROFILES, SEAMLESS, OF IRON (OTHER THAN CAST IRON) OR STEEL - LINE PIPE OF A KIND USED FOR OIL AND GAS PIPELINES"
+    ],
+    "is_valid": true,
+    "error_message": "Recognized product 'timber', but statutory classification falls under Chapter 44 (Wood and articles of wood), which is outside the active Master file schedule (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94).",
+    "retries_used": 0,
+    "synthesized_search_string": "raw timber logs | Terms: raw, logs",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "3595a6e2394e91bc1e9e8fe3e6120e19bce8c19f10ff416c37eaabd954a87b4a": {
+    "raw_query": "pure gold necklace jewelry",
+    "physical_product": "pure gold necklace",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "OUT_OF_SCHEDULE",
+    "grounded_search_terms": [
+      "gold"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "jewelry",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'jewelry'"
+      },
+      {
+        "term": "necklace",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'necklace'"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, not knitted or crocheted | TIES, BOW TIES AND CRAVATS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | BABIES GARMENTS AND CLOTHING ACCESSORIES",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | OTHER MADE UP CLOTHING ACCESSORIES",
+      "Articles of iron or steel | SEWING NEEDLES, KNITTING NEEDLES, BODKINS, CROCHET HOOKS, EMBROIDERY STILETTOS AND SIMILAR ARTICLES, FOR USE IN THE HAND, OF IRON OR STEEL",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES"
+    ],
+    "is_valid": true,
+    "error_message": "Recognized product 'gold', but statutory classification falls under Chapter 71 (Natural or cultured pearls, precious stones and metals), which is outside the active Master file schedule (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94).",
+    "retries_used": 0,
+    "synthesized_search_string": "pure gold necklace | Terms: gold",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "e878da23839541240eac7cd240c982443b94157f0e06e074ba7add4357ad79af": {
+    "raw_query": "fresh farm cow milk 500ml",
+    "physical_product": "fresh farm cow",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "OUT_OF_SCHEDULE",
+    "grounded_search_terms": [
+      "malt extract"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MILKING MACHINES AND DAIRY MACHINERY",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MACHINERY, NOT SPECIFIED OR INCLUDED ELSEWHERE IN THIS CHAPTER, FOR THE INDUSTRIAL PREPARATION OR MANUFACTURE OF FOOD OR DRINK,OTHER THAN MACHINERY FOR THE EXTRACTION OR PREPARATION OF ANIMAL OR FIXED VEGETABLE ORMACHINERY, NOT SPECIFIED OR INCLUDED ELSEWHERE IN THIS CHAPTER, FOR THE INDUSTRIAL PREPARATION OR MANUFACTURE OF FOOD OR DRINK, OTHER THAN MACHINERY FOR THE EXTRACTION OR PREPARATION OF ANIMAL OR FIXED VEGETABLE FATS OR OILS MICROBIAL FATS OR OILS",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | MALT EXTRACT",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | PUMPS FOR LIQUIDS, WHETHER OR NOT FITTED WITH A MEASURING DEVICE",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | PREPARED FOODS OBTAINED BY THE SWELLING OR ROASTING OF CEREALS OR CEREAL PRODUCTS (FOR EXAMPLE, CORN FLAKES)"
+    ],
+    "is_valid": true,
+    "error_message": "Recognized product 'milk', but statutory classification falls under Chapter 04 (Dairy produce; birds eggs; natural honey), which is outside the active Master file schedule (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94).",
+    "retries_used": 0,
+    "synthesized_search_string": "fresh farm cow | Terms: malt extract",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "8aa5d2489023f01e2535a2bae747dfc4548663472689ed069b06ef22967588c9": {
+    "raw_query": "crude oil petroleum barrel",
+    "physical_product": "crude oil petroleum",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "OUT_OF_SCHEDULE",
+    "grounded_search_terms": [
+      "oil",
+      "crude",
+      "petroleum"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of iron or steel | TUBES, PIPES AND HOLLOW PROFILES, SEAMLESS, OF IRON (OTHER THAN CAST IRON) OR STEEL - LINE PIPE OF A KIND USED FOR OIL AND GAS PIPELINES",
+      "Articles of iron or steel | OTHER TUBES AND PIPES (FOR EXAMPLE, WELDED, RIVETED OR SIMILARLY CLOSED), HAVING CIRCULAR CROSS-SECTIONS, THE EXTERNAL DIAMETER OF WHICH EXCEEDS 406.4 MM, OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | SHIPS DERRICKS",
+      "Articles of iron or steel | OTHER TUBES, PIPES AND HOLLOW PROFILES (FOR EXAMPLE, OPEN SEAM OR WELDED, RIVETED OR SIMILARLY CLOSED), OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES",
+      "Articles of iron or steel | RESERVOIRS, TANKS, VATS AND SIMILAR CONTAINERS FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUIPMENT"
+    ],
+    "is_valid": true,
+    "error_message": "Recognized product 'crude oil', but statutory classification falls under Chapter 27 (Mineral fuels, oils and products), which is outside the active Master file schedule (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94).",
+    "retries_used": 0,
+    "synthesized_search_string": "crude oil petroleum | Terms: oil, crude, petroleum",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "33e385a4f32fa3c13442edaab1da9839cd620d5b4402abfd3406b152eedd4d56": {
+    "raw_query": "antibiotic amoxicillin medicine capsule",
+    "physical_product": "antibiotic amoxicillin medicine",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "OUT_OF_SCHEDULE",
+    "grounded_search_terms": [],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "antibiotic",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'antibiotic'"
+      },
+      {
+        "term": "amoxicillin",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'amoxicillin'"
+      },
+      {
+        "term": "capsule",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'capsule'"
+      }
+    ],
+    "top_headings_shown": [
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | PASTA, WHETHER OR NOT COOKED OR STUFFED (WITH MEAT OR OTHER SUBSTANCES) OR OTHERWISE PREPARED, SUCH AS SPAGHETTI, MACARONI, NOODLES, LASAGNE, GNOCCHI, RAVIOLI, CANNELLONI",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | TANKS AND OTHER ARMOURED FIGHTING VEHICLES, MOTORISED, WHETHER OR NOT FITTED WITH WEAPONS, AND PARTS OF SUCH VEHICLES",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | WORKS TRUCKS, SELF-PROPELLED, NOT FITTED WITH LIFTING OR HANDLING EQUIPMENT, OF THE TYPE USED IN FACTORIES, WAREHOUSES, DOCK AREAS OR AIRPORTS FOR SHORT DISTANCE TRANSPORT OF GOODS",
+      "Plastics and articles thereof | P ETROLEUM RESINS , COUMARONE -INDENE RESINS , POLYTERPENES, POLYSULPHIDES, POLYSULPHONES AND OTHER PRODUCTS SPECIFIED IN NOTE 3 TO THIS CHAPTER, NOT ELSEWHERE SPECIFIED OR INCLUDED, IN PRIMARY FORMS",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'S OR GIRLS SLIPS, PETTICOATS, BRIEFS, PANTIES, NIGHT DRESSES, PYJAMAS, NEGLIGEES, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES, KNITTED OR CROCHETED ---- SLIPS AND PETTICOATS"
+    ],
+    "is_valid": true,
+    "error_message": "Recognized product 'medicine', but statutory classification falls under Chapter 30 (Pharmaceutical products), which is outside the active Master file schedule (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94).",
+    "retries_used": 0,
+    "synthesized_search_string": "antibiotic amoxicillin medicine",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "d3c1e5948bb47c8f5fb80dfbd29a407b4b1af0389a0f772f7fc691c3d33efccc": {
+    "raw_query": "random unspecified article",
+    "physical_product": "random unspecified article",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "random",
+      "article"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "unspecified",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'unspecified'"
+      }
+    ],
+    "top_headings_shown": [
+      "Plastics and articles thereof | TABLEWARE, KITCHENWARE, OTHER HOUSEHOLD ARTICLES AND HYGIENIC OR TOILET ARTICLES, OF PLASTICS",
+      "Articles of iron or steel | OTHER CAST ARTICLES OF IRON OR STEEL",
+      "Articles of iron or steel | OTHER ARTICLES OF IRON OR STEEL - FORGED OR STAMPED, BUT NOT FURTHER WORKED",
+      "Plastics and articles thereof | OTHER ARTICLES OF PLASTICS AND ARTICLES OF OTHER MATERIALS OF HEADINGS 3901 TO 3914",
+      "Plastics and articles thereof | ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "random unspecified article | Terms: random, article",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "d2f83cdb0f2e467a37c7198453f998dd42c6de900f8cf315b07debb68c922951": {
+    "raw_query": "miscellaneous thingamajig",
+    "physical_product": "miscellaneous thingamajig",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "miscellaneous"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "thingamajig",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'thingamajig'"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, not knitted or crocheted | SHAWLS, SCARVES, MUFFLERS, MANTILLAS, VEILS AND THE LIKE",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS OVERCOATS,CAR-COATS, CAPES, CLOAKS,ANORAKS (INCLUDING SKIJACKETS), WIND-CHEATERS, WINDJACKETS AND SIMILAR ARTICLES, NITTED OR CROCHETED, OTHER HAN THOSE OF HEADING 6104",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS SINGLETS AND OTHER VESTS, SLIPS, PETTICOATS, BRIEFS, PANTIES, NIGHTDRESSES, PYJAMAS, NEGLIGES, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES ---- SLIPS AND PETTICOATS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | TIES, BOW TIES AND CRAVATS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | BABIES GARMENTS AND CLOTHING ACCESSORIES"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "miscellaneous thingamajig | Terms: miscellaneous",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "eb0a59cc0ad8b6c73c7fd0b6058bac7417e2ae67866a3ad1ad128cdceff512cf": {
+    "raw_query": "doohickey",
+    "physical_product": "doohickey",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "UNRECOGNIZED",
+    "grounded_search_terms": [],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "doohickey",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'doohickey'"
+      }
+    ],
+    "top_headings_shown": [
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | TRACTORS (OTHER THAN TRACTORS OF HEADING 8709)",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | BABY CARRIAGES AND PARTS THEREOF",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | MOTORCYCLES (INCLUDING MOPEDS) AND CYCLES FITTED WITH AN AUXILIARY MOTOR, WITH OR WITHOUT SIDE-CARS",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | OMITTED",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | SHAVERS, HAIR CLIPPERS AND HAIR-REMOVING APPLIANCES, WITH SELF-CONTAINED ELECTRIC MOTOR"
+    ],
+    "is_valid": false,
+    "error_message": "All candidate search terms failed strict row-level customs grounding. Progress halted under GIR compliance.",
+    "retries_used": 0,
+    "synthesized_search_string": "doohickey",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "5f01e7ab8322be09e83d53bff3e001df794b4f5c7af13407e99ef4bd0019ac72": {
+    "raw_query": "stuff and things",
+    "physical_product": "stuff things",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "UNRECOGNIZED",
+    "grounded_search_terms": [],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "things",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'things'"
+      },
+      {
+        "term": "stuff",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'stuff'"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, not knitted or crocheted | BABIES GARMENTS AND CLOTHING ACCESSORIES",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | TIES, BOW TIES AND CRAVATS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | TRACK SUITS, SKI SUITS AND SWIMWEAR",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | OTHER MADE UP CLOTHING ACCESSORIES",
+      "Furniture; bedding, mattresses, mattress supports, cushions and similar stuffed furnishing; lamps and lighting fittings, not elsewhere specified or included; illuminated signs, illuminated name-plates and the like; prefabricated building | MEDICAL, SURGICAL, DENTAL OR VETERINARY FURNITURE (FOR EXAMPLE, OPERATING TABLES, EXAMINATION TABLES, HOSPITAL BEDS WITH MECHANICAL FITTINGS, DENTISTS' CHAIRS)"
+    ],
+    "is_valid": false,
+    "error_message": "Unable to identify a physical commodity from query 'stuff and things'. Clarification required.",
+    "retries_used": 0,
+    "synthesized_search_string": "stuff things",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "cc01caae3521a159b3d4d4502cf809cf4ab338be56751791d30a3fd1d41e18cf": {
+    "raw_query": "item 999",
+    "physical_product": "item 999",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "UNRECOGNIZED",
+    "grounded_search_terms": [
+      "item",
+      "999"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of iron or steel | STRUCTURES (EXCLUDING PREFABRICATED BUILDINGS OF HEADING 9406) AND PARTS OF STRUCTURES (FOR EXAMPLE, BRIDGES AND BRIDGE-SECTIONS, LOCK- GATES, TOWERS, LATTICE MASTS, ROOFS, ROOFING FRAME-WORKS, DOORS AND WINDOWS AND THEIR FRAMES AND THRESHOLDS FOR DOORS,",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | GARMENTS, MADE UP OF FABRICS OF HEADING 5602, 5603, 5903, 5906 OR 5907",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | PARTS AND ACCESSORIES OF THE MOTOR VEHICLES OF HEADINGS 8701 TO 8705",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | PARTS AND ACCESSORIES (OTHER THAN COVERS, CARRYING CASES AND THE LIKE) SUITABLE FOR USE SOLELY OR PRINCIPALLY WITH MACHINES OF HEADINGS 8469 TO 8472",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | PARTS AND ACCESSORIES OF VEHICLES OF HEADINGS 8711 TO 8713"
+    ],
+    "is_valid": false,
+    "error_message": "Unable to identify a physical commodity from query 'item 999'. Clarification required.",
+    "retries_used": 0,
+    "synthesized_search_string": "item 999 | Terms: item, 999",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "152f812a7ae83722d07aa8035be2a34020702853e6c5084e4b6382a5d61b3750": {
+    "raw_query": "qwertyuiopasdf",
+    "physical_product": "qwertyuiopasdf",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "UNRECOGNIZED",
+    "grounded_search_terms": [],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "qwertyuiopasdf",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'qwertyuiopasdf'"
+      }
+    ],
+    "top_headings_shown": [
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | TELEPHONE SETS, SMARTPHONES AND OTHER TELEPHONES FOR CELLULAR NETWORKS OR FOR OTHER WIRELESS N ETWO R KS : O THE R APPARAT US F OR THE TRANSMISSION OR RECEPTION OF VICE, IMAGES OR O T HE R D ATA , IN CL U DI NG A P PA RAT US FOR COMMUNICATION IN A WIRED OR WIRELESS NETWORK (SUCH AS A LOCAL OR WIDE AREA NETWORK), OTHER THAN TRANSMISSION OR RECEPTION APPARATUS OF HEADING 8443, 8525, 8527 OR 8528",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | BOARDS, PANELS, CONSOLES, DESKS, CABINETS AND OTHER BASES, EQUIPPED WITH TWO OR MORE APPARATUS OF HEADING 8535 OR 8536, FOR ELECTRIC CONTROL OR THE DISTRIBUTION OF ELECTRICITY, INCLUDING THOSE INCORPORATING INSTRUMENTS OR APPARATUS OF CHAPTER 90, AND NUM",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | OMITTED",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | PARTS SUITABLE FOR USE SOLELY OR PRINCIPALLY WITH THE APPARATUS OF HEADINGS 8525 TO 8528",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | PARTS SUITABLE FOR USE SOLELY OR PRINCIPALLY WITH THE APPARATUS OF HEADINGS 8535, 8536 OR 8537"
+    ],
+    "is_valid": false,
+    "error_message": "All candidate search terms failed strict row-level customs grounding. Progress halted under GIR compliance.",
+    "retries_used": 0,
+    "synthesized_search_string": "qwertyuiopasdf",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "8556bd10cd1a775dd9eff397c8bd35f4c7ed23b748814efcb80ff22b54a02198": {
+    "raw_query": "unobtainium antigravity drive",
+    "physical_product": "unobtainium antigravity drive",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "drive"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "unobtainium",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'unobtainium'"
+      },
+      {
+        "term": "antigravity",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'antigravity'"
+      }
+    ],
+    "top_headings_shown": [
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | -",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | PARTS AND ACCESSORIES OF VEHICLES OF HEADINGS 8711 TO 8713",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | MOTORCYCLES (INCLUDING MOPEDS) AND CYCLES FITTED WITH AN AUXILIARY MOTOR, WITH OR WITHOUT SIDE-CARS",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | MOTOR VEHICLES FOR THE TRANSPORT OF GOODS",
+      "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | WORKS TRUCKS, SELF-PROPELLED, NOT FITTED WITH LIFTING OR HANDLING EQUIPMENT, OF THE TYPE USED IN FACTORIES, WAREHOUSES, DOCK AREAS OR AIRPORTS FOR SHORT DISTANCE TRANSPORT OF GOODS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "unobtainium antigravity drive | Terms: drive",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "81919bfc8c35b1b426e295658d6130cddfdf49f6ebc5efadde0c8431e97ba37d": {
+    "raw_query": "something something",
+    "physical_product": "unspecified item",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "unclear",
+    "outcome_type": "UNRECOGNIZED",
+    "grounded_search_terms": [],
+    "unstated_attributes": [
+      "physical product type",
+      "constituent material",
+      "principal function"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS SINGLETS AND OTHER VESTS, SLIPS, PETTICOATS, BRIEFS, PANTIES, NIGHTDRESSES, PYJAMAS, NEGLIGES, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES ---- SLIPS AND PETTICOATS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | TRACK SUITS, SKI SUITS AND SWIMWEAR",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | MEN'S OR BOYS OVERCOATS, CAR-COATS, CLOAKS, ANORAKS (INCLUDING SKI-JACKETS), WINDCHEATERS, WIND-JACKETS AND SIMILAR ARTICLES OTHER THAN THOSE OF HEADING 6203 ---- OVERCOATS, RAINCOATS, CAR-COATS, CAPES, CLOAKS AND SIMILAR ARTICLES",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | BABIES GARMENTS AND CLOTHING ACCESSORIES",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'S OR GIRLS SLIPS, PETTICOATS, BRIEFS, PANTIES, NIGHT DRESSES, PYJAMAS, NEGLIGEES, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES, KNITTED OR CROCHETED ---- SLIPS AND PETTICOATS"
+    ],
+    "is_valid": false,
+    "error_message": "Unable to identify a physical commodity from query 'something something'. Clarification required.",
+    "retries_used": 0,
+    "synthesized_search_string": "unspecified item",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "b44974cb7aceab7f553e7efb589816c8ef2b159774ad0f37138e5e4e42ecf13e": {
+    "raw_query": "generic merchandise",
+    "physical_product": "generic merchandise",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "generic"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "merchandise",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'merchandise'"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, not knitted or crocheted | OTHER MADE UP CLOTHING ACCESSORIES",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | HANDKERCHIEFS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | BABIES GARMENTS AND CLOTHING ACCESSORIES",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | TRACK SUITS, SKI SUITS AND SWIMWEAR",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | MEN'S OR BOYS SHIRTS"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "generic merchandise | Terms: generic",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "7cc7006b7c99ae304236c302bf286376e357ac61487c471067cee7fa45dcccb0": {
+    "raw_query": "whatever item",
+    "physical_product": "whatever item",
+    "material": null,
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "UNRECOGNIZED",
+    "grounded_search_terms": [
+      "item"
+    ],
+    "unstated_attributes": [
+      "constituent material (e.g. plastics, steel, or textile)"
+    ],
+    "dropped_terms": [
+      {
+        "term": "whatever",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'whatever'"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, not knitted or crocheted | TIES, BOW TIES AND CRAVATS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | OTHER MADE UP CLOTHING ACCESSORIES",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS SINGLETS AND OTHER VESTS, SLIPS, PETTICOATS, BRIEFS, PANTIES, NIGHTDRESSES, PYJAMAS, NEGLIGES, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES ---- SLIPS AND PETTICOATS",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | MEN'S OR BOYS SINGLETS AND OTHER VESTS, UNDERPANTS, BRIEFS, NIGHTSHIRTS, PYJAMAS, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES ---- UNDERPANTS AND BRIF",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | BABIES GARMENTS AND CLOTHING ACCESSORIES"
+    ],
+    "is_valid": false,
+    "error_message": "Unable to identify a physical commodity from query 'whatever item'. Clarification required.",
+    "retries_used": 0,
+    "synthesized_search_string": "whatever item | Terms: item",
+    "is_cache_hit": false,
+    "clarification_merged": false
   }
 }
