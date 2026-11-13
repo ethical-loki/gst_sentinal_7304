@@ -187,6 +187,12 @@ def normalize_product_name(
     for pattern, replacement in abbrev_dict.items():
         text = re.sub(pattern, replacement, text)
 
+    # 1b. Fix split compound artifacts (e.g. 'stain less' -> 'stainless')
+    text = re.sub(r"\bstain\s+less\b", "stainless", text)
+    text = re.sub(r"\bwater\s*bottle\b", "water bottle", text)
+    text = re.sub(r"\bt\s*shirt\b", "t-shirt", text)
+    text = re.sub(r"\btee\s*shirt\b", "t-shirt", text)
+
     # 2. Normalize hyphens and slashes between words
     text = re.sub(r"\bun-(\w+)\b", r"un\1", text)
     text = re.sub(r"\bnon-(\w+)\b", r"non \1", text)
@@ -267,43 +273,55 @@ def extract_query_facts(raw_text: str) -> Dict[str, Any]:
             vocab_candidate_chapters.update(data.get("candidate_chapters", []))
             break
 
-    # 3. Check curated commodity articles in data/article_form_vocabulary.json
+    # 3. Check curated commodity articles in data/article_form_vocabulary.json (Rightmost match rule)
     if not detected_article:
+        matched_articles = []
         for item in vocab:
             term = item["term"]
-            if item.get("type") == "article":
-                if re.search(rf"\b{re.escape(term)}\b", lower):
-                    detected_article = term
-                    detected_family = item.get("family")
-                    detected_form_stage = item.get("form_stage", "finished_article")
-                    vocab_candidate_chapters.update(item.get("candidate_chapters", []))
-                    break
+            if item.get("type") == "article" and term.lower() not in material_terms_set:
+                m = re.search(rf"\b{re.escape(term)}\b", lower)
+                if m:
+                    matched_articles.append((m.start(), len(term), item))
+        if matched_articles:
+            matched_articles.sort(key=lambda x: (x[0], x[1]), reverse=True)
+            best_item = matched_articles[0][2]
+            detected_article = best_item["term"]
+            detected_family = best_item.get("family")
+            detected_form_stage = best_item.get("form_stage", "finished_article")
+            vocab_candidate_chapters.update(best_item.get("candidate_chapters", []))
 
-    # 4. If no article yet, scan single words from right to left (Rightmost content noun rule)
-    if not detected_article:
-        matched_nouns = []
-        for token in tokens:
-            t_clean = token.strip()
-            # Normalize plural
-            if t_clean.endswith("ies") and len(t_clean) > 4:
-                sing = t_clean[:-3] + "y"
-            elif t_clean.endswith("es") and len(t_clean) > 3 and t_clean[-3] in "shxz":
-                sing = t_clean[:-2]
-            elif t_clean.endswith("s") and not t_clean.endswith("ss") and len(t_clean) > 3:
-                sing = t_clean[:-1]
-            else:
-                sing = t_clean
+    # 4. Scan single words against head_noun_index (Rightmost content noun rule)
+    matched_nouns = []
+    for tok_idx, token in enumerate(tokens):
+        t_clean = token.strip()
+        # Normalize plural
+        if t_clean.endswith("ies") and len(t_clean) > 4:
+            sing = t_clean[:-3] + "y"
+        elif t_clean.endswith("es") and len(t_clean) > 3 and t_clean[-3] in "shxz":
+            sing = t_clean[:-2]
+        elif t_clean.endswith("s") and not t_clean.endswith("ss") and len(t_clean) > 3:
+            sing = t_clean[:-1]
+        else:
+            sing = t_clean
 
-            entry = head_noun_index.get(sing) or head_noun_index.get(t_clean)
-            # Ensure constituent materials are excluded from acting as the head noun
-            if entry and sing.lower() not in material_terms_set and t_clean.lower() not in material_terms_set:
-                matched_nouns.append((sing, entry))
+        entry = head_noun_index.get(sing) or head_noun_index.get(t_clean)
+        # Ensure constituent materials are excluded from acting as the head noun
+        if entry and sing.lower() not in material_terms_set and t_clean.lower() not in material_terms_set:
+            matched_nouns.append((tok_idx, sing, entry))
 
-        if matched_nouns:
-            best_sing, best_entry = matched_nouns[-1]
+    if matched_nouns:
+        best_tok_idx, best_sing, best_entry = matched_nouns[-1]
+        if not detected_article:
             detected_article = best_sing
             detected_form_stage = best_entry.get("state", "finished_article")
             vocab_candidate_chapters.update(best_entry.get("candidate_chapters", []))
+        else:
+            art_pos = lower.rfind(detected_article.lower())
+            noun_pos = lower.rfind(best_sing.lower())
+            if noun_pos > art_pos:
+                detected_article = best_sing
+                detected_form_stage = best_entry.get("state", "finished_article")
+                vocab_candidate_chapters = set(best_entry.get("candidate_chapters", []))
 
     # 5. Detect form and processing state dynamically from data/statutory_forms.json
     for f in forms_list:

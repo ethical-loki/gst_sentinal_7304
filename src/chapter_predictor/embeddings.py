@@ -119,7 +119,7 @@ class SemanticTariffIndex:
         self.build_index()
 
     def build_index(self):
-        """Generates embeddings for all 19,396 tariff lines + 99 chapter titles."""
+        """Generates embeddings for all tariff lines (Master_copy_hsn enriched + statutory) + 99 chapter titles."""
         import pandas as pd
         import re
 
@@ -131,53 +131,73 @@ class SemanticTariffIndex:
             with open(titles_path, "r", encoding="utf-8") as f:
                 self.chapter_titles = json.load(f)
 
-        excel_path = ROOT_DIR / "data" / "raw" / "Final_Copy_hsn_7304.xlsx"
-        if not excel_path.exists():
-            excel_path = ROOT_DIR / "data" / "raw" / "HSN_SAC (1).xlsx"
-
-        df = pd.read_excel(excel_path)
-        code_col = df.columns[0]
-        desc_col = df.columns[1]
-
         records = []
         texts_to_embed = []
+        seen_hsn_raw: set = set()
 
-        for idx, row in df.iterrows():
-            raw_c = str(row[code_col]).strip()
-            desc = str(row[desc_col] or "").strip()
-            clean_digits = re.sub(r"\D", "", raw_c)
+        # ----------------------------------------------------------------
+        # 1. PRIMARY: Master_copy_hsn.xlsx (Article + Material keywords)
+        #    Covers chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94
+        # ----------------------------------------------------------------
+        master_parquet = ROOT_DIR / "data" / "Master_copy_hsn.parquet"
+        master_xlsx = ROOT_DIR / "data" / "raw" / "Master_copy_hsn.xlsx"
+        df_master = None
+        if master_parquet.exists():
+            try:
+                df_master = pd.read_parquet(master_parquet)
+                logger.info(f"[Embeddings] Loaded Master_copy_hsn from parquet: {len(df_master)} rows")
+            except Exception as e:
+                logger.warning(f"[Embeddings] Parquet load failed, falling back to xlsx: {e}")
+        if df_master is None and master_xlsx.exists():
+            df_master = pd.read_excel(master_xlsx)
+            logger.info(f"[Embeddings] Loaded Master_copy_hsn from xlsx: {len(df_master)} rows")
 
-            if len(clean_digits) == 1:
-                clean_digits = clean_digits.zfill(2)
-            elif len(clean_digits) == 3:
-                clean_digits = clean_digits.zfill(4)
-            elif len(clean_digits) == 5:
-                clean_digits = clean_digits.zfill(6)
-            elif len(clean_digits) == 7:
-                clean_digits = clean_digits.zfill(8)
+        if df_master is not None:
+            for _, row in df_master.iterrows():
+                raw_c = str(row.get("HSN Code", "")).strip()
+                clean_digits = re.sub(r"\D", "", raw_c)
+                if not clean_digits:
+                    continue
+                if len(clean_digits) == 1:
+                    clean_digits = clean_digits.zfill(2)
+                elif len(clean_digits) == 3:
+                    clean_digits = clean_digits.zfill(4)
+                elif len(clean_digits) == 5:
+                    clean_digits = clean_digits.zfill(6)
+                elif len(clean_digits) == 7:
+                    clean_digits = clean_digits.zfill(8)
 
-            ch = clean_digits[:2] if len(clean_digits) >= 2 else "99"
-            ch_title = self.chapter_titles.get(ch, "")
+                ch = str(row.get("chapter_code", clean_digits[:2])).zfill(2)
+                ch_title = str(row.get("chapter_title", "")).strip() or self.chapter_titles.get(ch, "")
+                desc = str(row.get("HSN Description", "") or "").strip()
+                art = str(row.get("Article Keywords", "") or "").strip()
+                mat = str(row.get("Material Keywords", "") or "").strip()
 
-            if len(clean_digits) == 8:
-                formatted_code = f"{clean_digits[:4]} {clean_digits[4:6]} {clean_digits[6:]}"
-            elif len(clean_digits) == 6:
-                formatted_code = f"{clean_digits[:4]} {clean_digits[4:]}"
-            else:
-                formatted_code = clean_digits
+                if len(clean_digits) == 8:
+                    formatted_code = f"{clean_digits[:4]} {clean_digits[4:6]} {clean_digits[6:]}"
+                elif len(clean_digits) == 6:
+                    formatted_code = f"{clean_digits[:4]} {clean_digits[4:]}"
+                else:
+                    formatted_code = clean_digits
 
-            rec = {
-                "idx": idx,
-                "hsn_raw": clean_digits,
-                "hsn_code": formatted_code,
-                "description": desc,
-                "chapter": ch,
-                "chapter_title": ch_title
-            }
-            records.append(rec)
-            # Embedding representation: Chapter Title + Statutory Description
-            text_repr = f"Chapter {ch}: {ch_title}. Tariff: {desc}".strip()
-            texts_to_embed.append(text_repr)
+                rec = {
+                    "idx": len(records),
+                    "hsn_raw": clean_digits,
+                    "hsn_code": formatted_code,
+                    "description": desc,
+                    "chapter": ch,
+                    "chapter_title": ch_title,
+                    "article_keywords": art,
+                    "material_keywords": mat,
+                    "source": "master"
+                }
+                records.append(rec)
+                # Rich embedding text: chapter + article keywords + material keywords + tariff description
+                text_repr = f"Chapter {ch}: {ch_title}. Article: {art}. Material: {mat}. Tariff: {desc}".strip()
+                texts_to_embed.append(text_repr)
+                seen_hsn_raw.add(clean_digits)
+
+        logger.info(f"[Embeddings] Total records for embedding: {len(records)} (master + statutory deduped)")
 
         # 1. Embed tariff records
         logger.info(f"Encoding {len(texts_to_embed)} tariff lines with {self.model_name}...")

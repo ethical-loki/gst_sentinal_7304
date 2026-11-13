@@ -44,7 +44,7 @@ class DynamicHSNMasterEngine:
   tariffs and empirical entropy bounds.
   """
 
-  def __init__(self, hsn_excel_path: str = "data/raw/Final_hsn_sac_copy.xlsx"):
+  def __init__(self, hsn_excel_path: str = "data/raw/Master_copy_hsn.xlsx"):
     self.hsn_excel_path = hsn_excel_path
     self.hsn_to_desc: Dict[str, str] = {}
     self.hsn_to_rate: Dict[str, float] = {}

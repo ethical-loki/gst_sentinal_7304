@@ -1,0 +1,1157 @@
+[
+  {
+    "query": "laptop",
+    "category": "standard_clear",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "data processing",
+    "expected_chapter": "84",
+    "expected_unstated_attributes": [
+      "weight"
+    ]
+  },
+  {
+    "query": "stainless steel water bottle",
+    "category": "standard_clear",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "steel",
+    "expected_chapter": "73",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "cotton t-shirt",
+    "category": "standard_clear",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "t-shirt",
+    "expected_chapter": "61",
+    "expected_unstated_attributes": [
+      "knitted"
+    ]
+  },
+  {
+    "query": "plastic carboy for liquid storage",
+    "category": "standard_clear",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "carboys",
+    "expected_chapter": "39",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "sweet biscuits",
+    "category": "standard_clear",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "biscuit",
+    "expected_chapter": "19",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "centrifugal water pump",
+    "category": "standard_clear",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "pump",
+    "expected_chapter": "84",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "lithium ion battery pack for electric vehicle",
+    "category": "standard_clear",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "accumulator",
+    "expected_chapter": "85",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "passenger motor car",
+    "category": "standard_clear",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "motor vehicle",
+    "expected_chapter": "87",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "seamless alloy steel pipe",
+    "category": "standard_clear",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "tubes and pipes",
+    "expected_chapter": "73",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "woven cotton formal shirt for men",
+    "category": "standard_clear",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "shirt",
+    "expected_chapter": "62",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "plastic dining tableware plates",
+    "category": "standard_clear",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "plastics",
+    "expected_chapter": "39",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "knitted polo shirt of cotton",
+    "category": "standard_clear",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "shirt",
+    "expected_chapter": "61",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "cast iron kitchen frying pan",
+    "category": "standard_clear",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "household",
+    "expected_chapter": "73",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "electric accumulator battery",
+    "category": "standard_clear",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "accumulator",
+    "expected_chapter": "85",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "chocolate coated waffles and wafers",
+    "category": "standard_clear",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "biscuit",
+    "expected_chapter": "19",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "Apple MacBook Pro 16",
+    "category": "brand_names",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "data processing",
+    "expected_chapter": "84",
+    "expected_unstated_attributes": [
+      "weight"
+    ]
+  },
+  {
+    "query": "Lenovo ThinkPad notebook",
+    "category": "brand_names",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "data processing",
+    "expected_chapter": "84",
+    "expected_unstated_attributes": [
+      "weight"
+    ]
+  },
+  {
+    "query": "Milton Thermosteel insulated flask",
+    "category": "brand_names",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "household",
+    "expected_chapter": "73",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "Tupperware plastic water bottle",
+    "category": "brand_names",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "bottles",
+    "expected_chapter": "39",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "Sintex plastic water storage tank",
+    "category": "brand_names",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "reservoir",
+    "expected_chapter": "39",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "Levis cotton tee shirt",
+    "category": "brand_names",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "t-shirt",
+    "expected_chapter": "61",
+    "expected_unstated_attributes": [
+      "knitted"
+    ]
+  },
+  {
+    "query": "Parle-G glucose biscuits packet",
+    "category": "brand_names",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "biscuit",
+    "expected_chapter": "19",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "Britannia bourbon cream cookies",
+    "category": "brand_names",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "biscuit",
+    "expected_chapter": "19",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "Apple iPhone 15 smartphone",
+    "category": "brand_names",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "telephone",
+    "expected_chapter": "85",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "Samsung Galaxy mobile phone",
+    "category": "brand_names",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "telephone",
+    "expected_chapter": "85",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "Jindal seamless steel pipes",
+    "category": "brand_names",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "tubes and pipes",
+    "expected_chapter": "73",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "Tata passenger motor car",
+    "category": "brand_names",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "motor vehicle",
+    "expected_chapter": "87",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "Exide car lead acid battery",
+    "category": "brand_names",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "accumulator",
+    "expected_chapter": "85",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "Kirloskar centrifugal monoblock pump",
+    "category": "brand_names",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "pump",
+    "expected_chapter": "84",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "Supreme PVC pipe fittings",
+    "category": "brand_names",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "plastics",
+    "expected_chapter": "39",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "stainles stel botle",
+    "category": "misspelling_ocr",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "steel",
+    "expected_chapter": "73",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "leptop notebook pc",
+    "category": "misspelling_ocr",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "data processing",
+    "expected_chapter": "84",
+    "expected_unstated_attributes": [
+      "weight"
+    ]
+  },
+  {
+    "query": "cotten tshrt",
+    "category": "misspelling_ocr",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "t-shirt",
+    "expected_chapter": "61",
+    "expected_unstated_attributes": [
+      "knitted"
+    ]
+  },
+  {
+    "query": "plstic ppe for water drainage",
+    "category": "misspelling_ocr",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "tubes and pipes",
+    "expected_chapter": "39",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "biskit packet glucose",
+    "category": "misspelling_ocr",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "biscuit",
+    "expected_chapter": "19",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "centrifugl water pmp",
+    "category": "misspelling_ocr",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "pump",
+    "expected_chapter": "84",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "leed acid car batry",
+    "category": "misspelling_ocr",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "accumulator",
+    "expected_chapter": "85",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "pasenger motr vechile",
+    "category": "misspelling_ocr",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "motor vehicle",
+    "expected_chapter": "87",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "seemless stel pipe ss304",
+    "category": "misspelling_ocr",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "tubes and pipes",
+    "expected_chapter": "73",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "wooven cotten shrt",
+    "category": "misspelling_ocr",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "shirt",
+    "expected_chapter": "62",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "plastik carboy 20 ltr",
+    "category": "misspelling_ocr",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "carboys",
+    "expected_chapter": "39",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "mobil smartfone iphone",
+    "category": "misspelling_ocr",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "telephone",
+    "expected_chapter": "85",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "stainles stel presure cooker",
+    "category": "misspelling_ocr",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "household",
+    "expected_chapter": "73",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "knited cotten polo t-shrt",
+    "category": "misspelling_ocr",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "shirt",
+    "expected_chapter": "61",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "lithum batri pak",
+    "category": "misspelling_ocr",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "accumulator",
+    "expected_chapter": "85",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "lohe ka seamless pipe",
+    "category": "hinglish_colloquial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "tubes and pipes",
+    "expected_chapter": "73",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "sooti baniyan knitted singlet",
+    "category": "hinglish_colloquial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "t-shirt",
+    "expected_chapter": "61",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "lohe ki kadai cookware pan",
+    "category": "hinglish_colloquial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "household",
+    "expected_chapter": "73",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "plastic ki pani botal",
+    "category": "hinglish_colloquial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "bottles",
+    "expected_chapter": "39",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "steel ka thali bartan set",
+    "category": "hinglish_colloquial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "household",
+    "expected_chapter": "73",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "pani nikalne wala motor pump",
+    "category": "hinglish_colloquial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "pump",
+    "expected_chapter": "84",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "gaadi ki lead acid battery",
+    "category": "hinglish_colloquial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "accumulator",
+    "expected_chapter": "85",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "men cotton formal kurta shirt",
+    "category": "hinglish_colloquial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "shirt",
+    "expected_chapter": "62",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "meetha biscuit packet",
+    "category": "hinglish_colloquial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "biscuit",
+    "expected_chapter": "19",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "pvc plastic wala drainage pipe",
+    "category": "hinglish_colloquial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "tubes and pipes",
+    "expected_chapter": "39",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "chhota portable computer laptop",
+    "category": "hinglish_colloquial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "data processing",
+    "expected_chapter": "84",
+    "expected_unstated_attributes": [
+      "weight"
+    ]
+  },
+  {
+    "query": "pani ki plastic tanki sintex",
+    "category": "hinglish_colloquial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "reservoir",
+    "expected_chapter": "39",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "lohe ka nut bolt fasteners",
+    "category": "hinglish_colloquial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "fasteners",
+    "expected_chapter": "73",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "cotton sooti readymade t shirt",
+    "category": "hinglish_colloquial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "t-shirt",
+    "expected_chapter": "61",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "doodh powder packet",
+    "category": "hinglish_colloquial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "OUT_OF_SCHEDULE",
+    "expected_concept": "dairy",
+    "expected_chapter": "OUT_OF_SCHEDULE",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "seamless austenitic stainless steel pipe ASTM A312",
+    "category": "technical_industrial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "tubes and pipes",
+    "expected_chapter": "73",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "high pressure multistage centrifugal pump",
+    "category": "technical_industrial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "pump",
+    "expected_chapter": "84",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "lithium nickel manganese cobalt oxide prismatic cell battery",
+    "category": "technical_industrial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "accumulator",
+    "expected_chapter": "85",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "unplasticized polyvinyl chloride schedule 40 drainage pipe",
+    "category": "technical_industrial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "tubes and pipes",
+    "expected_chapter": "39",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "portable automatic data processing machine weighing 1.8 kg",
+    "category": "technical_industrial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "data processing",
+    "expected_chapter": "84",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "compression ignition diesel internal combustion motor car",
+    "category": "technical_industrial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "motor vehicle",
+    "expected_chapter": "87",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "knitted 100 percent combed cotton single jersey fabric t-shirt",
+    "category": "technical_industrial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "t-shirt",
+    "expected_chapter": "61",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "plain woven poplin cotton formal shirt",
+    "category": "technical_industrial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "shirt",
+    "expected_chapter": "62",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "rotomolded high density polyethylene industrial carboy",
+    "category": "technical_industrial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "carboys",
+    "expected_chapter": "39",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "deep drawn stainless steel kitchen utensils AISI 304",
+    "category": "technical_industrial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "household",
+    "expected_chapter": "73",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "electric submerged motor submersible pump for deep well",
+    "category": "technical_industrial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "pump",
+    "expected_chapter": "84",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "valve regulated lead acid stationary accumulator",
+    "category": "technical_industrial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "accumulator",
+    "expected_chapter": "85",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "electric road vehicle with motor for traction",
+    "category": "technical_industrial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "motor vehicle",
+    "expected_chapter": "87",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "electric cellular telephone apparatus for 5G network",
+    "category": "technical_industrial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "telephone",
+    "expected_chapter": "85",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "bakery products crispbread and wafers containing cocoa",
+    "category": "technical_industrial",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "SUCCESS",
+    "expected_concept": "biscuit",
+    "expected_chapter": "19",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "water bottle",
+    "category": "material_ambiguity",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "AMBIGUOUS_MATERIAL",
+    "expected_concept": "bottles",
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "material",
+      "insulation"
+    ]
+  },
+  {
+    "query": "drinking water bottle 750ml",
+    "category": "material_ambiguity",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "AMBIGUOUS_MATERIAL",
+    "expected_concept": "bottles",
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "material"
+    ]
+  },
+  {
+    "query": "drainage pipe",
+    "category": "material_ambiguity",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "AMBIGUOUS_MATERIAL",
+    "expected_concept": "tubes and pipes",
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "material"
+    ]
+  },
+  {
+    "query": "protective gloves",
+    "category": "material_ambiguity",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "AMBIGUOUS_MATERIAL",
+    "expected_concept": "gloves",
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "material"
+    ]
+  },
+  {
+    "query": "storage box with lid",
+    "category": "material_ambiguity",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "AMBIGUOUS_MATERIAL",
+    "expected_concept": "box",
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "material"
+    ]
+  },
+  {
+    "query": "water storage tank",
+    "category": "material_ambiguity",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "AMBIGUOUS_MATERIAL",
+    "expected_concept": "tank",
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "material"
+    ]
+  },
+  {
+    "query": "flanged pipe 4 inch",
+    "category": "material_ambiguity",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "AMBIGUOUS_MATERIAL",
+    "expected_concept": "tubes and pipes",
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "material"
+    ]
+  },
+  {
+    "query": "insulated food container",
+    "category": "material_ambiguity",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "AMBIGUOUS_MATERIAL",
+    "expected_concept": "container",
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "material"
+    ]
+  },
+  {
+    "query": "drinking sipper bottle",
+    "category": "material_ambiguity",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "AMBIGUOUS_MATERIAL",
+    "expected_concept": "bottles",
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "material"
+    ]
+  },
+  {
+    "query": "conduit tube",
+    "category": "material_ambiguity",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "AMBIGUOUS_MATERIAL",
+    "expected_concept": "tubes and pipes",
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "material"
+    ]
+  },
+  {
+    "query": "disposable gloves packet",
+    "category": "material_ambiguity",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "AMBIGUOUS_MATERIAL",
+    "expected_concept": "gloves",
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "material"
+    ]
+  },
+  {
+    "query": "storage drum container",
+    "category": "material_ambiguity",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "AMBIGUOUS_MATERIAL",
+    "expected_concept": "container",
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "material"
+    ]
+  },
+  {
+    "query": "vacuum flask for beverage",
+    "category": "material_ambiguity",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "AMBIGUOUS_MATERIAL",
+    "expected_concept": "bottles",
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "material"
+    ]
+  },
+  {
+    "query": "irrigation pipe 20mm",
+    "category": "material_ambiguity",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "AMBIGUOUS_MATERIAL",
+    "expected_concept": "tubes and pipes",
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "material"
+    ]
+  },
+  {
+    "query": "reusable gym shaker bottle",
+    "category": "material_ambiguity",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "AMBIGUOUS_MATERIAL",
+    "expected_concept": "bottles",
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "material"
+    ]
+  },
+  {
+    "query": "live sheep for breeding",
+    "category": "out_of_schedule",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "OUT_OF_SCHEDULE",
+    "expected_concept": "sheep",
+    "expected_chapter": "OUT_OF_SCHEDULE",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "fresh apples from shimla",
+    "category": "out_of_schedule",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "OUT_OF_SCHEDULE",
+    "expected_concept": "fruit",
+    "expected_chapter": "OUT_OF_SCHEDULE",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "roasted coffee beans",
+    "category": "out_of_schedule",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "OUT_OF_SCHEDULE",
+    "expected_concept": "coffee",
+    "expected_chapter": "OUT_OF_SCHEDULE",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "black tea leaves",
+    "category": "out_of_schedule",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "OUT_OF_SCHEDULE",
+    "expected_concept": "tea",
+    "expected_chapter": "OUT_OF_SCHEDULE",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "crude petroleum oil",
+    "category": "out_of_schedule",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "OUT_OF_SCHEDULE",
+    "expected_concept": "petroleum",
+    "expected_chapter": "OUT_OF_SCHEDULE",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "gold coin 24 karat",
+    "category": "out_of_schedule",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "OUT_OF_SCHEDULE",
+    "expected_concept": "gold",
+    "expected_chapter": "OUT_OF_SCHEDULE",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "uncut natural diamond",
+    "category": "out_of_schedule",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "OUT_OF_SCHEDULE",
+    "expected_concept": "diamond",
+    "expected_chapter": "OUT_OF_SCHEDULE",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "leather shoes for men",
+    "category": "out_of_schedule",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "OUT_OF_SCHEDULE",
+    "expected_concept": "footwear",
+    "expected_chapter": "OUT_OF_SCHEDULE",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "fresh milk 1 litre pouch",
+    "category": "out_of_schedule",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "OUT_OF_SCHEDULE",
+    "expected_concept": "milk",
+    "expected_chapter": "OUT_OF_SCHEDULE",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "pure natural honey",
+    "category": "out_of_schedule",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "OUT_OF_SCHEDULE",
+    "expected_concept": "honey",
+    "expected_chapter": "OUT_OF_SCHEDULE",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "raw timber logs of teak wood",
+    "category": "out_of_schedule",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "OUT_OF_SCHEDULE",
+    "expected_concept": "timber",
+    "expected_chapter": "OUT_OF_SCHEDULE",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "paracetamol medicine tablets",
+    "category": "out_of_schedule",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "OUT_OF_SCHEDULE",
+    "expected_concept": "pharmaceutical",
+    "expected_chapter": "OUT_OF_SCHEDULE",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "chemical fertilizer urea",
+    "category": "out_of_schedule",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "OUT_OF_SCHEDULE",
+    "expected_concept": "fertilizer",
+    "expected_chapter": "OUT_OF_SCHEDULE",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "fresh sea fish",
+    "category": "out_of_schedule",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "OUT_OF_SCHEDULE",
+    "expected_concept": "fish",
+    "expected_chapter": "OUT_OF_SCHEDULE",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "basmati rice grain",
+    "category": "out_of_schedule",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "OUT_OF_SCHEDULE",
+    "expected_concept": "cereals",
+    "expected_chapter": "OUT_OF_SCHEDULE",
+    "expected_unstated_attributes": []
+  },
+  {
+    "query": "gadget",
+    "category": "unrecognized_vague",
+    "expected_reading_confidence": "unclear",
+    "expected_outcome": "UNRECOGNIZED",
+    "expected_concept": null,
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "physical product type"
+    ]
+  },
+  {
+    "query": "aunty",
+    "category": "unrecognized_vague",
+    "expected_reading_confidence": "unclear",
+    "expected_outcome": "UNRECOGNIZED",
+    "expected_concept": null,
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "physical product type"
+    ]
+  },
+  {
+    "query": "stuff",
+    "category": "unrecognized_vague",
+    "expected_reading_confidence": "unclear",
+    "expected_outcome": "UNRECOGNIZED",
+    "expected_concept": null,
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "physical product type"
+    ]
+  },
+  {
+    "query": "miscellaneous thing",
+    "category": "unrecognized_vague",
+    "expected_reading_confidence": "unclear",
+    "expected_outcome": "UNRECOGNIZED",
+    "expected_concept": null,
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "physical product type"
+    ]
+  },
+  {
+    "query": "item",
+    "category": "unrecognized_vague",
+    "expected_reading_confidence": "unclear",
+    "expected_outcome": "UNRECOGNIZED",
+    "expected_concept": null,
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "physical product type"
+    ]
+  },
+  {
+    "query": "product",
+    "category": "unrecognized_vague",
+    "expected_reading_confidence": "unclear",
+    "expected_outcome": "UNRECOGNIZED",
+    "expected_concept": null,
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "physical product type"
+    ]
+  },
+  {
+    "query": "goods",
+    "category": "unrecognized_vague",
+    "expected_reading_confidence": "unclear",
+    "expected_outcome": "UNRECOGNIZED",
+    "expected_concept": null,
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "physical product type"
+    ]
+  },
+  {
+    "query": "something",
+    "category": "unrecognized_vague",
+    "expected_reading_confidence": "unclear",
+    "expected_outcome": "UNRECOGNIZED",
+    "expected_concept": null,
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "physical product type"
+    ]
+  },
+  {
+    "query": "anything",
+    "category": "unrecognized_vague",
+    "expected_reading_confidence": "unclear",
+    "expected_outcome": "UNRECOGNIZED",
+    "expected_concept": null,
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "physical product type"
+    ]
+  },
+  {
+    "query": "object",
+    "category": "unrecognized_vague",
+    "expected_reading_confidence": "unclear",
+    "expected_outcome": "UNRECOGNIZED",
+    "expected_concept": null,
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "physical product type"
+    ]
+  },
+  {
+    "query": "xyz789",
+    "category": "unrecognized_vague",
+    "expected_reading_confidence": "unclear",
+    "expected_outcome": "UNRECOGNIZED",
+    "expected_concept": null,
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "physical product type"
+    ]
+  },
+  {
+    "query": "123456",
+    "category": "unrecognized_vague",
+    "expected_reading_confidence": "unclear",
+    "expected_outcome": "UNRECOGNIZED",
+    "expected_concept": null,
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "physical product type"
+    ]
+  },
+  {
+    "query": "random article",
+    "category": "unrecognized_vague",
+    "expected_reading_confidence": "unclear",
+    "expected_outcome": "UNRECOGNIZED",
+    "expected_concept": null,
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "physical product type"
+    ]
+  },
+  {
+    "query": "qwertyuiop",
+    "category": "unrecognized_vague",
+    "expected_reading_confidence": "unclear",
+    "expected_outcome": "UNRECOGNIZED",
+    "expected_concept": null,
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": [
+      "physical product type"
+    ]
+  },
+  {
+    "query": "vibranium quantum hyperdrive shield",
+    "category": "unrecognized_vague",
+    "expected_reading_confidence": "clear",
+    "expected_outcome": "UNRECOGNIZED",
+    "expected_concept": null,
+    "expected_chapter": "NONE",
+    "expected_unstated_attributes": []
+  }
+]

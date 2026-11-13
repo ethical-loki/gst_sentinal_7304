@@ -63,6 +63,7 @@ class ChapterPrediction(BaseModel):
     reason: str
     stage_timings_ms: Dict[str, float] = Field(default_factory=dict)
     rerank_model_used: Optional[str] = None
+    disambiguation: Optional[Dict[str, Any]] = Field(default=None, description="Disambiguation options and questions when multiple statutory chapters apply")
 
 
 # =====================================================================
@@ -219,7 +220,7 @@ class ChapterPredictor:
             final_reason = llm_out.reason
             rerank_model = llm_out.model_used
             status = "OK" if final_conf >= 0.50 else "ABSTAIN"
-        elif fused_candidates:
+        elif fused_candidates and fused_candidates[0]["chapter"] in VALID_CLASSIFIABLE_CHAPTERS:
             top_cand = fused_candidates[0]
             selected_chapter = top_cand["chapter"]
             final_conf = top_cand["confidence"]
@@ -229,16 +230,29 @@ class ChapterPredictor:
                 dense_winner=sem_win,
                 article_signal_chapters=art_signals
             )
-            status = "OK" if raw_status in ("OK", "PREDICTED") else "ABSTAIN"
+            status = "OK" if raw_status in ("OK", "PREDICTED") and final_conf >= 0.45 else "ABSTAIN"
             final_reason = (
                 f"Statistical consensus from lexical and semantic tariff matching. {abstention_reason}"
             )
             rerank_model = fusion_method
         else:
-            selected_chapter = "99"
+            selected_chapter = "NONE"
             final_conf = 0.0
             status = "ABSTAIN"
-            final_reason = "No matching statutory chapters retrieved."
+            final_reason = (
+                f"Product '{raw_name}' does not map to any statutory chapter in Master_copy_hsn.xlsx. "
+                f"The master dataset exclusively contains Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94."
+            )
+
+        # Enforce strict membership in Master dataset chapters
+        if selected_chapter not in VALID_CLASSIFIABLE_CHAPTERS:
+            selected_chapter = "NONE"
+            status = "ABSTAIN"
+            final_conf = 0.0
+            final_reason = (
+                f"Product '{raw_name}' does not map to any statutory chapter in Master_copy_hsn.xlsx. "
+                f"The master dataset exclusively contains Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94."
+            )
 
         # Collect Evidence Tariff Lines
         evidence_lines: List[TariffEvidence] = []
@@ -258,22 +272,49 @@ class ChapterPredictor:
                     score=float(line.get("score", 0.0))
                 ))
 
-        # Collect Top-3 Alternatives (excluding the selected chapter)
+        # Collect Top-3 Alternatives (strictly within VALID_CLASSIFIABLE_CHAPTERS)
         alternatives: List[ChapterAlternative] = []
-        for cand in fused_candidates:
-            ch_code = cand["chapter"]
-            if ch_code == selected_chapter:
-                continue
-            alternatives.append(ChapterAlternative(
-                chapter=ch_code,
-                title=cand["chapter_title"] or self.chapter_titles.get(ch_code, ""),
-                score=round(cand["confidence"], 3)
-            ))
-            if len(alternatives) >= top_k:
-                break
+        if selected_chapter != "NONE":
+            for cand in fused_candidates:
+                ch_code = cand["chapter"]
+                if ch_code == selected_chapter or ch_code not in VALID_CLASSIFIABLE_CHAPTERS:
+                    continue
+                alternatives.append(ChapterAlternative(
+                    chapter=ch_code,
+                    title=cand["chapter_title"] or self.chapter_titles.get(ch_code, f"Chapter {ch_code}"),
+                    score=round(cand["confidence"], 3)
+                ))
+                if len(alternatives) >= top_k:
+                    break
+        else:
+            evidence_lines = []
 
-        ch_title = self.chapter_titles.get(selected_chapter, f"Chapter {selected_chapter}")
+        ch_title = self.chapter_titles.get(selected_chapter, "Not in Master Schedule") if selected_chapter != "NONE" else "Not in Master Schedule"
         timings["total_pipeline_ms"] = round((time.perf_counter() - t_start) * 1000.0, 2)
+
+        # Ambiguity resolution check
+        disambiguation_payload = None
+        try:
+            from src.chapter_predictor.ambiguity_resolver import analyze_product_ambiguity
+            _ev_dicts = [e.model_dump() for e in evidence_lines]
+            is_ambig, clarif_q, options_list, direct_opt = analyze_product_ambiguity(raw_name, _ev_dicts)
+            if is_ambig:
+                status = "NEEDS_REVIEW"
+                disambiguation_payload = {
+                    "is_ambiguous": True,
+                    "question": clarif_q,
+                    "options": [o.model_dump() for o in options_list]
+                }
+            elif direct_opt:
+                # If ambiguity resolver found an exact semantic match based on article & material keywords
+                selected_chapter = direct_opt.chapter_code
+                ch_title = direct_opt.chapter_title or self.chapter_titles.get(selected_chapter, ch_title)
+                disambiguation_payload = {
+                    "is_ambiguous": False,
+                    "direct_match": direct_opt.model_dump()
+                }
+        except Exception as _amb_err:
+            logger.debug(f"Ambiguity analysis skipped in predictor: {_amb_err}")
 
         return ChapterPrediction(
             product_name=raw_name,
@@ -286,7 +327,8 @@ class ChapterPredictor:
             evidence=evidence_lines,
             reason=final_reason,
             stage_timings_ms=timings,
-            rerank_model_used=rerank_model
+            rerank_model_used=rerank_model,
+            disambiguation=disambiguation_payload
         )
 
     def predict_batch(self, product_names: List[str], top_k: int = 3) -> List[ChapterPrediction]:

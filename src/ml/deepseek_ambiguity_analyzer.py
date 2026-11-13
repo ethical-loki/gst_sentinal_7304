@@ -350,73 +350,108 @@ class DeepSeekAmbiguityAnalyzer:
             if chap:
                 chapters.add(chap)
 
-        # -------------------------------------------------------------------------
-        # Category A & C: Unclear Terminology & Missing Attributes
-        # -------------------------------------------------------------------------
 
-        # 1. Generic term: "Rags"
-        if "rags" in words or "rag" in words:
-            has_textile_spec = any(w in words for w in ["cotton", "synthetic", "wool", "silk", "nylon", "polyester", "worn", "clothing"])
-            has_sorting_spec = any(w in words for w in ["sorted", "unsorted", "scrap", "new", "used", "wiping"])
+        # -------------------------------------------------------------------------
+        # Category A & C: Unclear Terminology & Missing Attributes (Dynamic Attribute Evaluation)
+        # -------------------------------------------------------------------------
+        from src.chapter_predictor.normalize import extract_query_facts
+        facts = extract_query_facts(orig_desc)
+        head_noun = facts.get("head_noun") or facts.get("article") or ""
+        unclear_terms = [orig_desc.title()] if len(words) <= 2 else ([head_noun.title()] if head_noun else [orig_desc.title()])
 
-            if not has_textile_spec or not has_sorting_spec:
-                missing = []
-                questions = []
-                if not has_textile_spec:
+        cand_descs = [str(c.get("description", "")).lower() for c in candidates]
+        all_cand_text = " ".join(cand_descs)
+
+        cand_materials = set()
+        for mat_word in ["steel", "iron", "copper", "brass", "pvc", "plastic", "hdpe", "aluminium", "aluminum", "rubber", "concrete", "cotton", "wool", "silk", "synthetic", "leather"]:
+            if any(mat_word in d for d in cand_descs):
+                cand_materials.add(mat_word)
+        differs_on_material = len(cand_materials) >= 2 or any(w in words for w in ["pipe", "pipes", "tube", "tubes", "bottle", "bottles", "shoes", "gloves"])
+        differs_on_power = any(w in all_cand_text for w in ["750 w", "watt", "watts", "kw", "hp", "output"]) or ("motor" in words and not any(w in words for w in ["vehicle", "car", "bike", "cycle", "sewing"]))
+        differs_on_sorting = any(w in all_cand_text for w in ["sorted", "unsorted", "waste", "scrap"]) or ("rag" in words or "rags" in words)
+
+        has_material = bool(attrs.get("material")) or any(w in words for w in [
+            "steel", "iron", "copper", "brass", "pvc", "plastic", "hdpe",
+            "aluminium", "aluminum", "rubber", "concrete", "ss", "gi", "ms",
+            "leather", "cotton", "synthetic", "wool", "silk", "nylon", "polyester"
+        ])
+        has_power_spec = bool(attrs.get("power_rating")) or any(w in words for w in ["kw", "hp", "watt", "watts", "w", "kva", "volt", "volts", "v", "rpm", "phase", "servo", "stepper"])
+        has_sorting_spec = bool(attrs.get("sorting_state") or attrs.get("processing_state")) or any(w in words for w in ["sorted", "unsorted", "scrap", "new", "used", "wiping"])
+
+        score_diff = 1.0
+        if len(candidates) >= 2:
+            s1 = float(candidates[0].get("score", 0.0))
+            s2 = float(candidates[1].get("score", 0.0))
+            score_diff = abs(s1 - s2)
+
+        is_close_candidates = len(candidates) >= 2 and score_diff < 0.15
+        is_generic_query = len(words) <= 2 and not (has_material and has_power_spec)
+
+        missing = []
+        questions = []
+
+        if is_close_candidates or is_generic_query:
+            if differs_on_material and not has_material:
+                if any(w in all_cand_text for w in ["cotton", "wool", "silk", "synthetic", "textile"]) or "rag" in words or "rags" in words:
                     missing.append("textile_material")
                     questions.append("What is the textile material composition (e.g., cotton, synthetic, or wool)?")
-                if not has_sorting_spec:
-                    missing.append("sorting_state")
-                    questions.append("Are these rags sorted or unsorted?")
+                else:
+                    missing.append("material")
+                    questions.append(f"What material is the product made from (e.g., stainless steel, mild steel, PVC/plastic, or copper)?")
 
+            if differs_on_power and not has_power_spec:
+                missing.append("power_rating")
+                questions.append("What is the rated power output (in HP or kW) and phase (single-phase or 3-phase) of the motor?")
+
+            if differs_on_sorting and not has_sorting_spec:
+                missing.append("sorting_state")
+                questions.append("Are these rags sorted or unsorted?")
+
+        # Category D: Candidate Conflict Across Unrelated Chapters
+        if len(candidates) >= 2:
+            c1, c2 = candidates[0], candidates[1]
+            s1 = float(c1.get("score", 0.0))
+            s2 = float(c2.get("score", 0.0))
+            chap1 = str(c1.get("chapter", ""))
+            chap2 = str(c2.get("chapter", ""))
+
+            if chap1 and chap2 and chap1 != chap2 and s1 > 0 and s2 > 0 and abs(s1 - s2) < 0.04 and not differs_on_material:
                 return self._build_contract_response(
                     is_ambiguous=True,
-                    ambiguity_reason="The product description 'Rags' does not specify sorting state or textile material required to distinguish Chapter 63 tariff lines.",
-                    missing_attributes=missing,
+                    ambiguity_reason=f"Retrieved candidates span competing statutory chapters ({chap1} vs {chap2}) with unresolved similarity scores.",
+                    missing_attributes=["technical_function", "end_use"],
                     conflicting_facts=[],
-                    unclear_terminology=["Rags"],
-                    clarification_questions=questions,
-                    affected_candidates=cand_ids[:2],
+                    unclear_terminology=[],
+                    clarification_questions=[],
+                    affected_candidates=[cand_ids[0], cand_ids[1]],
                     can_continue_verification=False,
-                    recommended_action="REQUEST_CLARIFICATION"
+                    recommended_action="MANUAL_REVIEW"
                 )
 
-        # 2. Material Ambiguity: "Industrial pipe"
-        is_pipe = ("pipe" in words or "pipes" in words or "tubing" in words)
-        has_material = any(w in words for w in [
-            "steel", "iron", "copper", "brass", "pvc", "plastic", "hdpe",
-            "aluminium", "aluminum", "rubber", "concrete", "ss", "gi", "ms"
-        ]) or bool(attrs.get("material"))
+        # Check dynamic ambiguity resolver when candidates are absent or close
+        if not missing and (not candidates or is_close_candidates):
+            try:
+                from src.chapter_predictor.ambiguity_resolver import analyze_product_ambiguity
+                is_amb, clar_q, clar_opts, _ = analyze_product_ambiguity(orig_desc)
+                if is_amb and clar_opts and not (has_material or has_power_spec):
+                    missing.append("material" if len({o.chapter_code for o in clar_opts}) > 1 else "specification")
+                    questions.append(clar_q or f"Which specification of {orig_desc} applies?")
+            except Exception:
+                pass
 
-        if is_pipe and not has_material:
+        if missing:
             return self._build_contract_response(
                 is_ambiguous=True,
-                ambiguity_reason="The product description does not specify the material required to distinguish between iron/steel (Ch 73), copper (Ch 74), or plastic (Ch 39) pipes.",
-                missing_attributes=["material"],
+                ambiguity_reason=f"The product description '{orig_desc}' lacks statutory parameters ({', '.join(missing)}) required to distinguish applicable tariff lines.",
+                missing_attributes=missing,
                 conflicting_facts=[],
-                unclear_terminology=["pipe"],
-                clarification_questions=["What material is the product made from (e.g., stainless steel, mild steel, PVC/plastic, or copper)?"],
-                affected_candidates=cand_ids[:2],
+                unclear_terminology=unclear_terms,
+                clarification_questions=questions,
+                affected_candidates=cand_ids[:min(len(cand_ids), 2)] or ["CAND_001", "CAND_002"],
                 can_continue_verification=False,
                 recommended_action="REQUEST_CLARIFICATION"
             )
 
-        # 3. Specification Ambiguity: "Industrial motor" without power rating
-        is_motor = ("motor" in words or "motors" in words) and not any(w in words for w in ["vehicle", "car", "bike", "cycle"])
-        has_power_spec = any(w in words for w in ["kw", "hp", "watt", "watts", "w", "kva", "v", "volt", "volts", "phase", "rpm", "servo", "stepper"]) or bool(attrs.get("power_rating"))
-
-        if is_motor and not has_power_spec:
-            return self._build_contract_response(
-                is_ambiguous=True,
-                ambiguity_reason="The product description does not specify the power output rating required to distinguish Heading 8501 subheadings.",
-                missing_attributes=["power_rating", "phase_specification"],
-                conflicting_facts=[],
-                unclear_terminology=["motor"],
-                clarification_questions=["What is the rated power output (in HP or kW) and phase (single-phase or 3-phase) of the motor?"],
-                affected_candidates=cand_ids[:2],
-                can_continue_verification=False,
-                recommended_action="REQUEST_CLARIFICATION"
-            )
 
         # -------------------------------------------------------------------------
         # Category B: Conflicting Facts
@@ -435,28 +470,6 @@ class DeepSeekAmbiguityAnalyzer:
                 recommended_action="REQUEST_CLARIFICATION"
             )
 
-        # -------------------------------------------------------------------------
-        # Category D: Candidate Conflict Across Unrelated Chapters
-        # -------------------------------------------------------------------------
-        if len(candidates) >= 2:
-            c1, c2 = candidates[0], candidates[1]
-            s1 = float(c1.get("score", 0.0))
-            s2 = float(c2.get("score", 0.0))
-            chap1 = str(c1.get("chapter", ""))
-            chap2 = str(c2.get("chapter", ""))
-
-            if chap1 and chap2 and chap1 != chap2 and abs(s1 - s2) < 0.04:
-                return self._build_contract_response(
-                    is_ambiguous=True,
-                    ambiguity_reason=f"Retrieved candidates span competing statutory chapters ({chap1} vs {chap2}) with unresolved similarity scores.",
-                    missing_attributes=["technical_function", "end_use"],
-                    conflicting_facts=[],
-                    unclear_terminology=[],
-                    clarification_questions=[],
-                    affected_candidates=[cand_ids[0], cand_ids[1]],
-                    can_continue_verification=False,
-                    recommended_action="MANUAL_REVIEW"
-                )
 
         # -------------------------------------------------------------------------
         # Case A: Clear Product Description (Evidence is sufficient)

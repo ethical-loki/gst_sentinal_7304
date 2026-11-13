@@ -4957,7 +4957,56 @@
             const confPct = typeof chap.confidence === 'number' ? (chap.confidence * 100).toFixed(1) : '0.0';
 
             let chapHtml = '';
-            if (isOK && chap.chapter) {
+            const dis = data.disambiguation || (chap && chap.disambiguation) || {};
+            const isDisambig = dis.is_ambiguous && dis.disambiguation_options && dis.disambiguation_options.length > 0;
+
+            if (isDisambig) {
+                // Ambiguity detected across multiple materials/chapters: Display Semantic Options Disambiguation Card
+                chapHtml = `
+                    <div style="background:linear-gradient(135deg, rgba(234,179,8,0.18) 0%, rgba(9,14,26,0.95) 100%); border:1.5px solid #facc15; border-radius:12px; padding:18px; margin-top:14px; box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+                            <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(234,179,8,0.25); border:1px solid #facc15; padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:800; color:#fde047; text-transform:uppercase; letter-spacing:0.04em;">
+                                <span class="pulse-dot" style="background:#facc15;"></span> MULTI-CHAPTER AMBIGUITY DETECTED
+                            </div>
+                            <span style="font-size:0.75rem; color:#94a3b8; font-family:'JetBrains Mono', monospace;">
+                                Select intended material/variant below
+                            </span>
+                        </div>
+                        <h4 style="margin:0 0 6px 0; font-size:1.05rem; color:#ffffff; font-weight:700;">
+                            ❓ ${escapeHtml(dis.clarification_question || 'What material or type is the product?')}
+                        </h4>
+                        <p style="margin:0 0 14px 0; font-size:0.82rem; color:#cbd5e1; line-height:1.45;">
+                            This item maps to multiple distinct HSN chapters depending on its material and construction. Choose the specific statutory classification to automatically lock the right HSN:
+                        </p>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:10px; margin-bottom:14px;">
+                            ${dis.disambiguation_options.map(opt => `
+                                <div onclick="selectDisambiguationOption('${escapeHtml(opt.label).replace(/'/g, "\\'")}', '${escapeHtml(opt.chapter_code)}', '${escapeHtml(opt.hsn_code)}')" 
+                                     style="background:rgba(15,23,42,0.9); border:1.5px solid rgba(250,204,21,0.5); border-radius:10px; padding:12px 14px; cursor:pointer; transition:all 0.2s;"
+                                     onmouseover="this.style.borderColor='#38bdf8'; this.style.transform='translateY(-2px)';" 
+                                     onmouseout="this.style.borderColor='rgba(250,204,21,0.5)'; this.style.transform='none';">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                        <span style="background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:#7dd3fc; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:800;">
+                                            Chapter ${escapeHtml(opt.chapter_code)}
+                                        </span>
+                                        <span style="font-family:'JetBrains Mono', monospace; font-weight:800; color:#34d399; font-size:0.85rem;">
+                                            HSN ${escapeHtml(opt.hsn_code)}
+                                        </span>
+                                    </div>
+                                    <div style="font-size:0.88rem; font-weight:700; color:#f8fafc; margin-bottom:4px;">
+                                        ${escapeHtml(opt.label)}
+                                    </div>
+                                    <div style="font-size:0.72rem; color:#94a3b8; line-height:1.35; margin-bottom:6px;">
+                                        ${escapeHtml(opt.chapter_title)}
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:#38bdf8; font-weight:700; border-top:1px solid rgba(148,163,184,0.15); padding-top:6px;">
+                                        <span>Click to Select &amp; Lock ➔</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (isOK && chap.chapter) {
                 chapHtml = `
                     <div style="background:rgba(9,14,26,0.9); border:1px solid rgba(56,189,248,0.35); border-radius:10px; padding:16px; margin-top:14px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
@@ -5081,6 +5130,16 @@
 
             box.style.display = 'block';
             box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function selectDisambiguationOption(label, chapterCode, hsnCode) {
+            const inp = document.getElementById('stepProductInput');
+            if (inp) {
+                // Update product input to the fully qualified choice
+                inp.value = label;
+            }
+            showToast(`✓ Selected: ${label} (Chapter ${chapterCode}, HSN ${hsnCode}). Running pipeline!`);
+            runAutoStepSequence();
         }
 
         function routeToReviewQueue(product, chapter) {
@@ -6324,14 +6383,39 @@
                                     </div>
                                 ` : ''}
                                 <div style="font-weight:800; margin-bottom:6px; color:#fef9c3;">❓ ${escapeHtml(res.clarification_question || 'Please select a suggested specification or enter further product details:')}</div>
-                                <div style="font-size:0.68rem; color:#fde047; font-weight:700; margin-bottom:4px;">💡 Suggested Product Specifications (Click to Confirm &amp; Lock HSN):</div>
-                                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
-                                    ${productSuggestions.map(opt => `
-                                        <button type="button" onclick="applyInlineClarification(${idx}, '${escapeHtml(opt).replace(/'/g, "\\'")}')" style="background:rgba(250,204,21,0.22); color:#fef9c3; border:1px solid #facc15; border-radius:6px; padding:4px 8px; font-size:0.7rem; font-weight:700; cursor:pointer; text-align:left;">
-                                            👉 ${escapeHtml(opt)}
-                                        </button>
-                                    `).join('')}
-                                </div>
+                                ${res.disambiguation_options && res.disambiguation_options.length > 0 ? `
+                                    <div style="font-size:0.7rem; color:#fde047; font-weight:800; margin-bottom:6px; text-transform:uppercase;">
+                                        🏛️ Statutory Chapter Disambiguation Options (from Master Catalog):
+                                    </div>
+                                    <div style="display:grid; grid-template-columns:1fr; gap:6px; margin-bottom:10px;">
+                                        ${res.disambiguation_options.map(dOpt => `
+                                            <div onclick="applyInlineClarification(${idx}, '${escapeHtml(dOpt.label).replace(/'/g, "\\'")}')" 
+                                                 style="background:rgba(15,23,42,0.9); border:1px solid rgba(250,204,21,0.6); border-radius:6px; padding:6px 10px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition:all 0.15s;"
+                                                 onmouseover="this.style.borderColor='#38bdf8'; this.style.background='rgba(56,189,248,0.1)';" 
+                                                 onmouseout="this.style.borderColor='rgba(250,204,21,0.6)'; this.style.background='rgba(15,23,42,0.9)';">
+                                                <div>
+                                                    <span style="background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:#7dd3fc; padding:1px 5px; border-radius:3px; font-size:0.65rem; font-weight:800; margin-right:6px;">
+                                                        Ch ${escapeHtml(dOpt.chapter_code)}
+                                                    </span>
+                                                    <strong style="color:#ffffff; font-size:0.75rem;">${escapeHtml(dOpt.label)}</strong>
+                                                    <div style="font-size:0.67rem; color:#94a3b8; margin-top:2px;">
+                                                        HSN <code style="color:#34d399;">${escapeHtml(dOpt.hsn_code)}</code> — ${escapeHtml(dOpt.chapter_title)}
+                                                    </div>
+                                                </div>
+                                                <span style="font-size:0.72rem; color:#fde047; font-weight:800;">Select ➔</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : `
+                                    <div style="font-size:0.68rem; color:#fde047; font-weight:700; margin-bottom:4px;">💡 Suggested Product Specifications (Click to Confirm &amp; Lock HSN):</div>
+                                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+                                        ${productSuggestions.map(opt => `
+                                            <button type="button" onclick="applyInlineClarification(${idx}, '${escapeHtml(opt).replace(/'/g, "\\'")}')" style="background:rgba(250,204,21,0.22); color:#fef9c3; border:1px solid #facc15; border-radius:6px; padding:4px 8px; font-size:0.7rem; font-weight:700; cursor:pointer; text-align:left;">
+                                                👉 ${escapeHtml(opt)}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                `}
                                 <div style="display:flex; gap:6px; align-items:center;">
                                     <input type="text" id="inlineClarifInput_${idx}" placeholder="Paste or type Product Description here (material, construction, end-use)..." style="flex:1; background:#090e1a; color:#f8fafc; border:1px solid rgba(250,204,21,0.4); border-radius:6px; padding:5px 8px; font-size:0.72rem; outline:none;" onkeydown="if(event.key==='Enter') applyCustomInlineClarification(${idx});">
                                     <button type="button" onclick="applyCustomInlineClarification(${idx})" style="background:#eab308; color:#0f172a; border:none; border-radius:6px; padding:5px 10px; font-size:0.72rem; font-weight:800; cursor:pointer;">

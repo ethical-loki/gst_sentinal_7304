@@ -491,61 +491,35 @@ class HSNRAGApplicationLayer:
                     ]
                 )
 
+        # Condition 4D: Dynamic Dataset-Driven Ambiguity Check (Master & Tariff Master)
+        if not needs_clarification:
+            try:
+                from src.chapter_predictor.ambiguity_resolver import analyze_product_ambiguity
+                _is_amb, _q_text, _amb_opts, _ = analyze_product_ambiguity(q_norm)
+                if _is_amb and _amb_opts:
+                    needs_clarification = True
+                    clarification_payload = ClarificationPayload(
+                        question=_q_text or f"What material and construction is the {q_norm}?",
+                        options=[f"{o.label} → Ch {o.chapter_code}, HSN {o.hsn_code}" for o in _amb_opts]
+                    )
+            except Exception:
+                pass
+
         # -------------------------------------------------------------
-        # 5. DYNAMIC PRODUCT NORMALIZED NAME
+        # 5. DYNAMIC PRODUCT NORMALIZATION & KEYWORDS
         # -------------------------------------------------------------
-        if has_coffee:
-            norm_name = "Whole Roasted Coffee Beans" if "roasted" in q_lower else "Coffee Beans"
-        elif has_friction:
-            norm_name = "Mounted Brake Pads for Passenger Cars" if is_mounted else "Brake Linings / Friction Material"
-        elif has_lithium:
-            norm_name = "Lithium-ion Battery Pack"
-        elif has_semiconductor:
-            norm_name = "Electronic Integrated Circuits (Processors & Controllers)"
-        elif has_unvulcanised_rubber:
-            norm_name = "Unvulcanised Natural Rubber Sheets"
-        elif has_honey:
-            norm_name = "Natural Honey"
-        elif re.search(r"\b(pipe|pipes|tube|tubes)\b", q_lower):
-            if has_stainless:
-                norm_name = "Stainless Steel Pipe"
-            elif has_carbon:
-                norm_name = "Carbon Steel Pipe"
-            elif has_pvc:
-                norm_name = "Plastic / PVC Pipe"
-            elif has_alum:
-                norm_name = "Aluminium Pipe"
-            elif has_copper:
-                norm_name = "Copper / Brass Pipe"
-            elif has_generic_steel:
-                norm_name = "Steel Pipe (Grade Unspecified)"
-            else:
-                norm_name = "Industrial Pipe"
-        elif re.search(r"\b(shoes|shoe|footwear|sneakers|boots)\b", q_lower):
-            if has_leather:
-                norm_name = "Footwear with Leather Uppers"
-            elif has_rubber or has_pvc:
-                norm_name = "Footwear with Rubber / Plastic Uppers"
-            elif has_textile:
-                norm_name = "Footwear with Textile / Mesh Uppers"
-            else:
-                norm_name = desc.title()
-        else:
-            norm_name = desc.title()
+        norm_name = desc.strip().title()
 
         # Dynamic search keywords
-        if has_coffee:
-            keywords = ["coffee roasted", "coffee beans"] + ch_info["priority_headings"][:1]
-        elif has_friction:
-            keywords = ["mounted brake pads", "motor vehicle brakes", "brakes and servo-brakes"] if is_mounted else ["friction material not mounted"]
-        elif has_lithium:
-            keywords = ["electric accumulators", "lithium-ion", "rechargeable battery pack"]
-        elif has_semiconductor:
-            keywords = ["electronic integrated circuits", "processors and controllers"]
-        elif has_honey:
-            keywords = ["natural honey"]
-        else:
-            keywords = [desc.lower()] + ch_info["statutory_keywords"][:3]
+        keywords = [desc.lower()]
+        if "roasted" in q_lower and "coffee" in q_lower:
+            keywords.append("coffee roasted")
+        if is_mounted and has_friction:
+            keywords.extend(["mounted brake pads", "motor vehicle brakes"])
+        if ch_info.get("priority_headings"):
+            keywords.extend(ch_info["priority_headings"][:2])
+        if ch_info.get("statutory_keywords"):
+            keywords.extend(ch_info["statutory_keywords"][:3])
 
         return AttributeExtractionResult(
             product_normalized=norm_name,
@@ -1097,9 +1071,53 @@ class HSNRAGApplicationLayer:
 
             clarif_opts = dyn_suggestions["clarification_options"]
 
+            # ----------------------------------------------------------------
+            # AMBIGUITY RESOLVER: Enrich clarification_options with structured
+            # multi-HSN semantic disambiguation options from ambiguity_resolver
+            # (covers water bottle, pipe, shirt etc. with chapter+HSN detail)
+            # ----------------------------------------------------------------
+            try:
+                from src.chapter_predictor.ambiguity_resolver import analyze_product_ambiguity
+                _ev_lines = [
+                    {"chapter": tl.get("chapter", ""), "chapter_title": tl.get("chapter_title", ""),
+                     "hsn_code": tl.get("hsn_code", ""), "description": tl.get("official_description") or tl.get("description", ""),
+                     "score": tl.get("score", 0.0)}
+                    for tl in top3_cands
+                ]
+                _ar_ambig, _ar_question, _ar_options, _ar_direct = analyze_product_ambiguity(item, _ev_lines)
+                if _ar_ambig and _ar_options and not already_clarified_inline:
+                    # Upgrade clarification options with structured chapter+HSN options
+                    is_ambiguous = True
+                    if not clarif_opts:
+                        clarif_opts = [o.label for o in _ar_options]
+                    # Attach rich disambiguation_options alongside simplified clarif_opts
+                    _rich_disambiguation_options = [o.model_dump() for o in _ar_options]
+                    _disambiguation_question = _ar_question or dyn_suggestions.get("user_prompt_suggestion", "")
+                elif _ar_direct and not is_ambiguous:
+                    # Direct semantic match — attach as resolved_chapter hint
+                    _rich_disambiguation_options = [_ar_direct.model_dump()]
+                    _disambiguation_question = None
+                    # Authoritative direct resolution from Master_copy_hsn
+                    prelim_hsn = _ar_direct.hsn_code
+                    prelim_desc = _ar_direct.hsn_description
+                    prelim_rationale = f"Direct statutory match from Master Catalog: {_ar_direct.chapter_title} (Heading {_ar_direct.hsn_code[:4]})."
+                    d5_code = prelim_hsn
+                    d5_desc = prelim_desc
+                    ds_code = prelim_hsn
+                    ds_desc = prelim_desc
+                    rag_code = prelim_hsn
+                    rag_desc = prelim_desc
+                else:
+                    _rich_disambiguation_options = []
+                    _disambiguation_question = None
+            except Exception as _ar_err:
+                logger.debug(f"Ambiguity resolver skipped for '{item}': {_ar_err}")
+                _rich_disambiguation_options = []
+                _disambiguation_question = None
+
             if is_ambiguous:
                 final_hsn = "REQUIRES_CLARIFICATION"
-                clarif_q = dyn_suggestions["user_prompt_suggestion"]
+                clarif_q = _disambiguation_question or dyn_suggestions["user_prompt_suggestion"]
                 final_desc = clarif_q
                 final_rate = None
                 final_status = "REQUIRES_CLARIFICATION"
@@ -1167,6 +1185,7 @@ class HSNRAGApplicationLayer:
                     if is_ambiguous else dyn_suggestions["user_prompt_suggestion"]
                 ),
                 "clarification_options": clarif_opts,
+                "disambiguation_options": _rich_disambiguation_options,
                 "auditor_protocol_output": auditor_protocol_output,
                 "three_stage_trace": {
                     "stage1_master_string": s1_trace["master_search_string"],
@@ -1362,105 +1381,15 @@ class HSNRAGApplicationLayer:
         return False
 
     OFFICIAL_CHAPTER_01_99_MAP: Dict[str, str] = {
-        "01": "01 - Live Animals; Animal Products",
-        "02": "02 - Meat and edible meat offal",
-        "03": "03 - Fish and crustaceans, molluscs and other aquatic invertebrates",
-        "04": "04 - Dairy produce; birds eggs; natural honey; edible products of animal origin, not elsewhere specified or included",
-        "05": "05 - Products of animal origin, not elsewhere specified or included",
-        "06": "06 - Vegetable Products",
-        "07": "07 - Edible vegetables and certain roots and tubers",
-        "08": "08 - Edible fruit and nuts; peel of citrus fruit or melons",
-        "09": "09 - Coffee, tea, mate and spices",
-        "10": "10 - Cereals",
-        "11": "11 - Products of the milling industry; malt; starches; inulin; wheat gluten",
-        "12": "12 - Oil seeds and oleaginous fruits, miscellaneous grains, seeds and fruit; industrial or medicinal plants; straw and fodder",
-        "13": "13 - Lac; gums, resins and other vegetable saps and extracts",
-        "14": "14 - Vegetable plaiting materials; vegetable products not elsewhere specified or included",
-        "15": "15 - Animal or vegetable fats and oils and their cleavage products; prepared edible fats; animal or vegetable waxes",
-        "16": "16 - Preparations of meat, of fish or of crustaceans, molluscs or other aquatic invertebrates",
-        "17": "17 - Sugars and sugar confectionery",
-        "18": "18 - Cocoa and cocoa preparations",
         "19": "19 - Preparations of cereals, flour, starch or milk; pastrycooks products",
-        "20": "20 - Preparations of vegetables, fruit, nuts or other parts of plants",
-        "21": "21 - Miscellaneous edible preparations",
-        "22": "22 - Beverages, spirits and vinegar",
-        "23": "23 - Residues and waste from the food industries; prepared animal fodder",
-        "24": "24 - Tobacco and manufactured tobacco substitutes",
-        "25": "25 - Mineral Products-Salt; sulphur; earths and stone; plastering materials, lime and cement",
-        "26": "26 - Ores, slag and ash",
-        "27": "27 - Mineral fuels, mineral oils and products of their distillation; bituminous substances; mineral waxes",
-        "28": "28 - Inorganic chemicals, organic or inorganic compounds of precious metals, of rare-earth metals, of radioactive elements or of isotopes",
-        "29": "29 - Organic chemicals",
-        "30": "30 - Pharmaceutical products",
-        "31": "31 - Fertilizers",
-        "32": "32 - Tanning or dyeing extracts; tannins and their derivatives; dyes, pigments and other colouring matter; paints and varnishes; putty and other mastics; inks",
-        "33": "33 - Essential oils and resinoids, perfumery, cosmetic or toilet preparations",
-        "34": "34 - Soap, organic surface-active agents, washing preparations, lubricating preparations, artificial waxes, prepared waxes, polishing or scouring preparations, candles and similar articles, modelling pastes, dental waxes",
-        "35": "35 - Albuminoidal substances; modified starches; glues; enzymes",
-        "36": "36 - Explosives; pyrotechnic products; matches; pyrophoric alloys; certain combustible preparations",
-        "37": "37 - Photographic or cinematographic goods",
-        "38": "38 - Miscellaneous chemical products",
         "39": "39 - Plastics and articles thereof",
-        "40": "40 - Rubber and articles thereof",
-        "41": "41 - Raw hides and skins (other than furskins) and leather",
-        "42": "42 - Articles of leather; saddlery and harness; travel goods, handbags and similar containers; articles of animal gut (other than silkworm gut)",
-        "43": "43 - Furskins and artificial fur; manufactures thereof",
-        "44": "44 - Wood and articles of wood; wood charcoal",
-        "45": "45 - Cork and articles of cork",
-        "46": "46 - Manufactures of straw, of esparto or of other plaiting materials; basketware and wickerwork",
-        "47": "47 - Pulp of wood or of other fibrous cellulosic material; recovered (waste and scrap) paper or paperboard",
-        "48": "48 - Paper and paperboard; articles of paper pulp, of paper or of paperboard",
-        "49": "49 - Printed books, newspapers, pictures and other products of the printing industry; manuscripts, typescripts and plans",
-        "50": "50 - Textiles And Textile Articles (Silk)",
-        "51": "51 - Wool, fine or coarse animal hair; horsehair yarn and woven fabric",
-        "52": "52 - Cotton",
-        "53": "53 - Other vegetable textile fibres; paper yarn and woven fabrics of paper yarn",
-        "54": "54 - Man-made filaments; strip and the like of man-made textile materials",
-        "55": "55 - Man-made staple fibres",
-        "56": "56 - Wadding, felt and nonwovens; special yarns; twine, cordage, ropes and cables and articles thereof",
-        "57": "57 - Carpets and other textile floor coverings",
-        "58": "58 - Special woven fabrics; tufted textile fabrics; lace; tapestries; trimmings; embroidery",
-        "59": "59 - Impregnated, coated, covered or laminated textile fabrics; textile articles of a kind suitable for industrial use",
-        "60": "60 - Knitted or crocheted fabrics",
         "61": "61 - Articles of apparel and clothing accessories, knitted or crocheted",
         "62": "62 - Articles of apparel and clothing accessories, not knitted or crocheted",
-        "63": "63 - Other made up textile articles; sets; worn clothing and worn textile articles; rags",
-        "64": "64 - Footwear, gaiters and the like; parts of such articles",
-        "65": "65 - Headgear and parts thereof",
-        "66": "66 - Umbrellas, sun umbrellas, walking-sticks, seat-sticks, whips, riding-crops and parts thereof",
-        "67": "67 - Prepared feathers and down and articles made of feathers or of down; artificial flowers; articles of human hair",
-        "68": "68 - Articles of stone, plaster, cement, asbestos, mica or similar materials",
-        "69": "69 - Ceramic products",
-        "70": "70 - Glass and glassware",
-        "71": "71 - Natural or cultured pearls, precious or semi-precious stones, precious metals, metals clad with precious metal, and articles thereof; imitation jewellery; coin",
-        "72": "72 - Iron and steel",
         "73": "73 - Articles of iron or steel",
-        "74": "74 - Copper and articles thereof",
-        "75": "75 - Nickel and articles thereof",
-        "76": "76 - Aluminium and articles thereof",
-        "77": "77 - (Reserved for possible future use)",
-        "78": "78 - Lead and articles thereof",
-        "79": "79 - Zinc and articles thereof",
-        "80": "80 - Tin and articles thereof",
-        "81": "81 - Other base metals; cermets; articles thereof",
-        "82": "82 - Tools, implements, cutlery, spoons and forks, of base metal; parts thereof of base metal",
-        "83": "83 - Miscellaneous articles of base metal",
         "84": "84 - Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof",
         "85": "85 - Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles",
-        "86": "86 - Railway or tramway locomotives, rolling-stock and parts thereof; railway or tramway track fixtures and fittings and parts thereof; mechanical (including electro-mechanical) traffic signalling equipment of all kinds",
         "87": "87 - Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof",
-        "88": "88 - Aircraft, spacecraft, and parts thereof",
-        "89": "89 - Ships, boats and floating structures",
-        "90": "90 - Optical, photographic, cinematographic, measuring, checking, precision, medical or surgical instruments and apparatus; parts and accessories thereof",
-        "91": "91 - Clocks and watches and parts thereof",
-        "92": "92 - Musical instruments; parts and accessories of such articles",
-        "93": "93 - Arms and ammunition; parts and accessories thereof",
-        "94": "94 - Furniture; bedding, mattresses, mattress supports, cushions and similar stuffed furnishing; lamps and lighting fittings, not elsewhere specified or included; illuminated signs, illuminated name-plates and the like; prefabricated building",
-        "95": "95 - Toys, games and sports requisites; parts and accessories thereof",
-        "96": "96 - Miscellaneous manufactured articles",
-        "97": "97 - Works of art, collectors' pieces and antiques",
-        "98": "98 - Project imports; laboratory chemicals; passengers' baggage, personal importations by air or post; ship stores",
-        "99": "99 - Services"
+        "94": "94 - Furniture; bedding, mattresses, mattress supports, cushions and similar stuffed furnishing; lamps and lighting fittings, not elsewhere specified or included; illuminated signs, illuminated name-plates and the like; prefabricated building"
     }
 
     def categorize_chapter_01_99(self, text: str) -> Dict[str, Any]:
@@ -1475,6 +1404,7 @@ class HSNRAGApplicationLayer:
         statutory_keywords: List[str] = []
         excluded_chapters: Set[str] = set()
         target_chapters: List[str] = []
+        priority_headings: List[str] = []
 
         # 1. Apparel & Clothing (Chapter 61 Knitted/Crocheted vs Chapter 62 Not Knitted/Woven)
         is_hoodie_pullover = bool(re.search(r"\b(hoodie|hoodies|sweatshirt|sweatshirts|pullover|pullovers|cardigan|cardigans|sweater|sweaters|jersey|jerseys|waistcoat|waistcoats|fleece)\b", t))
@@ -1654,13 +1584,22 @@ class HSNRAGApplicationLayer:
             elif "mat" in t or "mousepad" in t or "sheet" in t or "gasket" in t or "seal" in t:
                 statutory_keywords.extend(["plates", "sheets", "strip", "rods", "profile", "shapes", "vulcanised", "rubber", "gaskets", "washers", "seals"])
 
-        # 12. Ceramic Tableware (Ch 69), Vacuum Flasks (Ch 96), Printed Books/Posters (Ch 49), Services (Ch 99)
+        # 12. Ceramic Tableware (Ch 69), Vacuum Flasks (Ch 96), Drinking Bottles (Ch 39 / Ch 73), Printed Books/Posters (Ch 49), Services (Ch 99)
         if re.search(r"\b(ceramic mug|porcelain mug|coffee mug|teacup|ceramic bowl|dinnerware|tableware of porcelain|ceramic plate)\b", t):
             target_chapters.append("69")
             statutory_keywords.extend(["tableware", "kitchenware", "household", "toilet", "articles", "porcelain", "china", "ceramics"])
         if re.search(r"\b(vacuum flask|thermos|insulated bottle|insulated tumbler|insulated flask)\b", t):
             target_chapters.append("96")
             statutory_keywords.extend(["vacuum", "flasks", "vessels", "complete", "cases"])
+        elif re.search(r"\b(bottle|bottles|water bottle|water bottles|drinking bottle)\b", t):
+            if any(w in t for w in ["steel", "stainless", "ss", "metal", "iron"]):
+                target_chapters.append("73")
+                priority_headings.append("7323")
+                statutory_keywords.extend(["table", "kitchen", "household", "articles", "stainless", "steel", "utensils", "bottle"])
+            elif any(w in t for w in ["plastic", "pet", "hdpe", "polypropylene", "polymer", "resin"]):
+                target_chapters.append("39")
+                priority_headings.append("3923")
+                statutory_keywords.extend(["articles", "conveyance", "packing", "goods", "plastics", "carboys", "bottles", "flasks"])
         if re.search(r"\b(printed book|hardcover|paperback|artbook|manga|comic book|brochure|poster|art print)\b", t):
             target_chapters.append("49")
             statutory_keywords.extend(["printed", "books", "brochures", "leaflets", "printed", "matter", "pictures", "designs", "photographs"])
@@ -1701,13 +1640,17 @@ class HSNRAGApplicationLayer:
             scored_h4s.append((h_score, h_overlap, c_overlap, h4))
 
         scored_h4s.sort(key=lambda x: (round(x[0], 4), x[1], x[2], -int(x[3])), reverse=True)
-        priority_headings = [item[3] for item in scored_h4s[:4]]
+        discovered_h4s = [item[3] for item in scored_h4s[:4]]
+        # Merge pre-assigned priority headings with discovered ones
+        for h in discovered_h4s:
+            if h not in priority_headings:
+                priority_headings.append(h)
 
         if not target_chapters and priority_headings:
             target_chapters.append(priority_headings[0][:2])
 
         primary_ch = target_chapters[0] if target_chapters else None
-        chapter_label = self.OFFICIAL_CHAPTER_01_99_MAP.get(primary_ch, "Dynamic Tariff Schedule (Chapters 01–99)") if primary_ch else "Dynamic Tariff Schedule (Chapters 01–99)"
+        chapter_label = self.OFFICIAL_CHAPTER_01_99_MAP.get(primary_ch, "Dynamic Tariff Schedule (Master Copy: Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94)") if primary_ch else "Dynamic Tariff Schedule (Master Copy: Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94)"
 
         return {
             "chapter_code": primary_ch,
@@ -1752,6 +1695,24 @@ class HSNRAGApplicationLayer:
         if extraction and getattr(extraction, "clarification", None) and getattr(extraction.clarification, "options", None):
             for o in extraction.clarification.options:
                 _add_opt(str(o))
+
+        # Check for ambiguity resolver curated options and give them absolute priority
+        try:
+            from src.chapter_predictor.ambiguity_resolver import analyze_product_ambiguity
+            _amb_is, _, _amb_opts, _ = analyze_product_ambiguity(product_desc)
+            if _amb_is and _amb_opts:
+                # If product is inherently ambiguous (like 'water bottle'), only surface the specific material bifurcation options
+                options.clear()
+                seen_opts.clear()
+                for o in _amb_opts:
+                    _add_opt(f"{o.label} (HSN {o.hsn_code})")
+                return {
+                    "user_prompt_suggestion": f"What material or type is the {product_desc}?",
+                    "missing_attributes": ["Constituent Material / Type", "Statutory Chapter Code"],
+                    "clarification_options": options
+                }
+        except Exception:
+            pass
 
         # 2. Dynamically extract distinguishing 8-digit HSN / 6-digit SAC sub-items from HSN_SAC (1).xlsx
         matched_h4s = list(ch_info["priority_headings"])
@@ -2421,6 +2382,31 @@ class HSNRAGApplicationLayer:
                     }
 
         # Check cross-heading / cross-chapter material ambiguity dynamically
+        # Priority check for curated multi-chapter ambiguity catalog (e.g. water bottle)
+        # Note: Only apply if vector_search_top_3_options are not already specific candidate options evaluated by the statutory customs auditor
+        try:
+            from src.chapter_predictor.ambiguity_resolver import analyze_product_ambiguity
+            _amb_flag, _amb_q, _amb_options, _amb_dir = analyze_product_ambiguity(raw_q)
+            if _amb_flag and _amb_options and not vector_search_top_3_options:
+                return {
+                    "status": "NEED_CLARIFICATION",
+                    "hsn_code": None,
+                    "gst_rate": None,
+                    "missing_attributes": ["constituent_material", "chapter_code"],
+                    "user_prompt_suggestion": _amb_q or "What material or type is the product?",
+                    "clarification_options": [o.label for o in _amb_options]
+                }
+            elif _amb_dir and not vector_search_top_3_options:
+                return {
+                    "status": "SUCCESS",
+                    "hsn_code": _amb_dir.hsn_code,
+                    "gst_rate": None,
+                    "tariff_text": _amb_dir.hsn_description,
+                    "statutory_rationale": f"Statutory classification under {_amb_dir.chapter_title} (Heading {_amb_dir.hsn_code[:4]}) per GIR 1."
+                }
+        except Exception:
+            pass
+
         ext_check = self._extract_attributes_deterministic(raw_q)
         if ext_check.needs_clarification and not mat_attr:
             return {

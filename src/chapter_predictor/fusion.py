@@ -42,8 +42,8 @@ DEFAULT_CONFIDENCE_THRESHOLD = 0.50
 DEFAULT_MARGIN_THRESHOLD = 0.035
 RRF_K = 60
 
-# Exactly 98 valid classifiable chapters (01–99, with 77 explicitly excluded as reserved)
-VALID_CLASSIFIABLE_CHAPTERS = set(f"{i:02d}" for i in range(1, 100) if i != 77)
+# Strictly the 9 chapters present in Master_copy_hsn.xlsx (4,851 official lines)
+VALID_CLASSIFIABLE_CHAPTERS = {"19", "39", "61", "62", "73", "84", "85", "87", "94"}
 
 # Domestic India-specific chapters that require explicit regulatory tokens
 DOMESTIC_CHAPTER_TRIGGERS = {

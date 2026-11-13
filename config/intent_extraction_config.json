@@ -1,0 +1,12 @@
+{
+  "model_provider": "deterministic",
+  "local_model_path": "Questions_answering_bot/models/qwen2.5-0.5b-instruct",
+  "model_name": "qwen2.5-0.5b-instruct",
+  "embedding_model_name": "sentence-transformers/all-MiniLM-L6-v2",
+  "master_excel_path": "data/raw/Master_copy_hsn.xlsx",
+  "cache_dir": "data/intent_cache",
+  "vocabulary_top_k": 25,
+  "max_search_terms": 20,
+  "temperature": 0.0,
+  "max_new_tokens": 180
+}

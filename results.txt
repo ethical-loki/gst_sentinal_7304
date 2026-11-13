@@ -1,0 +1,39 @@
+=== QUERY: water bottle ===
+Status: OK | Chapter: 39 (Plastics and articles thereof)
+Banner: SAME_CHAPTER_VARIANT
+Question: Which specification of bottle | Terms: bottles applies under Chapter 39 (Plastics and articles thereof)?
+Disambiguation options count: 2
+  -> Ch 39: HSN 3923 30 10 (Plastics and articles thereof - INSULATED WARE)
+  -> Ch 39: HSN 3923 30 90 (Plastics and articles thereof - OTHER)
+Intent reading_confidence: clear
+Intent grounded_terms: ['bottles']
+Intent unstated_attributes: ['material (plastics, steel, or glass)', 'insulation status (vacuum insulated or plain)']
+
+=== QUERY: stain less steel water bottle ===
+Status: OK | Chapter: 73 (Articles of iron or steel)
+Banner: AUTO_LOCKED
+Direct Match: 7323 93 90 - Articles of iron or steel - OTHER
+Disambiguation options count: 0
+Intent reading_confidence: clear
+Intent grounded_terms: ['steel', 'bottles', 'utensils']
+Intent unstated_attributes: ['insulation status (vacuum insulated or plain)']
+
+=== QUERY: aunty ===
+Status: ABSTAIN | Chapter: NONE (Not in Master Schedule)
+Banner: NOT_AVAILABLE
+Disambiguation options count: 0
+Intent reading_confidence: unclear
+Intent grounded_terms: []
+Intent unstated_attributes: ['physical product type', 'material composition', 'intended use']
+
+=== QUERY: laptop ===
+Status: OK | Chapter: 84 (Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof)
+Banner: SAME_CHAPTER_VARIANT
+Question: Which specification of portable automatic data processing machine | Terms: automatic data processing machines, personal computer applies under Chapter 84 (Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof)?
+Disambiguation options count: 6
+  -> Ch 84: HSN 8471 30 10 (Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof - PORTABLE AUTOMATIC DATA PROCESSIN)
+  -> Ch 84: HSN 8471 30 90 (Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof - PORTABLE AUTOMATIC DATA PROCESSIN)
+  -> Ch 84: HSN 8471 10 00 (Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof - AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF - MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED ANALOGUE OR HYBRID AUTOMATIC DATA P)
+Intent reading_confidence: clear
+Intent grounded_terms: ['automatic data processing machines', 'personal computer']
+Intent unstated_attributes: ['weight (under or over 10 kg)', 'display screen size']

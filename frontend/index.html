@@ -2706,7 +2706,7 @@
                                     <div class="gk-record-card">
                                         <div class="gk-record-tag">Statutory Tariff Master</div>
                                         <div id="gkRecTariffCode" class="gk-record-val">HSN 84812000</div>
-                                        <div id="gkRecTariffChapter" class="gk-record-sub">Chapter 84 • data/tariff_master.parquet</div>
+                                        <div id="gkRecTariffChapter" class="gk-record-sub">Chapter 84 • data/raw/Master_copy_hsn.xlsx</div>
                                     </div>
                                     <div class="gk-record-card">
                                         <div class="gk-record-tag">Historical Pricing Baseline</div>
@@ -4874,7 +4874,7 @@
 
                 // Check if Step 1 produced an OK or ABSTAIN decision
                 const chap = data.chapter_prediction || {};
-                const isOK = chap.status === 'OK' || chap.status === 'PREDICTED';
+                const isOK = (chap.status === 'OK' || chap.status === 'PREDICTED') && chap.chapter && chap.chapter !== 'NONE';
 
                 // Render Step 1 UI
                 renderStep1Result(data, latency, isOK);
@@ -4957,8 +4957,140 @@
             const confPct = typeof chap.confidence === 'number' ? (chap.confidence * 100).toFixed(1) : '0.0';
 
             let chapHtml = '';
-            if (isOK && chap.chapter) {
+            const dis = data.disambiguation || (chap && chap.disambiguation) || {};
+            const rep = dis.descriptive_report || null;
+            const isDisambig = dis.is_ambiguous && dis.disambiguation_options && dis.disambiguation_options.length > 0;
+
+            let descriptiveReportHtml = '';
+            if (rep) {
+                const confColor = rep.confidence === 'High' ? '#34d399' : (rep.confidence === 'Medium' ? '#38bdf8' : '#facc15');
+                const confBg = rep.confidence === 'High' ? 'rgba(52,211,153,0.15)' : (rep.confidence === 'Medium' ? 'rgba(56,189,248,0.15)' : 'rgba(234,179,8,0.15)');
+                
+                descriptiveReportHtml = `
+                    <div style="background:rgba(15,23,42,0.92); border:1.5px solid rgba(56,189,248,0.45); border-radius:12px; padding:16px; margin-top:14px; box-shadow:0 8px 24px rgba(0,0,0,0.35);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; border-bottom:1px solid rgba(148,163,184,0.15); padding-bottom:8px;">
+                            <span style="font-size:0.75rem; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:0.04em;">
+                                📋 STATUTORY INTENT &amp; CLASSIFICATION REPORT
+                            </span>
+                            <span style="background:${confBg}; color:${confColor}; border:1px solid ${confColor}; padding:2px 8px; border-radius:12px; font-size:0.72rem; font-weight:800;">
+                                Confidence: ${escapeHtml(rep.confidence)} (${rep.confidence_score || 95}%)
+                            </span>
+                        </div>
+                        
+                        <div style="margin-bottom:10px;">
+                            <div style="font-size:0.72rem; color:#94a3b8; font-weight:800; text-transform:uppercase;">Article Understood As:</div>
+                            <div style="font-size:0.88rem; color:#f8fafc; margin-top:2px; line-height:1.45;">${escapeHtml(rep.article_understood_as)}</div>
+                        </div>
+                        
+                        <div style="margin-bottom:10px; background:rgba(30,41,59,0.5); padding:10px 12px; border-radius:8px; border-left:3px solid #34d399;">
+                            <div style="font-size:0.72rem; color:#94a3b8; font-weight:800; text-transform:uppercase;">Recommended HSN:</div>
+                            <div style="font-size:0.95rem; color:#34d399; font-family:'JetBrains Mono', monospace; font-weight:800; margin-top:2px;">
+                                ${escapeHtml(rep.recommended_hsn)}
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom:10px;">
+                            <div style="font-size:0.72rem; color:#94a3b8; font-weight:800; text-transform:uppercase;">Reasoning (Intent-Based):</div>
+                            <div style="font-size:0.82rem; color:#cbd5e1; margin-top:2px; line-height:1.45;">${escapeHtml(rep.reasoning)}</div>
+                        </div>
+                        
+                        ${rep.other_plausible_candidates && rep.other_plausible_candidates.length > 0 ? `
+                        <div style="margin-bottom:10px;">
+                            <div style="font-size:0.72rem; color:#94a3b8; font-weight:800; margin-bottom:4px; text-transform:uppercase;">Other Plausible Candidates:</div>
+                            <div style="display:flex; flex-direction:column; gap:6px;">
+                                ${rep.other_plausible_candidates.map(c => `
+                                    <div style="background:rgba(9,14,26,0.85); border:1px solid rgba(148,163,184,0.2); border-radius:6px; padding:8px 10px; font-size:0.78rem;">
+                                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                                            <span style="font-family:'JetBrains Mono', monospace; color:#38bdf8; font-weight:800;">${escapeHtml(c.hsn_code)}</span>
+                                            <span style="color:#94a3b8; font-size:0.7rem;">Official Schedule</span>
+                                        </div>
+                                        <div style="color:#e2e8f0; margin-top:2px;">${escapeHtml(c.description)}</div>
+                                        <div style="color:#a7f3d0; font-size:0.72rem; margin-top:3px;">✓ <em>Why it fits:</em> ${escapeHtml(c.why_it_could_apply)}</div>
+                                        <div style="color:#fca5a5; font-size:0.72rem; margin-top:1px;">✗ <em>Why it may not:</em> ${escapeHtml(c.why_it_may_not)}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>` : ''}
+                        
+                        ${rep.missing_information && rep.missing_information.length > 0 ? `
+                        <div style="margin-bottom:10px; background:rgba(234,179,8,0.1); border:1px solid rgba(250,204,21,0.3); border-radius:6px; padding:8px 10px;">
+                            <div style="font-size:0.72rem; color:#fde047; font-weight:800; text-transform:uppercase;">Missing Information That Would Change Result:</div>
+                            <div style="font-size:0.78rem; color:#cbd5e1; margin-top:2px;">${escapeHtml(rep.missing_information.join('; '))}</div>
+                        </div>` : ''}
+                        
+                        <div style="font-size:0.7rem; color:#64748b; font-style:italic; margin-top:8px; border-top:1px solid rgba(148,163,184,0.1); padding-top:6px;">
+                            Verification note: Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing.
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (isDisambig) {
+                const isSameChapter = dis.banner_type === "SAME_CHAPTER_VARIANT" || (dis.distinct_chapters_count === 1);
+                const badgeColor = isSameChapter ? '#38bdf8' : '#facc15';
+                const badgeBg = isSameChapter ? 'rgba(56,189,248,0.2)' : 'rgba(234,179,8,0.25)';
+                const badgeBorder = isSameChapter ? '#38bdf8' : '#facc15';
+                const badgeText = isSameChapter ? '#7dd3fc' : '#fde047';
+                const bannerTitle = isSameChapter ? 'SAME-CHAPTER SPECIFICATION VARIANT' : 'MULTI-CHAPTER AMBIGUITY DETECTED';
+                const bannerDesc = isSameChapter
+                    ? 'Multiple official tariff sub-items apply under this statutory Chapter. Select the specific product specification or trade variant:'
+                    : 'This item maps across distinct statutory chapters depending on constituent material or use. Select the applicable classification:';
+
                 chapHtml = `
+                    ${descriptiveReportHtml}
+                    <div style="background:linear-gradient(135deg, ${isSameChapter ? 'rgba(14,165,233,0.15)' : 'rgba(234,179,8,0.18)'} 0%, rgba(9,14,26,0.95) 100%); border:1.5px solid ${badgeBorder}; border-radius:12px; padding:18px; margin-top:14px; box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+                            <div style="display:inline-flex; align-items:center; gap:8px; background:${badgeBg}; border:1px solid ${badgeBorder}; padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:800; color:${badgeText}; text-transform:uppercase; letter-spacing:0.04em;">
+                                <span class="pulse-dot" style="background:${badgeColor};"></span> ${bannerTitle}
+                            </div>
+                            <span style="font-size:0.75rem; color:#94a3b8; font-family:'JetBrains Mono', monospace;">
+                                ${isSameChapter ? 'Variant & Specification Selector' : 'Select intended material/variant below'}
+                            </span>
+                        </div>
+                        <h4 style="margin:0 0 6px 0; font-size:1.05rem; color:#ffffff; font-weight:700;">
+                            ❓ ${escapeHtml(dis.clarification_question || (isSameChapter ? 'Which product variant/specification applies?' : 'What material or construction is the product?'))}
+                        </h4>
+                        <p style="margin:0 0 14px 0; font-size:0.82rem; color:#cbd5e1; line-height:1.45;">
+                            ${bannerDesc}
+                        </p>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:10px; margin-bottom:14px;">
+                            ${dis.disambiguation_options.map(opt => {
+                                const confScore = opt.confidence_pct || opt.score || 95.0;
+                                return `
+                                <div onclick="selectDisambiguationOption('${escapeHtml(opt.label).replace(/'/g, "\\'")}', '${escapeHtml(opt.chapter_code)}', '${escapeHtml(opt.hsn_code)}')" 
+                                     style="background:rgba(15,23,42,0.9); border:1.5px solid ${isSameChapter ? 'rgba(56,189,248,0.45)' : 'rgba(250,204,21,0.5)'}; border-radius:10px; padding:12px 14px; cursor:pointer; transition:all 0.2s;"
+                                     onmouseover="this.style.borderColor='#38bdf8'; this.style.transform='translateY(-2px)';" 
+                                     onmouseout="this.style.borderColor='${isSameChapter ? 'rgba(56,189,248,0.45)' : 'rgba(250,204,21,0.5)'}'; this.style.transform='none';">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                        <div style="display:flex; align-items:center; gap:6px;">
+                                            <span style="background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:#7dd3fc; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:800;">
+                                                Chapter ${escapeHtml(opt.chapter_code)}
+                                            </span>
+                                            <span style="background:rgba(52,211,153,0.15); border:1px solid rgba(52,211,153,0.4); color:#34d399; padding:2px 6px; border-radius:4px; font-size:0.68rem; font-weight:800;">
+                                                ${confScore}% Match
+                                            </span>
+                                        </div>
+                                        <span style="font-family:'JetBrains Mono', monospace; font-weight:800; color:#34d399; font-size:0.85rem;">
+                                            HSN ${escapeHtml(opt.hsn_code)}
+                                        </span>
+                                    </div>
+                                    <div style="font-size:0.88rem; font-weight:700; color:#f8fafc; margin-bottom:4px;">
+                                        ${escapeHtml(opt.label)}
+                                    </div>
+                                    <div style="font-size:0.72rem; color:#94a3b8; line-height:1.35; margin-bottom:6px;">
+                                        ${escapeHtml(opt.chapter_title)}
+                                    </div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:#38bdf8; font-weight:700; border-top:1px solid rgba(148,163,184,0.15); padding-top:6px;">
+                                        <span>Click to Select &amp; Lock ➔</span>
+                                    </div>
+                                </div>
+                            `}).join('')}
+                        </div>
+                    </div>
+                `;
+            } else if (isOK && chap.chapter && chap.chapter !== 'NONE') {
+                chapHtml = `
+                    ${descriptiveReportHtml}
                     <div style="background:rgba(9,14,26,0.9); border:1px solid rgba(56,189,248,0.35); border-radius:10px; padding:16px; margin-top:14px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
                             <div style="font-size:0.75rem; color:#7dd3fc; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; display:flex; align-items:center; gap:8px;">
@@ -4986,17 +5118,25 @@
                     </div>
                 `;
             } else {
-                // ABSTAIN: Manual Review Container
+                // ABSTAIN / Not Available in Reference Master Dataset
+                const isOutOfScope = chap.chapter === 'NONE' || !chap.chapter;
+                const statusLabel = isOutOfScope ? 'NOT IN MASTER SCHEDULE' : 'STATUS: ABSTAIN';
+                const statusSub = isOutOfScope ? '⚠️ Product Outside Master Schedule Scope' : '⚠️ Manual Review Required (Progression Halted)';
+                const headerText = isOutOfScope 
+                    ? 'Queried Article Not in Master Copy (Active Chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)' 
+                    : 'Classification Routed to Review Queue under GIR Compliance';
+
                 chapHtml = `
+                    ${descriptiveReportHtml}
                     <div style="background:linear-gradient(135deg, rgba(234,179,8,0.12) 0%, rgba(9,14,26,0.92) 100%); border:1px solid rgba(250,204,21,0.45); border-radius:10px; padding:16px; margin-top:14px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
                             <div style="font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.04em; display:flex; align-items:center; gap:8px;">
-                                <span style="background:rgba(234,179,8,0.25); border:1px solid rgba(250,204,21,0.6); color:#fde047; padding:2px 8px; border-radius:4px; font-weight:800;">STATUS: ABSTAIN</span>
-                                <span style="color:#fde047;">⚠️ Manual Review Required (Progression Halted)</span>
+                                <span style="background:rgba(234,179,8,0.25); border:1px solid rgba(250,204,21,0.6); color:#fde047; padding:2px 8px; border-radius:4px; font-weight:800;">${statusLabel}</span>
+                                <span style="color:#fde047;">${statusSub}</span>
                             </div>
                         </div>
                         <h4 style="margin:0 0 6px 0; font-size:0.95rem; color:#f8fafc; font-weight:700;">
-                            Classification Routed to Review Queue under GIR Compliance
+                            ${headerText}
                         </h4>
                         <p style="margin:0 0 10px 0; font-size:0.82rem; color:#cbd5e1; line-height:1.45;">
                             ${escapeHtml(chap.reason || 'Query confidence or competitive chapter margin is below threshold. Step 2 remains locked until reviewed.')}
@@ -5081,6 +5221,16 @@
 
             box.style.display = 'block';
             box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function selectDisambiguationOption(label, chapterCode, hsnCode) {
+            const inp = document.getElementById('stepProductInput');
+            if (inp) {
+                // Update product input to the fully qualified choice
+                inp.value = label;
+            }
+            showToast(`✓ Selected: ${label} (Chapter ${chapterCode}, HSN ${hsnCode}). Running pipeline!`);
+            runAutoStepSequence();
         }
 
         function routeToReviewQueue(product, chapter) {
@@ -5180,7 +5330,7 @@
 
             body.innerHTML = `
                 <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:12px;">
-                    Top 3 statutory tariff lines retrieved from official CBIC master (<code style="color:#7dd3fc;">Final_Copy_hsn_7304.xlsx</code>) via semantic embeddings + statutory keyword bridge:
+                    Top 3 statutory tariff lines retrieved from official CBIC master (<code style="color:#7dd3fc;">Master_copy_hsn.xlsx</code>) via semantic embeddings + statutory keyword bridge:
                 </div>
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:14px;">
                     ${candidates.map((cand, idx) => {
@@ -6324,14 +6474,39 @@
                                     </div>
                                 ` : ''}
                                 <div style="font-weight:800; margin-bottom:6px; color:#fef9c3;">❓ ${escapeHtml(res.clarification_question || 'Please select a suggested specification or enter further product details:')}</div>
-                                <div style="font-size:0.68rem; color:#fde047; font-weight:700; margin-bottom:4px;">💡 Suggested Product Specifications (Click to Confirm &amp; Lock HSN):</div>
-                                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
-                                    ${productSuggestions.map(opt => `
-                                        <button type="button" onclick="applyInlineClarification(${idx}, '${escapeHtml(opt).replace(/'/g, "\\'")}')" style="background:rgba(250,204,21,0.22); color:#fef9c3; border:1px solid #facc15; border-radius:6px; padding:4px 8px; font-size:0.7rem; font-weight:700; cursor:pointer; text-align:left;">
-                                            👉 ${escapeHtml(opt)}
-                                        </button>
-                                    `).join('')}
-                                </div>
+                                ${res.disambiguation_options && res.disambiguation_options.length > 0 ? `
+                                    <div style="font-size:0.7rem; color:#fde047; font-weight:800; margin-bottom:6px; text-transform:uppercase;">
+                                        🏛️ Statutory Chapter Disambiguation Options (from Master Catalog):
+                                    </div>
+                                    <div style="display:grid; grid-template-columns:1fr; gap:6px; margin-bottom:10px;">
+                                        ${res.disambiguation_options.map(dOpt => `
+                                            <div onclick="applyInlineClarification(${idx}, '${escapeHtml(dOpt.label).replace(/'/g, "\\'")}')" 
+                                                 style="background:rgba(15,23,42,0.9); border:1px solid rgba(250,204,21,0.6); border-radius:6px; padding:6px 10px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition:all 0.15s;"
+                                                 onmouseover="this.style.borderColor='#38bdf8'; this.style.background='rgba(56,189,248,0.1)';" 
+                                                 onmouseout="this.style.borderColor='rgba(250,204,21,0.6)'; this.style.background='rgba(15,23,42,0.9)';">
+                                                <div>
+                                                    <span style="background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:#7dd3fc; padding:1px 5px; border-radius:3px; font-size:0.65rem; font-weight:800; margin-right:6px;">
+                                                        Ch ${escapeHtml(dOpt.chapter_code)}
+                                                    </span>
+                                                    <strong style="color:#ffffff; font-size:0.75rem;">${escapeHtml(dOpt.label)}</strong>
+                                                    <div style="font-size:0.67rem; color:#94a3b8; margin-top:2px;">
+                                                        HSN <code style="color:#34d399;">${escapeHtml(dOpt.hsn_code)}</code> — ${escapeHtml(dOpt.chapter_title)}
+                                                    </div>
+                                                </div>
+                                                <span style="font-size:0.72rem; color:#fde047; font-weight:800;">Select ➔</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : `
+                                    <div style="font-size:0.68rem; color:#fde047; font-weight:700; margin-bottom:4px;">💡 Suggested Product Specifications (Click to Confirm &amp; Lock HSN):</div>
+                                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+                                        ${productSuggestions.map(opt => `
+                                            <button type="button" onclick="applyInlineClarification(${idx}, '${escapeHtml(opt).replace(/'/g, "\\'")}')" style="background:rgba(250,204,21,0.22); color:#fef9c3; border:1px solid #facc15; border-radius:6px; padding:4px 8px; font-size:0.7rem; font-weight:700; cursor:pointer; text-align:left;">
+                                                👉 ${escapeHtml(opt)}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                `}
                                 <div style="display:flex; gap:6px; align-items:center;">
                                     <input type="text" id="inlineClarifInput_${idx}" placeholder="Paste or type Product Description here (material, construction, end-use)..." style="flex:1; background:#090e1a; color:#f8fafc; border:1px solid rgba(250,204,21,0.4); border-radius:6px; padding:5px 8px; font-size:0.72rem; outline:none;" onkeydown="if(event.key==='Enter') applyCustomInlineClarification(${idx});">
                                     <button type="button" onclick="applyCustomInlineClarification(${idx})" style="background:#eab308; color:#0f172a; border:none; border-radius:6px; padding:5px 10px; font-size:0.72rem; font-weight:800; cursor:pointer;">
@@ -7303,7 +7478,7 @@
         <div class="side-drawer-body">
             <!-- 1. Statutory Tariff Master Record -->
             <div class="side-record-card">
-                <div class="side-card-badge">data/tariff_master.parquet</div>
+                <div class="side-card-badge">data/raw/Master_copy_hsn.xlsx</div>
                 <div class="side-card-label">Statutory Tariff Master Record</div>
                 <div class="side-metric-row">
                     <span class="side-metric-label">Matched HSN</span>

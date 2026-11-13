@@ -572,6 +572,17 @@
                 </div>
 
                 <!-- Grid: Alternatives + Evidence -->
+                <!-- Dynamic Disambiguation Options Box (for ambiguous products like 'water bottle') -->
+                <div id="res-disambiguation-box" style="display:none; margin-bottom:20px; padding:16px; background:rgba(234,179,8,0.12); border:1.5px solid #facc15; border-radius:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span style="font-size:12px; font-weight:800; color:#fde047; text-transform:uppercase; letter-spacing:0.04em;">
+                            ⚠️ Multi-Chapter Ambiguity Detected (Master Catalog)
+                        </span>
+                    </div>
+                    <div id="res-disambig-question" style="font-weight:700; color:#ffffff; font-size:14px; margin-bottom:10px;"></div>
+                    <div id="res-disambig-options" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:10px;"></div>
+                </div>
+
                 <div class="details-grid">
                     <div>
                         <div class="section-title">Top Alternative Chapters</div>
@@ -785,6 +796,38 @@
                 });
             } else {
                 altsList.innerHTML = '<li style="color: var(--text-muted); font-size: 13px;">No alternative chapters within margin.</li>';
+            }
+
+            // Disambiguation Box Handling
+            const disBox = document.getElementById('res-disambiguation-box');
+            const disQ = document.getElementById('res-disambig-question');
+            const disOpts = document.getElementById('res-disambig-options');
+            const dis = pred.disambiguation;
+            if (dis && dis.is_ambiguous && dis.options && dis.options.length > 0) {
+                disQ.textContent = `❓ ${dis.question || 'Please select the specific material/type:'}`;
+                disOpts.innerHTML = '';
+                dis.options.forEach(opt => {
+                    const card = document.createElement('div');
+                    card.style.cssText = 'background:rgba(15,23,42,0.85); border:1px solid rgba(250,204,21,0.5); border-radius:8px; padding:10px 12px; cursor:pointer; transition:all 0.15s;';
+                    card.onmouseover = () => { card.style.borderColor = '#38bdf8'; card.style.transform = 'translateY(-1px)'; };
+                    card.onmouseout = () => { card.style.borderColor = 'rgba(250,204,21,0.5)'; card.style.transform = 'none'; };
+                    card.onclick = () => {
+                        document.getElementById('product-input').value = opt.label;
+                        predictSingle();
+                    };
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <span style="background:rgba(56,189,248,0.2); border:1px solid #38bdf8; color:#7dd3fc; padding:1px 6px; border-radius:3px; font-size:11px; font-weight:800;">Ch ${opt.chapter_code}</span>
+                            <span style="font-family:'JetBrains Mono', monospace; font-size:12px; color:#34d399; font-weight:700;">HSN ${opt.hsn_code}</span>
+                        </div>
+                        <div style="font-size:13px; font-weight:700; color:#f8fafc; margin-bottom:3px;">${opt.label}</div>
+                        <div style="font-size:11px; color:#94a3b8;">${opt.chapter_title}</div>
+                    `;
+                    disOpts.appendChild(card);
+                });
+                disBox.style.display = 'block';
+            } else {
+                disBox.style.display = 'none';
             }
 
             // Evidence Table

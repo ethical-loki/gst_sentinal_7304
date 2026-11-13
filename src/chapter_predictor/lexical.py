@@ -122,7 +122,7 @@ class LexicalTariffIndex:
         self.build_index()
 
     def build_index(self):
-        """Builds BM25 index from raw spreadsheet + chapter titles."""
+        """Builds BM25 index prioritizing Master_copy_hsn.xlsx (with article & material keywords) + statutory chapters."""
         import pandas as pd
 
         # Load clean chapter titles
@@ -131,73 +131,72 @@ class LexicalTariffIndex:
             with open(titles_path, "r", encoding="utf-8") as f:
                 self.chapter_titles = json.load(f)
 
-        excel_path = ROOT_DIR / "data" / "raw" / "Final_Copy_hsn_7304.xlsx"
-        if not excel_path.exists():
-            excel_path = ROOT_DIR / "data" / "raw" / "HSN_SAC (1).xlsx"
-
-        df = pd.read_excel(excel_path)
-        code_col = df.columns[0]
-        desc_col = df.columns[1]
-
-        # First pass: map 4-digit headings to their statutory parent texts
-        heading_parent_text: Dict[str, str] = {}
-        for _, row in df.iterrows():
-            raw_c = str(row[code_col]).strip()
-            raw_d = str(row[desc_col] or "").strip()
-            clean_digits = re.sub(r"\D", "", raw_c)
-            # 4 digits (or 3 digits with dropped leading zero)
-            if len(clean_digits) == 3:
-                clean_digits = clean_digits.zfill(4)
-            if len(clean_digits) == 4:
-                heading_parent_text[clean_digits] = raw_d
-
         records = []
         corpus_tokenized = []
+        seen_hsn_raw = set()
 
-        for idx, row in df.iterrows():
-            raw_c = str(row[code_col]).strip()
-            desc = str(row[desc_col] or "").strip()
-            clean_digits = re.sub(r"\D", "", raw_c)
+        # 1. Primary: Load Master_copy_hsn.xlsx (rich with Article Keywords & Material Keywords)
+        master_excel = ROOT_DIR / "data" / "raw" / "Master_copy_hsn.xlsx"
+        master_parquet = ROOT_DIR / "data" / "Master_copy_hsn.parquet"
+        if master_parquet.exists():
+            df_master = pd.read_parquet(master_parquet)
+        elif master_excel.exists():
+            df_master = pd.read_excel(master_excel)
+        else:
+            df_master = None
 
-            # Normalize to 2, 4, 6, 8 digits
-            if len(clean_digits) == 1:
-                clean_digits = clean_digits.zfill(2)
-            elif len(clean_digits) == 3:
-                clean_digits = clean_digits.zfill(4)
-            elif len(clean_digits) == 5:
-                clean_digits = clean_digits.zfill(6)
-            elif len(clean_digits) == 7:
-                clean_digits = clean_digits.zfill(8)
+        if df_master is not None:
+            logger.info(f"Indexing {len(df_master)} master records from Master_copy_hsn...")
+            for idx, row in df_master.iterrows():
+                raw_c = str(row.get("HSN Code", "")).strip()
+                clean_digits = re.sub(r"\D", "", raw_c)
+                if not clean_digits:
+                    continue
 
-            ch = clean_digits[:2] if len(clean_digits) >= 2 else "99"
-            h4 = clean_digits[:4] if len(clean_digits) >= 4 else clean_digits.zfill(4)
-            ch_title = self.chapter_titles.get(ch, "")
-            parent_text = heading_parent_text.get(h4, "")
+                if len(clean_digits) == 1:
+                    clean_digits = clean_digits.zfill(2)
+                elif len(clean_digits) == 3:
+                    clean_digits = clean_digits.zfill(4)
+                elif len(clean_digits) == 5:
+                    clean_digits = clean_digits.zfill(6)
+                elif len(clean_digits) == 7:
+                    clean_digits = clean_digits.zfill(8)
 
-            # Format formatted HSN (e.g. "0901 21 10")
-            if len(clean_digits) == 8:
-                formatted_code = f"{clean_digits[:4]} {clean_digits[4:6]} {clean_digits[6:]}"
-            elif len(clean_digits) == 6:
-                formatted_code = f"{clean_digits[:4]} {clean_digits[4:]}"
-            else:
-                formatted_code = clean_digits
+                ch = str(row.get("chapter_code", clean_digits[:2])).zfill(2)
+                ch_title = str(row.get("chapter_title", "")).strip() or self.chapter_titles.get(ch, "")
+                desc = str(row.get("HSN Description", "") or "").strip()
+                art = str(row.get("Article Keywords", "") or "").strip()
+                mat = str(row.get("Material Keywords", "") or "").strip()
 
-            # Enriched text for BM25: full description + parent heading + chapter title
-            combined_text = f"{clean_digits} {desc} {parent_text} {ch_title}".strip()
-            tokens = tokenize_corpus_text(combined_text)
+                if len(clean_digits) == 8:
+                    formatted_code = f"{clean_digits[:4]} {clean_digits[4:6]} {clean_digits[6:]}"
+                elif len(clean_digits) == 6:
+                    formatted_code = f"{clean_digits[:4]} {clean_digits[4:]}"
+                else:
+                    formatted_code = clean_digits
 
-            rec = {
-                "idx": idx,
-                "hsn_raw": clean_digits,
-                "hsn_code": formatted_code,
-                "description": desc,
-                "parent_heading": h4,
-                "parent_heading_text": parent_text,
-                "chapter": ch,
-                "chapter_title": ch_title
-            }
-            records.append(rec)
-            corpus_tokenized.append(tokens)
+                # Enriched text for BM25: HSN code + description + article keywords + material keywords + chapter title
+                combined_text = f"{clean_digits} {desc} {art} {mat} {ch} {ch_title}".strip()
+                tokens = tokenize_corpus_text(combined_text)
+
+                rec = {
+                    "idx": len(records),
+                    "hsn_raw": clean_digits,
+                    "hsn_code": formatted_code,
+                    "description": desc,
+                    "article_keywords": art,
+                    "material_keywords": mat,
+                    "parent_heading": clean_digits[:4] if len(clean_digits) >= 4 else clean_digits,
+                    "parent_heading_text": "",
+                    "chapter": ch,
+                    "chapter_title": ch_title,
+                    "source": "master"
+                }
+                records.append(rec)
+                corpus_tokenized.append(tokens)
+                seen_hsn_raw.add(clean_digits)
+
+        logger.info(f"[Lexical] Indexed strictly {len(records)} Master_copy_hsn records across valid chapters.")
 
         # Build BM25 index
         try:

@@ -829,6 +829,28 @@ def get_hsn_dataframe():
     if _hsn_df_cache is not None:
         return _hsn_df_cache
 
+    master_parquet = BASE_DIR / "data" / "Master_copy_hsn.parquet"
+    master_excel = BASE_DIR / "data" / "raw" / "Master_copy_hsn.xlsx"
+    if master_parquet.exists() or master_excel.exists():
+        try:
+            import pandas as pd
+            if master_parquet.exists():
+                df = pd.read_parquet(master_parquet)
+            else:
+                df = pd.read_excel(master_excel)
+            if "HSN Code" in df.columns:
+                df["hsn_code"] = df["HSN Code"].astype(str).str.replace(" ", "").str.strip()
+            if "HSN Description" in df.columns:
+                df["description"] = df["HSN Description"].astype(str).str.strip()
+            if "chapter_code" in df.columns:
+                df["chapter"] = df["chapter_code"].astype(str).str.strip().str.zfill(2)
+            hsn_col = "hsn_code"
+            desc_col = "description"
+            _hsn_df_cache = (df, hsn_col, desc_col)
+            return _hsn_df_cache
+        except Exception as e:
+            print(f"[WARN] Could not load Master_copy_hsn in converter_service: {e}")
+
     parquet_path = BASE_DIR / "data" / "tariff_master.parquet"
     if parquet_path.exists():
         try:

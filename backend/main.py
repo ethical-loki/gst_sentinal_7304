@@ -56,8 +56,8 @@ app.include_router(chapter_router)
 # Files should be placed in data/raw/ or data/
 RAW_DATA_DIR = os.path.join("data", "raw")
 
-# 👉 Updated to latest authoritative HSN/SAC master file
-EXCEL_FILENAME = "Final_Copy_hsn_7304.xlsx"
+# 👉 Authoritative statutory HSN master file
+EXCEL_FILENAME = "Master_copy_hsn.xlsx"
 
 # Full dynamic path computation
 HSN_EXCEL_PATH = os.path.join(RAW_DATA_DIR, EXCEL_FILENAME)
@@ -667,6 +667,19 @@ async def step1_context_aggregator_endpoint(request: Request):
         existing_attributes=existing_attributes
     )
 
+    # --- Intent Extraction Stage (Vocabulary Retrieval + LLM Translation + File Grounding) ---
+    intent_data = None
+    search_query_for_retrieval = base_product
+    try:
+        from src.nlp.intent_extractor import get_intent_extractor
+        extractor = get_intent_extractor()
+        intent_res = extractor.extract_intent(base_product)
+        intent_data = intent_res.model_dump()
+        if intent_res.synthesized_search_string:
+            search_query_for_retrieval = intent_res.synthesized_search_string
+    except Exception as ie_err:
+        logger.warning(f"Intent extraction skipped in Step 1: {ie_err}")
+
     chapter_pred_data = None
     query_facts_data = {}
     catalogue_version = "v1.0.0-closed98"
@@ -677,17 +690,185 @@ async def step1_context_aggregator_endpoint(request: Request):
     except Exception as e:
         logger.warning(f"Fact extraction skipped in Step 1: {e}")
 
+    # --- Layer 4: Smart UI & Ambiguity Decision Engine (Hybrid Retrieval + Cross-Encoder) ---
+    disambiguation_data = {
+        "is_ambiguous": False,
+        "banner_type": "NONE",
+        "banner_title": "",
+        "clarification_question": None,
+        "disambiguation_options": [],
+        "direct_match": None,
+        "distinct_chapters_count": 0,
+        "descriptive_report": None
+    }
     try:
-        from src.chapter_predictor.predictor import ChapterPredictor
-        pred = ChapterPredictor.get_instance().predict(base_product, top_k=3)
-        chapter_pred_data = pred.model_dump()
-        chapter_pred_data["catalogue_version"] = catalogue_version
-        chapter_pred_data["index_version"] = index_version
-        chapter_pred_data["total_active_chapters"] = 98
+        from src.search.ambiguity_controller import evaluate_product_ambiguity
+        _eval_res = evaluate_product_ambiguity(search_query_for_retrieval)
+        disambiguation_data = {
+            "is_ambiguous": _eval_res.is_ambiguous,
+            "banner_type": _eval_res.banner_type,
+            "banner_title": _eval_res.banner_title,
+            "clarification_question": _eval_res.clarification_question,
+            "disambiguation_options": [o.model_dump() for o in _eval_res.disambiguation_options],
+            "direct_match": _eval_res.direct_match.model_dump() if _eval_res.direct_match else None,
+            "distinct_chapters_count": _eval_res.distinct_chapters_count,
+            "descriptive_report": _eval_res.descriptive_report.model_dump() if _eval_res.descriptive_report else None
+        }
+    except Exception as _ar_e:
+        logger.warning(f"Layer 4 ambiguity controller skipped in Step 1 for '{base_product}': {_ar_e}")
+
+    VALID_MASTER_CHAPTERS = {"19", "39", "61", "62", "73", "84", "85", "87", "94"}
+    try:
+        if disambiguation_data.get("direct_match") and disambiguation_data["direct_match"].get("chapter_code") in VALID_MASTER_CHAPTERS:
+            dm = disambiguation_data["direct_match"]
+            chapter_pred_data = {
+                "product_name": base_product,
+                "normalized": base_product.lower(),
+                "chapter": dm.get("chapter_code", ""),
+                "chapter_title": dm.get("chapter_title", ""),
+                "confidence": 0.99,
+                "status": "OK",
+                "alternatives": [],
+                "evidence": [
+                    {
+                        "chapter": dm.get("chapter_code", ""),
+                        "chapter_title": dm.get("chapter_title", ""),
+                        "hsn_code": dm.get("hsn_code", ""),
+                        "description": dm.get("hsn_description", ""),
+                        "score": dm.get("score", 1.0)
+                    }
+                ],
+                "reason": f"High-confidence statutory classification in Chapter {dm.get('chapter_code')}",
+                "catalogue_version": catalogue_version,
+                "index_version": index_version,
+                "total_active_chapters": len(VALID_MASTER_CHAPTERS)
+            }
+        elif disambiguation_data.get("disambiguation_options"):
+            # Filter strictly to active Master chapters
+            valid_opts = [o for o in disambiguation_data["disambiguation_options"] if o.get("chapter_code") in VALID_MASTER_CHAPTERS]
+            disambiguation_data["disambiguation_options"] = valid_opts
+            if valid_opts:
+                first_opt = valid_opts[0]
+                chapter_pred_data = {
+                    "product_name": base_product,
+                    "normalized": base_product.lower(),
+                    "chapter": first_opt.get("chapter_code", "39"),
+                    "chapter_title": first_opt.get("chapter_title", "Plastics and articles thereof"),
+                    "confidence": 0.95,
+                    "status": "OK",
+                    "alternatives": [],
+                    "evidence": [
+                        {
+                            "chapter": o.get("chapter_code", ""),
+                            "chapter_title": o.get("chapter_title", ""),
+                            "hsn_code": o.get("hsn_code", ""),
+                            "description": o.get("hsn_description", ""),
+                            "score": o.get("score", 1.0)
+                        }
+                        for o in valid_opts[:5]
+                    ],
+                    "reason": f"Matched statutory master entries in Chapter {first_opt.get('chapter_code')}",
+                    "catalogue_version": catalogue_version,
+                    "index_version": index_version,
+                    "total_active_chapters": len(VALID_MASTER_CHAPTERS)
+                }
+            else:
+                disambiguation_data["is_ambiguous"] = False
+                disambiguation_data["banner_type"] = "NONE"
+
+        if chapter_pred_data is None:
+            from src.chapter_predictor.predictor import ChapterPredictor
+            pred = ChapterPredictor.get_instance().predict(base_product, top_k=3)
+            chapter_pred_data = pred.model_dump()
+            chapter_pred_data["catalogue_version"] = catalogue_version
+            chapter_pred_data["index_version"] = index_version
+            chapter_pred_data["total_active_chapters"] = len(VALID_MASTER_CHAPTERS)
+
+        # Handle distinct outcome types from Intent Extraction (UNRECOGNIZED, OUT_OF_SCHEDULE, AMBIGUOUS_MATERIAL)
+        if intent_data and (intent_data.get("outcome_type") == "UNRECOGNIZED" or intent_data.get("reading_confidence") == "unclear"):
+            chapter_pred_data["status"] = "ABSTAIN"
+            chapter_pred_data["confidence"] = 0.0
+            chapter_pred_data["chapter"] = "NONE"
+            chapter_pred_data["chapter_title"] = "Unrecognized Query"
+            chapter_pred_data["reason"] = (
+                f"Query '{base_product}' is too vague or unrecognized under statutory customs tariff. "
+                f"Clarification required."
+            )
+            disambiguation_data["is_ambiguous"] = False
+            disambiguation_data["banner_type"] = "NONE"
+            disambiguation_data["direct_match"] = None
+        elif intent_data and intent_data.get("outcome_type") == "OUT_OF_SCHEDULE":
+            chapter_pred_data["status"] = "ABSTAIN"
+            chapter_pred_data["confidence"] = 0.0
+            chapter_pred_data["chapter"] = "NONE"
+            chapter_pred_data["chapter_title"] = "Out of Schedule"
+            chapter_pred_data["reason"] = (
+                intent_data.get("error_message") or
+                f"Product '{base_product}' belongs to a chapter outside the active Master schedule (available chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)."
+            )
+            disambiguation_data["direct_match"] = None
+            disambiguation_data["is_ambiguous"] = False
+            disambiguation_data["banner_type"] = "NOT_AVAILABLE"
+            disambiguation_data["descriptive_report"] = {
+                "article_understood_as": f"Commodity ('{base_product}') identified outside the 9 active chapters.",
+                "recommended_hsn": "None (Chapter outside active schedule)",
+                "confidence": "Low",
+                "confidence_score": 0.0,
+                "reasoning": intent_data.get("error_message") or "Statutory classification falls outside loaded schedule.",
+                "other_plausible_candidates": [],
+                "missing_information": ["Target chapter not loaded in active Master dataset (active: 19, 39, 61, 62, 73, 84, 85, 87, 94)"],
+                "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
+            }
+        elif intent_data and intent_data.get("outcome_type") == "AMBIGUOUS_MATERIAL":
+            disambiguation_data["direct_match"] = None
+            disambiguation_data["is_ambiguous"] = True
+            disambiguation_data["banner_type"] = "MULTI_CHAPTER_AMBIGUITY"
+            disambiguation_data["banner_title"] = "CONSTITUENT MATERIAL REQUIRED"
+            disambiguation_data["clarification_question"] = f"What material and construction is the {base_product}?"
+        else:
+            rep = disambiguation_data.get("descriptive_report") or {}
+            if rep.get("confidence") == "Low" or "Unrecognized commercial query" in str(rep.get("article_understood_as")):
+                chapter_pred_data["status"] = "ABSTAIN"
+                chapter_pred_data["confidence"] = min(chapter_pred_data.get("confidence", 0.0), 0.35)
+                chapter_pred_data["reason"] = (
+                    f"Query '{base_product}' is unrecognized or confidence threshold (0.50) is not met. "
+                    f"Requires customer clarification or manual review."
+                )
+
+        # Enforce strict membership in Master dataset chapters
+        if chapter_pred_data.get("chapter") not in VALID_MASTER_CHAPTERS:
+            chapter_pred_data["status"] = "ABSTAIN"
+            chapter_pred_data["chapter"] = "NONE"
+            chapter_pred_data["chapter_title"] = "Not in Master Schedule"
+            chapter_pred_data["confidence"] = 0.0
+            chapter_pred_data["evidence"] = []
+            chapter_pred_data["alternatives"] = []
+            chapter_pred_data["reason"] = (
+                f"Product '{base_product}' cannot be mapped to Master_copy_hsn.xlsx. "
+                f"The master dataset exclusively covers Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94."
+            )
+            disambiguation_data["direct_match"] = None
+            disambiguation_data["is_ambiguous"] = False
+            disambiguation_data["banner_type"] = "NOT_AVAILABLE"
+            disambiguation_data["descriptive_report"] = {
+                "article_understood_as": f"An item ('{base_product}') queried by user.",
+                "recommended_hsn": "None (Not available in reference dataset)",
+                "confidence": "Low",
+                "confidence_score": 0.0,
+                "reasoning": (
+                    f"The queried product '{base_product}' does not belong to any of the 9 statutory chapters "
+                    f"available in Master_copy_hsn.xlsx (available chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)."
+                ),
+                "other_plausible_candidates": [],
+                "missing_information": [
+                    "Item belongs to an unindexed Chapter outside Master_copy_hsn.xlsx (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)"
+                ],
+                "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
+            }
+
         logger.info(
-            f"[Step1-Context-Aggregator] Product: '{base_product}' -> Chapter {pred.chapter} "
-            f"({pred.chapter_title[:30]}) | Status: {pred.status} | Conf: {pred.confidence:.3f} | "
-            f"Catalogue: {catalogue_version} | Index: {index_version}"
+            f"[Step1-Context-Aggregator] Product: '{base_product}' -> Chapter {chapter_pred_data.get('chapter')} "
+            f"({str(chapter_pred_data.get('chapter_title', ''))[:30]})"
         )
     except Exception as e:
         logger.warning(f"Chapter predictor enrichment skipped in Step 1: {e}")
@@ -717,6 +898,8 @@ async def step1_context_aggregator_endpoint(request: Request):
         },
         "master_search_string": s1.get("master_search_string"),
         "chapter_prediction": chapter_pred_data,
+        "disambiguation": disambiguation_data,
+        "intent_extraction": intent_data,
         "catalogue_version": catalogue_version,
         "index_version": index_version
     }
@@ -1434,7 +1617,7 @@ async def search_hsn(
                         "matched_tariff": {
                             "hsn_code": top1_code_str,
                             "chapter": chap_str,
-                            "source": "data/tariff_master.parquet",
+                            "source": "data/raw/Master_copy_hsn.xlsx",
                             "standard_rate": formatted[0].get("gst_rate", 18.0),
                             "description": formatted[0].get("description", "")
                         },
