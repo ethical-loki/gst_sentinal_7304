@@ -8,5 +8,11 @@
   "vocabulary_top_k": 25,
   "max_search_terms": 20,
   "temperature": 0.0,
-  "max_new_tokens": 180
+  "max_new_tokens": 180,
+  "thresholds": {
+    "auto_lock_reranker_min": 0.85,
+    "auto_lock_margin_min": 0.15,
+    "statutory_chapter_threshold": 0.50,
+    "candidate_drop_threshold": 0.45
+  }
 }

@@ -25,6 +25,7 @@ Governs frontend recommendation state:
 import re
 import math
 import logging
+from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 from pydantic import BaseModel, Field
 from src.search.hybrid_retrieval import SearchCandidate, HybridHSNEngine
@@ -39,11 +40,13 @@ class UIRecommendationCard(BaseModel):
     chapter_title: str
     hsn_code: str
     hsn_description: str
-    material_keywords: str
-    article_keywords: str
+    material_keywords: Optional[str] = ""
+    article_keywords: Optional[str] = ""
     score: float
     confidence_pct: float
     is_chapter_representative: bool = False
+    is_duplicate_description: bool = False
+    is_truncated: bool = False
 
 
 class PlausibleCandidate(BaseModel):
@@ -80,36 +83,23 @@ class AmbiguityEvaluationResult(BaseModel):
 
 def disambiguate_candidate_labels(options: List[UIRecommendationCard]) -> None:
     """
-    Ensures that every candidate card has a distinct, readable label.
-    When multiple cards share identical labels (e.g. 8471 30 10 and 8471 30 90),
-    differentiates them using HSN code and distinguishing text.
+    Ensures that every candidate card has a distinct, readable label derived
+    strictly from statutory file columns (hsn_code, hsn_description, tariff_item_desc).
+    No synthetic or invented trade names are added.
+    Flags duplicate and truncated descriptions for user review.
     """
     from collections import Counter
-    label_counts = Counter(opt.label for opt in options)
-    duplicates = {lbl for lbl, cnt in label_counts.items() if cnt > 1}
-
-    if not duplicates:
-        return
+    desc_counts = Counter(opt.hsn_description for opt in options)
+    duplicates = {d for d, cnt in desc_counts.items() if cnt > 1}
 
     for opt in options:
-        if opt.label in duplicates:
-            kws = [k.strip() for k in (opt.article_keywords or "").split(",") if k.strip()]
-            diff_phrase = kws[-1] if kws else "Variant"
-            clean_code = opt.hsn_code.replace(" ", "")
-            if clean_code == "84713010":
-                diff_phrase = "Personal computer / Laptop"
-            elif clean_code == "84713090":
-                diff_phrase = "Other portable data processing unit"
-            elif clean_code == "39233010":
-                diff_phrase = "Insulated ware"
-            elif clean_code == "39233090":
-                diff_phrase = "Other carboys / bottles"
-            elif clean_code == "73239310":
-                diff_phrase = "Pressure cookers"
-            elif clean_code == "73239390":
-                diff_phrase = "Other household articles"
+        # Check if description appears truncated in the statutory file
+        if opt.hsn_description.endswith(("PROCESSIN", "-", ":", ",")) or len(opt.hsn_description) > 200:
+            opt.is_truncated = True
 
-            opt.label = f"{opt.label} [{opt.hsn_code} - {diff_phrase}]"
+        if opt.hsn_description in duplicates:
+            opt.is_duplicate_description = True
+            opt.label = f"[{opt.hsn_code}] {opt.hsn_description}"
 
 
 def format_hsn_code(code: str) -> str:
@@ -165,36 +155,15 @@ class SmartAmbiguityController:
 
         # -------------------------------------------------------------
         # Rule 1: Auto-Lock High Confidence Guardrails
+        # Thresholds read dynamically from config/intent_extraction_config.json
         # Requires:
-        # 1. Reranker score >= 0.85
-        # 2. Score margin >= 0.15 over #2
+        # 1. Reranker score >= auto_lock_reranker_min (config)
+        # 2. Score margin >= auto_lock_margin_min (config)
         # 3. 8-digit leaf match (length == 8)
         # 4. No multi-material ambiguity on unstated queries
         # -------------------------------------------------------------
-        clean_code1 = top1.hsn_code.replace(" ", "")
-        is_8digit_leaf = (len(clean_code1) == 8)
-        multi_material_keywords = ["bottle", "pipe", "tube", "gloves", "tank", "box", "container"]
-        explicit_materials = ["steel", "stainless", "plastic", "cotton", "glass", "rubber", "iron", "copper", "wood"]
-        is_ambiguous_mat = (
-            any(re.search(rf"\b{a}\b", q.lower()) for a in multi_material_keywords)
-            and not any(re.search(rf"\b{m}\b", q.lower()) for m in explicit_materials)
-        )
-
-        if score1 >= 0.85 and (top2 is None or score_margin >= 0.15) and is_8digit_leaf and not is_ambiguous_mat:
-            direct_card = UIRecommendationCard(
-                option_id=f"OPT_{top1.hsn_code}_AUTO",
-                label=f"{top1.chapter_title} - {top1.tariff_item_desc}",
-                chapter_code=top1.chapter_code,
-                chapter_title=top1.chapter_title,
-                hsn_code=format_hsn_code(top1.hsn_code),
-                hsn_description=top1.statutory_description,
-                material_keywords=top1.material_keywords,
-                article_keywords=top1.article_keywords,
-                score=round(score1 * 100.0, 1),
-                confidence_pct=round(score1 * 100.0, 1),
-                is_chapter_representative=True
-            )
-
+        direct_card, is_locked = self._evaluate_auto_lock(q, candidates)
+        if is_locked and direct_card:
             report = self._build_descriptive_report(
                 query=q,
                 is_ambiguous=False,
@@ -303,6 +272,56 @@ class SmartAmbiguityController:
             top_candidates_count=len(candidates),
             descriptive_report=report
         )
+
+    def _evaluate_auto_lock(self, q: str, candidates: List[SearchCandidate]) -> Tuple[Optional[UIRecommendationCard], bool]:
+        """Evaluates auto-lock guardrails (reranker >= 0.85, margin >= 0.15, 8-digit leaf, no material ambiguity)."""
+        if not candidates:
+            return None, False
+        top1 = candidates[0]
+        top2 = candidates[1] if len(candidates) > 1 else None
+        score1 = top1.final_score
+        score2 = top2.final_score if top2 else 0.0
+        score_margin = score1 - score2
+
+        config_path = Path(__file__).resolve().parent.parent.parent / "config" / "intent_extraction_config.json"
+        reranker_min = 0.85
+        margin_min = 0.15
+        if config_path.exists():
+            try:
+                import json
+                with open(config_path, "r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+                    thresholds = cfg.get("thresholds", {})
+                    reranker_min = float(thresholds.get("auto_lock_reranker_min", 0.85))
+                    margin_min = float(thresholds.get("auto_lock_margin_min", 0.15))
+            except Exception:
+                pass
+
+        clean_code1 = top1.hsn_code.replace(" ", "")
+        is_8digit_leaf = (len(clean_code1) == 8)
+        multi_material_keywords = ["bottle", "pipe", "tube", "gloves", "tank", "box", "container"]
+        explicit_materials = ["steel", "stainless", "plastic", "cotton", "glass", "rubber", "iron", "copper", "wood"]
+        is_ambiguous_mat = (
+            any(re.search(rf"\b{a}\b", q.lower()) for a in multi_material_keywords)
+            and not any(re.search(rf"\b{m}\b", q.lower()) for m in explicit_materials)
+        )
+
+        if score1 >= reranker_min and (top2 is None or score_margin >= margin_min) and is_8digit_leaf and not is_ambiguous_mat:
+            direct_card = UIRecommendationCard(
+                option_id=f"OPT_{top1.hsn_code}_AUTO",
+                label=f"[{format_hsn_code(top1.hsn_code)}] {top1.statutory_description}",
+                chapter_code=top1.chapter_code,
+                chapter_title=top1.chapter_title,
+                hsn_code=format_hsn_code(top1.hsn_code),
+                hsn_description=top1.statutory_description,
+                material_keywords=top1.material_keywords,
+                article_keywords=top1.article_keywords,
+                score=round(score1 * 100.0, 1),
+                confidence_pct=round(score1 * 100.0, 1),
+                is_chapter_representative=True
+            )
+            return direct_card, True
+        return None, False
 
     def _build_descriptive_report(
         self,

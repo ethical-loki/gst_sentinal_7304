@@ -459,8 +459,15 @@ class IntentExtractor:
         if self._llm_client is not None:
             return self._llm_client
 
-        provider = self.config.get("model_provider", "deterministic").lower()
-        if provider == "deterministic" or provider == "mock":
+        provider = self.config.get("model_provider", "").lower()
+        valid_providers = {"deterministic", "local_transformers", "ollama"}
+        if provider not in valid_providers:
+            raise ValueError(
+                f"Unsupported or missing 'model_provider': '{provider}'. "
+                f"The config file is the strict single source of truth. Allowed providers: {sorted(valid_providers)}"
+            )
+
+        if provider == "deterministic":
             self._llm_client = DeterministicLLMClient()
         elif provider == "ollama":
             self._llm_client = OllamaLLMClient(
@@ -469,21 +476,15 @@ class IntentExtractor:
             )
         elif provider == "local_transformers":
             local_path = str(self.base_dir / self.config.get("local_model_path", "Questions_answering_bot/models/qwen2.5-0.5b-instruct"))
-            if os.path.exists(local_path):
-                try:
-                    self._llm_client = TransformersLLMClient(
-                        model_path=local_path,
-                        max_new_tokens=int(self.config.get("max_new_tokens", 180)),
-                        temperature=float(self.config.get("temperature", 0.0))
-                    )
-                except Exception as e:
-                    logger.warning(f"Could not load local transformers model: {e}. Falling back to deterministic.")
-                    self._llm_client = DeterministicLLMClient()
-            else:
-                self._llm_client = DeterministicLLMClient()
-        else:
-            self._llm_client = DeterministicLLMClient()
+            if not os.path.exists(local_path):
+                raise FileNotFoundError(f"Configured local_model_path not found: {local_path}")
+            self._llm_client = TransformersLLMClient(
+                model_path=local_path,
+                max_new_tokens=int(self.config.get("max_new_tokens", 180)),
+                temperature=float(self.config.get("temperature", 0.0))
+            )
 
+        logger.info(f"[IntentExtractor] Config verified. Active provider: '{provider}', model: '{self.config.get('model_name')}'")
         return self._llm_client
 
     def _initialize(self):
@@ -820,6 +821,9 @@ Produce the JSON interpretation object following all rules."""
             "medicine": ("30", "Pharmaceutical products"),
             "medicines": ("30", "Pharmaceutical products"),
             "fertilizer": ("31", "Fertilisers"),
+            "glass": ("70", "Glass and glassware"),
+            "glassware": ("70", "Glass and glassware"),
+            "leather": ("42", "Articles of leather; saddlery and harness; travel goods"),
             "leather shoe": ("64", "Footwear, gaiters and the like"),
             "shoes": ("64", "Footwear, gaiters and the like"),
             "gold": ("71", "Natural or cultured pearls, precious stones and metals"),
@@ -903,11 +907,14 @@ Produce the JSON interpretation object following all rules."""
     # Pipeline Execution
     # =================================================================
 
-    def extract_intent(self, query: str) -> IntentExtractionResult:
+    def extract_intent(self, query: str, clarification: str = "") -> IntentExtractionResult:
         """
         Full 5-step Intent Extraction Pipeline with Caching, Row-Level Grounding,
         and Scope Classification.
         """
+        if clarification:
+            return self.merge_clarification(query, clarification)
+
         raw_query = str(query or "").strip()
         if not raw_query:
             return IntentExtractionResult(

@@ -48,6 +48,12 @@ class SearchCandidate(BaseModel):
     match_reasons: List[str] = Field(default_factory=list)
 
 
+STOPWORDS = {
+    "and", "the", "for", "with", "other", "than", "not", "under", "goods",
+    "articles", "thereof", "kind", "used", "like", "such", "all", "of", "in", "a", "an"
+}
+
+
 def tokenize(text: str) -> List[str]:
     """Lightweight whitespace & punctuation tokenizer with stopword suppression and compound normalization."""
     if not text:
@@ -57,11 +63,7 @@ def tokenize(text: str) -> List[str]:
     clean = re.sub(r"\bwater\s*bottle\b", "water bottle", clean)
     clean = re.sub(r"\bt\s*shirt\b", "t-shirt", clean)
     words = re.findall(r"\b[a-zA-Z0-9]{2,}\b", clean)
-    stop_words = {
-        "and", "the", "for", "with", "other", "than", "not", "under", "goods",
-        "articles", "thereof", "kind", "used", "like", "such", "all"
-    }
-    return [w for w in words if w not in stop_words]
+    return [w for w in words if w not in STOPWORDS]
 
 
 # Domain exclusion rules for homonyms across chapters
@@ -274,25 +276,32 @@ class HybridHSNEngine:
             raw_logit = cand.cross_encoder_score if self.cross_encoder else (cand.vector_score * 4.0 - 2.0)
             calibrated_prob = 1.0 / (1.0 + math.exp(-raw_logit))
 
-            # Apply generic material consistency guardrails (no product-specific hardcoding)
-            q_mat_steel = any(re.search(rf"\b{w}\b", q) for w in ["steel", "stainless", "inox", "iron", "loha"])
-            q_mat_plastic = any(re.search(rf"\b{w}\b", q) for w in ["plastic", "plastics", "polymer", "pvc", "hdpe", "polyethylene"])
-            q_mat_cotton = any(re.search(rf"\b{w}\b", q) for w in ["cotton", "sooti", "suti"])
+            # ---------------------------------------------------------
+            # Generic Material Keyword Alignment (File-Driven)
+            # Matches material tokens directly against candidate's
+            # Material Keywords & Article Keywords columns from the file.
+            # No hardcoded chapter numbers or product names.
+            # ---------------------------------------------------------
+            cand_mat_text = f"{cand.material_keywords} {cand.article_keywords}".lower()
+            
+            # Detect material tokens specified in user search string
+            mat_match = re.search(r"Material:\s*([^\n|]+)", q, re.IGNORECASE)
+            specified_material = mat_match.group(1).strip().lower() if mat_match else ""
+            if not specified_material:
+                # Extract any material tokens present in the query
+                for m_candidate in ["stainless steel", "steel", "iron", "plastics", "plastic", "cotton", "rubber", "aluminium", "glass", "copper"]:
+                    if re.search(rf"\b{re.escape(m_candidate)}\b", q):
+                        specified_material = m_candidate
+                        break
 
-            if q_mat_steel:
-                if cand.chapter_code == "73":
+            if specified_material:
+                m_tokens = set(tokenize(specified_material)) - STOPWORDS
+                cand_tokens = set(tokenize(cand_mat_text))
+                if m_tokens and m_tokens.issubset(cand_tokens):
+                    # Query material aligned with file's Material Keywords
                     calibrated_prob = min(1.0, calibrated_prob * 1.15)
-                elif cand.chapter_code in ("39", "61", "62"):
-                    calibrated_prob *= 0.25
-            elif q_mat_plastic:
-                if cand.chapter_code == "39":
-                    calibrated_prob = min(1.0, calibrated_prob * 1.15)
-                elif cand.chapter_code in ("73", "61", "62"):
-                    calibrated_prob *= 0.25
-            elif q_mat_cotton:
-                if cand.chapter_code in ("61", "62"):
-                    calibrated_prob = min(1.0, calibrated_prob * 1.15)
-                elif cand.chapter_code in ("39", "73"):
+                elif m_tokens and any(conflict in cand_mat_text for conflict in ["plastics", "polymer", "cotton", "synthetic", "steel", "iron"] if conflict not in specified_material):
+                    # Incompatible material keywords in file record
                     calibrated_prob *= 0.25
 
             cand.final_score = round(float(calibrated_prob), 4)

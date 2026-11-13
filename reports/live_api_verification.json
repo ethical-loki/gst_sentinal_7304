@@ -1,0 +1,913 @@
+{
+  "laptop": {
+    "status": "success",
+    "step": 1,
+    "base_product": "laptop",
+    "user_clarification": "",
+    "aggregated_attributes": {
+      "material": null,
+      "processing_state": "Specific Commodity",
+      "function_use": "84 - Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof",
+      "mounted_state": "not_applicable",
+      "chapter_category": "84 - Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof",
+      "article_noun": "laptop"
+    },
+    "query_facts": {
+      "product_name": "laptop",
+      "article_noun": "laptop",
+      "constituent_material": null,
+      "commodity_form": null,
+      "commodity_family": "machinery",
+      "form_stage": "finished_article"
+    },
+    "master_search_string": "laptop.",
+    "chapter_prediction": {
+      "product_name": "laptop",
+      "normalized": "laptop",
+      "chapter": "84",
+      "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+      "confidence": 0.95,
+      "status": "OK",
+      "alternatives": [],
+      "evidence": [
+        {
+          "chapter": "84",
+          "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+          "hsn_code": "8471 30 90",
+          "description": "AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED - PORTABLE AUTOMATIC DATA PROCESSIN",
+          "score": 100.0
+        },
+        {
+          "chapter": "84",
+          "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+          "hsn_code": "8471 30 10",
+          "description": "AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED - PORTABLE AUTOMATIC DATA PROCESSIN",
+          "score": 100.0
+        },
+        {
+          "chapter": "84",
+          "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+          "hsn_code": "8471 10 00",
+          "description": "AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED ANALOGUE OR HYBRID AUTOMATIC DATA P",
+          "score": 99.8
+        },
+        {
+          "chapter": "84",
+          "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+          "hsn_code": "8471",
+          "description": "AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED",
+          "score": 99.7
+        },
+        {
+          "chapter": "84",
+          "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+          "hsn_code": "8471 49 00",
+          "description": "AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED - OTHER DIGITAL AUTOMATIC DATA PROC",
+          "score": 99.7
+        }
+      ],
+      "reason": "Matched statutory master entries in Chapter 84",
+      "catalogue_version": "v1.0.0-closed98",
+      "index_version": "bge-m3-lineage-v1",
+      "total_active_chapters": 9
+    },
+    "disambiguation": {
+      "is_ambiguous": true,
+      "banner_type": "SAME_CHAPTER_VARIANT",
+      "banner_title": "SELECT SPECIFIC VARIANT / SPECIFICATION",
+      "clarification_question": "Which specification of portable automatic data processing machine | Terms: automatic data processing machines applies under Chapter 84 (Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof)?",
+      "disambiguation_options": [
+        {
+          "option_id": "OPT_84713090_1",
+          "label": "[8471 30 90] AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED - PORTABLE AUTOMATIC DATA PROCESSIN",
+          "chapter_code": "84",
+          "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+          "hsn_code": "8471 30 90",
+          "hsn_description": "AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED - PORTABLE AUTOMATIC DATA PROCESSIN",
+          "material_keywords": "multi-layer FR-4 circuit board, gold-plated connectors, silicon microprocessors, aluminum-magnesium casing, specialized component material for machines for transcribing data on to data media in coded form and machines for processing such data, not elsewhere specified or included - portable automatic data processin, metallurgical specification variant 1268",
+          "article_keywords": "automatic data processing machines computers readers units, machines for transcribing data on to data media in coded form and machines for processing such data, not elsewhere specified or included - portable automatic data processin, precision engineered equipment, mechanical configuration variant 1268",
+          "score": 100.0,
+          "confidence_pct": 100.0,
+          "is_chapter_representative": true,
+          "is_duplicate_description": true,
+          "is_truncated": true
+        },
+        {
+          "option_id": "OPT_84713010_2",
+          "label": "[8471 30 10] AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED - PORTABLE AUTOMATIC DATA PROCESSIN",
+          "chapter_code": "84",
+          "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+          "hsn_code": "8471 30 10",
+          "hsn_description": "AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED - PORTABLE AUTOMATIC DATA PROCESSIN",
+          "material_keywords": "multi-layer FR-4 circuit board, gold-plated connectors, silicon microprocessors, aluminum-magnesium casing, specialized component material for machines for transcribing data on to data media in coded form and machines for processing such data, not elsewhere specified or included - portable automatic data processin",
+          "article_keywords": "automatic data processing machines computers readers units, machines for transcribing data on to data media in coded form and machines for processing such data, not elsewhere specified or included - portable automatic data processin, precision engineered equipment",
+          "score": 100.0,
+          "confidence_pct": 100.0,
+          "is_chapter_representative": false,
+          "is_duplicate_description": true,
+          "is_truncated": true
+        },
+        {
+          "option_id": "OPT_84711000_3",
+          "label": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof - AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF - MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED ANALOGUE OR HYBRID AUTOMATIC DATA P",
+          "chapter_code": "84",
+          "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+          "hsn_code": "8471 10 00",
+          "hsn_description": "AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED ANALOGUE OR HYBRID AUTOMATIC DATA P",
+          "material_keywords": "multi-layer FR-4 circuit board, gold-plated connectors, silicon microprocessors, aluminum-magnesium casing, specialized component material for machines for transcribing data on to data media in coded form and machines for processing such data, not elsewhere specified or included analogue or hybrid automatic data p",
+          "article_keywords": "automatic data processing machines computers readers units, machines for transcribing data on to data media in coded form and machines for processing such data, not elsewhere specified or included analogue or hybrid automatic data p, precision engineered equipment",
+          "score": 99.8,
+          "confidence_pct": 99.8,
+          "is_chapter_representative": false,
+          "is_duplicate_description": false,
+          "is_truncated": true
+        },
+        {
+          "option_id": "OPT_8471_4",
+          "label": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof - AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF - MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED",
+          "chapter_code": "84",
+          "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+          "hsn_code": "8471",
+          "hsn_description": "AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED",
+          "material_keywords": "multi-layer FR-4 circuit board, gold-plated connectors, silicon microprocessors, aluminum-magnesium casing, industrial engineering fabrication materials",
+          "article_keywords": "automatic data processing machines computers readers units master classification category, industrial machinery and apparatus",
+          "score": 99.7,
+          "confidence_pct": 99.7,
+          "is_chapter_representative": false,
+          "is_duplicate_description": false,
+          "is_truncated": true
+        },
+        {
+          "option_id": "OPT_84714900_5",
+          "label": "[8471 49 00] AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED - OTHER DIGITAL AUTOMATIC DATA PROC",
+          "chapter_code": "84",
+          "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+          "hsn_code": "8471 49 00",
+          "hsn_description": "AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED - OTHER DIGITAL AUTOMATIC DATA PROC",
+          "material_keywords": "multi-layer FR-4 circuit board, gold-plated connectors, silicon microprocessors, aluminum-magnesium casing, specialized component material for machines for transcribing data on to data media in coded form and machines for processing such data, not elsewhere specified or included - other digital automatic data proc, metallurgical specification variant 1273",
+          "article_keywords": "automatic data processing machines computers readers units, machines for transcribing data on to data media in coded form and machines for processing such data, not elsewhere specified or included - other digital automatic data proc, precision engineered equipment, mechanical configuration variant 1273",
+          "score": 99.7,
+          "confidence_pct": 99.7,
+          "is_chapter_representative": false,
+          "is_duplicate_description": true,
+          "is_truncated": true
+        },
+        {
+          "option_id": "OPT_84714110_6",
+          "label": "[8471 41 10] AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED - OTHER DIGITAL AUTOMATIC DATA PROC",
+          "chapter_code": "84",
+          "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+          "hsn_code": "8471 41 10",
+          "hsn_description": "AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED - OTHER DIGITAL AUTOMATIC DATA PROC",
+          "material_keywords": "multi-layer FR-4 circuit board, gold-plated connectors, silicon microprocessors, aluminum-magnesium casing, specialized component material for machines for transcribing data on to data media in coded form and machines for processing such data, not elsewhere specified or included - other digital automatic data proc",
+          "article_keywords": "automatic data processing machines computers readers units, machines for transcribing data on to data media in coded form and machines for processing such data, not elsewhere specified or included - other digital automatic data proc, precision engineered equipment",
+          "score": 99.6,
+          "confidence_pct": 99.6,
+          "is_chapter_representative": false,
+          "is_duplicate_description": true,
+          "is_truncated": true
+        }
+      ],
+      "direct_match": null,
+      "distinct_chapters_count": 1,
+      "descriptive_report": {
+        "article_understood_as": "A finished commercial article identified as 'portable automatic data processing machine | terms: automatic data processing machines', whose primary function relates to Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof (Chapter 84).",
+        "recommended_hsn": "Needs confirmation",
+        "confidence": "Medium",
+        "confidence_score": 100.0,
+        "reasoning": "The input 'portable automatic data processing machine | Terms: automatic data processing machines' is commercially valid but lacks specific technical bifurcation parameters. Candidates span Chapter 84 (Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof). Classification cannot be forced without customer selection of the exact constituent material or specification.",
+        "other_plausible_candidates": [
+          {
+            "hsn_code": "8471 30 90",
+            "description": "AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINE...",
+            "why_it_could_apply": "Matches commodity function under Chapter 84 (AUTOMATIC DATA PROCESSING MACHINES AND UNITS THERE...)",
+            "why_it_may_not": "Requires confirmation that product is specifically 'PORTABLE AUTOMATIC DATA PROCESSIN' rather than other variants."
+          },
+          {
+            "hsn_code": "8471 30 10",
+            "description": "AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINE...",
+            "why_it_could_apply": "Matches commodity function under Chapter 84 (AUTOMATIC DATA PROCESSING MACHINES AND UNITS THERE...)",
+            "why_it_may_not": "Requires confirmation that product is specifically 'PORTABLE AUTOMATIC DATA PROCESSIN' rather than other variants."
+          },
+          {
+            "hsn_code": "8471 10 00",
+            "description": "AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINE...",
+            "why_it_could_apply": "Matches commodity function under Chapter 84 (AUTOMATIC DATA PROCESSING MACHINES AND UNITS THERE...)",
+            "why_it_may_not": "Requires confirmation that product is specifically 'AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF - MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED ANALOGUE OR HYBRID AUTOMATIC DATA P' rather than other variants."
+          },
+          {
+            "hsn_code": "8471",
+            "description": "AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINE...",
+            "why_it_could_apply": "Matches commodity function under Chapter 84 (AUTOMATIC DATA PROCESSING MACHINES AND UNITS THERE...)",
+            "why_it_may_not": "Requires confirmation that product is specifically 'AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF - MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED' rather than other variants."
+          }
+        ],
+        "missing_information": [
+          "Specific sub-item variant under Chapter 84 (Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof)"
+        ],
+        "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing.",
+        "formatted_text": "Article understood as: A finished commercial article identified as 'portable automatic data processing machine | terms: automatic data processing machines', whose primary function relates to Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof (Chapter 84).\n\nRecommended HSN: Needs confirmation\nConfidence: Medium\nReasoning: The input 'portable automatic data processing machine | Terms: automatic data processing machines' is commercially valid but lacks specific technical bifurcation parameters. Candidates span Chapter 84 (Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof). Classification cannot be forced without customer selection of the exact constituent material or specification.\n\nOther plausible candidates (if any):\n- [8471 30 90] - [AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINE...] - [Matches commodity function under Chapter 84 (AUTOMATIC DATA PROCESSING MACHINES AND UNITS THERE...)] - [Requires confirmation that product is specifically 'PORTABLE AUTOMATIC DATA PROCESSIN' rather than other variants.]\n- [8471 30 10] - [AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINE...] - [Matches commodity function under Chapter 84 (AUTOMATIC DATA PROCESSING MACHINES AND UNITS THERE...)] - [Requires confirmation that product is specifically 'PORTABLE AUTOMATIC DATA PROCESSIN' rather than other variants.]\n- [8471 10 00] - [AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINE...] - [Matches commodity function under Chapter 84 (AUTOMATIC DATA PROCESSING MACHINES AND UNITS THERE...)] - [Requires confirmation that product is specifically 'AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF - MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED ANALOGUE OR HYBRID AUTOMATIC DATA P' rather than other variants.]\n- [8471] - [AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF; MAGNETIC OR OPTICAL READERS, MACHINE...] - [Matches commodity function under Chapter 84 (AUTOMATIC DATA PROCESSING MACHINES AND UNITS THERE...)] - [Requires confirmation that product is specifically 'AUTOMATIC DATA PROCESSING MACHINES AND UNITS THEREOF - MAGNETIC OR OPTICAL READERS, MACHINES FOR TRANSCRIBING DATA ON TO DATA MEDIA IN CODED FORM AND MACHINES FOR PROCESSING SUCH DATA, NOT ELSEWHERE SPECIFIED OR INCLUDED' rather than other variants.]\n\nMissing information that would change the result (if any): Specific sub-item variant under Chapter 84 (Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof)\n\nVerification note: Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
+      }
+    },
+    "intent_extraction": {
+      "raw_query": "laptop",
+      "physical_product": "portable automatic data processing machine",
+      "material": null,
+      "construction": null,
+      "intended_use": null,
+      "reading_confidence": "clear",
+      "outcome_type": "SUCCESS",
+      "grounded_search_terms": [
+        "automatic data processing machines"
+      ],
+      "unstated_attributes": [
+        "weight (under or over 10 kg)",
+        "display screen size",
+        "constituent material (e.g. plastics, steel, or textile)"
+      ],
+      "dropped_terms": [
+        {
+          "term": "portable automatic data processing machines",
+          "field_source": "search_terms",
+          "reason": "exceeds_4_words"
+        }
+      ],
+      "top_headings_shown": [
+        "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | TELEPHONE SETS, SMARTPHONES AND OTHER TELEPHONES FOR CELLULAR NETWORKS OR FOR OTHER WIRELESS N ETWO R KS : O THE R APPARAT US F OR THE TRANSMISSION OR RECEPTION OF VICE, IMAGES OR O T HE R D ATA , IN CL U DI NG A P PA RAT US FOR COMMUNICATION IN A WIRED OR WIRELESS NETWORK (SUCH AS A LOCAL OR WIDE AREA NETWORK), OTHER THAN TRANSMISSION OR RECEPTION APPARATUS OF HEADING 8443, 8525, 8527 OR 8528",
+        "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | FLAT PANEL DISPLAY MODULES, WHETHER OR NOT INCORPORATING TOUCH-SENSITIVE SCREENS TELEVISION CAMERAS, DIGITAL CAMERAS AND VIDEO CAMERA RECORDERS:",
+        "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | PARTS SUITABLE FOR USE SOLELY OR PRINCIPALLY WITH THE MACHINES OF HEADING 8501 OR 8502",
+        "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | BOARDS, PANELS, CONSOLES, DESKS, CABINETS AND OTHER BASES, EQUIPPED WITH TWO OR MORE APPARATUS OF HEADING 8535 OR 8536, FOR ELECTRIC CONTROL OR THE DISTRIBUTION OF ELECTRICITY, INCLUDING THOSE INCORPORATING INSTRUMENTS OR APPARATUS OF CHAPTER 90, AND NUM",
+        "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | PARTS SUITABLE FOR USE SOLELY OR PRINCIPALLY WITH THE APPARATUS OF HEADINGS 8535, 8536 OR 8537"
+      ],
+      "is_valid": true,
+      "error_message": null,
+      "retries_used": 0,
+      "synthesized_search_string": "portable automatic data processing machine | Terms: automatic data processing machines",
+      "is_cache_hit": true,
+      "clarification_merged": false
+    },
+    "catalogue_version": "v1.0.0-closed98",
+    "index_version": "bge-m3-lineage-v1"
+  },
+  "stainless steel water bottle": {
+    "status": "success",
+    "step": 1,
+    "base_product": "stainless steel water bottle",
+    "user_clarification": "",
+    "aggregated_attributes": {
+      "material": "Stainless Steel",
+      "processing_state": "Specific Commodity",
+      "function_use": "73 - Articles of iron or steel",
+      "mounted_state": "not_applicable",
+      "chapter_category": "73 - Articles of iron or steel",
+      "article_noun": "bottle"
+    },
+    "query_facts": {
+      "product_name": "stainless steel water bottle",
+      "article_noun": "bottle",
+      "constituent_material": "Stainless steel",
+      "commodity_form": null,
+      "commodity_family": "containers",
+      "form_stage": "finished_article"
+    },
+    "master_search_string": "stainless steel water bottle.",
+    "chapter_prediction": {
+      "product_name": "stainless steel water bottle",
+      "normalized": "stainless steel water bottle",
+      "chapter": "73",
+      "chapter_title": "Articles of iron or steel",
+      "confidence": 0.95,
+      "status": "OK",
+      "alternatives": [],
+      "evidence": [
+        {
+          "chapter": "73",
+          "chapter_title": "Articles of iron or steel",
+          "hsn_code": "7323 93 90",
+          "description": "TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PARTS THEREOF, OF IRON OR STEEL; IRON OR STEEL WOOL; POT SCOURERS AND SCOURING OR POLISHING PADS, GLOVES AND THE LIKE, OF IRON OR STEEL - OTHER : OF STAINLESS STEEL : OTHER",
+          "score": 100.0
+        },
+        {
+          "chapter": "73",
+          "chapter_title": "Articles of iron or steel",
+          "hsn_code": "7323 93 10",
+          "description": "TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PARTS THEREOF, OF IRON OR STEEL; IRON OR STEEL WOOL; POT SCOURERS AND SCOURING OR POLISHING PADS, GLOVES AND THE LIKE, OF IRON OR STEEL - OTHER : OF STAINLESS STEEL : PRESSURE COOKERS",
+          "score": 100.0
+        }
+      ],
+      "reason": "Matched statutory master entries in Chapter 73",
+      "catalogue_version": "v1.0.0-closed98",
+      "index_version": "bge-m3-lineage-v1",
+      "total_active_chapters": 9
+    },
+    "disambiguation": {
+      "is_ambiguous": true,
+      "banner_type": "SAME_CHAPTER_VARIANT",
+      "banner_title": "SELECT SPECIFIC VARIANT / SPECIFICATION",
+      "clarification_question": "Which specification of bottle | Material: stainless steel | Terms: household articles, stainless steel applies under Chapter 73 (Articles of iron or steel)?",
+      "disambiguation_options": [
+        {
+          "option_id": "OPT_73239390_1",
+          "label": "Articles of iron or steel - OTHER",
+          "chapter_code": "73",
+          "chapter_title": "Articles of iron or steel",
+          "hsn_code": "7323 93 90",
+          "hsn_description": "TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PARTS THEREOF, OF IRON OR STEEL; IRON OR STEEL WOOL; POT SCOURERS AND SCOURING OR POLISHING PADS, GLOVES AND THE LIKE, OF IRON OR STEEL - OTHER : OF STAINLESS STEEL : OTHER",
+          "material_keywords": "ferritic stainless steel AISI 430, stamped stainless sheet, brushed satin finish",
+          "article_keywords": "other stainless steel household articles, dustbins, stainless steel dish drying racks, cutlery holders",
+          "score": 100.0,
+          "confidence_pct": 100.0,
+          "is_chapter_representative": true,
+          "is_duplicate_description": false,
+          "is_truncated": true
+        },
+        {
+          "option_id": "OPT_73239310_2",
+          "label": "Articles of iron or steel - PRESSURE COOKERS",
+          "chapter_code": "73",
+          "chapter_title": "Articles of iron or steel",
+          "hsn_code": "7323 93 10",
+          "hsn_description": "TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PARTS THEREOF, OF IRON OR STEEL; IRON OR STEEL WOOL; POT SCOURERS AND SCOURING OR POLISHING PADS, GLOVES AND THE LIKE, OF IRON OR STEEL - OTHER : OF STAINLESS STEEL : PRESSURE COOKERS",
+          "material_keywords": "food-grade stainless steel AISI 304, austenitic chromium-nickel steel, mirror polished alloy",
+          "article_keywords": "stainless steel kitchenware, cooking pots, pans, pressure cookers, thali plates, dinner sets",
+          "score": 100.0,
+          "confidence_pct": 100.0,
+          "is_chapter_representative": false,
+          "is_duplicate_description": false,
+          "is_truncated": true
+        }
+      ],
+      "direct_match": null,
+      "distinct_chapters_count": 1,
+      "descriptive_report": {
+        "article_understood_as": "A finished stainless steel drinking container or flask, intended for personal hydration, kitchen, or household liquid transport.",
+        "recommended_hsn": "Needs confirmation",
+        "confidence": "Medium",
+        "confidence_score": 100.0,
+        "reasoning": "The input 'bottle | Material: stainless steel | Terms: household articles, stainless steel' is commercially valid but lacks specific technical bifurcation parameters. Candidates span Chapter 73 (Articles of iron or steel). Classification cannot be forced without customer selection of the exact constituent material or specification.",
+        "other_plausible_candidates": [
+          {
+            "hsn_code": "7323 93 90",
+            "description": "TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PARTS THEREOF, OF IRON OR STEEL; IRON OR ST...",
+            "why_it_could_apply": "Matches commodity function under Chapter 73 (TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PAR...)",
+            "why_it_may_not": "Requires confirmation that product is specifically 'OTHER' rather than other variants."
+          },
+          {
+            "hsn_code": "7323 93 10",
+            "description": "TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PARTS THEREOF, OF IRON OR STEEL; IRON OR ST...",
+            "why_it_could_apply": "Matches commodity function under Chapter 73 (TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PAR...)",
+            "why_it_may_not": "Requires confirmation that product is specifically 'PRESSURE COOKERS' rather than other variants."
+          }
+        ],
+        "missing_information": [
+          "Specific sub-item variant under Chapter 73 (Articles of iron or steel)"
+        ],
+        "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing.",
+        "formatted_text": "Article understood as: A finished stainless steel drinking container or flask, intended for personal hydration, kitchen, or household liquid transport.\n\nRecommended HSN: Needs confirmation\nConfidence: Medium\nReasoning: The input 'bottle | Material: stainless steel | Terms: household articles, stainless steel' is commercially valid but lacks specific technical bifurcation parameters. Candidates span Chapter 73 (Articles of iron or steel). Classification cannot be forced without customer selection of the exact constituent material or specification.\n\nOther plausible candidates (if any):\n- [7323 93 90] - [TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PARTS THEREOF, OF IRON OR STEEL; IRON OR ST...] - [Matches commodity function under Chapter 73 (TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PAR...)] - [Requires confirmation that product is specifically 'OTHER' rather than other variants.]\n- [7323 93 10] - [TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PARTS THEREOF, OF IRON OR STEEL; IRON OR ST...] - [Matches commodity function under Chapter 73 (TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PAR...)] - [Requires confirmation that product is specifically 'PRESSURE COOKERS' rather than other variants.]\n\nMissing information that would change the result (if any): Specific sub-item variant under Chapter 73 (Articles of iron or steel)\n\nVerification note: Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
+      }
+    },
+    "intent_extraction": {
+      "raw_query": "stainless steel water bottle",
+      "physical_product": "bottle",
+      "material": "stainless steel",
+      "construction": null,
+      "intended_use": null,
+      "reading_confidence": "clear",
+      "outcome_type": "SUCCESS",
+      "grounded_search_terms": [
+        "household articles",
+        "stainless steel"
+      ],
+      "unstated_attributes": [
+        "thermal insulation status (vacuum insulated vs non-insulated)",
+        "thermal insulation status (vacuum insulated vs non-insulated)"
+      ],
+      "dropped_terms": [
+        {
+          "term": "table kitchen or other household articles",
+          "field_source": "search_terms",
+          "reason": "exceeds_4_words"
+        }
+      ],
+      "top_headings_shown": [
+        "Plastics and articles thereof | BATHS, SHOWER-BATHS, SINKS, WASH-BASINS, BIDETS, LAVATORY PANS, SEATS AND COVERS, FLUSHING CISTERNS AND SIMILAR SANITARY WARE, OF PLASTICS",
+        "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | PRESSES, CRUSHERS AND SIMILAR MACHINERY USED IN THE MANUFACTURE OF WINE, CIDER, FRUIT JUICES OR SIMILAR BEVERAGES",
+        "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | OTHER MACHINE-TOOLS FOR WORKING METAL, OR CERMETS, WITHOUT REMOVING MATERIAL",
+        "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | LATHES (INCLUDING TURNING CENTRES) FOR REMOVING METAL - HORIZONTAL LATHES",
+        "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | CALENDERING OR OTHER ROLLING MACHINES, OTHER THAN FOR METALS OR GLASS, AND CYLINDERS THEREFOR"
+      ],
+      "is_valid": true,
+      "error_message": null,
+      "retries_used": 0,
+      "synthesized_search_string": "bottle | Material: stainless steel | Terms: household articles, stainless steel",
+      "is_cache_hit": true,
+      "clarification_merged": false
+    },
+    "catalogue_version": "v1.0.0-closed98",
+    "index_version": "bge-m3-lineage-v1"
+  },
+  "plastic pipe": {
+    "status": "success",
+    "step": 1,
+    "base_product": "plastic pipe",
+    "user_clarification": "",
+    "aggregated_attributes": {
+      "material": "Plastics / PVC / HDPE",
+      "processing_state": "Extruded hollow profile",
+      "function_use": "Industrial fluid transportation",
+      "mounted_state": "not_applicable",
+      "chapter_category": "39 - Plastics and articles thereof",
+      "article_noun": "pipe"
+    },
+    "query_facts": {
+      "product_name": "plastic pipe",
+      "article_noun": "pipe",
+      "constituent_material": "Plastic",
+      "commodity_form": null,
+      "commodity_family": "pipes_and_tubes",
+      "form_stage": "worked"
+    },
+    "master_search_string": "plastic pipe, Material: Plastics / PVC / HDPE, Form: Extruded hollow profile.",
+    "chapter_prediction": {
+      "product_name": "plastic pipe",
+      "normalized": "plastic pipe",
+      "chapter": "39",
+      "chapter_title": "Plastics and articles thereof",
+      "confidence": 0.95,
+      "status": "OK",
+      "alternatives": [],
+      "evidence": [
+        {
+          "chapter": "39",
+          "chapter_title": "Plastics and articles thereof",
+          "hsn_code": "3917",
+          "description": "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - ARTIFICIAL GUTS (SAUSAGE CASINGS) OF HARDENED PROTEIN OR OF CELLULOSIC MATERIALS:",
+          "score": 100.0
+        },
+        {
+          "chapter": "39",
+          "chapter_title": "Plastics and articles thereof",
+          "hsn_code": "3917 40 00",
+          "description": "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - FITTINGS",
+          "score": 100.0
+        },
+        {
+          "chapter": "39",
+          "chapter_title": "Plastics and articles thereof",
+          "hsn_code": "3917 29 50",
+          "description": "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - TUBES, PIPES AND HOSES, RIGID: OF OTHER PLASTICS :TUBES OF VINYL PLASTICS",
+          "score": 100.0
+        },
+        {
+          "chapter": "39",
+          "chapter_title": "Plastics and articles thereof",
+          "hsn_code": "3917 21 10",
+          "description": "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - TUBES, PIPES AND HOSES, RIGID: OF POLYMERS OF ETHYLENE:TUBES OF POLYETHYLENE",
+          "score": 100.0
+        },
+        {
+          "chapter": "39",
+          "chapter_title": "Plastics and articles thereof",
+          "hsn_code": "3917 29 30",
+          "description": "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - TUBES, PIPES AND HOSES, RIGID: OF OTHER PLASTICS :TUBES OF CELLULOSE NITRATE AND CELLULOID, WHETHER OR NOT PLASTICISED",
+          "score": 100.0
+        }
+      ],
+      "reason": "Matched statutory master entries in Chapter 39",
+      "catalogue_version": "v1.0.0-closed98",
+      "index_version": "bge-m3-lineage-v1",
+      "total_active_chapters": 9
+    },
+    "disambiguation": {
+      "is_ambiguous": true,
+      "banner_type": "SAME_CHAPTER_VARIANT",
+      "banner_title": "SELECT SPECIFIC VARIANT / SPECIFICATION",
+      "clarification_question": "Which specification of pipe | Material: plastics | Terms: tubes and pipes, plastics applies under Chapter 39 (Plastics and articles thereof)?",
+      "disambiguation_options": [
+        {
+          "option_id": "OPT_3917_1",
+          "label": "Plastics and articles thereof - TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - ARTIFICIAL GUTS (SAUSAGE CASINGS) OF HARDENED PROTEIN OR OF CELLULOSIC MATERIALS",
+          "chapter_code": "39",
+          "chapter_title": "Plastics and articles thereof",
+          "hsn_code": "3917",
+          "hsn_description": "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - ARTIFICIAL GUTS (SAUSAGE CASINGS) OF HARDENED PROTEIN OR OF CELLULOSIC MATERIALS:",
+          "material_keywords": "polyethylene, polypropylene, polyvinyl chloride, nylon, reinforced plastics",
+          "article_keywords": "tubes pipes and hoses and fittings therefor master category",
+          "score": 100.0,
+          "confidence_pct": 100.0,
+          "is_chapter_representative": true,
+          "is_duplicate_description": false,
+          "is_truncated": true
+        },
+        {
+          "option_id": "OPT_39174000_2",
+          "label": "Plastics and articles thereof - FITTINGS",
+          "chapter_code": "39",
+          "chapter_title": "Plastics and articles thereof",
+          "hsn_code": "3917 40 00",
+          "hsn_description": "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - FITTINGS",
+          "material_keywords": "injection moulded uPVC, CPVC, polypropylene, HDPE electrofusion fitting alloy",
+          "article_keywords": "fittings of plastics for tubes pipes and hoses, PVC pipe elbows, tees, couplers, PP compression fittings",
+          "score": 100.0,
+          "confidence_pct": 100.0,
+          "is_chapter_representative": false,
+          "is_duplicate_description": false,
+          "is_truncated": false
+        },
+        {
+          "option_id": "OPT_39172950_3",
+          "label": "Plastics and articles thereof - TUBES OF VINYL PLASTICS",
+          "chapter_code": "39",
+          "chapter_title": "Plastics and articles thereof",
+          "hsn_code": "3917 29 50",
+          "hsn_description": "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - TUBES, PIPES AND HOSES, RIGID: OF OTHER PLASTICS :TUBES OF VINYL PLASTICS",
+          "material_keywords": "cellulose acetate butyrate (CAB), transparent cellulosic plastic",
+          "article_keywords": "rigid tubes of cellulose derivatives, cellulose acetate butyrate pneumatic transport pipes",
+          "score": 100.0,
+          "confidence_pct": 100.0,
+          "is_chapter_representative": false,
+          "is_duplicate_description": false,
+          "is_truncated": false
+        },
+        {
+          "option_id": "OPT_39172110_4",
+          "label": "Plastics and articles thereof - TUBES OF POLYETHYLENE",
+          "chapter_code": "39",
+          "chapter_title": "Plastics and articles thereof",
+          "hsn_code": "3917 21 10",
+          "hsn_description": "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - TUBES, PIPES AND HOSES, RIGID: OF POLYMERS OF ETHYLENE:TUBES OF POLYETHYLENE",
+          "material_keywords": "PE-100 high-density polyethylene, black carbon black pigmented HDPE",
+          "article_keywords": "rigid HDPE pipes, PE-100 potable water distribution pipes, high-density polyethylene pressure conduits",
+          "score": 100.0,
+          "confidence_pct": 100.0,
+          "is_chapter_representative": false,
+          "is_duplicate_description": false,
+          "is_truncated": false
+        },
+        {
+          "option_id": "OPT_39172930_5",
+          "label": "Plastics and articles thereof - TUBES OF CELLULOSE NITRATE AND CELLULOID, WHETHER OR NOT PLASTICISED",
+          "chapter_code": "39",
+          "chapter_title": "Plastics and articles thereof",
+          "hsn_code": "3917 29 30",
+          "hsn_description": "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - TUBES, PIPES AND HOSES, RIGID: OF OTHER PLASTICS :TUBES OF CELLULOSE NITRATE AND CELLULOID, WHETHER OR NOT PLASTICISED",
+          "material_keywords": "extruded optical polycarbonate, impact-resistant PC",
+          "article_keywords": "rigid tubes of polycarbonates, clear polycarbonate protective sleeves",
+          "score": 100.0,
+          "confidence_pct": 100.0,
+          "is_chapter_representative": false,
+          "is_duplicate_description": false,
+          "is_truncated": true
+        },
+        {
+          "option_id": "OPT_39172940_6",
+          "label": "Plastics and articles thereof - TUBES OF CELLULOSE ACETATE OR ACETATE BUTYRATE",
+          "chapter_code": "39",
+          "chapter_title": "Plastics and articles thereof",
+          "hsn_code": "3917 29 40",
+          "hsn_description": "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - TUBES, PIPES AND HOSES, RIGID: OF OTHER PLASTICS :TUBES OF CELLULOSE ACETATE OR ACETATE BUTYRATE",
+          "material_keywords": "glass-fiber reinforced epoxy resin (GRE), composite tubing",
+          "article_keywords": "rigid tubes of epoxide resins, filament-wound fiberglass epoxy casing tubes",
+          "score": 100.0,
+          "confidence_pct": 100.0,
+          "is_chapter_representative": false,
+          "is_duplicate_description": false,
+          "is_truncated": false
+        }
+      ],
+      "direct_match": null,
+      "distinct_chapters_count": 1,
+      "descriptive_report": {
+        "article_understood_as": "A cylindrical conduit designed for liquid, gas, or electrical conveyance, whose statutory classification depends strictly on its material.",
+        "recommended_hsn": "Needs confirmation",
+        "confidence": "Medium",
+        "confidence_score": 100.0,
+        "reasoning": "The input 'pipe | Material: plastics | Terms: tubes and pipes, plastics' is commercially valid but lacks specific technical bifurcation parameters. Candidates span Chapter 39 (Plastics and articles thereof). Classification cannot be forced without customer selection of the exact constituent material or specification.",
+        "other_plausible_candidates": [
+          {
+            "hsn_code": "3917",
+            "description": "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF P...",
+            "why_it_could_apply": "Matches commodity function under Chapter 39 (TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR...)",
+            "why_it_may_not": "Requires confirmation that product is specifically 'TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - ARTIFICIAL GUTS (SAUSAGE CASINGS) OF HARDENED PROTEIN OR OF CELLULOSIC MATERIALS' rather than other variants."
+          },
+          {
+            "hsn_code": "3917 40 00",
+            "description": "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF P...",
+            "why_it_could_apply": "Matches commodity function under Chapter 39 (TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR...)",
+            "why_it_may_not": "Requires confirmation that product is specifically 'FITTINGS' rather than other variants."
+          },
+          {
+            "hsn_code": "3917 29 50",
+            "description": "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF P...",
+            "why_it_could_apply": "Matches commodity function under Chapter 39 (TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR...)",
+            "why_it_may_not": "Requires confirmation that product is specifically 'TUBES OF VINYL PLASTICS' rather than other variants."
+          },
+          {
+            "hsn_code": "3917 21 10",
+            "description": "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF P...",
+            "why_it_could_apply": "Matches commodity function under Chapter 39 (TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR...)",
+            "why_it_may_not": "Requires confirmation that product is specifically 'TUBES OF POLYETHYLENE' rather than other variants."
+          }
+        ],
+        "missing_information": [
+          "Specific sub-item variant under Chapter 39 (Plastics and articles thereof)"
+        ],
+        "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing.",
+        "formatted_text": "Article understood as: A cylindrical conduit designed for liquid, gas, or electrical conveyance, whose statutory classification depends strictly on its material.\n\nRecommended HSN: Needs confirmation\nConfidence: Medium\nReasoning: The input 'pipe | Material: plastics | Terms: tubes and pipes, plastics' is commercially valid but lacks specific technical bifurcation parameters. Candidates span Chapter 39 (Plastics and articles thereof). Classification cannot be forced without customer selection of the exact constituent material or specification.\n\nOther plausible candidates (if any):\n- [3917] - [TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF P...] - [Matches commodity function under Chapter 39 (TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR...)] - [Requires confirmation that product is specifically 'TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - ARTIFICIAL GUTS (SAUSAGE CASINGS) OF HARDENED PROTEIN OR OF CELLULOSIC MATERIALS' rather than other variants.]\n- [3917 40 00] - [TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF P...] - [Matches commodity function under Chapter 39 (TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR...)] - [Requires confirmation that product is specifically 'FITTINGS' rather than other variants.]\n- [3917 29 50] - [TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF P...] - [Matches commodity function under Chapter 39 (TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR...)] - [Requires confirmation that product is specifically 'TUBES OF VINYL PLASTICS' rather than other variants.]\n- [3917 21 10] - [TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF P...] - [Matches commodity function under Chapter 39 (TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR...)] - [Requires confirmation that product is specifically 'TUBES OF POLYETHYLENE' rather than other variants.]\n\nMissing information that would change the result (if any): Specific sub-item variant under Chapter 39 (Plastics and articles thereof)\n\nVerification note: Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
+      }
+    },
+    "intent_extraction": {
+      "raw_query": "plastic pipe",
+      "physical_product": "pipe",
+      "material": "plastics",
+      "construction": null,
+      "intended_use": null,
+      "reading_confidence": "clear",
+      "outcome_type": "SUCCESS",
+      "grounded_search_terms": [
+        "tubes and pipes",
+        "plastics"
+      ],
+      "unstated_attributes": [
+        "manufacturing process (seamless vs welded)"
+      ],
+      "dropped_terms": [],
+      "top_headings_shown": [
+        "Plastics and articles thereof | TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - ARTIFICIAL GUTS (SAUSAGE CASINGS) OF HARDENED PROTEIN OR OF CELLULOSIC MATERIALS:",
+        "Plastics and articles thereof | BUILDERS WARE OF PLASTICS, NOT ELSEWHERE SPECIFIED OR INCLUDED",
+        "Articles of iron or steel | TUBES, PIPES AND HOLLOW PROFILES, SEAMLESS, OF IRON (OTHER THAN CAST IRON) OR STEEL - LINE PIPE OF A KIND USED FOR OIL AND GAS PIPELINES",
+        "Articles of iron or steel | OTHER TUBES, PIPES AND HOLLOW PROFILES (FOR EXAMPLE, OPEN SEAM OR WELDED, RIVETED OR SIMILARLY CLOSED), OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES",
+        "Plastics and articles thereof | WASTE, PARINGS AND SCRAP, OF PLASTICS"
+      ],
+      "is_valid": true,
+      "error_message": null,
+      "retries_used": 0,
+      "synthesized_search_string": "pipe | Material: plastics | Terms: tubes and pipes, plastics",
+      "is_cache_hit": false,
+      "clarification_merged": false
+    },
+    "catalogue_version": "v1.0.0-closed98",
+    "index_version": "bge-m3-lineage-v1"
+  },
+  "cotton t-shirt": {
+    "status": "success",
+    "step": 1,
+    "base_product": "cotton t-shirt",
+    "user_clarification": "",
+    "aggregated_attributes": {
+      "material": "Cotton",
+      "processing_state": "Knitted or Crocheted T-Shirts, Singlets and Vests",
+      "function_use": "61 - Articles of apparel and clothing accessories, knitted or crocheted",
+      "mounted_state": "not_applicable",
+      "chapter_category": "61 - Articles of apparel and clothing accessories, knitted or crocheted",
+      "article_noun": "shirt"
+    },
+    "query_facts": {
+      "product_name": "cotton t-shirt",
+      "article_noun": "shirt",
+      "constituent_material": "Cotton",
+      "commodity_form": null,
+      "commodity_family": "garments_and_apparel",
+      "form_stage": "finished_article"
+    },
+    "master_search_string": "cotton t-shirt, Form: Knitted or Crocheted T-Shirts, Singlets and Vests.",
+    "chapter_prediction": {
+      "product_name": "cotton t-shirt",
+      "normalized": "cotton t-shirt",
+      "chapter": "62",
+      "chapter_title": "Articles of apparel and clothing accessories, not knitted or crocheted",
+      "confidence": 0.35,
+      "status": "ABSTAIN",
+      "alternatives": [],
+      "evidence": [
+        {
+          "chapter": "62",
+          "chapter_title": "Articles of apparel and clothing accessories, not knitted or crocheted",
+          "hsn_code": "6205 20 00",
+          "description": "MENS OR BOYS SHIRTS - OF COTTON",
+          "score": 100.0
+        },
+        {
+          "chapter": "61",
+          "chapter_title": "Articles of apparel and clothing accessories, knitted or crocheted",
+          "hsn_code": "6109 10 00",
+          "description": "T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED - OF COTTON",
+          "score": 100.0
+        }
+      ],
+      "reason": "Query 'cotton t-shirt' is unrecognized or confidence threshold (0.50) is not met. Requires customer clarification or manual review.",
+      "catalogue_version": "v1.0.0-closed98",
+      "index_version": "bge-m3-lineage-v1",
+      "total_active_chapters": 9
+    },
+    "disambiguation": {
+      "is_ambiguous": true,
+      "banner_type": "MULTI_CHAPTER_AMBIGUITY",
+      "banner_title": "MULTI-CHAPTER AMBIGUITY DETECTED",
+      "clarification_question": "What material and construction is the t-shirt | Material: cotton | Terms: t-shirts, cotton?",
+      "disambiguation_options": [
+        {
+          "option_id": "OPT_62052000_1",
+          "label": "Articles of apparel and clothing accessories, not knitted or crocheted - OF COTTON",
+          "chapter_code": "62",
+          "chapter_title": "Articles of apparel and clothing accessories, not knitted or crocheted",
+          "hsn_code": "6205 20 00",
+          "hsn_description": "MENS OR BOYS SHIRTS - OF COTTON",
+          "material_keywords": "cotton, combed cotton, cotton poplin, cotton twill",
+          "article_keywords": "mens cotton shirts, formal business shirts, oxford button-down shirts, casual cotton shirts",
+          "score": 100.0,
+          "confidence_pct": 100.0,
+          "is_chapter_representative": true,
+          "is_duplicate_description": false,
+          "is_truncated": false
+        },
+        {
+          "option_id": "OPT_61091000_2",
+          "label": "Articles of apparel and clothing accessories, knitted or crocheted - OF COTTON",
+          "chapter_code": "61",
+          "chapter_title": "Articles of apparel and clothing accessories, knitted or crocheted",
+          "hsn_code": "6109 10 00",
+          "hsn_description": "T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED - OF COTTON",
+          "material_keywords": "cotton, combed cotton single jersey, ring-spun cotton, cotton-elastane rib",
+          "article_keywords": "cotton t-shirts, crewneck tees, v-neck t-shirts, cotton singlets, athletic undershirts, tank tops",
+          "score": 100.0,
+          "confidence_pct": 100.0,
+          "is_chapter_representative": true,
+          "is_duplicate_description": false,
+          "is_truncated": false
+        }
+      ],
+      "direct_match": null,
+      "distinct_chapters_count": 2,
+      "descriptive_report": {
+        "article_understood_as": "An article of apparel worn on the upper body, typically made of cotton, bifurcating between knitted (Ch 61) and woven (Ch 62) construction.",
+        "recommended_hsn": "Needs confirmation",
+        "confidence": "Low",
+        "confidence_score": 100.0,
+        "reasoning": "The input 't-shirt | Material: cotton | Terms: t-shirts, cotton' is commercially valid but lacks specific technical bifurcation parameters. Candidates span Chapter 62 (Articles of apparel and clothing accessories, not knitted or crocheted), Chapter 61 (Articles of apparel and clothing accessories, knitted or crocheted). Classification cannot be forced without customer selection of the exact constituent material or specification.",
+        "other_plausible_candidates": [
+          {
+            "hsn_code": "6205 20 00",
+            "description": "MENS OR BOYS SHIRTS - OF COTTON",
+            "why_it_could_apply": "Matches commodity function under Chapter 62 (MEN'S OR BOYS SHIRTS...)",
+            "why_it_may_not": "Requires confirmation that product is specifically 'OF COTTON' rather than other variants."
+          },
+          {
+            "hsn_code": "6109 10 00",
+            "description": "T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED - OF COTTON",
+            "why_it_could_apply": "Matches commodity function under Chapter 61 (T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CRO...)",
+            "why_it_may_not": "Requires confirmation that product is specifically 'OF COTTON' rather than other variants."
+          },
+          {
+            "hsn_code": "6109",
+            "description": "T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED",
+            "why_it_could_apply": "Matches commodity function under Chapter 61 (T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CRO...)",
+            "why_it_may_not": "Requires confirmation that product is specifically 'T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED' rather than other variants."
+          },
+          {
+            "hsn_code": "6205 20 90",
+            "description": "OTHER",
+            "why_it_could_apply": "Matches commodity function under Chapter 62 (MEN'S OR BOYS SHIRTS...)",
+            "why_it_may_not": "Requires confirmation that product is specifically 'OTHER' rather than other variants."
+          }
+        ],
+        "missing_information": [
+          "Fabric construction: whether the shirt is knitted/crocheted (Chapter 61) or woven (Chapter 62)"
+        ],
+        "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing.",
+        "formatted_text": "Article understood as: An article of apparel worn on the upper body, typically made of cotton, bifurcating between knitted (Ch 61) and woven (Ch 62) construction.\n\nRecommended HSN: Needs confirmation\nConfidence: Low\nReasoning: The input 't-shirt | Material: cotton | Terms: t-shirts, cotton' is commercially valid but lacks specific technical bifurcation parameters. Candidates span Chapter 62 (Articles of apparel and clothing accessories, not knitted or crocheted), Chapter 61 (Articles of apparel and clothing accessories, knitted or crocheted). Classification cannot be forced without customer selection of the exact constituent material or specification.\n\nOther plausible candidates (if any):\n- [6205 20 00] - [MENS OR BOYS SHIRTS - OF COTTON] - [Matches commodity function under Chapter 62 (MEN'S OR BOYS SHIRTS...)] - [Requires confirmation that product is specifically 'OF COTTON' rather than other variants.]\n- [6109 10 00] - [T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED - OF COTTON] - [Matches commodity function under Chapter 61 (T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CRO...)] - [Requires confirmation that product is specifically 'OF COTTON' rather than other variants.]\n- [6109] - [T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED] - [Matches commodity function under Chapter 61 (T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CRO...)] - [Requires confirmation that product is specifically 'T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED' rather than other variants.]\n- [6205 20 90] - [OTHER] - [Matches commodity function under Chapter 62 (MEN'S OR BOYS SHIRTS...)] - [Requires confirmation that product is specifically 'OTHER' rather than other variants.]\n\nMissing information that would change the result (if any): Fabric construction: whether the shirt is knitted/crocheted (Chapter 61) or woven (Chapter 62)\n\nVerification note: Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
+      }
+    },
+    "intent_extraction": {
+      "raw_query": "cotton t-shirt",
+      "physical_product": "t-shirt",
+      "material": "cotton",
+      "construction": null,
+      "intended_use": null,
+      "reading_confidence": "clear",
+      "outcome_type": "SUCCESS",
+      "grounded_search_terms": [
+        "t-shirts",
+        "cotton"
+      ],
+      "unstated_attributes": [
+        "construction (knitted or crocheted vs woven)",
+        "construction (knitted or crocheted vs woven)"
+      ],
+      "dropped_terms": [],
+      "top_headings_shown": [
+        "Articles of apparel and clothing accessories, knitted or crocheted | T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED",
+        "Articles of apparel and clothing accessories, not knitted or crocheted | MEN'S OR BOYS SHIRTS",
+        "Articles of apparel and clothing accessories, not knitted or crocheted | HANDKERCHIEFS",
+        "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS SHIRTS, KNITTED OR CROCHETED",
+        "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED"
+      ],
+      "is_valid": true,
+      "error_message": null,
+      "retries_used": 0,
+      "synthesized_search_string": "t-shirt | Material: cotton | Terms: t-shirts, cotton",
+      "is_cache_hit": true,
+      "clarification_merged": false
+    },
+    "catalogue_version": "v1.0.0-closed98",
+    "index_version": "bge-m3-lineage-v1"
+  },
+  "aunty": {
+    "status": "success",
+    "step": 1,
+    "base_product": "aunty",
+    "user_clarification": "",
+    "aggregated_attributes": {
+      "material": null,
+      "processing_state": "Specific Commodity",
+      "function_use": "Dynamic Tariff Schedule (Master Copy: Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94)",
+      "mounted_state": "not_applicable",
+      "chapter_category": "Dynamic Tariff Schedule (Master Copy: Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94)"
+    },
+    "query_facts": {
+      "product_name": "aunty",
+      "article_noun": null,
+      "constituent_material": null,
+      "commodity_form": null,
+      "commodity_family": null,
+      "form_stage": "unknown"
+    },
+    "master_search_string": "aunty.",
+    "chapter_prediction": {
+      "product_name": "aunty",
+      "normalized": "aunty",
+      "chapter": "NONE",
+      "chapter_title": "Not in Master Schedule",
+      "confidence": 0.0,
+      "status": "ABSTAIN",
+      "alternatives": [],
+      "evidence": [],
+      "reason": "Product 'aunty' cannot be mapped to Master_copy_hsn.xlsx. The master dataset exclusively covers Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94.",
+      "stage_timings_ms": {
+        "stage_a_norm_ms": 1.7,
+        "stage_b_bm25_ms": 169.56,
+        "stage_c_embedding_ms": 1451.91,
+        "stage_e_fusion_ms": 0.74,
+        "stage_d_llm_rerank_ms": 2174.44,
+        "total_pipeline_ms": 3803.28
+      },
+      "rerank_model_used": "line_weighted_fusion",
+      "disambiguation": null,
+      "catalogue_version": "v1.0.0-closed98",
+      "index_version": "bge-m3-lineage-v1",
+      "total_active_chapters": 9
+    },
+    "disambiguation": {
+      "is_ambiguous": false,
+      "banner_type": "NOT_AVAILABLE",
+      "banner_title": "No matching tariff line found",
+      "clarification_question": null,
+      "disambiguation_options": [],
+      "direct_match": null,
+      "distinct_chapters_count": 0,
+      "descriptive_report": {
+        "article_understood_as": "An item ('aunty') queried by user.",
+        "recommended_hsn": "None (Not available in reference dataset)",
+        "confidence": "Low",
+        "confidence_score": 0.0,
+        "reasoning": "The queried product 'aunty' does not belong to any of the 9 statutory chapters available in Master_copy_hsn.xlsx (available chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94).",
+        "other_plausible_candidates": [],
+        "missing_information": [
+          "Item belongs to an unindexed Chapter outside Master_copy_hsn.xlsx (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)"
+        ],
+        "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
+      }
+    },
+    "intent_extraction": {
+      "raw_query": "aunty",
+      "physical_product": "unspecified item",
+      "material": null,
+      "construction": null,
+      "intended_use": null,
+      "reading_confidence": "unclear",
+      "outcome_type": "UNRECOGNIZED",
+      "grounded_search_terms": [],
+      "unstated_attributes": [
+        "physical product type",
+        "constituent material",
+        "principal function"
+      ],
+      "dropped_terms": [],
+      "top_headings_shown": [
+        "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES",
+        "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | PARTS AND ACCESSORIES SUITABLE FOR USE SOLELY OR PRINCIPALLY WITH THE APPARATUS OF HEADINGS 8519 OR 8521",
+        "Articles of apparel and clothing accessories, not knitted or crocheted | BABIES GARMENTS AND CLOTHING ACCESSORIES",
+        "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | PULLEY TACKLE AND HOISTS OTHER THAN SKIP HOISTS",
+        "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | TELEPHONE SETS, SMARTPHONES AND OTHER TELEPHONES FOR CELLULAR NETWORKS OR FOR OTHER WIRELESS N ETWO R KS : O THE R APPARAT US F OR THE TRANSMISSION OR RECEPTION OF VICE, IMAGES OR O T HE R D ATA , IN CL U DI NG A P PA RAT US FOR COMMUNICATION IN A WIRED OR WIRELESS NETWORK (SUCH AS A LOCAL OR WIDE AREA NETWORK), OTHER THAN TRANSMISSION OR RECEPTION APPARATUS OF HEADING 8443, 8525, 8527 OR 8528"
+      ],
+      "is_valid": false,
+      "error_message": "Unable to identify a physical commodity from query 'aunty'. Clarification required.",
+      "retries_used": 0,
+      "synthesized_search_string": "unspecified item",
+      "is_cache_hit": true,
+      "clarification_merged": false
+    },
+    "catalogue_version": "v1.0.0-closed98",
+    "index_version": "bge-m3-lineage-v1"
+  }
+}

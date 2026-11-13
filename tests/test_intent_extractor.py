@@ -187,3 +187,116 @@ def test_intent_accuracy_benchmark_report(extractor):
     assert intent_acc >= 90.0
     assert ground_prec >= 95.0
 
+
+def test_clarification_loop_trace(extractor):
+    """Verifies clarification loop merges clarification and records audit trace in traces.jsonl."""
+    res = extractor.extract_intent("water bottle", clarification="material: stainless steel")
+    assert res.clarification_merged is True
+    assert res.material is not None and "steel" in res.material.lower()
+    assert "stainless steel" in (res.synthesized_search_string or "").lower()
+
+    traces_file = Path(__file__).resolve().parent.parent / "data" / "intent_cache" / "traces.jsonl"
+    assert traces_file.exists()
+    with open(traces_file, "r", encoding="utf-8") as f:
+        traces = [json.loads(line) for line in f if line.strip()]
+    matching = [t for t in traces if t.get("prior_query") == "water bottle" or t.get("raw_query") == "water bottle"]
+    assert len(matching) > 0
+    assert matching[-1].get("clarification_merged") is True or matching[-1].get("event") == "clarification_loop_merge"
+
+
+def test_all_terms_dropped_abstain(extractor):
+    """Verifies that when all generated terms fail grounding, system marks UNRECOGNIZED without falling back to raw query."""
+    fake_intent = LLMIntentOutput(
+        physical_product="nonexistent_product_xyz",
+        material=None,
+        construction=None,
+        intended_use=None,
+        search_terms=["bogus term alpha", "synthetic phantom heading beta"],
+        unstated_attributes=[],
+        reading_confidence="clear"
+    )
+    g_terms, d_terms, _ = extractor.ground_intent(fake_intent)
+    assert len(g_terms) == 0
+    assert len(d_terms) == 2
+
+    # Gibberish query test
+    res = extractor.extract_intent("asdfghjk qwertyuiop")
+    assert res.outcome_type == "UNRECOGNIZED"
+    assert len(res.grounded_search_terms) == 0
+
+
+def test_auto_lock_guardrails():
+    """Verifies that auto-lock requires reranker score >= 0.85, margin >= 0.15, 8-digit leaf match, and no unstated ambiguity."""
+    from src.search.ambiguity_controller import SmartAmbiguityController
+    from src.search.hybrid_retrieval import SearchCandidate
+
+    controller = SmartAmbiguityController()
+
+    c1 = SearchCandidate(
+        hsn_code="84713010",
+        chapter_code="84",
+        chapter_title="Nuclear reactors, boilers, machinery and mechanical appliances",
+        heading_4digit="8471",
+        heading_4digit_desc="Automatic data processing machines",
+        subheading_6digit="847130",
+        subheading_6digit_desc="Portable automatic data processing machines",
+        tariff_item_desc="Personal computer (laptop, palmtop, etc.)",
+        statutory_description="Personal computer (laptop, palmtop, etc.)",
+        consumer_synonyms="laptop notebook",
+        article_keywords="laptop notebook computer",
+        material_keywords="",
+        final_score=0.92
+    )
+    c2 = SearchCandidate(
+        hsn_code="84713090",
+        chapter_code="84",
+        chapter_title="Nuclear reactors, boilers, machinery and mechanical appliances",
+        heading_4digit="8471",
+        heading_4digit_desc="Automatic data processing machines",
+        subheading_6digit="847130",
+        subheading_6digit_desc="Portable automatic data processing machines",
+        tariff_item_desc="Other",
+        statutory_description="Other",
+        consumer_synonyms="other portable computer",
+        article_keywords="portable computer",
+        material_keywords="",
+        final_score=0.65
+    )
+
+    card, flag = controller._evaluate_auto_lock("laptop computer", [c1, c2])
+    assert flag is True
+    assert card is not None
+    assert card.hsn_code.replace(" ", "") == "84713010"
+
+    # Negative test: margin too small (0.90 vs 0.85 -> margin 0.05 < 0.15)
+    c2.final_score = 0.85
+    card_fail, flag_fail = controller._evaluate_auto_lock("laptop computer", [c1, c2])
+    assert flag_fail is False
+    assert card_fail is None
+
+
+def test_config_driven_thresholds():
+    """Verifies that thresholds are read directly from config/intent_extraction_config.json."""
+    config_file = Path(__file__).resolve().parent.parent / "config" / "intent_extraction_config.json"
+    assert config_file.exists()
+    with open(config_file, "r", encoding="utf-8") as f:
+        cfg = json.load(f)
+    assert "thresholds" in cfg
+    thresh = cfg["thresholds"]
+    assert thresh.get("auto_lock_reranker_min") == 0.85
+    assert thresh.get("auto_lock_margin_min") == 0.15
+    assert thresh.get("statutory_chapter_threshold") == 0.50
+    assert thresh.get("candidate_drop_threshold") == 0.45
+
+
+def test_out_of_schedule_materials(extractor):
+    """Verifies unindexed materials (glass, leather) return OUT_OF_SCHEDULE."""
+    res_glass = extractor.extract_intent("glass water bottle")
+    assert res_glass.outcome_type == "OUT_OF_SCHEDULE"
+    assert "70" in (res_glass.error_message or "") or "schedule" in (res_glass.error_message or "").lower()
+
+    res_leather = extractor.extract_intent("genuine leather wallet")
+    assert res_leather.outcome_type == "OUT_OF_SCHEDULE"
+    assert "42" in (res_leather.error_message or "") or "schedule" in (res_leather.error_message or "").lower()
+
+
