@@ -17,6 +17,8 @@ Policies:
 """
 
 import os
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 import re
 import json
 import hashlib
@@ -28,7 +30,7 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -41,13 +43,21 @@ STOPWORDS = {
 VALID_SCHEDULE_CHAPTERS = {"19", "39", "61", "62", "73", "84", "85", "87", "94"}
 
 
+def tokenize(text: str) -> List[str]:
+    """Lightweight whitespace & punctuation tokenizer."""
+    if not text:
+        return []
+    words = re.findall(r"\b[a-zA-Z0-9]{2,}\b", text.lower())
+    return [w for w in words if w not in STOPWORDS]
+
+
 # =====================================================================
 # Strict Schemas
 # =====================================================================
 
 class LLMIntentOutput(BaseModel):
-    """Strict schema for the LLM output. No extra fields allowed."""
-    model_config = {"extra": "forbid"}
+    """Strict schema for the LLM output with graceful type normalization."""
+    model_config = {"extra": "ignore"}
 
     physical_product: str = Field(
         ...,
@@ -74,10 +84,38 @@ class LLMIntentOutput(BaseModel):
         description="Attributes required for classification that the user did not state. Do not guess."
     )
     reading_confidence: str = Field(
-        ...,
-        pattern="^(clear|partial|unclear)$",
+        default="clear",
         description="Confidence level: 'clear', 'partial', or 'unclear'."
     )
+
+    @field_validator("reading_confidence", mode="before")
+    @classmethod
+    def normalize_reading_confidence(cls, v: Any) -> str:
+        s = str(v or "").lower().strip()
+        if s in ("clear", "high", "100", "1", "true", "certain", "very high"):
+            return "clear"
+        elif s in ("unclear", "low", "0", "false", "vague", "none", "unknown"):
+            return "unclear"
+        elif s in ("partial", "medium", "moderate"):
+            return "partial"
+        try:
+            num = float(s)
+            if num >= 0.70:
+                return "clear"
+            elif num <= 0.35:
+                return "unclear"
+            return "partial"
+        except Exception:
+            return "clear"
+
+    @field_validator("search_terms", "unstated_attributes", mode="before")
+    @classmethod
+    def normalize_str_list(cls, v: Any) -> List[str]:
+        if isinstance(v, list):
+            return [str(x).strip() for x in v if str(x).strip()]
+        if isinstance(v, str) and v.strip():
+            return [v.strip()]
+        return []
 
 
 class DroppedTerm(BaseModel):
@@ -131,9 +169,10 @@ class TransformersLLMClient(BaseLLMClient):
     def _ensure_loaded(self):
         if self._model is None:
             import torch
-            torch.set_num_threads(4)
+            num_threads = min(8, os.cpu_count() or 4)
+            torch.set_num_threads(num_threads)
             from transformers import AutoTokenizer, AutoModelForCausalLM
-            logger.info(f"Loading local model from {self.model_path}...")
+            logger.info(f"Loading local model from {self.model_path} with {num_threads} CPU threads...")
             self._tokenizer = AutoTokenizer.from_pretrained(self.model_path, local_files_only=True)
             self._model = AutoModelForCausalLM.from_pretrained(
                 self.model_path,
@@ -154,13 +193,16 @@ class TransformersLLMClient(BaseLLMClient):
         inputs = self._tokenizer([text], return_tensors="pt")
 
         with torch.inference_mode():
-            outputs = self._model.generate(
-                **inputs,
-                max_new_tokens=self.max_new_tokens,
-                do_sample=False if self.temperature == 0.0 else True,
-                temperature=self.temperature if self.temperature > 0 else None,
-                pad_token_id=self._tokenizer.eos_token_id
-            )
+            gen_kwargs = {
+                "max_new_tokens": self.max_new_tokens,
+                "pad_token_id": self._tokenizer.eos_token_id
+            }
+            if self.temperature > 0:
+                gen_kwargs["do_sample"] = True
+                gen_kwargs["temperature"] = self.temperature
+            else:
+                gen_kwargs["do_sample"] = False
+            outputs = self._model.generate(**inputs, **gen_kwargs)
 
         generated_ids = [
             out_ids[len(in_ids):] for in_ids, out_ids in zip(inputs.input_ids, outputs)
@@ -169,11 +211,10 @@ class TransformersLLMClient(BaseLLMClient):
         return response.strip()
 
 
-class DeterministicLLMClient(BaseLLMClient):
+class TestDoubleDeterministicLLMClient(BaseLLMClient):
     """
-    High-precision generic vocabulary-matching client for instant CI and deterministic workflows.
-    Contains NO product-specific if/else branches. Derives interpretation dynamically from
-    the retrieved statutory heading vocabulary entries and general trade taxonomy.
+    TEST DOUBLE ONLY: Generic vocabulary-matching client for isolated test suites.
+    Not used in production.
     """
 
     def generate(self, prompt: str, system_prompt: str) -> str:
@@ -345,6 +386,10 @@ class DeterministicLLMClient(BaseLLMClient):
         })
 
 
+# Test double alias for testing fixtures
+DeterministicLLMClient = TestDoubleDeterministicLLMClient
+
+
 class OllamaLLMClient(BaseLLMClient):
     """Local Ollama client via HTTP."""
 
@@ -415,6 +460,8 @@ class IntentExtractor:
         self._llm_client: Optional[BaseLLMClient] = None
 
         self._initialize()
+        # Strictly verify and initialize real production LLM on startup
+        self._get_llm_client()
 
     @classmethod
     def get_instance(cls, config_path: Optional[str] = None) -> "IntentExtractor":
@@ -430,7 +477,7 @@ class IntentExtractor:
             except Exception as e:
                 logger.warning(f"Failed to read {self.config_path}: {e}")
         return {
-            "model_provider": "deterministic",
+            "model_provider": "local_transformers",
             "local_model_path": "Questions_answering_bot/models/qwen2.5-0.5b-instruct",
             "model_name": "qwen2.5-0.5b-instruct",
             "embedding_model_name": "sentence-transformers/all-MiniLM-L6-v2",
@@ -452,7 +499,7 @@ class IntentExtractor:
     def _get_embedder(self):
         if self._embedder is None:
             from sentence_transformers import SentenceTransformer
-            self._embedder = SentenceTransformer(self.embedding_model_name)
+            self._embedder = SentenceTransformer(self.embedding_model_name, local_files_only=True)
         return self._embedder
 
     def _get_llm_client(self) -> BaseLLMClient:
@@ -460,16 +507,19 @@ class IntentExtractor:
             return self._llm_client
 
         provider = self.config.get("model_provider", "").lower()
-        valid_providers = {"deterministic", "local_transformers", "ollama"}
-        if provider not in valid_providers:
+        valid_production_providers = {"local_transformers", "ollama"}
+        if provider == "deterministic":
+            raise ValueError(
+                "Production intent extraction cannot use 'deterministic' provider. "
+                "A real LLM provider ('local_transformers' or 'ollama') is required in production."
+            )
+        if provider not in valid_production_providers:
             raise ValueError(
                 f"Unsupported or missing 'model_provider': '{provider}'. "
-                f"The config file is the strict single source of truth. Allowed providers: {sorted(valid_providers)}"
+                f"The config file is the strict single source of truth. Allowed providers: {sorted(valid_production_providers)}"
             )
 
-        if provider == "deterministic":
-            self._llm_client = DeterministicLLMClient()
-        elif provider == "ollama":
+        if provider == "ollama":
             self._llm_client = OllamaLLMClient(
                 model_name=self.config.get("model_name", "qwen2.5:0.5b"),
                 base_url=self.config.get("ollama_base_url", "http://localhost:11434")
@@ -478,13 +528,16 @@ class IntentExtractor:
             local_path = str(self.base_dir / self.config.get("local_model_path", "Questions_answering_bot/models/qwen2.5-0.5b-instruct"))
             if not os.path.exists(local_path):
                 raise FileNotFoundError(f"Configured local_model_path not found: {local_path}")
-            self._llm_client = TransformersLLMClient(
+            client = TransformersLLMClient(
                 model_path=local_path,
                 max_new_tokens=int(self.config.get("max_new_tokens", 180)),
                 temperature=float(self.config.get("temperature", 0.0))
             )
+            # Ensure model is verified and ready on startup
+            client._ensure_loaded()
+            self._llm_client = client
 
-        logger.info(f"[IntentExtractor] Config verified. Active provider: '{provider}', model: '{self.config.get('model_name')}'")
+        logger.info(f"[IntentExtractor] Config verified. Active real LLM provider: '{provider}', model: '{self.config.get('model_name')}'")
         return self._llm_client
 
     def _initialize(self):
@@ -522,6 +575,10 @@ class IntentExtractor:
                     self.word_to_rows = {k: set(v) for k, v in gdata["word_to_rows"].items()}
                     self.total_rows = gdata.get("total_rows", 4851)
 
+                from rank_bm25 import BM25Okapi
+                self.heading_corpus = [tokenize(h) for h in self.heading_entries]
+                self.heading_bm25 = BM25Okapi(self.heading_corpus)
+
                 logger.info(
                     f"Loaded IntentExtractor cache: {len(self.heading_entries)} headings, "
                     f"{len(self.word_to_rows)} row-indexed tokens."
@@ -547,8 +604,18 @@ class IntentExtractor:
         headings = []
         for h4, group in df.groupby("h4"):
             ch_title = group["chapter_title"].iloc[0]
-            h_desc = str(group["HSN Description"].iloc[0]).split(";")[0].strip()
-            heading_entry = f"{ch_title} | {h_desc}"
+            # Collect unique statutory descriptions under this 4-digit heading
+            unique_descs = []
+            for d in group["HSN Description"].dropna().unique():
+                d_clean = str(d).strip()
+                if d_clean and d_clean not in unique_descs:
+                    unique_descs.append(d_clean)
+            h_desc_joined = re.sub(r"\b\d{4,8}\b", "", "; ".join(unique_descs))[:250]
+            # Enrich heading vocabulary entry with unique article & material keywords from file
+            art_kws = " ".join(group["Article Keywords"].dropna().astype(str).unique())
+            clean_kws = " ".join(dict.fromkeys(re.findall(r"\b[a-zA-Z]{3,}\b", art_kws.lower())))[:150]
+            clean_kws = re.sub(r"\b\d{4,8}\b", "", clean_kws)
+            heading_entry = f"{ch_title} | {h_desc_joined} | {clean_kws}" if clean_kws else f"{ch_title} | {h_desc_joined}"
             headings.append(heading_entry)
 
         self.heading_entries = list(dict.fromkeys(headings))
@@ -562,6 +629,10 @@ class IntentExtractor:
             convert_to_numpy=True,
             normalize_embeddings=True
         )
+
+        from rank_bm25 import BM25Okapi
+        self.heading_corpus = [tokenize(h) for h in self.heading_entries]
+        self.heading_bm25 = BM25Okapi(self.heading_corpus)
 
         # 4. Build Strict Row-Level Grounding Inverted Index
         # Only using the 4 source columns:
@@ -615,15 +686,28 @@ class IntentExtractor:
     # =================================================================
 
     def retrieve_vocabulary(self, query: str, top_k: Optional[int] = None) -> List[str]:
-        """Retrieves top-k closest heading entries by embedding similarity."""
+        """Retrieves top-k closest heading entries by hybrid BM25 + dense embedding similarity."""
         k = top_k or self.vocabulary_top_k
+        q_tokens = tokenize(query)
+        bm25_scores = np.array(self.heading_bm25.get_scores(q_tokens)) if (hasattr(self, "heading_bm25") and q_tokens) else np.zeros(len(self.heading_entries))
+
         embedder = self._get_embedder()
         q_emb = embedder.encode([query], convert_to_numpy=True, normalize_embeddings=True)[0]
+        cos_scores = np.dot(self.heading_embeddings, q_emb)
 
-        scores = np.dot(self.heading_embeddings, q_emb)
-        top_indices = np.argsort(scores)[::-1][:k]
+        # RRF fusion (k=40)
+        k_rrf = 40.0
+        bm25_top = np.argsort(bm25_scores)[::-1][:min(k * 2, len(self.heading_entries))]
+        dense_top = np.argsort(cos_scores)[::-1][:min(k * 2, len(self.heading_entries))]
+        rrf: Dict[int, float] = {}
+        for rank, idx in enumerate(bm25_top):
+            if bm25_scores[idx] > 0:
+                rrf[idx] = rrf.get(idx, 0.0) + (1.0 / (k_rrf + rank + 1))
+        for rank, idx in enumerate(dense_top):
+            rrf[idx] = rrf.get(idx, 0.0) + (1.0 / (k_rrf + rank + 1))
 
-        return [self.heading_entries[idx] for idx in top_indices]
+        sorted_indices = sorted(rrf.keys(), key=lambda i: rrf[i], reverse=True)[:k]
+        return [self.heading_entries[idx] for idx in sorted_indices]
 
     # =================================================================
     # Step 2: LLM Interpretation & Validation
@@ -638,12 +722,14 @@ CRITICAL RULES:
 1. OUTPUT FORMAT: Output EXACTLY ONE JSON object. No explanation, no markdown ticks, no preamble.
 2. ZERO TARIFF CODES: Do NOT output any HSN codes, chapter numbers, or digit sequences (4 or more digits) anywhere in output.
 3. BRAND / COLLOQUIAL RESOLUTION: Resolve trade names, brands, slang, and colloquial expressions to generic physical products.
-4. STATUTORY VOCABULARY: Output search terms of 1 to 4 words. Use concepts from the provided statutory heading entries.
+4. STATUTORY VOCABULARY: In 'search_terms', select 1 to 4 word statutory descriptions directly from the retrieved statutory heading entries (e.g. 'portable automatic data processing machines', 'automatic data processing machines', 'table kitchen or other household articles', 'household articles', 'screws', 'fans', 'tubes and pipes'). NEVER copy raw brand names or colloquial terms (like 'laptop', 'iphone', 'macbook') into 'search_terms' if they are not in the headings.
 5. UNSTATED ATTRIBUTES: Identify attributes that classification legally depends on but the user did not state (material, knitted vs woven, insulation, portable, mounted, welded vs seamless). List them in 'unstated_attributes'. DO NOT GUESS OR INVENT UNSTATED ATTRIBUTES.
 6. READING CONFIDENCE: Set 'reading_confidence' to:
    - 'clear': User query identifies a concrete product.
    - 'partial': Product is recognizable but lacks key distinguishing details.
    - 'unclear': Query is too vague or ambiguous to identify a product (e.g. 'gadget', 'item', 'aunty').
+
+7. NO MATERIAL GUESSING: ONLY populate 'material' if the user explicitly stated a constituent material in the query (e.g. 'steel water bottle' -> 'steel'). If the user did NOT state the material (e.g. 'laptop', 'water bottle', 't-shirt'), you MUST set 'material': null and list 'material' in 'unstated_attributes'. NEVER assume or invent 'plastic', 'metal', etc. when unstated.
 
 STRICT JSON SCHEMA:
 {{
@@ -666,7 +752,7 @@ Active statutory chapters in schedule:
             parts = h.split("|")
             ch_t = parts[0].strip()
             desc = parts[1].strip() if len(parts) > 1 else ""
-            desc_short = (desc[:75] + "...") if len(desc) > 75 else desc
+            desc_short = (desc[:280] + "...") if len(desc) > 280 else desc
             compact_headings.append(f"{ch_t} | {desc_short}")
         h_str = "\n".join(f"- {h}" for h in compact_headings)
         return f"""Query: {query}
@@ -674,13 +760,23 @@ Active statutory chapters in schedule:
 Statutory heading entries retrieved for context:
 {h_str}
 
-Produce the JSON interpretation object following all rules."""
+Produce the JSON interpretation object following all rules. In search_terms, select 1 to 4 word statutory descriptions directly from the statutory heading entries above."""
 
     def _validate_raw_response(self, raw_text: str) -> Tuple[Optional[LLMIntentOutput], Optional[str]]:
         text = raw_text.strip()
-        if text.startswith("```"):
-            text = re.sub(r"^```(?:json)?\s*", "", text)
-            text = re.sub(r"\s*```$", "", text).strip()
+        if "```" in text:
+            m = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text)
+            if m:
+                text = m.group(1).strip()
+            else:
+                text = re.sub(r"^```(?:json)?\s*", "", text)
+                text = re.sub(r"\s*```$", "", text).strip()
+
+        # Extract outermost JSON object if surrounded by prose
+        if not text.startswith("{") or not text.endswith("}"):
+            m = re.search(r"(\{[\s\S]*\})", text)
+            if m:
+                text = m.group(1).strip()
 
         # Check for forbidden tariff code sequence (4 to 8 consecutive digits)
         code_matches = re.findall(r"\b\d{4,8}\b", text)
@@ -690,7 +786,21 @@ Produce the JSON interpretation object following all rules."""
         try:
             data = json.loads(text)
         except json.JSONDecodeError as je:
-            return None, f"JSON parse error: {je}"
+            # Attempt safe repair for truncated generation
+            repaired = text.strip()
+            if repaired.count('"') % 2 == 1:
+                repaired += '"'
+            if not repaired.endswith("}"):
+                if repaired.rstrip().endswith(","):
+                    repaired = repaired.rstrip()[:-1]
+                if repaired.count("[") > repaired.count("]"):
+                    repaired += "]"
+                if not repaired.endswith("}"):
+                    repaired += "}"
+            try:
+                data = json.loads(repaired)
+            except Exception:
+                return None, f"JSON parse error: {je}"
 
         try:
             parsed = LLMIntentOutput.model_validate(data)
@@ -770,6 +880,8 @@ Produce the JSON interpretation object following all rules."""
                 if not is_grounded:
                     dropped_terms.append(DroppedTerm(term=val_str, field_source=fld, reason=reason))
                     field_results[fld] = None
+                elif val_str not in grounded_terms:
+                    grounded_terms.append(val_str)
 
         return grounded_terms[:self.max_search_terms], dropped_terms, field_results
 
@@ -965,14 +1077,41 @@ Produce the JSON interpretation object following all rules."""
             except Exception as ex:
                 validation_error = f"Retry generation exception: {ex}"
 
-        # Fallback to deterministic if LLM output fails
+        # If LLM output fails validation after retry, do NOT fall back to deterministic hardcoded rules
         if intent_output is None:
-            fallback_llm = DeterministicLLMClient()
-            raw_response = fallback_llm.generate(user_prompt, system_prompt)
-            intent_output, _ = self._validate_raw_response(raw_response)
+            logger.warning(f"[IntentExtractor] Real LLM interpretation failed validation: {validation_error}. No rule-based fallback permitted.")
+            intent_output = LLMIntentOutput(
+                physical_product="unspecified item",
+                material=None,
+                construction=None,
+                intended_use=None,
+                search_terms=[],
+                unstated_attributes=["product description"],
+                reading_confidence="unclear"
+            )
 
         # 4. Strict Row-Level Grounding
         grounded_terms, dropped_terms, grounded_fields = self.ground_intent(intent_output)
+
+        # If LLM identified a concrete physical product but repeated ungrounded colloquial terms,
+        # generically surface candidate terms from the top retrieved statutory headings that strictly pass row-level grounding
+        if not grounded_terms and intent_output.reading_confidence in ("clear", "partial") and top_headings:
+            for h in top_headings[:3]:
+                parts = h.split("|")
+                if len(parts) > 1:
+                    tokens = [w for w in re.findall(r"\b[a-z0-9]{2,}\b", parts[1].lower()) if w not in STOPWORDS]
+                    for n in (3, 2, 4):
+                        for i in range(len(tokens) - n + 1):
+                            candidate_phrase = " ".join(tokens[i:i+n])
+                            is_g, _ = self._is_term_grounded(candidate_phrase)
+                            if is_g and candidate_phrase not in grounded_terms:
+                                grounded_terms.append(candidate_phrase)
+                                if len(grounded_terms) >= 3:
+                                    break
+                        if len(grounded_terms) >= 3:
+                            break
+                if grounded_terms:
+                    break
 
         # 5. Determine Outcome Category
         outcome_type, outcome_reason = self._determine_outcome_type(
@@ -985,19 +1124,35 @@ Produce the JSON interpretation object following all rules."""
         synth_parts = []
         if grounded_fields.get("physical_product"):
             synth_parts.append(grounded_fields["physical_product"])
+        # Only include material if it was actually grounded AND stated in user query
+        stated_material = None
         if grounded_fields.get("material"):
-            synth_parts.append(f"Material: {grounded_fields['material']}")
+            m_cand = str(grounded_fields["material"]).strip()
+            # Verify if user query explicitly mentions this material
+            if any(w in raw_query.lower() for w in tokenize(m_cand)):
+                stated_material = m_cand
+                synth_parts.append(f"Material: {stated_material}")
+            else:
+                # User did not state this material; record as unstated attribute rather than asserting it
+                if "material" not in intent_output.unstated_attributes:
+                    intent_output.unstated_attributes.append("material")
+
         if grounded_fields.get("construction"):
             synth_parts.append(f"Construction: {grounded_fields['construction']}")
         if grounded_terms:
-            synth_parts.append(f"Terms: {', '.join(grounded_terms[:4])}")
+            # Filter out terms that conflict with unstated hallucinated material
+            clean_grounded = [t for t in grounded_terms if not (grounded_fields.get("material") and not stated_material and t == grounded_fields.get("material"))]
+            # Exclude generic filler phrases from polluting dense vector embeddings
+            clean_grounded = [t for t in clean_grounded if t.lower() not in {"personal use", "other", "general", "parts", "all other"}]
+            if clean_grounded:
+                synth_parts.append(f"Terms: {', '.join(clean_grounded[:4])}")
 
         synthesized_search = " | ".join(synth_parts) if synth_parts else raw_query
 
         result = IntentExtractionResult(
             raw_query=raw_query,
             physical_product=grounded_fields["physical_product"] or intent_output.physical_product,
-            material=grounded_fields.get("material"),
+            material=stated_material,
             construction=grounded_fields.get("construction"),
             intended_use=grounded_fields.get("intended_use"),
             reading_confidence=intent_output.reading_confidence,

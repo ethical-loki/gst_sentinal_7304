@@ -36,13 +36,18 @@ def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, A
     print("=" * 76)
 
     extractor = IntentExtractor.get_instance()
-    # Ensure deterministic mode for reproducible evaluation
-    extractor._llm_client = DeterministicLLMClient()
+    if "--deterministic" in sys.argv:
+        print("[INFO] Running in deterministic test-double mode")
+        extractor._llm_client = DeterministicLLMClient()
+    else:
+        print(f"[INFO] Running with real production LLM: {type(extractor._llm_client).__name__}")
 
     total_cases = len(cases)
     intent_correct_count = 0
     grounding_total_terms = 0
     grounding_passed_terms = 0
+    grounding_total_expected = 0
+    grounding_recalled_terms = 0
     top1_correct_count = 0
     top3_correct_count = 0
     clarification_count = 0
@@ -84,8 +89,13 @@ def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, A
             intent_correct_count += 1
             category_stats[cat]["intent_correct"] += 1
 
-        # 2. Evaluate Grounding Precision (Human-labeled ground truth or file ground truth)
+        # 2. Evaluate Grounding Precision and Recall against Human-Curated Labels
         if exp_terms:
+            grounding_total_expected += len(exp_terms)
+            for exp in exp_terms:
+                if any(exp in t.lower() or t.lower() in exp or any(w in exp for w in t.lower().split() if len(w) > 3) for t in intent_res.grounded_search_terms):
+                    grounding_recalled_terms += 1
+
             for term in intent_res.grounded_search_terms:
                 grounding_total_terms += 1
                 t_low = term.lower()
@@ -146,6 +156,9 @@ def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, A
     grounding_precision_pct = round(
         (grounding_passed_terms / max(1, grounding_total_terms)) * 100.0, 2
     ) if grounding_total_terms > 0 else 100.0
+    grounding_recall_pct = round(
+        (grounding_recalled_terms / max(1, grounding_total_expected)) * 100.0, 2
+    ) if grounding_total_expected > 0 else 100.0
     top1_accuracy_pct = round((top1_correct_count / total_cases) * 100.0, 2)
     top3_accuracy_pct = round((top3_correct_count / total_cases) * 100.0, 2)
     abstention_rate_pct = round((abstention_count / total_cases) * 100.0, 2)
@@ -170,6 +183,7 @@ def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, A
     print("-" * 76)
     print(f"Intent Extraction Accuracy:     {intent_accuracy_pct}% ({intent_correct_count}/{total_cases})")
     print(f"Row-Level Grounding Precision:  {grounding_precision_pct}% ({grounding_passed_terms}/{grounding_total_terms} terms)")
+    print(f"Row-Level Grounding Recall:     {grounding_recall_pct}% ({grounding_recalled_terms}/{grounding_total_expected} expected terms)")
     print(f"Top-1 Statutory Accuracy:       {top1_accuracy_pct}% ({top1_correct_count}/{total_cases})")
     print(f"Top-3 Statutory Accuracy:       {top3_accuracy_pct}% ({top3_correct_count}/{total_cases})")
     print(f"Abstention Rate:                {abstention_rate_pct}% ({abstention_count}/{total_cases})")
@@ -206,6 +220,8 @@ def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, A
         "intent_accuracy_fraction": f"{intent_correct_count}/{total_cases}",
         "grounding_precision_pct": grounding_precision_pct,
         "grounding_precision_fraction": f"{grounding_passed_terms}/{grounding_total_terms}",
+        "grounding_recall_pct": grounding_recall_pct,
+        "grounding_recall_fraction": f"{grounding_recalled_terms}/{grounding_total_expected}",
         "top1_accuracy_pct": top1_accuracy_pct,
         "top3_accuracy_pct": top3_accuracy_pct,
         "abstention_rate_pct": abstention_rate_pct,

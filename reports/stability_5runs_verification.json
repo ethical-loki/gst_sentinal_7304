@@ -1,0 +1,242 @@
+{
+  "laptop": {
+    "is_deterministic_stable": true,
+    "runs": [
+      {
+        "run": 1,
+        "latency_ms": 1582.7,
+        "chapter": "84",
+        "status": "ABSTAIN",
+        "confidence": 0.33,
+        "banner_type": "MULTI_CHAPTER_AMBIGUITY",
+        "options_count": 2,
+        "recommended_hsn": "Needs confirmation",
+        "descriptive_report_confidence": "Low"
+      },
+      {
+        "run": 2,
+        "latency_ms": 1005.7,
+        "chapter": "84",
+        "status": "ABSTAIN",
+        "confidence": 0.33,
+        "banner_type": "MULTI_CHAPTER_AMBIGUITY",
+        "options_count": 2,
+        "recommended_hsn": "Needs confirmation",
+        "descriptive_report_confidence": "Low"
+      },
+      {
+        "run": 3,
+        "latency_ms": 1051.0,
+        "chapter": "84",
+        "status": "ABSTAIN",
+        "confidence": 0.33,
+        "banner_type": "MULTI_CHAPTER_AMBIGUITY",
+        "options_count": 2,
+        "recommended_hsn": "Needs confirmation",
+        "descriptive_report_confidence": "Low"
+      },
+      {
+        "run": 4,
+        "latency_ms": 1027.8,
+        "chapter": "84",
+        "status": "ABSTAIN",
+        "confidence": 0.33,
+        "banner_type": "MULTI_CHAPTER_AMBIGUITY",
+        "options_count": 2,
+        "recommended_hsn": "Needs confirmation",
+        "descriptive_report_confidence": "Low"
+      },
+      {
+        "run": 5,
+        "latency_ms": 1049.9,
+        "chapter": "84",
+        "status": "ABSTAIN",
+        "confidence": 0.33,
+        "banner_type": "MULTI_CHAPTER_AMBIGUITY",
+        "options_count": 2,
+        "recommended_hsn": "Needs confirmation",
+        "descriptive_report_confidence": "Low"
+      }
+    ]
+  },
+  "stainless steel water bottle": {
+    "is_deterministic_stable": true,
+    "runs": [
+      {
+        "run": 1,
+        "latency_ms": 1168.3,
+        "chapter": "73",
+        "status": "ABSTAIN",
+        "confidence": 0.45,
+        "banner_type": "SAME_CHAPTER_VARIANT",
+        "options_count": 6,
+        "recommended_hsn": "Needs confirmation",
+        "descriptive_report_confidence": "Medium"
+      },
+      {
+        "run": 2,
+        "latency_ms": 1129.3,
+        "chapter": "73",
+        "status": "ABSTAIN",
+        "confidence": 0.45,
+        "banner_type": "SAME_CHAPTER_VARIANT",
+        "options_count": 6,
+        "recommended_hsn": "Needs confirmation",
+        "descriptive_report_confidence": "Medium"
+      },
+      {
+        "run": 3,
+        "latency_ms": 1318.6,
+        "chapter": "73",
+        "status": "ABSTAIN",
+        "confidence": 0.45,
+        "banner_type": "SAME_CHAPTER_VARIANT",
+        "options_count": 6,
+        "recommended_hsn": "Needs confirmation",
+        "descriptive_report_confidence": "Medium"
+      },
+      {
+        "run": 4,
+        "latency_ms": 1306.1,
+        "chapter": "73",
+        "status": "ABSTAIN",
+        "confidence": 0.45,
+        "banner_type": "SAME_CHAPTER_VARIANT",
+        "options_count": 6,
+        "recommended_hsn": "Needs confirmation",
+        "descriptive_report_confidence": "Medium"
+      },
+      {
+        "run": 5,
+        "latency_ms": 1459.4,
+        "chapter": "73",
+        "status": "ABSTAIN",
+        "confidence": 0.45,
+        "banner_type": "SAME_CHAPTER_VARIANT",
+        "options_count": 6,
+        "recommended_hsn": "Needs confirmation",
+        "descriptive_report_confidence": "Medium"
+      }
+    ]
+  },
+  "cotton t-shirt": {
+    "is_deterministic_stable": true,
+    "runs": [
+      {
+        "run": 1,
+        "latency_ms": 81607.4,
+        "chapter": "62",
+        "status": "ABSTAIN",
+        "confidence": 0.45,
+        "banner_type": "MULTI_CHAPTER_AMBIGUITY",
+        "options_count": 2,
+        "recommended_hsn": "Needs confirmation",
+        "descriptive_report_confidence": "Medium"
+      },
+      {
+        "run": 2,
+        "latency_ms": 1500.4,
+        "chapter": "62",
+        "status": "ABSTAIN",
+        "confidence": 0.45,
+        "banner_type": "MULTI_CHAPTER_AMBIGUITY",
+        "options_count": 2,
+        "recommended_hsn": "Needs confirmation",
+        "descriptive_report_confidence": "Medium"
+      },
+      {
+        "run": 3,
+        "latency_ms": 1132.7,
+        "chapter": "62",
+        "status": "ABSTAIN",
+        "confidence": 0.45,
+        "banner_type": "MULTI_CHAPTER_AMBIGUITY",
+        "options_count": 2,
+        "recommended_hsn": "Needs confirmation",
+        "descriptive_report_confidence": "Medium"
+      },
+      {
+        "run": 4,
+        "latency_ms": 1087.1,
+        "chapter": "62",
+        "status": "ABSTAIN",
+        "confidence": 0.45,
+        "banner_type": "MULTI_CHAPTER_AMBIGUITY",
+        "options_count": 2,
+        "recommended_hsn": "Needs confirmation",
+        "descriptive_report_confidence": "Medium"
+      },
+      {
+        "run": 5,
+        "latency_ms": 2180.6,
+        "chapter": "62",
+        "status": "ABSTAIN",
+        "confidence": 0.45,
+        "banner_type": "MULTI_CHAPTER_AMBIGUITY",
+        "options_count": 2,
+        "recommended_hsn": "Needs confirmation",
+        "descriptive_report_confidence": "Medium"
+      }
+    ]
+  },
+  "aunty": {
+    "is_deterministic_stable": true,
+    "runs": [
+      {
+        "run": 1,
+        "latency_ms": 1676.0,
+        "chapter": "NONE",
+        "status": "ABSTAIN",
+        "confidence": 0.0,
+        "banner_type": "NOT_AVAILABLE",
+        "options_count": 0,
+        "recommended_hsn": "None (Not available in reference dataset)",
+        "descriptive_report_confidence": "Low"
+      },
+      {
+        "run": 2,
+        "latency_ms": 1293.3,
+        "chapter": "NONE",
+        "status": "ABSTAIN",
+        "confidence": 0.0,
+        "banner_type": "NOT_AVAILABLE",
+        "options_count": 0,
+        "recommended_hsn": "None (Not available in reference dataset)",
+        "descriptive_report_confidence": "Low"
+      },
+      {
+        "run": 3,
+        "latency_ms": 1267.4,
+        "chapter": "NONE",
+        "status": "ABSTAIN",
+        "confidence": 0.0,
+        "banner_type": "NOT_AVAILABLE",
+        "options_count": 0,
+        "recommended_hsn": "None (Not available in reference dataset)",
+        "descriptive_report_confidence": "Low"
+      },
+      {
+        "run": 4,
+        "latency_ms": 1173.5,
+        "chapter": "NONE",
+        "status": "ABSTAIN",
+        "confidence": 0.0,
+        "banner_type": "NOT_AVAILABLE",
+        "options_count": 0,
+        "recommended_hsn": "None (Not available in reference dataset)",
+        "descriptive_report_confidence": "Low"
+      },
+      {
+        "run": 5,
+        "latency_ms": 1461.2,
+        "chapter": "NONE",
+        "status": "ABSTAIN",
+        "confidence": 0.0,
+        "banner_type": "NOT_AVAILABLE",
+        "options_count": 0,
+        "recommended_hsn": "None (Not available in reference dataset)",
+        "descriptive_report_confidence": "Low"
+      }
+    ]
+  }
+}

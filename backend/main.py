@@ -6,11 +6,13 @@ Description: Complete FastAPI backend serving Excel-based HSN/SAC search with
 
 import os
 
-# Prevent OpenBLAS thread allocation failure on Windows
-os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
-os.environ.setdefault("MKL_NUM_THREADS", "1")
-os.environ.setdefault("OMP_NUM_THREADS", "1")
-os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+# Offline transformers & optimal thread allocation
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "2")
+os.environ.setdefault("MKL_NUM_THREADS", "4")
+os.environ.setdefault("OMP_NUM_THREADS", "4")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "4")
 os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
 
 import json
@@ -83,34 +85,8 @@ async def preload_services():
     else:
         print("[WARN] HSN Excel file not found at startup - will retry on first search.")
 
-    try:
-        from backend.qa_service import get_qa_engine
-        print("[INFO] Pre-warming Multi-Domain QA Engine (Qwen2.5)...")
-        get_qa_engine()
-        print("[OK] Multi-Domain QA Engine preloaded and ready.")
-    except Exception as e:
-        print(f"[WARN] QA Engine preload deferred: {e}")
-
-    try:
-        print("[INFO] Pre-warming HSN Intelligence Engine (Module 1)...")
-        get_hsn_intelligence_engine()
-        print("[OK] HSN Intelligence Engine (Module 1) preloaded.")
-    except Exception as e:
-        print(f"[WARN] HSN Intelligence Engine preload deferred: {e}")
-
-    try:
-        print("[INFO] Pre-warming HSN Audit Sentinel (Module 2)...")
-        get_hsn_audit_sentinel()
-        print("[OK] HSN Audit Sentinel (Module 2) preloaded.")
-    except Exception as e:
-        print(f"[WARN] HSN Audit Sentinel preload deferred: {e}")
-
-    try:
-        print("[INFO] Pre-warming DeepSeek HSN Verifier (Dual-Model Neural Layer)...")
-        get_hsn_deepseek_verifier()
-        print("[OK] DeepSeek HSN Verifier preloaded.")
-    except Exception as e:
-        print(f"[WARN] DeepSeek HSN Verifier preload deferred: {e}")
+    # Lazy-load neural engines on demand rather than blocking server startup
+    logger.info("[INFO] Neural engines configured for on-demand lazy initialization.")
 
 
 _hsn_search_engine = None
@@ -641,17 +617,11 @@ async def statutory_auditor_evaluate(request: Request):
 
 
 @app.post("/api/v1/hsn-rag/step1-context-aggregator")
-async def step1_context_aggregator_endpoint(request: Request):
+def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
     """
     Step 1: Context Aggregator (Product + Material + Form + Chapter Categorization).
-    Extracts base product, material composition, form/state, and Chapter 01–99.
-    Also queries Chapter Predictor (BGE-M3 + BM25 + Qwen/fusion) to provide high-precision
-    chapter guidance and evidence.
+    Extracts base product, material composition, form/state, and active Master Chapters.
     """
-    try:
-        body = await request.json()
-    except Exception:
-        body = {}
     base_product = (body.get("product") or body.get("base_product") or body.get("product_name") or "").strip()
     user_clarification = (body.get("clarification") or body.get("user_clarification") or "").strip()
     existing_attributes = body.get("attributes") or body.get("existing_attributes") or None
@@ -749,13 +719,16 @@ async def step1_context_aggregator_endpoint(request: Request):
             disambiguation_data["disambiguation_options"] = valid_opts
             if valid_opts:
                 first_opt = valid_opts[0]
+                desc_rep = disambiguation_data.get("descriptive_report") or {}
+                calculated_conf = float(desc_rep.get("confidence_score", 45.0)) / 100.0
+
                 chapter_pred_data = {
                     "product_name": base_product,
                     "normalized": base_product.lower(),
-                    "chapter": first_opt.get("chapter_code", "39"),
-                    "chapter_title": first_opt.get("chapter_title", "Plastics and articles thereof"),
-                    "confidence": 0.95,
-                    "status": "OK",
+                    "chapter": first_opt.get("chapter_code", "NONE"),
+                    "chapter_title": first_opt.get("chapter_title", "Multiple Candidates"),
+                    "confidence": min(calculated_conf, 0.49),  # Capped: undecided 8-digit code cannot report high confidence
+                    "status": "ABSTAIN",  # Needs user selection to finalize 8-digit code
                     "alternatives": [],
                     "evidence": [
                         {
@@ -767,7 +740,7 @@ async def step1_context_aggregator_endpoint(request: Request):
                         }
                         for o in valid_opts[:5]
                     ],
-                    "reason": f"Matched statutory master entries in Chapter {first_opt.get('chapter_code')}",
+                    "reason": "Multiple candidate tariff items identified under GIR compliance. User selection required to finalize 8-digit HSN code.",
                     "catalogue_version": catalogue_version,
                     "index_version": index_version,
                     "total_active_chapters": len(VALID_MASTER_CHAPTERS)
@@ -777,12 +750,54 @@ async def step1_context_aggregator_endpoint(request: Request):
                 disambiguation_data["banner_type"] = "NONE"
 
         if chapter_pred_data is None:
-            from src.chapter_predictor.predictor import ChapterPredictor
-            pred = ChapterPredictor.get_instance().predict(base_product, top_k=3)
-            chapter_pred_data = pred.model_dump()
-            chapter_pred_data["catalogue_version"] = catalogue_version
-            chapter_pred_data["index_version"] = index_version
-            chapter_pred_data["total_active_chapters"] = len(VALID_MASTER_CHAPTERS)
+            # Strictly use candidates from Master_copy_hsn.xlsx (active 9 chapters)
+            from src.search.hybrid_retrieval import HybridHSNEngine
+            engine = HybridHSNEngine.get_instance()
+            cands = engine.search(search_query_for_retrieval, top_k=5)
+            valid_cands = [c for c in cands if c.chapter_code in VALID_MASTER_CHAPTERS]
+            if valid_cands and valid_cands[0].final_score >= 0.20:
+                top_cand = valid_cands[0]
+                chapter_pred_data = {
+                    "product_name": base_product,
+                    "normalized": base_product.lower(),
+                    "chapter": top_cand.chapter_code,
+                    "chapter_title": top_cand.chapter_title,
+                    "confidence": min(round(top_cand.final_score, 2), 0.49),
+                    "status": "ABSTAIN",
+                    "alternatives": [],
+                    "evidence": [
+                        {
+                            "chapter": c.chapter_code,
+                            "chapter_title": c.chapter_title,
+                            "hsn_code": c.hsn_code,
+                            "description": c.hsn_description,
+                            "score": round(c.final_score, 4)
+                        }
+                        for c in valid_cands[:5]
+                    ],
+                    "reason": "Multiple candidate tariff items identified under GIR compliance. User selection required to finalize 8-digit HSN code.",
+                    "catalogue_version": catalogue_version,
+                    "index_version": index_version,
+                    "total_active_chapters": len(VALID_MASTER_CHAPTERS)
+                }
+            else:
+                chapter_pred_data = {
+                    "product_name": base_product,
+                    "normalized": base_product.lower(),
+                    "chapter": "NONE",
+                    "chapter_title": "Not in Master Schedule",
+                    "confidence": 0.0,
+                    "status": "ABSTAIN",
+                    "alternatives": [],
+                    "evidence": [],
+                    "reason": (
+                        f"Product '{base_product}' cannot be mapped to Master_copy_hsn.xlsx. "
+                        f"The master dataset exclusively covers Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94."
+                    ),
+                    "catalogue_version": catalogue_version,
+                    "index_version": index_version,
+                    "total_active_chapters": len(VALID_MASTER_CHAPTERS)
+                }
 
         # Handle distinct outcome types from Intent Extraction (UNRECOGNIZED, OUT_OF_SCHEDULE, AMBIGUOUS_MATERIAL)
         if intent_data and (intent_data.get("outcome_type") == "UNRECOGNIZED" or intent_data.get("reading_confidence") == "unclear"):
@@ -790,13 +805,32 @@ async def step1_context_aggregator_endpoint(request: Request):
             chapter_pred_data["confidence"] = 0.0
             chapter_pred_data["chapter"] = "NONE"
             chapter_pred_data["chapter_title"] = "Unrecognized Query"
-            chapter_pred_data["reason"] = (
+            unrec_reason = (
                 f"Query '{base_product}' is too vague or unrecognized under statutory customs tariff. "
                 f"Clarification required."
             )
+            chapter_pred_data["reason"] = unrec_reason
             disambiguation_data["is_ambiguous"] = False
             disambiguation_data["banner_type"] = "NONE"
             disambiguation_data["direct_match"] = None
+            disambiguation_data["descriptive_report"] = {
+                "article_understood_as": f"Query '{base_product}' is unrecognized.",
+                "recommended_hsn": "Needs confirmation",
+                "confidence": "Low",
+                "confidence_score": 0.0,
+                "reasoning": unrec_reason,
+                "other_plausible_candidates": [],
+                "missing_information": ["Product constituent material, intended function, or standard trade denomination."],
+                "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing.",
+                "formatted_text": (
+                    f"Article understood as: Query '{base_product}' is unrecognized.\n\n"
+                    f"Recommended HSN: Needs confirmation\n"
+                    f"Confidence: Low\n"
+                    f"Reasoning: {unrec_reason}\n\n"
+                    f"Missing information that would change the result (if any): Product constituent material, intended function, or standard trade denomination.\n\n"
+                    f"Verification note: Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
+                )
+            }
         elif intent_data and intent_data.get("outcome_type") == "OUT_OF_SCHEDULE":
             chapter_pred_data["status"] = "ABSTAIN"
             chapter_pred_data["confidence"] = 0.0
@@ -809,6 +843,8 @@ async def step1_context_aggregator_endpoint(request: Request):
             disambiguation_data["direct_match"] = None
             disambiguation_data["is_ambiguous"] = False
             disambiguation_data["banner_type"] = "NOT_AVAILABLE"
+            disambiguation_data["disambiguation_options"] = []
+            disambiguation_data["distinct_chapters_count"] = 0
             disambiguation_data["descriptive_report"] = {
                 "article_understood_as": f"Commodity ('{base_product}') identified outside the 9 active chapters.",
                 "recommended_hsn": "None (Chapter outside active schedule)",
@@ -817,7 +853,15 @@ async def step1_context_aggregator_endpoint(request: Request):
                 "reasoning": intent_data.get("error_message") or "Statutory classification falls outside loaded schedule.",
                 "other_plausible_candidates": [],
                 "missing_information": ["Target chapter not loaded in active Master dataset (active: 19, 39, 61, 62, 73, 84, 85, 87, 94)"],
-                "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
+                "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing.",
+                "formatted_text": (
+                    f"Article understood as: Commodity ('{base_product}') identified outside the 9 active chapters.\n\n"
+                    f"Recommended HSN: None (Chapter outside active schedule)\n"
+                    f"Confidence: Low\n"
+                    f"Reasoning: {intent_data.get('error_message') or 'Statutory classification falls outside loaded schedule.'}\n\n"
+                    f"Missing information that would change the result (if any): Target chapter not loaded in active Master dataset (active: 19, 39, 61, 62, 73, 84, 85, 87, 94)\n\n"
+                    f"Verification note: Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
+                )
             }
         elif intent_data and intent_data.get("outcome_type") == "AMBIGUOUS_MATERIAL":
             disambiguation_data["direct_match"] = None
@@ -827,7 +871,7 @@ async def step1_context_aggregator_endpoint(request: Request):
             disambiguation_data["clarification_question"] = f"What material and construction is the {base_product}?"
         else:
             rep = disambiguation_data.get("descriptive_report") or {}
-            if rep.get("confidence") == "Low" or "Unrecognized commercial query" in str(rep.get("article_understood_as")):
+            if not disambiguation_data.get("disambiguation_options") and (rep.get("confidence") == "Low" or "Unrecognized commercial query" in str(rep.get("article_understood_as"))):
                 chapter_pred_data["status"] = "ABSTAIN"
                 chapter_pred_data["confidence"] = min(chapter_pred_data.get("confidence", 0.0), 0.35)
                 chapter_pred_data["reason"] = (
@@ -837,6 +881,10 @@ async def step1_context_aggregator_endpoint(request: Request):
 
         # Enforce strict membership in Master dataset chapters
         if chapter_pred_data.get("chapter") not in VALID_MASTER_CHAPTERS:
+            out_of_sched_msg = (
+                f"The queried product '{base_product}' does not belong to any of the 9 statutory chapters "
+                f"available in Master_copy_hsn.xlsx (available chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)."
+            )
             chapter_pred_data["status"] = "ABSTAIN"
             chapter_pred_data["chapter"] = "NONE"
             chapter_pred_data["chapter_title"] = "Not in Master Schedule"
@@ -850,20 +898,27 @@ async def step1_context_aggregator_endpoint(request: Request):
             disambiguation_data["direct_match"] = None
             disambiguation_data["is_ambiguous"] = False
             disambiguation_data["banner_type"] = "NOT_AVAILABLE"
+            disambiguation_data["disambiguation_options"] = []
+            disambiguation_data["distinct_chapters_count"] = 0
             disambiguation_data["descriptive_report"] = {
                 "article_understood_as": f"An item ('{base_product}') queried by user.",
                 "recommended_hsn": "None (Not available in reference dataset)",
                 "confidence": "Low",
                 "confidence_score": 0.0,
-                "reasoning": (
-                    f"The queried product '{base_product}' does not belong to any of the 9 statutory chapters "
-                    f"available in Master_copy_hsn.xlsx (available chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)."
-                ),
+                "reasoning": out_of_sched_msg,
                 "other_plausible_candidates": [],
                 "missing_information": [
                     "Item belongs to an unindexed Chapter outside Master_copy_hsn.xlsx (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)"
                 ],
-                "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
+                "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing.",
+                "formatted_text": (
+                    f"Article understood as: An item ('{base_product}') queried by user.\n\n"
+                    f"Recommended HSN: None (Not available in reference dataset)\n"
+                    f"Confidence: Low\n"
+                    f"Reasoning: {out_of_sched_msg}\n\n"
+                    f"Missing information that would change the result (if any): Item belongs to an unindexed Chapter outside Master_copy_hsn.xlsx (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)\n\n"
+                    f"Verification note: Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
+                )
             }
 
         logger.info(

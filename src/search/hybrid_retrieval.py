@@ -3,16 +3,18 @@ Layer 2 & Layer 3: Hybrid Retrieval & Cross-Encoder Re-Ranking Engine
 =====================================================================
 Implements:
 - Layer 2A: Weighted BM25 (Heading 3.0x, Synonyms 2.5x, Chapter 1.5x, Sub-clause 1.0x)
-- Layer 2B: Dense Vector Semantic Search (Precomputed all-MiniLM-L6-v2)
+- Layer 2B: Dense Vector Semantic Search (MiniLM-L6-v2 across exact Master records with SHA-256 verification)
 - Layer 2C: Reciprocal Rank Fusion (RRF, k=60)
 - Layer 3A: Cross-Encoder Re-Ranking (cross-encoder/ms-marco-MiniLM-L-6-v2)
-- Layer 3B: Negative Keyword & Domain Exclusion Guardrails
-- Layer 3C: Confidence Thresholding (Threshold >= 0.45, Normalized 0.0 - 1.0)
+- Layer 3B: File-Driven Keyword & Material Alignment (Strict column alignment, zero product-specific rules)
+- Layer 3C: Dynamic Thresholding & Sibling Deduplication
 """
 
 import os
 import re
 import math
+import json
+import hashlib
 import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
@@ -55,70 +57,48 @@ STOPWORDS = {
 
 
 def tokenize(text: str) -> List[str]:
-    """Lightweight whitespace & punctuation tokenizer with stopword suppression and compound normalization."""
+    """Lightweight whitespace & punctuation tokenizer with stopword suppression."""
     if not text:
         return []
     clean = text.lower()
-    clean = re.sub(r"\bstain\s+less\b", "stainless", clean)
-    clean = re.sub(r"\bwater\s*bottle\b", "water bottle", clean)
-    clean = re.sub(r"\bt\s*shirt\b", "t-shirt", clean)
     words = re.findall(r"\b[a-zA-Z0-9]{2,}\b", clean)
     return [w for w in words if w not in STOPWORDS]
-
-
-# Domain exclusion rules for homonyms across chapters
-HOMONYM_EXCLUSIONS: Dict[str, Dict[str, Any]] = {
-    "bottle": {
-        "preferred_chapters": ["39"],
-        "excluded_terms_unless_present": {
-            "hot water bottle": ["rubber", "medical", "vulcanized"],
-            "feeding bottle": ["nipple", "baby", "feeding"]
-        }
-    },
-    "brake": {
-        "preferred_chapters": ["87"],
-        "negative_penalties": {
-            "68": 0.35  # Raw unmounted mineral friction penalised unless 'unmounted' or 'mineral' specified
-        }
-    },
-    "pipe": {
-        "cross_chapters": ["39", "73"],
-        "material_hints": {
-            "pvc": "39",
-            "plastic": "39",
-            "steel": "73",
-            "stainless": "73",
-            "seamless": "73",
-            "iron": "73"
-        }
-    }
-}
 
 
 class HybridHSNEngine:
     """
     Singleton Hybrid HSN Retrieval & Precision Re-Ranking Engine.
+    Operates strictly on the authoritative Master dataset with row-level SHA-256 integrity.
     """
     _instance: Optional["HybridHSNEngine"] = None
 
     def __init__(self):
         base_dir = Path(__file__).resolve().parent.parent.parent
+        self.raw_master_path = base_dir / "data" / "raw" / "Master_copy_hsn.xlsx"
         self.enriched_parquet_path = base_dir / "data" / "enriched_master_hsn.parquet"
-        self.embeddings_path = base_dir / "data" / "chapter_predictor" / "tariff_embeddings.npy"
+
+        if not self.raw_master_path.exists():
+            raise FileNotFoundError(f"Master HSN file missing at {self.raw_master_path}")
+
+        # Compute SHA-256 file hash of the authoritative Master file
+        hasher = hashlib.sha256()
+        with open(self.raw_master_path, "rb") as f:
+            for chunk in iter(lambda: f.read(65536), b""):
+                hasher.update(chunk)
+        self.file_hash = hasher.hexdigest()
 
         # Load or generate enriched dataset
         if not self.enriched_parquet_path.exists():
             from src.search.normalization import MasterHSNEnricher
-            enricher = MasterHSNEnricher()
+            enricher = MasterHSNEnricher(raw_excel_path=self.raw_master_path)
             enricher.process()
             enricher.save(self.enriched_parquet_path)
 
         self.df = pd.read_parquet(self.enriched_parquet_path)
-        # Filter strictly to 8-digit tariff items if available, or all records
         self.records = self.df.to_dict(orient="records")
         self.total_records = len(self.records)
 
-        # 1. Initialize BM25 Multi-Field Corpora (with 4-digit and 6-digit subheadings included)
+        # 1. Initialize BM25 Multi-Field Corpora from the exact records
         from rank_bm25 import BM25Okapi
         self.corpus_heading = [
             tokenize(f"{r.get('heading_4digit_desc', '')} {r.get('subheading_6digit_desc', '')}")
@@ -136,18 +116,38 @@ class HybridHSNEngine:
         self.bm25_chapter = BM25Okapi(self.corpus_chapter)
         self.bm25_subclause = BM25Okapi(self.corpus_subclause)
 
-        # 2. Load Dense Embeddings (first 4,851 rows match Master_copy_hsn exactly)
-        self.dense_embeddings = np.load(self.embeddings_path)[:self.total_records]
-        # Normalize dense embeddings just in case
+        # 2. Embedding Model for Query & Document Encoding
+        from sentence_transformers import SentenceTransformer
+        self.embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", local_files_only=True)
+
+        # 3. Dense Embeddings row-for-row cache keyed by Master file hash
+        cache_dir = base_dir / "data" / "intent_cache"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        self.cache_npy = cache_dir / f"master_embeddings_{self.file_hash[:16]}.npy"
+        self.cache_meta = cache_dir / f"master_embeddings_meta_{self.file_hash[:16]}.json"
+
+        if self.cache_npy.exists() and self.cache_meta.exists():
+            try:
+                with open(self.cache_meta, "r", encoding="utf-8") as f:
+                    meta = json.load(f)
+                if meta.get("file_hash") == self.file_hash and meta.get("total_records") == self.total_records:
+                    self.dense_embeddings = np.load(self.cache_npy)
+                    if self.dense_embeddings.shape[0] != self.total_records:
+                        raise ValueError(f"Shape mismatch: {self.dense_embeddings.shape[0]} vs {self.total_records}")
+                else:
+                    self._build_and_cache_dense_embeddings()
+            except Exception as e:
+                logger.warning(f"Failed loading cached dense embeddings ({e}). Rebuilding...")
+                self._build_and_cache_dense_embeddings()
+        else:
+            self._build_and_cache_dense_embeddings()
+
+        # Normalize dense embeddings
         norms = np.linalg.norm(self.dense_embeddings, axis=1, keepdims=True)
         norms[norms == 0] = 1e-10
         self.dense_embeddings = self.dense_embeddings / norms
 
-        # 3. Load Embedding Model for Query Encoding
-        from sentence_transformers import SentenceTransformer
-        self.embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", local_files_only=True)
-
-        # 4. Load Cross-Encoder Model
+        # 4. Cross-Encoder Model
         try:
             from sentence_transformers import CrossEncoder
             self.cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2", local_files_only=True)
@@ -155,7 +155,28 @@ class HybridHSNEngine:
             logger.warning(f"Cross-encoder load skipped: {e}")
             self.cross_encoder = None
 
-        logger.info(f"[HybridHSNEngine] Ready with {self.total_records} master records.")
+        logger.info(f"[HybridHSNEngine] Ready with {self.total_records} master records (hash: {self.file_hash[:16]}).")
+
+    def _build_and_cache_dense_embeddings(self):
+        """Builds dense embeddings for all rows in the loaded Master dataset."""
+        logger.info(f"Computing row-level dense embeddings for {self.total_records} Master records...")
+        texts = [
+            f"{r.get('chapter_title', '')} | {r.get('heading_4digit_desc', '')} | {r.get('statutory_description', '')} | {r.get('consumer_synonyms', '')} | {r.get('material_keywords', '')}"
+            for r in self.records
+        ]
+        self.dense_embeddings = self.embedding_model.encode(
+            texts,
+            show_progress_bar=False,
+            convert_to_numpy=True,
+            normalize_embeddings=True
+        )
+        np.save(self.cache_npy, self.dense_embeddings)
+        with open(self.cache_meta, "w", encoding="utf-8") as f:
+            json.dump({
+                "file_hash": self.file_hash,
+                "total_records": self.total_records,
+                "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
+            }, f, indent=2)
 
     @classmethod
     def get_instance(cls) -> "HybridHSNEngine":
@@ -168,8 +189,6 @@ class HybridHSNEngine:
         Executes Layer 2 Hybrid Retrieval + Layer 3 Re-Ranking.
         """
         q = (raw_query or "").strip().lower()
-        q = re.sub(r"\bstain\s+less\b", "stainless", q)
-        q = re.sub(r"\bwater\s*bottle\b", "water bottle", q)
         if not q:
             return []
 
@@ -179,81 +198,78 @@ class HybridHSNEngine:
 
         # -------------------------------------------------------------
         # Layer 2A: Weighted BM25 Lexical Retrieval
+        # Boost weights: Heading 3.0x, Synonyms 2.5x, Chapter 1.5x, Subclause 1.0x
         # -------------------------------------------------------------
-        # Boost weights as specified: Heading 3.0x, Synonyms 2.5x, Chapter 1.5x, Subclause 1.0x
         s_head = np.array(self.bm25_heading.get_scores(q_tokens))
         s_syn = np.array(self.bm25_synonyms.get_scores(q_tokens))
         s_chap = np.array(self.bm25_chapter.get_scores(q_tokens))
         s_sub = np.array(self.bm25_subclause.get_scores(q_tokens))
 
-        weighted_bm25 = (3.0 * s_head) + (2.5 * s_syn) + (1.5 * s_chap) + (1.0 * s_sub)
-        top_bm25_indices = np.argsort(weighted_bm25)[::-1][:20]
+        def min_max(arr: np.ndarray) -> np.ndarray:
+            denom = arr.max() - arr.min()
+            if denom <= 0:
+                return np.zeros_like(arr)
+            return (arr - arr.min()) / denom
+
+        bm25_composite = (
+            3.0 * min_max(s_head) +
+            2.5 * min_max(s_syn) +
+            1.5 * min_max(s_chap) +
+            1.0 * min_max(s_sub)
+        )
+        top_bm25_indices = np.argsort(bm25_composite)[::-1][:20]
 
         # -------------------------------------------------------------
-        # Layer 2B: Dense Vector Semantic Retrieval
+        # Layer 2B: Dense Vector Semantic Search
         # -------------------------------------------------------------
-        q_vec = self.embedding_model.encode([q], normalize_embeddings=True)[0]
-        dense_sims = np.dot(self.dense_embeddings, q_vec)
-        top_dense_indices = np.argsort(dense_sims)[::-1][:20]
+        q_emb = self.embedding_model.encode([q], convert_to_numpy=True, normalize_embeddings=True)[0]
+        cos_sims = np.dot(self.dense_embeddings, q_emb)
+        top_vector_indices = np.argsort(cos_sims)[::-1][:20]
 
         # -------------------------------------------------------------
         # Layer 2C: Reciprocal Rank Fusion (RRF, k=60)
         # -------------------------------------------------------------
         k_rrf = 60.0
         rrf_map: Dict[int, float] = {}
-
         for rank, idx in enumerate(top_bm25_indices):
             rrf_map[idx] = rrf_map.get(idx, 0.0) + (1.0 / (k_rrf + rank + 1))
-
-        for rank, idx in enumerate(top_dense_indices):
+        for rank, idx in enumerate(top_vector_indices):
             rrf_map[idx] = rrf_map.get(idx, 0.0) + (1.0 / (k_rrf + rank + 1))
 
-        # Select Top 15 unified RRF candidates
-        sorted_rrf = sorted(rrf_map.items(), key=lambda x: x[1], reverse=True)[:15]
-        candidate_indices = [idx for idx, _ in sorted_rrf]
+        # Union candidate pool
+        candidate_indices = sorted(rrf_map.keys(), key=lambda i: rrf_map[i], reverse=True)[:15]
 
-        # Sibling expansion: ensure all 8-digit tariff items under matched subheadings are evaluated
-        top_h6_prefixes = {
-            self.records[idx]["subheading_6digit"]
-            for idx in candidate_indices[:5]
-            if self.records[idx].get("subheading_6digit")
-        }
-        for i, r in enumerate(self.records):
-            if r.get("subheading_6digit") in top_h6_prefixes and len(r.get("hsn_code", "")) == 8:
-                if i not in candidate_indices:
-                    candidate_indices.append(i)
-                    rrf_map[i] = 0.01
-
-        # Build Candidate Objects
+        # Convert indices to SearchCandidate objects
         candidates: List[SearchCandidate] = []
-        ce_pairs: List[Tuple[str, str]] = []
+        ce_pairs: List[List[str]] = []
 
         for idx in candidate_indices:
             r = self.records[idx]
             cand = SearchCandidate(
-                hsn_code=r.get("hsn_code", ""),
-                chapter_code=r.get("chapter_code", ""),
-                chapter_title=r.get("chapter_title", ""),
-                heading_4digit=r.get("heading_4digit", ""),
-                heading_4digit_desc=r.get("heading_4digit_desc", ""),
-                subheading_6digit=r.get("subheading_6digit", ""),
-                subheading_6digit_desc=r.get("subheading_6digit_desc", ""),
-                tariff_item_desc=r.get("tariff_item_desc", ""),
-                statutory_description=r.get("statutory_description", ""),
-                consumer_synonyms=r.get("consumer_synonyms", ""),
-                article_keywords=r.get("article_keywords", ""),
-                material_keywords=r.get("material_keywords", ""),
-                bm25_score=float(weighted_bm25[idx]),
-                vector_score=float(dense_sims[idx]),
+                hsn_code=str(r.get("hsn_code") or r.get("code_str") or "").strip(),
+                chapter_code=str(r.get("chapter_code") or r.get("chapter_str") or "").strip(),
+                chapter_title=str(r.get("chapter_title", "")).strip(),
+                heading_4digit=str(r.get("heading_4digit", "")),
+                heading_4digit_desc=str(r.get("heading_4digit_desc", "")),
+                subheading_6digit=str(r.get("subheading_6digit", "")),
+                subheading_6digit_desc=str(r.get("subheading_6digit_desc", "")),
+                tariff_item_desc=str(r.get("tariff_item_desc", "")),
+                statutory_description=str(r.get("statutory_description", "")),
+                consumer_synonyms=str(r.get("consumer_synonyms", "")),
+                article_keywords=str(r.get("article_keywords", "")),
+                material_keywords=str(r.get("material_keywords", "")),
+                bm25_score=float(bm25_composite[idx]),
+                vector_score=float(cos_sims[idx]),
                 rrf_score=float(rrf_map[idx])
             )
             candidates.append(cand)
-            context = (
-                f"{r.get('chapter_title', '')} | {r.get('heading_4digit_desc', '')} | "
-                f"{r.get('subheading_6digit_desc', '')} | {r.get('tariff_item_desc', '')} | "
-                f"Trade: {r.get('consumer_synonyms', '')}"
+
+            # Pair for Cross-Encoder: (query, candidate context)
+            cand_context = (
+                f"{cand.chapter_title} - {cand.heading_4digit_desc}: "
+                f"{cand.statutory_description} | {cand.material_keywords} {cand.article_keywords}"
             )
-            ce_pairs.append((q, context))
+            ce_pairs.append([q, cand_context])
 
         # -------------------------------------------------------------
         # Layer 3A: Cross-Encoder Re-Ranking
@@ -269,62 +285,74 @@ class HybridHSNEngine:
                     cand.cross_encoder_score = cand.vector_score
 
         # -------------------------------------------------------------
-        # Layer 3B: Negative Keyword & Domain Guardrails
+        # Layer 3B: Hybrid Score Fusion & Material Keyword Alignment
+        # Combines Stage 2 RRF retrieval (BM25 + Dense) with Cross-Encoder
+        # and aligns statutory material keywords from the Master file.
         # -------------------------------------------------------------
-        for cand in candidates:
-            # Baseline sigmoid calibration from cross-encoder + vector score
-            raw_logit = cand.cross_encoder_score if self.cross_encoder else (cand.vector_score * 4.0 - 2.0)
-            calibrated_prob = 1.0 / (1.0 + math.exp(-raw_logit))
+        max_rrf = max((c.rrf_score for c in candidates), default=1.0)
 
-            # ---------------------------------------------------------
-            # Generic Material Keyword Alignment (File-Driven)
-            # Matches material tokens directly against candidate's
-            # Material Keywords & Article Keywords columns from the file.
-            # No hardcoded chapter numbers or product names.
-            # ---------------------------------------------------------
+        for cand in candidates:
+            if self.cross_encoder is not None:
+                # Calibrate ms-marco logit (mean center ~ -7.5) to [0.0, 1.0]
+                calibrated_prob = 1.0 / (1.0 + math.exp(-(cand.cross_encoder_score + 7.5) / 1.5))
+            else:
+                calibrated_prob = max(0.0, min(1.0, cand.vector_score))
+
+            norm_rrf = (cand.rrf_score / max_rrf) if max_rrf > 0 else 0.5
+            blended_score = 0.45 * norm_rrf + 0.55 * calibrated_prob
+
             cand_mat_text = f"{cand.material_keywords} {cand.article_keywords}".lower()
-            
-            # Detect material tokens specified in user search string
             mat_match = re.search(r"Material:\s*([^\n|]+)", q, re.IGNORECASE)
-            specified_material = mat_match.group(1).strip().lower() if mat_match else ""
-            if not specified_material:
-                # Extract any material tokens present in the query
-                for m_candidate in ["stainless steel", "steel", "iron", "plastics", "plastic", "cotton", "rubber", "aluminium", "glass", "copper"]:
-                    if re.search(rf"\b{re.escape(m_candidate)}\b", q):
-                        specified_material = m_candidate
+            query_mat = mat_match.group(1).strip().lower() if mat_match else ""
+
+            # If no explicit 'Material:' prefix, detect material keywords from query
+            if not query_mat:
+                common_materials = ["stainless steel", "steel", "iron", "cotton", "plastic", "plastics", "wood", "aluminum", "glass", "silk", "wool", "leather"]
+                for cm in common_materials:
+                    if re.search(rf"\b{re.escape(cm)}\b", q.lower()):
+                        query_mat = cm
                         break
 
-            if specified_material:
-                m_tokens = set(tokenize(specified_material)) - STOPWORDS
+            if query_mat:
+                m_tokens = set(tokenize(query_mat))
                 cand_tokens = set(tokenize(cand_mat_text))
                 if m_tokens and m_tokens.issubset(cand_tokens):
-                    # Query material aligned with file's Material Keywords
-                    calibrated_prob = min(1.0, calibrated_prob * 1.15)
-                elif m_tokens and any(conflict in cand_mat_text for conflict in ["plastics", "polymer", "cotton", "synthetic", "steel", "iron"] if conflict not in specified_material):
-                    # Incompatible material keywords in file record
-                    calibrated_prob *= 0.25
+                    blended_score = min(1.0, blended_score * 1.30)
+                elif m_tokens and cand_tokens and not m_tokens.intersection(cand_tokens):
+                    # Specified material conflicts with candidate's material keywords
+                    blended_score *= 0.35
 
-            cand.final_score = round(float(calibrated_prob), 4)
+            cand.final_score = round(float(blended_score), 4)
 
         # -------------------------------------------------------------
-        # Layer 3C: Confidence Thresholding (Drop below 0.45) & Sibling Deduplication
+        # Layer 3C: Dynamic Thresholding & GIR Sibling Deduplication
+        # Under GIR 6, 8-digit tariff items inherit subheading relevance,
+        # and 6-digit subheadings yield to their concrete 8-digit children.
         # -------------------------------------------------------------
-        filtered_candidates = [c for c in candidates if c.final_score >= 0.45]
+        six_digit_parents = {
+            c.hsn_code.replace(" ", ""): c.final_score
+            for c in candidates
+            if len(c.hsn_code.replace(" ", "")) == 6 and c.final_score >= 0.40
+        }
+        for cand in candidates:
+            c_clean = cand.hsn_code.replace(" ", "")
+            if len(c_clean) == 8 and c_clean[:6] in six_digit_parents:
+                cand.final_score = max(cand.final_score, round(six_digit_parents[c_clean[:6]] * 0.98, 4))
 
-        # Under GIR Rule 6, prefer specific 8-digit tariff items over their parent 6-digit subheadings
-        eight_digit_prefixes = {c.hsn_code[:6] for c in filtered_candidates if len(c.hsn_code) == 8}
+        filtered_candidates = [c for c in candidates if c.final_score >= 0.40]
+
+        # Prefer specific 8-digit tariff items over their parent 6-digit subheadings under GIR 6
+        eight_digit_prefixes = {c.hsn_code.replace(" ", "")[:6] for c in filtered_candidates if len(c.hsn_code.replace(" ", "")) == 8}
         filtered_candidates = [
             c for c in filtered_candidates
-            if not (len(c.hsn_code) == 6 and c.hsn_code in eight_digit_prefixes)
+            if not (len(c.hsn_code.replace(" ", "")) == 6 and c.hsn_code.replace(" ", "") in eight_digit_prefixes)
         ]
 
-        # Sort by final calibrated score descending
+        # Sort descending by final calibrated score
         filtered_candidates.sort(key=lambda c: c.final_score, reverse=True)
 
-        # If strict filtering dropped everything, keep top 1 if > 0.35
         if not filtered_candidates and candidates:
             candidates.sort(key=lambda c: c.final_score, reverse=True)
-            if candidates[0].final_score >= 0.35:
-                filtered_candidates = [candidates[0]]
+            filtered_candidates = [candidates[0]]
 
         return filtered_candidates[:top_k]

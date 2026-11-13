@@ -3,14 +3,15 @@ Layer 4: Smart UI & Ambiguity Decision Engine
 =============================================
 Governs frontend recommendation state:
 1. Auto-Lock High Confidence:
-   If #1 result scores > 0.85 and leads #2 by at least 0.15, auto-lock as direct statutory match.
+   If #1 result scores > 0.85 and leads #2 by at least 0.15, and is an 8-digit leaf,
+   auto-lock as direct statutory match.
 2. True Multi-Chapter Check:
    Only display MULTI-CHAPTER AMBIGUITY banner when count(distinct(chapter)) > 1.
 3. Same-Chapter Variant Check:
    If all top results share the same chapter (count(distinct(chapter)) == 1),
    emit "Select specific variant/specification" with banner type "SAME_CHAPTER_VARIANT".
 4. Material / Chapter Grouping:
-   If results span 2+ chapters, group cards by Chapter (1 card per chapter) to avoid redundant duplicates.
+   If results span 2+ chapters, group cards by Chapter (1 card per chapter).
 5. Descriptive Evaluation Protocol:
    Outputs the structured report:
    - Article understood as
@@ -24,6 +25,7 @@ Governs frontend recommendation state:
 
 import re
 import math
+import json
 import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
@@ -33,6 +35,29 @@ from src.search.hybrid_retrieval import SearchCandidate, HybridHSNEngine
 logger = logging.getLogger(__name__)
 
 
+def compute_classification_confidence(
+    reranker_score: float,
+    score_margin: float,
+    is_8digit_leaf: bool,
+    is_undecided: bool
+) -> float:
+    """
+    Computes a single unified classification confidence value in range [0.0, 1.0].
+    
+    Rules:
+    - If undecided (multiple plausible candidates, multi-chapter ambiguity, or missing attributes),
+      confidence is strictly capped at < 0.50 (cannot report high confidence).
+    - If 8-digit leaf is decided and margin is substantial, confidence scales with reranker score and margin.
+    """
+    if is_undecided or not is_8digit_leaf:
+        base = min(reranker_score * 0.45, 0.45)
+        return round(float(base), 2)
+
+    norm_margin = min(max(score_margin, 0.0), 0.30) / 0.30
+    conf = (reranker_score * 0.70) + (norm_margin * 0.30)
+    return round(float(min(max(conf, 0.0), 1.0)), 2)
+
+
 class UIRecommendationCard(BaseModel):
     option_id: str
     label: str
@@ -40,8 +65,8 @@ class UIRecommendationCard(BaseModel):
     chapter_title: str
     hsn_code: str
     hsn_description: str
-    material_keywords: Optional[str] = ""
-    article_keywords: Optional[str] = ""
+    material_keywords: str = ""
+    article_keywords: str = ""
     score: float
     confidence_pct: float
     is_chapter_representative: bool = False
@@ -71,7 +96,7 @@ class DescriptiveReport(BaseModel):
 class AmbiguityEvaluationResult(BaseModel):
     query: str
     is_ambiguous: bool
-    banner_type: str  # "NONE" | "AUTO_LOCKED" | "SAME_CHAPTER_VARIANT" | "MULTI_CHAPTER_AMBIGUITY"
+    banner_type: str  # "NONE" | "SAME_CHAPTER_VARIANT" | "MULTI_CHAPTER_AMBIGUITY" | "AUTO_LOCKED"
     banner_title: str
     clarification_question: Optional[str] = None
     direct_match: Optional[UIRecommendationCard] = None
@@ -83,38 +108,41 @@ class AmbiguityEvaluationResult(BaseModel):
 
 def disambiguate_candidate_labels(options: List[UIRecommendationCard]) -> None:
     """
-    Ensures that every candidate card has a distinct, readable label derived
-    strictly from statutory file columns (hsn_code, hsn_description, tariff_item_desc).
-    No synthetic or invented trade names are added.
-    Flags duplicate and truncated descriptions for user review.
+    Ensures option labels strictly derive from statutory file text without inventing terms.
+    If multiple options share identical descriptions, flags is_duplicate_description = True
+    and allows user selection by HSN code.
     """
-    from collections import Counter
-    desc_counts = Counter(opt.hsn_description for opt in options)
-    duplicates = {d for d, cnt in desc_counts.items() if cnt > 1}
+    desc_counts: Dict[str, int] = {}
+    for opt in options:
+        d_clean = opt.hsn_description.strip().lower()
+        desc_counts[d_clean] = desc_counts.get(d_clean, 0) + 1
 
     for opt in options:
-        # Check if description appears truncated in the statutory file
-        if opt.hsn_description.endswith(("PROCESSIN", "-", ":", ",")) or len(opt.hsn_description) > 200:
-            opt.is_truncated = True
-
-        if opt.hsn_description in duplicates:
+        d_clean = opt.hsn_description.strip().lower()
+        opt.label = f"[{opt.hsn_code}] {opt.hsn_description}"
+        if desc_counts[d_clean] > 1:
             opt.is_duplicate_description = True
-            opt.label = f"[{opt.hsn_code}] {opt.hsn_description}"
+
+        raw_desc = opt.hsn_description.strip()
+        if raw_desc.endswith(("-", ":", "...", "â€¦")) or len(raw_desc) >= 195:
+            opt.is_truncated = True
 
 
 def format_hsn_code(code: str) -> str:
-    """Formats 8-digit HSN code into standard statutory groups: 'XXXX XX XX'."""
-    clean = str(code).replace(" ", "").strip()
-    if len(clean) == 8:
-        return f"{clean[:4]} {clean[4:6]} {clean[6:]}"
-    elif len(clean) == 6:
-        return f"{clean[:4]} {clean[4:]}"
-    return clean
+    """Formats 4, 6, or 8 digit strings into standard customs format."""
+    c = str(code).replace(" ", "").strip()
+    if len(c) == 8:
+        return f"{c[:4]} {c[4:6]} {c[6:]}"
+    elif len(c) == 6:
+        return f"{c[:4]} {c[4:]}"
+    elif len(c) == 4:
+        return c
+    return code
 
 
 class SmartAmbiguityController:
     """
-    Evaluates candidate predictions and drives Layer 4 Smart UI behavior.
+    Evaluates search candidates and enforces UI & GIR ambiguity guardrails.
     """
 
     def __init__(self, hybrid_engine: Optional[HybridHSNEngine] = None):
@@ -149,18 +177,9 @@ class SmartAmbiguityController:
 
         top1 = candidates[0]
         top2 = candidates[1] if len(candidates) > 1 else None
-        score1 = top1.final_score
-        score2 = top2.final_score if top2 else 0.0
-        score_margin = score1 - score2
 
         # -------------------------------------------------------------
         # Rule 1: Auto-Lock High Confidence Guardrails
-        # Thresholds read dynamically from config/intent_extraction_config.json
-        # Requires:
-        # 1. Reranker score >= auto_lock_reranker_min (config)
-        # 2. Score margin >= auto_lock_margin_min (config)
-        # 3. 8-digit leaf match (length == 8)
-        # 4. No multi-material ambiguity on unstated queries
         # -------------------------------------------------------------
         direct_card, is_locked = self._evaluate_auto_lock(q, candidates)
         if is_locked and direct_card:
@@ -194,20 +213,16 @@ class SmartAmbiguityController:
         ui_options: List[UIRecommendationCard] = []
 
         if distinct_count == 1:
-            # ---------------------------------------------------------
-            # Rule 2: Same-Chapter Variant Check
-            # count(distinct(chapter)) == 1 -> SAME-CHAPTER VARIANT
-            # ---------------------------------------------------------
+            # Same-Chapter Variant
             banner_type = "SAME_CHAPTER_VARIANT"
             banner_title = "SELECT SPECIFIC VARIANT / SPECIFICATION"
             ch_title = top1.chapter_title
             clarif_q = f"Which specification of {q} applies under Chapter {top1.chapter_code} ({ch_title})?"
 
             for idx, c in enumerate(candidates[:6]):
-                label_txt = f"{c.chapter_title} - {c.tariff_item_desc}" if c.tariff_item_desc else c.chapter_title
                 ui_options.append(UIRecommendationCard(
                     option_id=f"OPT_{c.hsn_code}_{idx+1}",
-                    label=label_txt,
+                    label=f"[{format_hsn_code(c.hsn_code)}] {c.statutory_description}",
                     chapter_code=c.chapter_code,
                     chapter_title=c.chapter_title,
                     hsn_code=format_hsn_code(c.hsn_code),
@@ -215,15 +230,12 @@ class SmartAmbiguityController:
                     material_keywords=c.material_keywords,
                     article_keywords=c.article_keywords,
                     score=round(c.final_score * 100.0, 1),
-                    confidence_pct=round(c.final_score * 100.0, 1),
+                    confidence_pct=round(min(c.final_score * 45.0, 45.0), 1),  # Capped because undecided
                     is_chapter_representative=(idx == 0)
                 ))
 
         else:
-            # ---------------------------------------------------------
-            # Rule 3: True Multi-Chapter Check
-            # count(distinct(chapter)) > 1 -> Group by Chapter first
-            # ---------------------------------------------------------
+            # Multi-Chapter Ambiguity
             banner_type = "MULTI_CHAPTER_AMBIGUITY"
             banner_title = "MULTI-CHAPTER AMBIGUITY DETECTED"
             clarif_q = f"What material and construction is the {q}?"
@@ -232,10 +244,9 @@ class SmartAmbiguityController:
             for idx, c in enumerate(candidates):
                 if c.chapter_code not in seen_ch:
                     seen_ch.add(c.chapter_code)
-                    label_txt = f"{c.chapter_title} - {c.tariff_item_desc}" if c.tariff_item_desc else c.chapter_title
                     ui_options.append(UIRecommendationCard(
                         option_id=f"OPT_{c.hsn_code}_{len(ui_options)+1}",
-                        label=label_txt,
+                        label=f"[{format_hsn_code(c.hsn_code)}] {c.statutory_description}",
                         chapter_code=c.chapter_code,
                         chapter_title=c.chapter_title,
                         hsn_code=format_hsn_code(c.hsn_code),
@@ -243,13 +254,13 @@ class SmartAmbiguityController:
                         material_keywords=c.material_keywords,
                         article_keywords=c.article_keywords,
                         score=round(c.final_score * 100.0, 1),
-                        confidence_pct=round(c.final_score * 100.0, 1),
+                        confidence_pct=round(min(c.final_score * 40.0, 40.0), 1),
                         is_chapter_representative=True
                     ))
                 if len(ui_options) >= 5:
                     break
 
-        # Disambiguate identical labels (e.g. 8471 30 10 vs 8471 30 90)
+        # Disambiguate duplicate labels
         disambiguate_candidate_labels(ui_options)
 
         report = self._build_descriptive_report(
@@ -288,7 +299,6 @@ class SmartAmbiguityController:
         margin_min = 0.15
         if config_path.exists():
             try:
-                import json
                 with open(config_path, "r", encoding="utf-8") as f:
                     cfg = json.load(f)
                     thresholds = cfg.get("thresholds", {})
@@ -299,14 +309,10 @@ class SmartAmbiguityController:
 
         clean_code1 = top1.hsn_code.replace(" ", "")
         is_8digit_leaf = (len(clean_code1) == 8)
-        multi_material_keywords = ["bottle", "pipe", "tube", "gloves", "tank", "box", "container"]
-        explicit_materials = ["steel", "stainless", "plastic", "cotton", "glass", "rubber", "iron", "copper", "wood"]
-        is_ambiguous_mat = (
-            any(re.search(rf"\b{a}\b", q.lower()) for a in multi_material_keywords)
-            and not any(re.search(rf"\b{m}\b", q.lower()) for m in explicit_materials)
-        )
 
-        if score1 >= reranker_min and (top2 is None or score_margin >= margin_min) and is_8digit_leaf and not is_ambiguous_mat:
+        # Candidate is locked only if score meets threshold, margin meets threshold, is 8-digit leaf
+        if score1 >= reranker_min and (top2 is None or score_margin >= margin_min) and is_8digit_leaf:
+            locked_conf = compute_classification_confidence(score1, score_margin, is_8digit_leaf=True, is_undecided=False)
             direct_card = UIRecommendationCard(
                 option_id=f"OPT_{top1.hsn_code}_AUTO",
                 label=f"[{format_hsn_code(top1.hsn_code)}] {top1.statutory_description}",
@@ -317,7 +323,7 @@ class SmartAmbiguityController:
                 material_keywords=top1.material_keywords,
                 article_keywords=top1.article_keywords,
                 score=round(score1 * 100.0, 1),
-                confidence_pct=round(score1 * 100.0, 1),
+                confidence_pct=round(locked_conf * 100.0, 1),
                 is_chapter_representative=True
             )
             return direct_card, True
@@ -335,28 +341,40 @@ class SmartAmbiguityController:
         Builds the structured descriptive report complying strictly with user requirements.
         """
         q_lower = query.lower()
+        score1 = top1.final_score
+        score2 = top2.final_score if top2 else 0.0
+        score_margin = score1 - score2
+        clean_code1 = top1.hsn_code.replace(" ", "")
+        is_8digit_leaf = (len(clean_code1) == 8)
 
-        # 1. Article understood as
+        calculated_conf = compute_classification_confidence(
+            reranker_score=score1,
+            score_margin=score_margin,
+            is_8digit_leaf=is_8digit_leaf,
+            is_undecided=is_ambiguous
+        )
+
+        # 1. Article understood as (Generic statutory derivation)
         article_desc = self._synthesize_article_understanding(q_lower, top1)
 
         # 2. Recommended HSN
         if not is_ambiguous:
             rec_hsn = f"{format_hsn_code(top1.hsn_code)} - {top1.statutory_description}"
-            conf_level = "High" if top1.final_score >= 0.85 else "Medium"
+            conf_level = "High" if calculated_conf >= 0.85 else "Medium"
             reasoning = (
-                f"The product intent unequivocally aligns with {top1.chapter_title} (Chapter {top1.chapter_code}, "
-                f"Heading {top1.heading_4digit}). The specific form '{top1.tariff_item_desc}' provides the most "
-                f"specific statutory classification under GIR 1 & GIR 3(a), clearly distinguishing it from generic residual lines."
+                f"The product intent aligns decisively with {top1.chapter_title} (Chapter {top1.chapter_code}, "
+                f"Heading {top1.heading_4digit}). The 8-digit tariff item '{top1.tariff_item_desc}' provides specific "
+                f"classification under GIR 1 and GIR 6, leading alternatives by a decisive score margin."
             )
             missing_info = []
         else:
             rec_hsn = "Needs confirmation"
-            conf_level = "Medium" if len({c.chapter_code for c in candidates}) == 1 else "Low"
+            conf_level = "Medium" if calculated_conf >= 0.35 else "Low"
             distinct_ch_names = list(dict.fromkeys(f"Chapter {c.chapter_code} ({c.chapter_title})" for c in candidates[:4]))
             reasoning = (
-                f"The input '{query}' is commercially valid but lacks specific technical bifurcation parameters. "
-                f"Candidates span {', '.join(distinct_ch_names)}. Classification cannot be forced without customer "
-                f"selection of the exact constituent material or specification."
+                f"The input '{query}' is commercially recognized but cannot be locked to a single 8-digit tariff item "
+                f"without user selection. Candidates span {', '.join(distinct_ch_names)}. "
+                f"Classification requires selecting the specific sub-item variant."
             )
             missing_info = self._derive_missing_info(q_lower, candidates)
 
@@ -364,12 +382,8 @@ class SmartAmbiguityController:
         plausible_list: List[PlausibleCandidate] = []
         alt_cands = candidates[1:4] if not is_ambiguous else candidates[:4]
         for cand in alt_cands:
-            why_apply = f"Matches commodity function under Chapter {cand.chapter_code} ({cand.heading_4digit_desc[:50]}...)"
-            why_not = f"Requires confirmation that product is specifically '{cand.tariff_item_desc}' rather than other variants."
-            if cand.chapter_code == "39" and "steel" in q_lower:
-                why_not = "Excluded if the item is manufactured from stainless steel or iron."
-            elif cand.chapter_code == "73" and "plastic" in q_lower:
-                why_not = "Excluded if the item is made of plastic."
+            why_apply = f"Matches commodity description under Chapter {cand.chapter_code} ({cand.heading_4digit_desc[:50]}...)"
+            why_not = f"Requires confirmation that product matches specific tariff item [{format_hsn_code(cand.hsn_code)}] '{cand.tariff_item_desc}' rather than alternative subheadings."
 
             plausible_list.append(PlausibleCandidate(
                 hsn_code=format_hsn_code(cand.hsn_code),
@@ -378,7 +392,6 @@ class SmartAmbiguityController:
                 why_it_may_not=why_not
             ))
 
-        # Format raw markdown/text
         md_lines = [
             f"Article understood as: {article_desc}\n",
             f"Recommended HSN: {rec_hsn}",
@@ -399,7 +412,7 @@ class SmartAmbiguityController:
             article_understood_as=article_desc,
             recommended_hsn=rec_hsn,
             confidence=conf_level,
-            confidence_score=round(top1.final_score * 100.0, 1),
+            confidence_score=round(calculated_conf * 100.0, 1),
             reasoning=reasoning,
             other_plausible_candidates=plausible_list,
             missing_information=missing_info,
@@ -407,39 +420,28 @@ class SmartAmbiguityController:
         )
 
     def _synthesize_article_understanding(self, q: str, top: SearchCandidate) -> str:
-        """Generates clear, intent-grounded 1-2 sentence understanding."""
-        if "bottle" in q:
-            if "steel" in q or "stainless" in q:
-                return "A finished stainless steel drinking container or flask, intended for personal hydration, kitchen, or household liquid transport."
-            elif "insulated" in q:
-                return "A finished insulated drinking bottle manufactured with double-wall thermal retention, designed for temperature-controlled liquid storage."
-            return "A portable finished liquid bottle designed for holding drinking water or beverages for everyday consumer use."
-        elif "pipe" in q or "tube" in q:
-            if "steel" in q or "stainless" in q:
-                return "A hollow structural conduit or industrial pipe manufactured from stainless steel, designed for fluid conveyance or engineering applications."
-            return "A cylindrical conduit designed for liquid, gas, or electrical conveyance, whose statutory classification depends strictly on its material."
-        elif "shirt" in q or "t-shirt" in q:
-            if "knit" in q:
-                return "A knitted garment worn on the upper body, classified under Chapter 61."
-            elif "woven" in q:
-                return "A woven garment worn on the upper body, classified under Chapter 62."
-            return "An article of apparel worn on the upper body, typically made of cotton, bifurcating between knitted (Ch 61) and woven (Ch 62) construction."
-        elif "pump" in q:
-            return "A mechanical device designed to move liquids by centrifugal displacement, classified under industrial machinery (Chapter 84)."
-        return f"A finished commercial article identified as '{q}', whose primary function relates to {top.chapter_title} (Chapter {top.chapter_code})."
+        """Generic statutory derivation of article understanding from candidate fields without product hardcoding."""
+        statutory_desc = (top.statutory_description or top.tariff_item_desc or "").strip()
+        if top.heading_4digit_desc and top.heading_4digit_desc.lower() not in statutory_desc.lower():
+            return f"An article or commodity understood under '{top.heading_4digit_desc}' ({top.chapter_title}, Chapter {top.chapter_code}), corresponding to commercial query '{q}'."
+        return f"A finished commercial commodity described as '{statutory_desc}' under {top.chapter_title} (Chapter {top.chapter_code}, Heading {top.heading_4digit})."
 
     def _derive_missing_info(self, q: str, candidates: List[SearchCandidate]) -> List[str]:
-        """Derives exact missing parameters needed to finalize classification."""
+        """Generic derivation of missing classification parameters across competing candidate chapters/headings."""
         missing = []
-        distinct_ch = {c.chapter_code for c in candidates}
-        if "61" in distinct_ch and "62" in distinct_ch:
-            missing.append("Fabric construction: whether the shirt is knitted/crocheted (Chapter 61) or woven (Chapter 62)")
-        if "39" in distinct_ch and "73" in distinct_ch:
-            missing.append("Constituent material: whether manufactured of plastics/polymer (Chapter 39) or stainless steel/iron (Chapter 73)")
-        if any(c.hsn_code.startswith("392330") for c in candidates):
-            missing.append("Thermal insulation: whether the bottle is standard non-insulated plastic (3923 30 90) or insulated ware (3923 30 10)")
+        distinct_ch = sorted(list({c.chapter_code for c in candidates}))
+        if len(distinct_ch) > 1:
+            ch_names = [f"Chapter {ch} ({next(c.chapter_title for c in candidates if c.chapter_code == ch)})" for ch in distinct_ch]
+            missing.append(f"Constituent material / physical character: query spans multiple statutory chapters ({'; '.join(ch_names)})")
+
+        distinct_h4 = sorted(list({c.heading_4digit for c in candidates}))
+        if len(distinct_ch) == 1 and len(distinct_h4) > 1:
+            h4_names = [f"Heading {h} ({next(c.heading_4digit_desc for c in candidates if c.heading_4digit == h)})" for h in distinct_h4]
+            missing.append(f"Heading classification: query spans multiple 4-digit headings ({'; '.join(h4_names)})")
+
         if not missing:
-            missing.append(f"Specific sub-item variant under Chapter {candidates[0].chapter_code} ({candidates[0].chapter_title})")
+            ch0 = candidates[0]
+            missing.append(f"Specific sub-item variant / specification under Chapter {ch0.chapter_code} ({ch0.chapter_title})")
         return missing
 
 

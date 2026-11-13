@@ -1234,11 +1234,14 @@ class HSNRAGApplicationLayer:
         from pathlib import Path
 
         root_dir = Path(__file__).resolve().parent.parent.parent
-        parquet_path = root_dir / "data" / "tariff_hierarchy_map.parquet"
+        parquet_path = root_dir / "data" / "enriched_master_hsn.parquet"
         if not parquet_path.exists():
-            parquet_path = root_dir / "data" / "tariff_master.parquet"
+            parquet_path = root_dir / "data" / "Master_copy_hsn.parquet"
+        if not parquet_path.exists():
+            parquet_path = root_dir / "data" / "tariff_hierarchy_map.parquet"
 
         df = pd.read_parquet(parquet_path)
+        VALID_MASTER_CHAPTERS = {"19", "39", "61", "62", "73", "84", "85", "87", "94"}
 
         desc_map: Dict[str, str] = {}
         rate_map: Dict[str, Optional[float]] = {}
@@ -1250,8 +1253,10 @@ class HSNRAGApplicationLayer:
 
         for idx, row in enumerate(df.to_dict(orient="records")):
             c = str(row["hsn_code"]).strip()
-            d = str(row.get("description") or "").strip()
-            ch = str(row.get("chapter") or c[:2]).strip().zfill(2)
+            d = str(row.get("statutory_description") or row.get("description") or "").strip()
+            ch = str(row.get("chapter_code") or row.get("chapter") or c[:2]).strip().zfill(2)
+            if ch not in VALID_MASTER_CHAPTERS:
+                continue
             toks = set(re.findall(r"\b[a-z0-9]{2,}\b", d.lower()))
             stems = {w.rstrip("s") if len(w) > 3 else w for w in toks if w.isalpha()}
             tariff_vocab_stems.update(stems)
@@ -1646,11 +1651,15 @@ class HSNRAGApplicationLayer:
             if h not in priority_headings:
                 priority_headings.append(h)
 
+        VALID_MASTER_CHAPTERS = {"19", "39", "61", "62", "73", "84", "85", "87", "94"}
         if not target_chapters and priority_headings:
             target_chapters.append(priority_headings[0][:2])
 
+        target_chapters = [c for c in target_chapters if c in VALID_MASTER_CHAPTERS]
+        priority_headings = [h for h in priority_headings if h[:2] in VALID_MASTER_CHAPTERS]
+
         primary_ch = target_chapters[0] if target_chapters else None
-        chapter_label = self.OFFICIAL_CHAPTER_01_99_MAP.get(primary_ch, "Dynamic Tariff Schedule (Master Copy: Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94)") if primary_ch else "Dynamic Tariff Schedule (Master Copy: Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94)"
+        chapter_label = self.OFFICIAL_CHAPTER_01_99_MAP.get(primary_ch, "Out of Schedule (Master file covers Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94)") if primary_ch else "Out of Schedule (Master file covers Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94)"
 
         return {
             "chapter_code": primary_ch,
