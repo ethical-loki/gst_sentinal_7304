@@ -283,95 +283,29 @@ class TestDoubleDeterministicLLMClient(BaseLLMClient):
                 max_overlap = overlap
                 best_heading_text = h_desc
 
-        # Trade concept to statutory customs category resolution
-        phys_prod = ""
-        customs_terms = []
+        # Generic trade concept to statutory heading resolution from context headings
+        phys_prod = " ".join([w for w in query.split() if w not in STOPWORDS][:3]) or query
         candidate_terms = []
         unstated_attrs = []
 
-        if has_any(["laptop", "leptop", "notebook", "macbook", "thinkpad", "chromebook", "personal computer", "desktop pc", "data processing"]):
-            phys_prod = "portable automatic data processing machine"
-            customs_terms.extend(["portable automatic data processing machines", "automatic data processing machines"])
-            unstated_attrs.extend(["weight (under or over 10 kg)", "display screen size"])
-        elif has_any(["tshirt", "t-shirt", "t shirt", "tee", "baniyan", "singlet", "polo shirt", "tshrt"]):
-            phys_prod = "t-shirt"
-            customs_terms.append("t-shirts")
-            if not construction:
-                unstated_attrs.append("construction (knitted or crocheted vs woven)")
-        elif has_any(["shirt", "kurta", "dress shirt"]):
-            phys_prod = "shirt"
-            customs_terms.append("shirts")
-            if not construction:
-                unstated_attrs.append("construction (knitted vs woven)")
-        elif has_any(["bottle", "botle", "botal", "flask", "tumbler", "sipper", "carboy", "thermosteel", "tupperware"]):
-            phys_prod = "bottle"
-            if mat == "plastics":
-                customs_terms.extend(["carboys", "bottles"])
-            elif mat in ("steel", "stainless steel"):
-                customs_terms.extend(["table kitchen or other household articles", "household articles"])
-            else:
-                customs_terms.append("bottles")
-            if not construction:
-                unstated_attrs.append("thermal insulation status (vacuum insulated vs non-insulated)")
-        elif has_any(["pipe", "ppe", "tube", "tubing", "conduit", "hose"]):
-            phys_prod = "pipe"
-            customs_terms.append("tubes and pipes")
-            if not construction and mat in ("steel", "stainless steel"):
-                unstated_attrs.append("manufacturing process (seamless vs welded)")
-        elif has_any(["biscuit", "cookie", "cracker", "wafer", "wafers", "cake", "crispbread", "bread", "pastry", "parle-g"]):
-            phys_prod = "baker wares"
-            customs_terms.extend(["biscuit", "bread", "pastry", "cakes"])
-        elif has_any(["pump", "submersible", "monoblock"]):
-            phys_prod = "pump"
-            customs_terms.extend(["pumps for liquids", "pumps"])
-        elif has_any(["fastener", "fasteners", "nut bolt", "screw", "screws", "bolts", "nuts"]):
-            phys_prod = "fasteners"
-            customs_terms.extend(["screws", "bolts", "nuts"])
-        elif has_any(["utensil", "utensils", "cookware", "kitchenware", "kadai", "bartan", "thali", "pan", "cooker"]):
-            phys_prod = "household articles"
-            customs_terms.extend(["table kitchen or other household articles", "household articles"])
-        elif has_any(["battery", "accumulator", "powerbank", "batri", "batry"]):
-            phys_prod = "electric accumulator"
-            customs_terms.append("accumulators")
-        elif has_any(["car", "vehicle", "vechile", "scooter", "motorcycle", "truck"]):
-            phys_prod = "motor vehicle"
-            customs_terms.append("motor vehicles")
-        elif has_any(["smartphone", "iphone", "pixel", "mobile phone", "telephone"]):
-            phys_prod = "telephone set"
-            customs_terms.append("telephone sets")
-        elif has_any(["tank", "reservoir", "sintex"]):
-            phys_prod = "reservoir or tank"
-            customs_terms.append("reservoirs")
-
-        # Combine with heading-derived terms and material/construction
-        candidate_terms.extend(customs_terms)
-        if mat:
-            candidate_terms.append(mat)
-        if construction:
-            candidate_terms.append(construction)
-
-        # If still no terms, pull from token overlap with context headings
-        if not candidate_terms and best_heading_text:
+        # Derive candidate terms directly from overlapping context headings
+        if best_heading_text:
             phrases = [p.strip().lower() for p in re.split(r"[,;:\-]", best_heading_text) if len(p.strip()) > 3]
             for p in phrases[:3]:
                 w_list = [w for w in p.split() if w not in STOPWORDS]
                 if 1 <= len(w_list) <= 4:
                     candidate_terms.append(" ".join(w_list[:4]))
 
-        # Identify required unstated attributes generically
-        if not mat:
-            unstated_attrs.append("constituent material (e.g. plastics, steel, or textile)")
-        if not construction:
-            if has_any(["shirt", "tshirt", "t-shirt", "vest", "trouser", "garment", "suit", "jacket", "tee"]):
-                unstated_attrs.append("construction (knitted or crocheted vs woven)")
-            elif has_any(["bottle", "botle", "botal", "flask", "tumbler", "ware"]):
-                unstated_attrs.append("thermal insulation status (vacuum insulated vs non-insulated)")
-            elif has_any(["pipe", "ppe", "tube", "tubing"]):
-                unstated_attrs.append("manufacturing process (seamless vs welded)")
+        if mat:
+            candidate_terms.append(mat)
+        else:
+            unstated_attrs.append("constituent material")
 
-        # Generic physical product deduction fallback
-        if not phys_prod:
-            phys_prod = " ".join([w for w in query.split() if w not in STOPWORDS][:3]) or query
+        if construction:
+            candidate_terms.append(construction)
+        else:
+            unstated_attrs.append("construction / manufacturing process")
+
         if not candidate_terms:
             candidate_terms = [w for w in q_tokens if len(w) >= 3][:3]
 
@@ -380,7 +314,7 @@ class TestDoubleDeterministicLLMClient(BaseLLMClient):
             "material": mat,
             "construction": construction,
             "intended_use": None,
-            "search_terms": list(dict.fromkeys(candidate_terms))[:8],
+            "search_terms": list(dict.fromkeys(candidate_terms))[:4],
             "unstated_attributes": unstated_attrs,
             "reading_confidence": "clear" if max_overlap >= 1 or mat or phys_prod else "partial"
         })
@@ -835,8 +769,12 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
         if not t_clean:
             return False, "empty_term"
 
-        # Check 1: Exact phrase match
-        if t_clean in self.grounding_phrases:
+        # Check 1: Exact phrase match (with singular/plural match)
+        if (
+            t_clean in self.grounding_phrases
+            or f"{t_clean}s" in self.grounding_phrases
+            or (t_clean.endswith("s") and t_clean[:-1] in self.grounding_phrases)
+        ):
             return True, "exact_phrase_match"
 
         # Check 2: Row-level co-occurrence
@@ -844,13 +782,20 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
         if not words:
             return False, "no_content_words"
 
-        # Check if each word exists in vocabulary
+        # Check if each word exists in vocabulary (with singular/plural stem fallback)
+        word_row_sets = []
         for w in words:
-            if w not in self.word_to_rows:
+            if w in self.word_to_rows:
+                word_row_sets.append(self.word_to_rows[w])
+            elif f"{w}s" in self.word_to_rows:
+                word_row_sets.append(self.word_to_rows[f"{w}s"])
+            elif w.endswith("s") and w[:-1] in self.word_to_rows:
+                word_row_sets.append(self.word_to_rows[w[:-1]])
+            else:
                 return False, f"word_not_in_tariff_vocabulary: '{w}'"
 
         # Intersect row occurrences
-        common_rows = set.intersection(*(self.word_to_rows[w] for w in words))
+        common_rows = set.intersection(*word_row_sets)
         if common_rows:
             return True, f"row_cooccurrence_count_{len(common_rows)}"
 
@@ -978,16 +923,16 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
                     )
 
         # Check 3: AMBIGUOUS_MATERIAL
-        multi_material_articles = {"bottle", "bottles", "botal", "flask", "flasks", "pipe", "pipes", "tube", "tubes", "gloves", "tank", "box", "container"}
-        has_multi = any(re.search(rf"\b{re.escape(a)}\b", q_norm) for a in multi_material_articles)
+        # Generic: If top statutory headings retrieved from the schedule span multiple chapters and material is unstated
+        heading_chaps = {h.split("|")[0].strip() for h in (top_headings or [])[:10] if "|" in h}
         mat_in_query = False
         if intent.material:
             mat_words = [w for w in re.findall(r"\b[a-zA-Z]{3,}\b", intent.material.lower()) if w not in ("and", "the", "for", "with")]
             mat_in_query = any(w in q_norm for w in mat_words)
-        if has_multi and not mat_in_query:
+        if len(heading_chaps) > 1 and not mat_in_query and ("material" in (intent.unstated_attributes or []) or not intent.material):
             return "AMBIGUOUS_MATERIAL", (
                 f"Statutory classification depends on constituent material and construction. Product '{raw_query}' "
-                f"exists across multiple chapters (e.g. Chapter 39 Plastics vs Chapter 73 Steel). Material is required."
+                f"spans multiple statutory chapters ({'; '.join(list(heading_chaps)[:3])}). Material is required."
             )
 
         # Check 4: ALL TERMS DROPPED RULE
@@ -1145,13 +1090,28 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
         if grounded_fields.get("material"):
             m_cand = str(grounded_fields["material"]).strip()
             # Verify if user query explicitly mentions this material
-            if any(w in raw_query.lower() for w in tokenize(m_cand)):
+            if any(w.rstrip("s") in {tok.rstrip("s") for tok in tokenize(raw_query.lower())} for w in tokenize(m_cand)):
                 stated_material = m_cand
                 synth_parts.append(f"Material: {stated_material}")
             else:
                 # User did not state this material; record as unstated attribute rather than asserting it
                 if "material" not in intent_output.unstated_attributes:
                     intent_output.unstated_attributes.append("material")
+
+        # If stated material was not resolved from LLM field (e.g. LLM produced 'polystyrene' for 'plastic pipe'),
+        # verify if any query content token is a grounded statutory material term matching chapter titles
+        if not stated_material:
+            for q_tok in tokenize(raw_query.lower()):
+                if q_tok not in STOPWORDS:
+                    is_g, _ = self._is_term_grounded(q_tok)
+                    if is_g:
+                        for ch in self.chapter_titles:
+                            if q_tok.rstrip("s") in {w.rstrip("s") for w in tokenize(ch.lower())}:
+                                stated_material = q_tok
+                                synth_parts.append(f"Material: {stated_material}")
+                                break
+                    if stated_material:
+                        break
 
         if grounded_fields.get("construction"):
             synth_parts.append(f"Construction: {grounded_fields['construction']}")

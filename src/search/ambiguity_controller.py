@@ -30,7 +30,7 @@ import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple, Set
 from pydantic import BaseModel, Field
-from src.search.hybrid_retrieval import SearchCandidate, HybridHSNEngine, tokenize
+from src.search.hybrid_retrieval import SearchCandidate, HybridHSNEngine, tokenize, STOPWORDS
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +154,8 @@ class SmartAmbiguityController:
         self,
         user_query: str = "",
         candidates: Optional[List[SearchCandidate]] = None,
-        query: Optional[str] = None
+        query: Optional[str] = None,
+        intent_material: Optional[str] = None
     ) -> AmbiguityEvaluationResult:
         q = (query or user_query or "").strip()
         if candidates is None:
@@ -189,14 +190,25 @@ class SmartAmbiguityController:
         top2 = candidates[1] if len(candidates) > 1 else None
 
         # -------------------------------------------------------------
-        # Generic Material Resolution Protocol (No arbitrary multipliers)
-        # Extract material terms from query/intent against Master file vocabulary
+        # Generic Material Resolution Protocol (No product-specific logic)
+        # Material terms come directly from the Intent Extraction Stage
         # -------------------------------------------------------------
-        mat_tokens = self._extract_material_terms(q)
+        mat_tokens = set()
+        if intent_material:
+            mat_tokens = {w.rstrip("s") for w in tokenize(intent_material.lower()) if w not in STOPWORDS}
+        else:
+            try:
+                from src.nlp.intent_extractor import IntentExtractor
+                extractor = IntentExtractor.get_instance()
+                intent_res = extractor.extract_intent(q, use_cache=False)
+                if intent_res.material:
+                    mat_tokens = {w.rstrip("s") for w in tokenize(intent_res.material.lower()) if w not in STOPWORDS}
+            except Exception:
+                pass
 
         if mat_tokens:
             material_filtered_candidates = []
-            # First check if any candidate's chapter title directly matches the material
+            # Match material terms against chapter titles and candidate keywords
             chap_title_matches = [
                 c for c in candidates
                 if bool(mat_tokens.intersection({w.rstrip("s") for w in tokenize(c.chapter_title)}))
@@ -217,22 +229,33 @@ class SmartAmbiguityController:
                     candidates = material_filtered_candidates
                     top1 = candidates[0]
                     top2 = candidates[1] if len(candidates) > 1 else None
-        # Identify truly competing candidates
-        competing_candidates = [
-            c for c in candidates
-            if c.final_score >= 0.20 and (top1.final_score - c.final_score) <= 0.15 and (c.final_score / max(0.001, top1.final_score)) >= 0.75
-        ]
-        if not mat_tokens:
-            # If query did not specify material, check if alternative chapters match a multi-material commodity noun
-            q_nouns = set(tokenize(q.lower())).intersection(self.COMMODITY_ARTICLE_NOUNS)
-            if q_nouns:
+                else:
+                    candidates = material_filtered_candidates
+        else:
+            # Query did not state constituent material: check if competing candidates span multiple chapters
+            query_content = {w.rstrip("s") for w in tokenize(q.lower()) if w not in STOPWORDS}
+            if query_content:
+                multichap = []
+                seen_ch = set()
                 for c in candidates:
-                    if c.chapter_code != top1.chapter_code and c.final_score >= 0.50:
+                    if c.final_score >= 0.50:
                         cand_art_stems = {w.rstrip("s") for w in tokenize(f"{c.article_keywords} {c.statutory_description}")}
-                        if any(n.rstrip("s") in cand_art_stems for n in q_nouns):
-                            if c not in competing_candidates:
-                                competing_candidates.append(c)
+                        if cand_art_stems.intersection(query_content):
+                            if c.chapter_code not in seen_ch:
+                                seen_ch.add(c.chapter_code)
+                                multichap.append(c)
+                if len(seen_ch) > 1:
+                    candidates = multichap
+                    competing_candidates = multichap
+                    top1 = candidates[0]
+                    top2 = candidates[1] if len(candidates) > 1 else None
 
+        # Identify truly competing candidates if not already set by multi-chapter unstated material
+        if "competing_candidates" not in locals():
+            competing_candidates = [
+                c for c in candidates
+                if c.final_score >= 0.20 and (top1.final_score - c.final_score) <= 0.15 and (c.final_score / max(0.001, top1.final_score)) >= 0.75
+            ]
         if not competing_candidates:
             competing_candidates = [top1]
 
@@ -364,40 +387,6 @@ class SmartAmbiguityController:
         )
 
     evaluate_ambiguity = evaluate
-
-    COMMODITY_ARTICLE_NOUNS = {
-        "bottle", "bottles", "pipe", "pipes", "tube", "tubes", "machine", "machines",
-        "flask", "flasks", "water", "grade", "resin", "beverage", "beverages", "food",
-        "liquid", "gas", "oil", "fluid", "box", "boxes", "case", "cases", "container",
-        "containers", "apparatus", "equipment", "tool", "tools", "fitting", "fittings",
-        "valve", "valves", "pump", "pumps", "motor", "motors", "engine", "engines",
-        "vehicle", "vehicles", "part", "parts", "piece", "pieces", "unit", "units",
-        "item", "items", "commodity", "commodities", "product", "products", "good", "goods"
-    }
-
-    def _get_all_material_vocab(self) -> Set[str]:
-        if not hasattr(self, "_cached_mat_vocab"):
-            vocab = set()
-            for row in self.engine.records:
-                mat_str = row.get("material_keywords") or ""
-                for tok in tokenize(mat_str):
-                    tok_low = tok.lower().rstrip("s")
-                    if (
-                        len(tok_low) > 2
-                        and tok_low not in self.COMMODITY_ARTICLE_NOUNS
-                        and tok_low not in (
-                            "and", "the", "for", "with", "other", "not", "elsewhere",
-                            "specified", "article", "articles", "parts", "goods", "kind", "used"
-                        )
-                    ):
-                        vocab.add(tok_low)
-            self._cached_mat_vocab = vocab
-        return self._cached_mat_vocab
-
-    def _extract_material_terms(self, text: str) -> Set[str]:
-        vocab = self._get_all_material_vocab()
-        q_tokens = {w.lower().rstrip("s") for w in tokenize(text)}
-        return q_tokens.intersection(vocab)
 
     def _evaluate_auto_lock(self, q: str, candidates: List[SearchCandidate]) -> Tuple[Optional[UIRecommendationCard], bool]:
         """Evaluates auto-lock guardrails (reranker >= 0.85, margin >= 0.15, 8-digit leaf, no material ambiguity)."""
