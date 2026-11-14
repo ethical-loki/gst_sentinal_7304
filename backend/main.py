@@ -1074,6 +1074,62 @@ async def submit_hsn_v2_feedback(payload: dict):
     return {"status": "recorded", "feedback_id": fid}
 
 
+_multi_candidate_engine = None
+
+
+def get_multi_candidate_engine():
+    global _multi_candidate_engine
+    if _multi_candidate_engine is None:
+        from src.ml.multi_candidate_engine import MultiCandidateEngine
+        v2 = get_hsn_v2_pipeline()
+        if v2 is not None:
+            _multi_candidate_engine = MultiCandidateEngine(
+                hybrid_engine=v2.hybrid_engine,
+                relevance_classifier=v2.classifier,
+                statutory_index=v2.statutory_index,
+                feedback_collector=v2.feedback,
+            )
+        else:
+            _multi_candidate_engine = MultiCandidateEngine()
+    return _multi_candidate_engine
+
+
+@app.post("/api/v1/hsn-v2/classify-adaptive")
+async def classify_hsn_v2_adaptive(payload: dict):
+    product = (payload.get("product") or payload.get("query") or payload.get("description") or "").strip()
+    if not product:
+        raise HTTPException(status_code=400, detail="Product description is required.")
+    engine = get_multi_candidate_engine()
+    return engine.classify_adaptive(
+        description=product,
+        confirmed_attributes=payload.get("confirmed_attributes"),
+        page=int(payload.get("page") or 1),
+        page_size=int(payload["page_size"]) if payload.get("page_size") is not None else 20,
+        exhaustive=bool(payload.get("exhaustive", False)),
+    )
+
+
+@app.post("/api/v1/hsn-v2/clarify-adaptive")
+async def clarify_hsn_v2_adaptive(payload: dict):
+    orig = (
+        payload.get("original_description")
+        or payload.get("description")
+        or payload.get("product")
+        or payload.get("query")
+        or ""
+    ).strip()
+    if not orig:
+        raise HTTPException(status_code=400, detail="original_description is required.")
+    engine = get_multi_candidate_engine()
+    return engine.clarify_and_refine(
+        original_description=orig,
+        previous_confirmed=payload.get("previous_confirmed") or payload.get("confirmed_attributes"),
+        new_answers=payload.get("new_answers") or {},
+        page=int(payload.get("page") or 1),
+        page_size=int(payload["page_size"]) if payload.get("page_size") is not None else 20,
+    )
+
+
 @app.post("/api/v1/hsn-rag/step2-vector-search")
 async def step2_vector_search_endpoint(request: Request):
     """

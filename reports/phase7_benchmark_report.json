@@ -1,0 +1,114 @@
+{
+  "total_cases": 51,
+  "fair_comparison_51_cases": {
+    "phase6_v2": {
+      "strict_passed": 35,
+      "strict_pass_rate": 0.6863,
+      "clarification_aware_passed": 35,
+      "clarification_aware_pass_rate": 0.6863,
+      "prediction_modes": {
+        "CHAPTER_ONLY_CLARIFY": 14,
+        "INSUFFICIENT_INFORMATION": 8,
+        "CLARIFY_AMBIGUOUS": 18,
+        "EXACT_HSN": 2,
+        "OUT_OF_SCHEDULE": 9
+      },
+      "latency_mean_ms": 3192.09,
+      "latency_p95_ms": 5058.17
+    },
+    "phase7_8_adaptive": {
+      "strict_passed": 44,
+      "strict_pass_rate": 0.8627,
+      "clarification_aware_passed": 44,
+      "clarification_aware_pass_rate": 0.8627,
+      "prediction_modes": {
+        "CHAPTER_ONLY_CLARIFY": 15,
+        "MULTIPLE_CANDIDATES": 21,
+        "INSUFFICIENT_INFORMATION": 6,
+        "OUT_OF_SCHEDULE": 9
+      },
+      "latency_mean_ms": 16553.35,
+      "latency_p95_ms": 34375.14
+    }
+  },
+  "metrics": {
+    "candidate_recall_at_pool_active": 0.8837,
+    "exhaustive_reference_recall_5q": "4/4",
+    "candidate_precision_mean": 0.8211,
+    "alternative_coverage_mean_candidates": 65.0,
+    "duplicate_rate_mean": 0.1694,
+    "discovery_completeness_rate": 0.8627,
+    "chapter_prediction_accuracy": "15/15",
+    "multiple_candidate_coverage": "21/21",
+    "clarification_necessity_accuracy": "36/36",
+    "out_of_schedule_accuracy": "8/8",
+    "latency_mean_ms": 16553.35,
+    "latency_p95_ms": 34375.14
+  },
+  "exact_hsn_unseen_evaluation": {
+    "total_unseen_cases": 35,
+    "detailed_cases": 23,
+    "detailed_exact_hsn_accuracy_given_exact": 0.0,
+    "detailed_exact_hsn_overall_accuracy": 0.0,
+    "detailed_exact_hsn_coverage": 0.0,
+    "detailed_abstention_rate": 0.0,
+    "detailed_chapter_accuracy": 0.1739,
+    "detailed_candidate_pool_recall": 1.0,
+    "clarification_cases": 12,
+    "clarification_before_exact_hsn_hits": "0/12",
+    "clarification_after_exact_hsn_hits": "0/12",
+    "clarification_before_pool_recall": "12/12",
+    "clarification_after_pool_recall": "12/12"
+  },
+  "by_category": {
+    "abbreviated": {
+      "total": 7,
+      "strict_passed": 4,
+      "aware_passed": 4,
+      "strict_pass_rate": 0.5714,
+      "aware_pass_rate": 0.5714
+    },
+    "complete_vs_component": {
+      "total": 6,
+      "strict_passed": 6,
+      "aware_passed": 6,
+      "strict_pass_rate": 1.0,
+      "aware_pass_rate": 1.0
+    },
+    "inactive_chapter": {
+      "total": 8,
+      "strict_passed": 8,
+      "aware_passed": 8,
+      "strict_pass_rate": 1.0,
+      "aware_pass_rate": 1.0
+    },
+    "long_industrial": {
+      "total": 8,
+      "strict_passed": 8,
+      "aware_passed": 8,
+      "strict_pass_rate": 1.0,
+      "aware_pass_rate": 1.0
+    },
+    "missing_material": {
+      "total": 6,
+      "strict_passed": 5,
+      "aware_passed": 5,
+      "strict_pass_rate": 0.8333,
+      "aware_pass_rate": 0.8333
+    },
+    "short": {
+      "total": 8,
+      "strict_passed": 5,
+      "aware_passed": 5,
+      "strict_pass_rate": 0.625,
+      "aware_pass_rate": 0.625
+    },
+    "similar_different_construction": {
+      "total": 8,
+      "strict_passed": 8,
+      "aware_passed": 8,
+      "strict_pass_rate": 1.0,
+      "aware_pass_rate": 1.0
+    }
+  }
+}

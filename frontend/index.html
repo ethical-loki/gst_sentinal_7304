@@ -5273,20 +5273,153 @@
                             ${sepAttrs}
                             ${clarHtml}
                             ${v2.selected_hsn ? `
-                            <div style="margin-top:8px; display:flex; justify-content:flex-end;">
+                            <div style="margin-top:8px; display:flex; justify-content:flex-end; gap:8px;">
+                                <button onclick="window.runAdaptiveDiscovery(1)"
+                                    style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.45); color:#7dd3fc; padding:4px 10px; border-radius:6px; font-size:0.72rem; cursor:pointer; font-weight:700;">
+                                    🔍 Adaptive Multi-Candidate Discovery
+                                </button>
                                 <button onclick="window.flagV2Prediction()"
                                     style="background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.4); color:#fda4af; padding:4px 10px; border-radius:6px; font-size:0.72rem; cursor:pointer; font-weight:700;">
                                     ⚑ Flag Incorrect Prediction
                                 </button>
-                            </div>` : ''}
+                            </div>` : `
+                            <div style="margin-top:8px; display:flex; justify-content:flex-end;">
+                                <button onclick="window.runAdaptiveDiscovery(1)"
+                                    style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.45); color:#7dd3fc; padding:4px 10px; border-radius:6px; font-size:0.72rem; cursor:pointer; font-weight:700;">
+                                    🔍 Adaptive Multi-Candidate Discovery
+                                </button>
+                            </div>`}
+                            <div id="adaptiveDiscoveryPanel" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid rgba(148,163,184,0.25);"></div>
                         </div>
                     `;
                 })()}
             `;
 
+            window._adaptiveQueryBase = data.base_product || data.master_search_string || '';
+            window._adaptiveConfirmed = {};
             box.style.display = 'block';
             box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
+
+        window.renderAdaptiveDiscovery = function(res) {
+            const panel = document.getElementById('adaptiveDiscoveryPanel');
+            if (!panel || !res) return;
+            const disc = res.discovery || {};
+            const pag = res.pagination || {};
+            const clar = res.clarification || {};
+            const groups = Array.isArray(res.candidate_groups) ? res.candidate_groups : [];
+            const cands = Array.isArray(res.candidates) ? res.candidates : [];
+            const completeBadge = disc.discovery_complete
+                ? '<span style="color:#34d399; font-weight:700;">✓ Discovery Complete</span>'
+                : '<span style="color:#fbbf24; font-weight:700;">⚠ Discovery Incomplete (Budget Reached)</span>';
+
+            const groupsHtml = groups.length ? `
+                <div style="margin-top:8px;">
+                    <div style="font-size:0.72rem; font-weight:700; color:#93c5fd; margin-bottom:4px;">Candidate Groups (${groups.length})</div>
+                    ${groups.slice(0, 8).map(g => `
+                        <details style="margin-bottom:4px; background:rgba(15,23,42,0.45); border:1px solid rgba(148,163,184,0.2); border-radius:6px; padding:5px 8px; font-size:0.72rem; color:#e2e8f0;">
+                            <summary style="cursor:pointer; font-weight:600;">
+                                [${escapeHtml(g.group_type || 'GROUP')}] Ch/Hdg ${escapeHtml(g.heading_4digit || '')} · ${g.count || 0} HSN(s) — ${escapeHtml((g.group_label || '').slice(0, 90))}
+                            </summary>
+                            <div style="margin-top:4px; color:#cbd5e1; font-family:'JetBrains Mono', monospace;">
+                                ${(g.hsn_codes || []).map(h => `<span style="display:inline-block; margin:2px 4px 2px 0; padding:1px 6px; background:rgba(30,41,59,0.8); border-radius:4px;">${escapeHtml(h)}</span>`).join('')}
+                            </div>
+                        </details>
+                    `).join('')}
+                </div>` : '';
+
+            const clarHtml = (clar.required && Array.isArray(clar.questions) && clar.questions.length) ? `
+                <div style="margin-top:8px; padding:8px 10px; background:rgba(234,179,8,0.1); border:1px solid rgba(250,204,21,0.35); border-radius:8px;">
+                    <div style="font-size:0.73rem; font-weight:700; color:#fde68a; margin-bottom:6px;">Targeted Clarification Questions</div>
+                    ${clar.questions.map((q, qi) => `
+                        <div style="margin-bottom:6px; font-size:0.72rem; color:#e2e8f0;">
+                            <div style="margin-bottom:3px;">${escapeHtml(q.question || '')}</div>
+                            <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:4px;">
+                                ${(q.options || []).slice(0, 5).map(opt => `
+                                    <button onclick="window.submitAdaptiveClarification('${escapeHtml(q.attribute || ('attr_' + qi))}', '${escapeHtml(opt)}')"
+                                        style="background:rgba(30,41,59,0.85); border:1px solid rgba(148,163,184,0.35); color:#e2e8f0; padding:2px 8px; border-radius:5px; font-size:0.7rem; cursor:pointer;">
+                                        ${escapeHtml(opt)}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                    <div style="display:flex; gap:6px; margin-top:4px;">
+                        <input id="adaptiveCustomClarInput" type="text" placeholder="Or enter exact material / spec..."
+                            style="flex:1; background:rgba(15,23,42,0.7); border:1px solid rgba(148,163,184,0.35); color:#e2e8f0; padding:4px 8px; border-radius:6px; font-size:0.72rem;" />
+                        <button onclick="window.submitAdaptiveClarification('specification', document.getElementById('adaptiveCustomClarInput').value)"
+                            style="background:rgba(56,189,248,0.2); border:1px solid rgba(56,189,248,0.45); color:#7dd3fc; padding:4px 10px; border-radius:6px; font-size:0.72rem; cursor:pointer; font-weight:700;">
+                            Refine
+                        </button>
+                    </div>
+                </div>` : '';
+
+            const candsHtml = cands.map(c => `
+                <div style="margin-top:6px; padding:6px 8px; background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.2); border-radius:6px; font-size:0.72rem;">
+                    <div style="display:flex; justify-content:space-between; color:#e2e8f0; font-family:'JetBrains Mono', monospace;">
+                        <span><strong>#${c.rank} HSN ${escapeHtml(c.hsn_code)}</strong> (Ch ${escapeHtml(c.chapter_code)})</span>
+                        <span>${escapeHtml(c.relevance_category)} · Rel ${(Number(c.relevance_confidence || 0) * 100).toFixed(1)}%</span>
+                    </div>
+                    <div style="color:#cbd5e1; margin-top:2px;">${escapeHtml(c.hsn_description || '')}</div>
+                    <div style="color:#94a3b8; font-size:0.68rem; margin-top:2px;">${escapeHtml((c.match_reasons || []).join(' | '))}</div>
+                </div>
+            `).join('');
+
+            const pagHtml = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:0.72rem; color:#cbd5e1;">
+                    <span>Page ${pag.page || 1} of ${pag.total_pages || 1} (${pag.total_candidates || 0} total candidates)</span>
+                    <div style="display:flex; gap:6px;">
+                        <button ${(pag.page || 1) <= 1 ? 'disabled' : ''} onclick="window.runAdaptiveDiscovery(${(pag.page || 1) - 1})"
+                            style="background:rgba(30,41,59,0.85); border:1px solid rgba(148,163,184,0.35); color:#e2e8f0; padding:2px 8px; border-radius:5px; cursor:pointer;">Prev</button>
+                        <button ${!pag.has_next_page ? 'disabled' : ''} onclick="window.runAdaptiveDiscovery(${(pag.page || 1) + 1})"
+                            style="background:rgba(30,41,59,0.85); border:1px solid rgba(148,163,184,0.35); color:#e2e8f0; padding:2px 8px; border-radius:5px; cursor:pointer;">Next</button>
+                    </div>
+                </div>`;
+
+            panel.innerHTML = `
+                <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; font-size:0.74rem; color:#e2e8f0;">
+                    <span><strong>Mode:</strong> ${escapeHtml(res.prediction_mode)} ${res.final_hsn ? `· Final HSN ${escapeHtml(res.final_hsn)}` : '· No forced HSN (clarification/discovery)'}</span>
+                    <span>${completeBadge} (${disc.qualifying_candidates || 0} qualifying / ${disc.total_retrieved || 0} examined)</span>
+                </div>
+                ${clarHtml}
+                ${groupsHtml}
+                <div style="margin-top:8px; font-size:0.72rem; font-weight:700; color:#93c5fd;">Discovered Candidates (Page ${pag.page || 1})</div>
+                ${candsHtml}
+                ${pagHtml}
+            `;
+            panel.style.display = 'block';
+        };
+
+        window.runAdaptiveDiscovery = async function(page = 1) {
+            const panel = document.getElementById('adaptiveDiscoveryPanel');
+            if (panel) {
+                panel.style.display = 'block';
+                panel.innerHTML = '<div style="font-size:0.73rem; color:#93c5fd;">Running adaptive multi-candidate discovery...</div>';
+            }
+            try {
+                const hasConf = window._adaptiveConfirmed && Object.keys(window._adaptiveConfirmed).length > 0;
+                const endpoint = hasConf ? '/api/v1/hsn-v2/clarify-adaptive' : '/api/v1/hsn-v2/classify-adaptive';
+                const body = hasConf
+                    ? { description: window._adaptiveQueryBase || '', confirmed_attributes: window._adaptiveConfirmed, page, page_size: 10 }
+                    : { description: window._adaptiveQueryBase || '', page, page_size: 10 };
+                const resp = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const res = await resp.json();
+                window.renderAdaptiveDiscovery(res);
+            } catch (e) {
+                if (panel) panel.innerHTML = `<div style="font-size:0.72rem; color:#fda4af;">Adaptive discovery failed: ${escapeHtml(e.message)}</div>`;
+            }
+        };
+
+        window.submitAdaptiveClarification = async function(attr, value) {
+            const v = (value || '').trim();
+            if (!v) return;
+            window._adaptiveConfirmed = Object.assign({}, window._adaptiveConfirmed || {}, { [attr]: v });
+            await window.runAdaptiveDiscovery(1);
+        };
 
         window.flagV2Prediction = async function() {
             const p = window._lastV2FeedbackPayload;

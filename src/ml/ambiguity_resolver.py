@@ -28,9 +28,10 @@ from src.ml.relevance_classifier import (
 # Statutory linguistic cues per attribute dimension (domain-general customs terminology)
 ATTRIBUTE_CUE_VOCAB: Dict[str, Set[str]] = {
     "construction": {
-        "knitted", "crocheted", "woven", "nonwoven", "seamless", "welded",
-        "moulded", "molded", "forged", "cast", "extruded", "laminated",
-        "braided", "printed", "assembled", "portable", "hand-operated",
+        "knitted", "not knitted", "crocheted", "not crocheted", "woven", "not woven",
+        "nonwoven", "seamless", "welded", "moulded", "molded", "forged", "cast",
+        "extruded", "laminated", "braided", "printed", "assembled", "portable",
+        "hand-operated",
     },
     "processing_state": {
         "raw", "unworked", "semi-finished", "finished", "coated", "plated",

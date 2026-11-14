@@ -287,6 +287,70 @@ class HybridHSNEngine:
         indices, _, _, _, _ = self._fuse_with_scores(raw_query, pool_size=pool_size, branch_k=branch_k)
         return [dict(self.records[idx]) for idx in indices]
 
+    def retrieve_with_lineage(
+        self, raw_query: str, branch_k: int = 30
+    ) -> List[Dict[str, Any]]:
+        """
+        Phase 7 Adaptive Retrieval Helper:
+        Executes Weighted BM25 + Dense Cosine + RRF up to `branch_k` per branch
+        (or full corpus if branch_k >= total_records) without a fixed final cap,
+        attaching `source_record_id`, `retrieval_source`, `bm25_score`, `vector_score`,
+        and `rrf_score` to every record for candidate lineage & completeness tracking.
+        """
+        q, q_tokens = self._expand_abbreviated_query(raw_query)
+        if not q or not q_tokens:
+            return []
+
+        s_head = np.array(self.bm25_heading.get_scores(q_tokens))
+        s_syn = np.array(self.bm25_synonyms.get_scores(q_tokens))
+        s_chap = np.array(self.bm25_chapter.get_scores(q_tokens))
+        s_sub = np.array(self.bm25_subclause.get_scores(q_tokens))
+
+        def min_max(arr: np.ndarray) -> np.ndarray:
+            denom = arr.max() - arr.min()
+            if denom <= 0:
+                return np.zeros_like(arr)
+            return (arr - arr.min()) / denom
+
+        bm25_composite = (
+            3.0 * min_max(s_head) +
+            2.5 * min_max(s_syn) +
+            1.5 * min_max(s_chap) +
+            1.0 * min_max(s_sub)
+        )
+        k_eff = min(max(1, int(branch_k)), self.total_records)
+        top_bm25_indices = np.argsort(bm25_composite)[::-1][:k_eff]
+
+        q_emb = self.embedding_model.encode([q], convert_to_numpy=True, normalize_embeddings=True)[0]
+        cos_sims = np.dot(self.dense_embeddings, q_emb)
+        top_vector_indices = np.argsort(cos_sims)[::-1][:k_eff]
+
+        k_rrf = 60.0
+        rrf_map: Dict[int, float] = {}
+        bm25_set = set(int(i) for i in top_bm25_indices)
+        dense_set = set(int(i) for i in top_vector_indices)
+        for rank, idx in enumerate(top_bm25_indices):
+            i = int(idx)
+            rrf_map[i] = rrf_map.get(i, 0.0) + (1.0 / (k_rrf + rank + 1))
+        for rank, idx in enumerate(top_vector_indices):
+            i = int(idx)
+            rrf_map[i] = rrf_map.get(i, 0.0) + (1.0 / (k_rrf + rank + 1))
+
+        ordered = sorted(rrf_map.keys(), key=lambda i: rrf_map[i], reverse=True)
+        out: List[Dict[str, Any]] = []
+        for idx in ordered:
+            rec = dict(self.records[idx])
+            in_b = idx in bm25_set and float(bm25_composite[idx]) > 0.0
+            in_d = idx in dense_set
+            src = "bm25+dense" if (in_b and in_d) else ("bm25" if in_b else "dense")
+            rec["source_record_id"] = f"row_{idx}"
+            rec["retrieval_source"] = src
+            rec["bm25_score"] = round(float(bm25_composite[idx]), 4)
+            rec["vector_score"] = round(float(cos_sims[idx]), 4)
+            rec["rrf_score"] = round(float(rrf_map[idx]), 6)
+            out.append(rec)
+        return out
+
     def search(self, raw_query: str, top_k: int = 10) -> List[SearchCandidate]:
         """
         Executes Layer 2 Hybrid Retrieval + Layer 3 Re-Ranking.

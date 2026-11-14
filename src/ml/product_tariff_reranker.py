@@ -88,7 +88,7 @@ class ProductTariffReranker:
         device: Optional[str] = None,
         max_length: int = 512,
         local_files_only: bool = True,
-        batch_size: int = 16,
+        batch_size: int = 32,
     ):
         self.model_name_or_path = model_name_or_path
         if device is None:
@@ -145,8 +145,23 @@ class ProductTariffReranker:
         if not tariff_rows:
             return []
 
-        pairs = [[product_intent, format_tariff_context(row)] for row in tariff_rows]
-        raw_scores = self.score_pairs(pairs)
+        # Deduplicate identical formatted tariff contexts so duplicate statutory descriptions
+        # are scored once by the Cross-Encoder and mapped back to every matching row.
+        unique_contexts: List[str] = []
+        context_to_idx: Dict[str, int] = {}
+        row_context_indices: List[int] = []
+        for row in tariff_rows:
+            ctx = format_tariff_context(row)
+            c_idx = context_to_idx.get(ctx)
+            if c_idx is None:
+                c_idx = len(unique_contexts)
+                context_to_idx[ctx] = c_idx
+                unique_contexts.append(ctx)
+            row_context_indices.append(c_idx)
+
+        unique_pairs = [[product_intent, ctx] for ctx in unique_contexts]
+        unique_raw_scores = self.score_pairs(unique_pairs)
+        raw_scores = [unique_raw_scores[c_idx] for c_idx in row_context_indices]
 
         results: List[RerankedTariffCandidate] = []
         for idx, (row, raw_score) in enumerate(zip(tariff_rows, raw_scores)):
