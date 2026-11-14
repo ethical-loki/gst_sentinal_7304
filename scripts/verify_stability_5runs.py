@@ -92,7 +92,8 @@ for item in QUERIES:
     raw_responses = []
 
     for r in range(1, RUNS + 1):
-        req_data = json.dumps({"product": q}).encode("utf-8")
+        # Cache disabled per Directive 8
+        req_data = json.dumps({"product": q, "use_cache": False}).encode("utf-8")
         req = urllib.request.Request(URL, data=req_data, headers={"Content-Type": "application/json"})
         t0 = time.time()
         with urllib.request.urlopen(req, timeout=120) as resp:

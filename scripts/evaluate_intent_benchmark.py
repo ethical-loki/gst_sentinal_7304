@@ -60,12 +60,18 @@ def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, A
     print(f"Git Commit Hash: {git_hash} | Config Hash: {config_hash}")
     print("=" * 78, flush=True)
 
+    # Directive 3: Strict cache prohibition check
+    if any(arg in sys.argv for arg in ["--cache", "--use-cache", "--enable-cache"]):
+        raise RuntimeError("Directive 3 Violation: Evaluation cache must remain strictly disabled for all benchmark runs.")
+
     extractor = IntentExtractor.get_instance()
+    # Enforce empty / disabled cache state for evaluation instance
     if "--deterministic" in sys.argv:
         print("[INFO] Running in deterministic test-double mode", flush=True)
         extractor._llm_client = DeterministicLLMClient()
     else:
         print(f"[INFO] Running with real production LLM: {type(extractor._llm_client).__name__}", flush=True)
+    print("[INFO] Directive 3: Interpretation cache is STRICTLY DISABLED for this evaluation run.", flush=True)
 
     total_cases = len(cases)
     intent_correct_count = 0
@@ -113,10 +119,13 @@ def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, A
             category_stats[cat] = {"total": 0, "intent_correct": 0, "retrieval_correct": 0, "abstain": 0, "clarify": 0}
         category_stats[cat]["total"] += 1
 
-        # 1. Run Intent Extraction with timing
+        # 1. Run Intent Extraction with timing (Strict cache prohibition per Directive 3)
         q_t0 = time.perf_counter()
-        intent_res = extractor.extract_intent(q)
+        intent_res = extractor.extract_intent(q, use_cache=False)
         q_lat = (time.perf_counter() - q_t0) * 1000.0
+
+        if getattr(intent_res, "is_cache_hit", False):
+            raise RuntimeError(f"Directive 3 Violation: Cache hit detected for query '{q}' during evaluation run!")
 
         # Evaluate Intent Accuracy
         conf_match = (intent_res.reading_confidence == exp_conf) if exp_conf else True

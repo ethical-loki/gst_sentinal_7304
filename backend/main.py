@@ -625,6 +625,7 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
     base_product = (body.get("product") or body.get("base_product") or body.get("product_name") or "").strip()
     user_clarification = (body.get("clarification") or body.get("user_clarification") or "").strip()
     existing_attributes = body.get("attributes") or body.get("existing_attributes") or None
+    use_cache = bool(body.get("use_cache", True))
 
     if not base_product:
         raise HTTPException(status_code=400, detail="'product' is required.")
@@ -643,7 +644,7 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
     try:
         from src.nlp.intent_extractor import get_intent_extractor
         extractor = get_intent_extractor()
-        intent_res = extractor.extract_intent(base_product)
+        intent_res = extractor.extract_intent(base_product, use_cache=use_cache)
         intent_data = intent_res.model_dump()
         if intent_res.synthesized_search_string:
             search_query_for_retrieval = intent_res.synthesized_search_string
