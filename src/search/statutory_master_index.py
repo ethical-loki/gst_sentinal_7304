@@ -51,6 +51,17 @@ class StatutoryCoverageResult:
     reason: str = ""
 
 
+@dataclass
+class StatutoryComparisonResult:
+    query: str
+    is_out_of_schedule: bool
+    best_active_score: float
+    best_inactive_score: float
+    best_inactive_match: Optional[Dict[str, Any]] = None
+    top_statutory_matches: List[Dict[str, Any]] = field(default_factory=list)
+    reason: str = ""
+
+
 class StatutoryMasterIndex:
     """
     Full 98-chapter BM25 index over the complete CBIC/ITC-HS Tariff Master
@@ -187,4 +198,79 @@ class StatutoryMasterIndex:
             top_statutory_matches=matches,
             active_chapters=sorted(self.active_chapters),
             reason=f"Covered by active chapter schedule (top statutory chapter: {top['chapter']}).",
+        )
+
+    def compare_active_vs_statutory(
+        self,
+        query: str,
+        best_active_score: float,
+        reranker: Any,
+        top_k: int = 8,
+        inactive_advantage_margin: float = 0.02,
+    ) -> StatutoryComparisonResult:
+        """
+        Independently searches the complete 98-chapter statutory master, reranks
+        any inactive-chapter candidates using the same Cross-Encoder `reranker`,
+        and checks whether an inactive chapter contains a better-supported
+        classification than the best active-chapter candidate.
+        """
+        statutory_matches = self.search_statutory(query, top_k=top_k)
+        inactive_cands = [m for m in statutory_matches if not m["in_active_schedule"]]
+
+        if not inactive_cands:
+            return StatutoryComparisonResult(
+                query=query,
+                is_out_of_schedule=False,
+                best_active_score=round(float(best_active_score), 4),
+                best_inactive_score=0.0,
+                top_statutory_matches=statutory_matches,
+                reason="No stronger inactive-chapter candidate found in 98-chapter master.",
+            )
+
+        # Rerank inactive-chapter statutory candidates with the same Cross-Encoder
+        formatted_rows = [
+            {
+                "hsn_code": m["hsn_code"],
+                "chapter_code": m["chapter"],
+                "chapter_title": f"Chapter {m['chapter']}",
+                "statutory_description": m["description"],
+            }
+            for m in inactive_cands
+        ]
+        ranked_inactive = reranker.rerank(query, formatted_rows, normalize_sigmoid=True)
+        best_inact = ranked_inactive[0]
+        best_inact_score = float(best_inact.relevance_score)
+        best_inact_dict = next(
+            (m for m in inactive_cands if m["hsn_code"] == best_inact.hsn_code),
+            inactive_cands[0],
+        )
+        best_inact_dict = {**best_inact_dict, "reranker_score": round(best_inact_score, 4)}
+
+        # Inactive chapter wins only if:
+        #   1) It has at least moderate statutory relevance (>= 0.40, never UNRELATED < 0.35), AND
+        #   2) When active schedule already has a SAME_PRODUCT match (>= 0.725), inactive must win
+        #      by a decisive margin (>= 0.15) rather than a tie/near-tie on material-ambiguous items.
+        if best_inact_score < 0.40:
+            is_oos = False
+        elif best_active_score >= 0.725:
+            is_oos = best_inact_score >= (best_active_score + 0.15)
+        else:
+            is_oos = best_inact_score > (best_active_score + inactive_advantage_margin)
+
+        reason = (
+            f"Inactive Chapter {best_inact_dict['chapter']} (HSN {best_inact_dict['hsn_code']}, "
+            f"score={best_inact_score:.3f}) outranks best active candidate (score={best_active_score:.3f})."
+            if is_oos
+            else f"Active schedule (score={best_active_score:.3f}) outranks best inactive chapter "
+            f"Ch {best_inact_dict['chapter']} (score={best_inact_score:.3f})."
+        )
+
+        return StatutoryComparisonResult(
+            query=query,
+            is_out_of_schedule=is_oos,
+            best_active_score=round(float(best_active_score), 4),
+            best_inactive_score=round(best_inact_score, 4),
+            best_inactive_match=best_inact_dict,
+            top_statutory_matches=statutory_matches,
+            reason=reason,
         )

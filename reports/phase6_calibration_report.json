@@ -1,0 +1,400 @@
+{
+  "elapsed_sec": 747.24,
+  "dataset_integrity": {
+    "rel_fit_pairs": 306,
+    "rel_fit_unique_hsns": 123,
+    "rel_eval_pairs": 218,
+    "rel_eval_unique_hsns": 84,
+    "query_fit_n": 83,
+    "query_eval_n": 60,
+    "query_fit_chapter_acc": 1.0,
+    "query_fit_exact_hsn_acc": 0.0241,
+    "query_eval_chapter_acc": 1.0,
+    "query_eval_exact_hsn_acc": 0.0667
+  },
+  "relevance_confidence": {
+    "winner": "platt",
+    "uncalibrated": {
+      "n": 218,
+      "nll": 0.2827,
+      "brier": 0.0601,
+      "ece": 0.0851,
+      "reliability_bins": [
+        {
+          "bin": "[0.0,0.1]",
+          "count": 12,
+          "mean_confidence": 0.0233,
+          "empirical_accuracy": 0.75
+        },
+        {
+          "bin": "[0.1,0.2]",
+          "count": 2,
+          "mean_confidence": 0.1346,
+          "empirical_accuracy": 0.5
+        },
+        {
+          "bin": "[0.2,0.3]",
+          "count": 2,
+          "mean_confidence": 0.2107,
+          "empirical_accuracy": 0.5
+        },
+        {
+          "bin": "[0.4,0.5]",
+          "count": 3,
+          "mean_confidence": 0.4664,
+          "empirical_accuracy": 1.0
+        },
+        {
+          "bin": "[0.5,0.6]",
+          "count": 1,
+          "mean_confidence": 0.5357,
+          "empirical_accuracy": 1.0
+        },
+        {
+          "bin": "[0.6,0.7]",
+          "count": 2,
+          "mean_confidence": 0.6314,
+          "empirical_accuracy": 1.0
+        },
+        {
+          "bin": "[0.7,0.8]",
+          "count": 3,
+          "mean_confidence": 0.7694,
+          "empirical_accuracy": 1.0
+        },
+        {
+          "bin": "[0.8,0.9]",
+          "count": 19,
+          "mean_confidence": 0.8617,
+          "empirical_accuracy": 1.0
+        },
+        {
+          "bin": "[0.9,1.0]",
+          "count": 174,
+          "mean_confidence": 0.9805,
+          "empirical_accuracy": 0.9943
+        }
+      ]
+    },
+    "temperature": {
+      "n": 218,
+      "nll": 0.2688,
+      "brier": 0.0606,
+      "ece": 0.0931,
+      "reliability_bins": [
+        {
+          "bin": "[0.0,0.1]",
+          "count": 12,
+          "mean_confidence": 0.0331,
+          "empirical_accuracy": 0.75
+        },
+        {
+          "bin": "[0.1,0.2]",
+          "count": 2,
+          "mean_confidence": 0.1601,
+          "empirical_accuracy": 0.5
+        },
+        {
+          "bin": "[0.2,0.3]",
+          "count": 2,
+          "mean_confidence": 0.2357,
+          "empirical_accuracy": 0.5
+        },
+        {
+          "bin": "[0.4,0.5]",
+          "count": 3,
+          "mean_confidence": 0.4701,
+          "empirical_accuracy": 1.0
+        },
+        {
+          "bin": "[0.5,0.6]",
+          "count": 1,
+          "mean_confidence": 0.5318,
+          "empirical_accuracy": 1.0
+        },
+        {
+          "bin": "[0.6,0.7]",
+          "count": 2,
+          "mean_confidence": 0.6176,
+          "empirical_accuracy": 1.0
+        },
+        {
+          "bin": "[0.7,0.8]",
+          "count": 5,
+          "mean_confidence": 0.7639,
+          "empirical_accuracy": 1.0
+        },
+        {
+          "bin": "[0.8,0.9]",
+          "count": 26,
+          "mean_confidence": 0.8564,
+          "empirical_accuracy": 1.0
+        },
+        {
+          "bin": "[0.9,1.0]",
+          "count": 165,
+          "mean_confidence": 0.9773,
+          "empirical_accuracy": 0.9939
+        }
+      ]
+    },
+    "platt": {
+      "n": 218,
+      "nll": 0.1298,
+      "brier": 0.0368,
+      "ece": 0.0505,
+      "reliability_bins": [
+        {
+          "bin": "[0.0,0.1]",
+          "count": 2,
+          "mean_confidence": 0.0753,
+          "empirical_accuracy": 1.0
+        },
+        {
+          "bin": "[0.1,0.2]",
+          "count": 1,
+          "mean_confidence": 0.1514,
+          "empirical_accuracy": 1.0
+        },
+        {
+          "bin": "[0.2,0.3]",
+          "count": 3,
+          "mean_confidence": 0.237,
+          "empirical_accuracy": 1.0
+        },
+        {
+          "bin": "[0.3,0.4]",
+          "count": 3,
+          "mean_confidence": 0.3682,
+          "empirical_accuracy": 0.3333
+        },
+        {
+          "bin": "[0.4,0.5]",
+          "count": 3,
+          "mean_confidence": 0.4542,
+          "empirical_accuracy": 0.6667
+        },
+        {
+          "bin": "[0.6,0.7]",
+          "count": 4,
+          "mean_confidence": 0.6432,
+          "empirical_accuracy": 0.5
+        },
+        {
+          "bin": "[0.7,0.8]",
+          "count": 1,
+          "mean_confidence": 0.7959,
+          "empirical_accuracy": 1.0
+        },
+        {
+          "bin": "[0.8,0.9]",
+          "count": 5,
+          "mean_confidence": 0.8387,
+          "empirical_accuracy": 1.0
+        },
+        {
+          "bin": "[0.9,1.0]",
+          "count": 196,
+          "mean_confidence": 0.9761,
+          "empirical_accuracy": 0.9949
+        }
+      ]
+    }
+  },
+  "chapter_confidence": {
+    "uncalibrated_top1": {
+      "n": 60,
+      "nll": 0.0029,
+      "brier": 0.0,
+      "ece": 0.0029,
+      "reliability_bins": [
+        {
+          "bin": "[0.9,1.0]",
+          "count": 60,
+          "mean_confidence": 0.9971,
+          "empirical_accuracy": 1.0
+        }
+      ]
+    },
+    "calibrated": {
+      "n": 60,
+      "nll": 0.0085,
+      "brier": 0.0001,
+      "ece": 0.0085,
+      "reliability_bins": [
+        {
+          "bin": "[0.9,1.0]",
+          "count": 60,
+          "mean_confidence": 0.9915,
+          "empirical_accuracy": 1.0
+        }
+      ]
+    },
+    "selective_curve_eval": [
+      {
+        "threshold": 0.3,
+        "covered": 60,
+        "coverage": 1.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      },
+      {
+        "threshold": 0.4,
+        "covered": 60,
+        "coverage": 1.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      },
+      {
+        "threshold": 0.5,
+        "covered": 60,
+        "coverage": 1.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      },
+      {
+        "threshold": 0.6,
+        "covered": 60,
+        "coverage": 1.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      },
+      {
+        "threshold": 0.7,
+        "covered": 60,
+        "coverage": 1.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      },
+      {
+        "threshold": 0.75,
+        "covered": 60,
+        "coverage": 1.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      },
+      {
+        "threshold": 0.8,
+        "covered": 60,
+        "coverage": 1.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      },
+      {
+        "threshold": 0.85,
+        "covered": 60,
+        "coverage": 1.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      },
+      {
+        "threshold": 0.9,
+        "covered": 60,
+        "coverage": 1.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      }
+    ]
+  },
+  "hsn_confidence": {
+    "uncalibrated_top1": {
+      "n": 60,
+      "nll": 6.0197,
+      "brier": 0.9283,
+      "ece": 0.9305,
+      "reliability_bins": [
+        {
+          "bin": "[0.9,1.0]",
+          "count": 60,
+          "mean_confidence": 0.9971,
+          "empirical_accuracy": 0.0667
+        }
+      ]
+    },
+    "calibrated": {
+      "n": 60,
+      "nll": 0.268,
+      "brier": 0.0638,
+      "ece": 0.0433,
+      "reliability_bins": [
+        {
+          "bin": "[0.0,0.1]",
+          "count": 60,
+          "mean_confidence": 0.0233,
+          "empirical_accuracy": 0.0667
+        }
+      ]
+    },
+    "selective_curve_eval": [
+      {
+        "threshold": 0.3,
+        "covered": 0,
+        "coverage": 0.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      },
+      {
+        "threshold": 0.4,
+        "covered": 0,
+        "coverage": 0.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      },
+      {
+        "threshold": 0.5,
+        "covered": 0,
+        "coverage": 0.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      },
+      {
+        "threshold": 0.6,
+        "covered": 0,
+        "coverage": 0.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      },
+      {
+        "threshold": 0.7,
+        "covered": 0,
+        "coverage": 0.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      },
+      {
+        "threshold": 0.75,
+        "covered": 0,
+        "coverage": 0.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      },
+      {
+        "threshold": 0.8,
+        "covered": 0,
+        "coverage": 0.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      },
+      {
+        "threshold": 0.85,
+        "covered": 0,
+        "coverage": 0.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      },
+      {
+        "threshold": 0.9,
+        "covered": 0,
+        "coverage": 0.0,
+        "accuracy": 1.0,
+        "error_rate": 0.0
+      }
+    ]
+  },
+  "selected_thresholds": {
+    "tau_abstain": 0.4,
+    "tau_chapter": 0.5,
+    "tau_exact_hsn": 0.55
+  },
+  "calibration_artifact": "C:\\Users\\User\\OneDrive\\Desktop\\GST_Sentinal\\data\\model_versions\\hsn_reranker_v1\\calibration.json"
+}

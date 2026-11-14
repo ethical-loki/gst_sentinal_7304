@@ -201,3 +201,137 @@ class FeedbackCollector:
         logger.info(f"Exported merged training dataset ({len(merged)} rows) -> {dest}")
         return dest
 
+    def list_pending_feedback(
+        self, status: str = "PENDING_EXPERT_REVIEW"
+    ) -> List[Dict[str, Any]]:
+        """Lists customer feedback entries filtered by status."""
+        if not self.pending_path.exists():
+            return []
+        entries: List[Dict[str, Any]] = []
+        with open(self.pending_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                rec = json.loads(line)
+                if not status or rec.get("status") == status:
+                    entries.append(rec)
+        return entries
+
+    def approve_pending_feedback(
+        self,
+        feedback_id: str,
+        expert_id: str,
+        incorrect_row: Optional[Dict[str, Any]],
+        correct_row: Dict[str, Any],
+        notes: str = "",
+    ) -> int:
+        """
+        GST expert verifies a pending customer flag, promoting it to the
+        verified training dataset and marking the pending record VERIFIED.
+        """
+        if not self.pending_path.exists():
+            raise FileNotFoundError(f"No pending feedback file at {self.pending_path}")
+
+        records: List[Dict[str, Any]] = []
+        target_rec: Optional[Dict[str, Any]] = None
+        with open(self.pending_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                rec = json.loads(line)
+                if rec.get("feedback_id") == feedback_id:
+                    target_rec = rec
+                records.append(rec)
+
+        if target_rec is None:
+            raise ValueError(f"Pending feedback_id '{feedback_id}' not found.")
+
+        pairs_added = self.confirm_expert_correction(
+            query=target_rec["query"],
+            incorrect_row=incorrect_row,
+            correct_row=correct_row,
+            expert_id=expert_id,
+            notes=notes,
+        )
+
+        target_rec["status"] = "VERIFIED"
+        target_rec["verified_by"] = expert_id
+        target_rec["verified_at"] = datetime.now(timezone.utc).isoformat()
+        with open(self.pending_path, "w", encoding="utf-8") as f:
+            for rec in records:
+                f.write(json.dumps(rec) + "\n")
+
+        return pairs_added
+
+    def run_retraining_lifecycle(
+        self,
+        new_version_name: str,
+        base_train_parquet: Path = DEFAULT_PAIRS_DIR / "full_pairs_train.parquet",
+        val_parquet: Path = DEFAULT_PAIRS_DIR / "full_pairs_val.parquet",
+        test_parquet: Path = DEFAULT_PAIRS_DIR / "full_pairs_test.parquet",
+        registry: Optional[Any] = None,
+        trainer_fn: Optional[Any] = None,
+        epochs: int = 1,
+        batch_size: int = 16,
+        min_auc_delta: float = 0.0,
+    ) -> Dict[str, Any]:
+        """
+        Step 8 end-to-end continuous improvement lifecycle:
+          Verified training dataset -> Model retraining -> Held-out evaluation ->
+          Approved deployment (ModelRegistry promotion only if no regression).
+        Refuses to run if no expert-verified pairs exist.
+        """
+        if not self.verified_pairs_path.exists():
+            raise ValueError(
+                "No expert-verified training pairs found. Never train directly on unverified customer feedback."
+            )
+        ver_df = pd.read_parquet(self.verified_pairs_path)
+        if ver_df.empty:
+            raise ValueError(
+                "Verified training pairs dataset is empty. Expert verification is required before retraining."
+            )
+
+        merged_train = self.merge_into_training_set(base_train_parquet=base_train_parquet)
+
+        if registry is None:
+            from src.ml.model_registry import ModelRegistry
+            registry = ModelRegistry()
+
+        active = registry.get_active()
+        prev_auc = float((active or {}).get("metrics", {}).get("test_roc_auc", 0.0))
+
+        if trainer_fn is None:
+            from src.training.train_reranker import train_and_evaluate
+            trainer_fn = train_and_evaluate
+
+        train_result = trainer_fn(
+            train_path=merged_train,
+            val_path=val_parquet,
+            test_path=test_parquet,
+            version_name=new_version_name,
+            epochs=epochs,
+            batch_size=batch_size,
+            promote=False,
+        )
+        new_auc = float(train_result.get("test_metrics", {}).get("roc_auc", 0.0))
+
+        approved = new_auc >= (prev_auc + min_auc_delta)
+        if approved:
+            registry.promote(new_version_name)
+            status = "PROMOTED"
+        else:
+            status = "REJECTED_REGRESSION"
+
+        return {
+            "status": status,
+            "promoted": approved,
+            "new_version_name": new_version_name,
+            "verified_pairs_count": int(len(ver_df)),
+            "merged_train_path": str(merged_train),
+            "previous_test_auc": round(prev_auc, 4),
+            "new_test_auc": round(new_auc, 4),
+            "threshold": train_result.get("calibrated_threshold"),
+        }
+

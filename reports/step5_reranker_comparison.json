@@ -1,0 +1,457 @@
+{
+  "models": [
+    {
+      "model": "MiniLM-baseline",
+      "golden_top1_chapter_accuracy": 1.0,
+      "golden_hits": "10/10",
+      "adversarial_rejection_rate": 1.0,
+      "adversarial_rejected": "4/4",
+      "avg_latency_sec": 1.035,
+      "total_eval_sec": 14.49,
+      "details": [
+        {
+          "type": "golden",
+          "query": "plastic water bottle",
+          "expected_chapter": "39",
+          "top_hsn": "39233010",
+          "top_chapter": "39",
+          "top_score": 0.9789,
+          "hit": true,
+          "latency_sec": 0.916
+        },
+        {
+          "type": "golden",
+          "query": "stainless steel water bottle",
+          "expected_chapter": "73",
+          "top_hsn": "730411",
+          "top_chapter": "73",
+          "top_score": 0.0021,
+          "hit": true,
+          "latency_sec": 1.15
+        },
+        {
+          "type": "golden",
+          "query": "laptop computer",
+          "expected_chapter": "84",
+          "top_hsn": "847130",
+          "top_chapter": "84",
+          "top_score": 0.0002,
+          "hit": true,
+          "latency_sec": 1.037
+        },
+        {
+          "type": "golden",
+          "query": "cotton knitted t-shirt",
+          "expected_chapter": "61",
+          "top_hsn": "61091000",
+          "top_chapter": "61",
+          "top_score": 0.9983,
+          "hit": true,
+          "latency_sec": 0.636
+        },
+        {
+          "type": "golden",
+          "query": "men woven cotton formal shirt",
+          "expected_chapter": "62",
+          "top_hsn": "62052000",
+          "top_chapter": "62",
+          "top_score": 0.9955,
+          "hit": true,
+          "latency_sec": 1.367
+        },
+        {
+          "type": "golden",
+          "query": "lithium ion battery pack",
+          "expected_chapter": "85",
+          "top_hsn": "850760",
+          "top_chapter": "85",
+          "top_score": 0.2609,
+          "hit": true,
+          "latency_sec": 1.262
+        },
+        {
+          "type": "golden",
+          "query": "wooden office chair",
+          "expected_chapter": "94",
+          "top_hsn": "940330",
+          "top_chapter": "94",
+          "top_score": 0.9511,
+          "hit": true,
+          "latency_sec": 1.032
+        },
+        {
+          "type": "golden",
+          "query": "pasta and noodles",
+          "expected_chapter": "19",
+          "top_hsn": "190230",
+          "top_chapter": "19",
+          "top_score": 0.9963,
+          "hit": true,
+          "latency_sec": 1.134
+        },
+        {
+          "type": "golden",
+          "query": "car brake pads",
+          "expected_chapter": "87",
+          "top_hsn": "87083900",
+          "top_chapter": "87",
+          "top_score": 0.8325,
+          "hit": true,
+          "latency_sec": 0.963
+        },
+        {
+          "type": "golden",
+          "query": "stainless steel kitchen sink",
+          "expected_chapter": "73",
+          "top_hsn": "73241000",
+          "top_chapter": "73",
+          "top_score": 0.9984,
+          "hit": true,
+          "latency_sec": 1.18
+        },
+        {
+          "type": "adversarial",
+          "query": "roasted arabica coffee beans",
+          "expected": "score < threshold",
+          "top_hsn": "190410",
+          "top_chapter": "19",
+          "top_score": 0.0,
+          "rejected": true,
+          "latency_sec": 0.99
+        },
+        {
+          "type": "adversarial",
+          "query": "paracetamol 500mg tablets",
+          "expected": "score < threshold",
+          "top_hsn": "19024090",
+          "top_chapter": "19",
+          "top_score": 0.0,
+          "rejected": true,
+          "latency_sec": 0.954
+        },
+        {
+          "type": "adversarial",
+          "query": "fresh basmati rice",
+          "expected": "score < threshold",
+          "top_hsn": "19059040",
+          "top_chapter": "19",
+          "top_score": 0.0,
+          "rejected": true,
+          "latency_sec": 0.925
+        },
+        {
+          "type": "adversarial",
+          "query": "gold wedding ring",
+          "expected": "score < threshold",
+          "top_hsn": "39269029",
+          "top_chapter": "39",
+          "top_score": 0.0,
+          "rejected": true,
+          "latency_sec": 0.941
+        }
+      ]
+    },
+    {
+      "model": "hsn_reranker_v1",
+      "golden_top1_chapter_accuracy": 0.8,
+      "golden_hits": "8/10",
+      "adversarial_rejection_rate": 1.0,
+      "adversarial_rejected": "4/4",
+      "avg_latency_sec": 0.936,
+      "total_eval_sec": 13.11,
+      "details": [
+        {
+          "type": "golden",
+          "query": "plastic water bottle",
+          "expected_chapter": "39",
+          "top_hsn": "39233010",
+          "top_chapter": "39",
+          "top_score": 0.9242,
+          "hit": true,
+          "latency_sec": 0.889
+        },
+        {
+          "type": "golden",
+          "query": "stainless steel water bottle",
+          "expected_chapter": "73",
+          "top_hsn": "39233010",
+          "top_chapter": "39",
+          "top_score": 0.0448,
+          "hit": false,
+          "latency_sec": 0.924
+        },
+        {
+          "type": "golden",
+          "query": "laptop computer",
+          "expected_chapter": "84",
+          "top_hsn": "847130",
+          "top_chapter": "84",
+          "top_score": 0.0045,
+          "hit": true,
+          "latency_sec": 0.872
+        },
+        {
+          "type": "golden",
+          "query": "cotton knitted t-shirt",
+          "expected_chapter": "61",
+          "top_hsn": "61091000",
+          "top_chapter": "61",
+          "top_score": 0.9736,
+          "hit": true,
+          "latency_sec": 0.645
+        },
+        {
+          "type": "golden",
+          "query": "men woven cotton formal shirt",
+          "expected_chapter": "62",
+          "top_hsn": "62052000",
+          "top_chapter": "62",
+          "top_score": 0.9118,
+          "hit": true,
+          "latency_sec": 0.592
+        },
+        {
+          "type": "golden",
+          "query": "lithium ion battery pack",
+          "expected_chapter": "85",
+          "top_hsn": "87024022",
+          "top_chapter": "87",
+          "top_score": 0.4991,
+          "hit": false,
+          "latency_sec": 0.952
+        },
+        {
+          "type": "golden",
+          "query": "wooden office chair",
+          "expected_chapter": "94",
+          "top_hsn": "940330",
+          "top_chapter": "94",
+          "top_score": 0.7973,
+          "hit": true,
+          "latency_sec": 0.958
+        },
+        {
+          "type": "golden",
+          "query": "pasta and noodles",
+          "expected_chapter": "19",
+          "top_hsn": "190230",
+          "top_chapter": "19",
+          "top_score": 0.9376,
+          "hit": true,
+          "latency_sec": 0.931
+        },
+        {
+          "type": "golden",
+          "query": "car brake pads",
+          "expected_chapter": "87",
+          "top_hsn": "87083900",
+          "top_chapter": "87",
+          "top_score": 0.6293,
+          "hit": true,
+          "latency_sec": 0.938
+        },
+        {
+          "type": "golden",
+          "query": "stainless steel kitchen sink",
+          "expected_chapter": "73",
+          "top_hsn": "73241000",
+          "top_chapter": "73",
+          "top_score": 0.9747,
+          "hit": true,
+          "latency_sec": 1.021
+        },
+        {
+          "type": "adversarial",
+          "query": "roasted arabica coffee beans",
+          "expected": "score < threshold",
+          "top_hsn": "190410",
+          "top_chapter": "19",
+          "top_score": 0.0003,
+          "rejected": true,
+          "latency_sec": 0.974
+        },
+        {
+          "type": "adversarial",
+          "query": "paracetamol 500mg tablets",
+          "expected": "score < threshold",
+          "top_hsn": "190590",
+          "top_chapter": "19",
+          "top_score": 0.0,
+          "rejected": true,
+          "latency_sec": 0.92
+        },
+        {
+          "type": "adversarial",
+          "query": "fresh basmati rice",
+          "expected": "score < threshold",
+          "top_hsn": "19059040",
+          "top_chapter": "19",
+          "top_score": 0.0003,
+          "rejected": true,
+          "latency_sec": 1.128
+        },
+        {
+          "type": "adversarial",
+          "query": "gold wedding ring",
+          "expected": "score < threshold",
+          "top_hsn": "39269029",
+          "top_chapter": "39",
+          "top_score": 0.0004,
+          "rejected": true,
+          "latency_sec": 1.367
+        }
+      ]
+    },
+    {
+      "model": "BGE-reranker-v2-m3",
+      "golden_top1_chapter_accuracy": 0.7,
+      "golden_hits": "7/10",
+      "adversarial_rejection_rate": 1.0,
+      "adversarial_rejected": "4/4",
+      "avg_latency_sec": 33.012,
+      "total_eval_sec": 462.16,
+      "details": [
+        {
+          "type": "golden",
+          "query": "plastic water bottle",
+          "expected_chapter": "39",
+          "top_hsn": "39233010",
+          "top_chapter": "39",
+          "top_score": 0.6659,
+          "hit": true,
+          "latency_sec": 32.656
+        },
+        {
+          "type": "golden",
+          "query": "stainless steel water bottle",
+          "expected_chapter": "73",
+          "top_hsn": "39233010",
+          "top_chapter": "39",
+          "top_score": 0.506,
+          "hit": false,
+          "latency_sec": 29.064
+        },
+        {
+          "type": "golden",
+          "query": "laptop computer",
+          "expected_chapter": "84",
+          "top_hsn": "852411",
+          "top_chapter": "85",
+          "top_score": 0.5012,
+          "hit": false,
+          "latency_sec": 32.389
+        },
+        {
+          "type": "golden",
+          "query": "cotton knitted t-shirt",
+          "expected_chapter": "61",
+          "top_hsn": "61091000",
+          "top_chapter": "61",
+          "top_score": 0.7283,
+          "hit": true,
+          "latency_sec": 25.418
+        },
+        {
+          "type": "golden",
+          "query": "men woven cotton formal shirt",
+          "expected_chapter": "62",
+          "top_hsn": "62052000",
+          "top_chapter": "62",
+          "top_score": 0.7206,
+          "hit": true,
+          "latency_sec": 22.25
+        },
+        {
+          "type": "golden",
+          "query": "lithium ion battery pack",
+          "expected_chapter": "85",
+          "top_hsn": "87012400",
+          "top_chapter": "87",
+          "top_score": 0.6744,
+          "hit": false,
+          "latency_sec": 30.409
+        },
+        {
+          "type": "golden",
+          "query": "wooden office chair",
+          "expected_chapter": "94",
+          "top_hsn": "940330",
+          "top_chapter": "94",
+          "top_score": 0.5652,
+          "hit": true,
+          "latency_sec": 23.329
+        },
+        {
+          "type": "golden",
+          "query": "pasta and noodles",
+          "expected_chapter": "19",
+          "top_hsn": "190230",
+          "top_chapter": "19",
+          "top_score": 0.6793,
+          "hit": true,
+          "latency_sec": 31.581
+        },
+        {
+          "type": "golden",
+          "query": "car brake pads",
+          "expected_chapter": "87",
+          "top_hsn": "87083900",
+          "top_chapter": "87",
+          "top_score": 0.6585,
+          "hit": true,
+          "latency_sec": 21.341
+        },
+        {
+          "type": "golden",
+          "query": "stainless steel kitchen sink",
+          "expected_chapter": "73",
+          "top_hsn": "73241000",
+          "top_chapter": "73",
+          "top_score": 0.726,
+          "hit": true,
+          "latency_sec": 28.92
+        },
+        {
+          "type": "adversarial",
+          "query": "roasted arabica coffee beans",
+          "expected": "score < threshold",
+          "top_hsn": "19041020",
+          "top_chapter": "19",
+          "top_score": 0.5002,
+          "rejected": true,
+          "latency_sec": 39.314
+        },
+        {
+          "type": "adversarial",
+          "query": "paracetamol 500mg tablets",
+          "expected": "score < threshold",
+          "top_hsn": "19059040",
+          "top_chapter": "19",
+          "top_score": 0.5001,
+          "rejected": true,
+          "latency_sec": 48.766
+        },
+        {
+          "type": "adversarial",
+          "query": "fresh basmati rice",
+          "expected": "score < threshold",
+          "top_hsn": "190230",
+          "top_chapter": "19",
+          "top_score": 0.5001,
+          "rejected": true,
+          "latency_sec": 51.461
+        },
+        {
+          "type": "adversarial",
+          "query": "gold wedding ring",
+          "expected": "score < threshold",
+          "top_hsn": "6208",
+          "top_chapter": "62",
+          "top_score": 0.5001,
+          "rejected": true,
+          "latency_sec": 45.265
+        }
+      ]
+    }
+  ]
+}

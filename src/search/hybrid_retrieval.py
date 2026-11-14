@@ -165,7 +165,43 @@ class HybridHSNEngine:
             logger.warning(f"Cross-encoder load skipped: {e}")
             self.cross_encoder = None
 
+        # Build corpus vocabulary frequencies for general morphological prefix expansion
+        self._vocab_freq: Dict[str, int] = {}
+        for bm in (self.bm25_heading, self.bm25_synonyms, self.bm25_subclause):
+            for tok, freq in getattr(bm, "idf", {}).items():
+                if len(tok) >= 4:
+                    self._vocab_freq[tok] = self._vocab_freq.get(tok, 0) + 1
+
         logger.info(f"[HybridHSNEngine] Ready with {self.total_records} master records (hash: {self.file_hash[:16]}).")
+
+    def _expand_abbreviated_query(self, raw_query: str) -> tuple[str, List[str]]:
+        """
+        General corpus-driven morphological prefix expansion for abbreviated tokens
+        ending with a period (e.g. 'auxi.' -> 'auxiliary', 'mach.' -> 'machinery').
+        Uses only the indexed tariff vocabulary; no product-specific dictionaries.
+        """
+        q_lower = (raw_query or "").strip().lower()
+        base_tokens = tokenize(q_lower)
+        prefixes = re.findall(r"\b([a-z]{3,7})\.", q_lower)
+        if not prefixes or not self._vocab_freq:
+            return q_lower, base_tokens
+
+        expanded_words: List[str] = []
+        extra_tokens: List[str] = []
+        for pref in prefixes:
+            matches = [
+                w for w in self._vocab_freq
+                if w.startswith(pref) and len(w) > len(pref)
+            ]
+            # Prefer shorter/more common statutory root forms first
+            matches.sort(key=lambda w: (len(w), w))
+            for m in matches[:2]:
+                if m not in base_tokens:
+                    extra_tokens.append(m)
+                    expanded_words.append(m)
+
+        expanded_q = f"{q_lower} {' '.join(expanded_words)}".strip() if expanded_words else q_lower
+        return expanded_q, base_tokens + extra_tokens
 
     def _build_and_cache_dense_embeddings(self):
         """Builds dense embeddings for all rows in the loaded Master dataset."""
@@ -194,22 +230,18 @@ class HybridHSNEngine:
             cls._instance = cls()
         return cls._instance
 
-    def search(self, raw_query: str, top_k: int = 10) -> List[SearchCandidate]:
+    def _fuse_with_scores(
+        self, raw_query: str, pool_size: int = 15, branch_k: int = 20
+    ):
         """
-        Executes Layer 2 Hybrid Retrieval + Layer 3 Re-Ranking.
+        Executes Layer 2 Hybrid Retrieval (Weighted BM25 + Dense Embeddings + RRF)
+        and returns (candidate_indices, bm25_composite, cos_sims, rrf_map, clean_query).
         """
-        q = (raw_query or "").strip().lower()
-        if not q:
-            return []
+        q, q_tokens = self._expand_abbreviated_query(raw_query)
+        if not q or not q_tokens:
+            return [], None, None, {}, q
 
-        q_tokens = tokenize(q)
-        if not q_tokens:
-            return []
-
-        # -------------------------------------------------------------
         # Layer 2A: Weighted BM25 Lexical Retrieval
-        # Boost weights: Heading 3.0x, Synonyms 2.5x, Chapter 1.5x, Subclause 1.0x
-        # -------------------------------------------------------------
         s_head = np.array(self.bm25_heading.get_scores(q_tokens))
         s_syn = np.array(self.bm25_synonyms.get_scores(q_tokens))
         s_chap = np.array(self.bm25_chapter.get_scores(q_tokens))
@@ -227,18 +259,14 @@ class HybridHSNEngine:
             1.5 * min_max(s_chap) +
             1.0 * min_max(s_sub)
         )
-        top_bm25_indices = np.argsort(bm25_composite)[::-1][:20]
+        top_bm25_indices = np.argsort(bm25_composite)[::-1][:branch_k]
 
-        # -------------------------------------------------------------
         # Layer 2B: Dense Vector Semantic Search
-        # -------------------------------------------------------------
         q_emb = self.embedding_model.encode([q], convert_to_numpy=True, normalize_embeddings=True)[0]
         cos_sims = np.dot(self.dense_embeddings, q_emb)
-        top_vector_indices = np.argsort(cos_sims)[::-1][:20]
+        top_vector_indices = np.argsort(cos_sims)[::-1][:branch_k]
 
-        # -------------------------------------------------------------
         # Layer 2C: Reciprocal Rank Fusion (RRF, k=60)
-        # -------------------------------------------------------------
         k_rrf = 60.0
         rrf_map: Dict[int, float] = {}
         for rank, idx in enumerate(top_bm25_indices):
@@ -246,8 +274,28 @@ class HybridHSNEngine:
         for rank, idx in enumerate(top_vector_indices):
             rrf_map[idx] = rrf_map.get(idx, 0.0) + (1.0 / (k_rrf + rank + 1))
 
-        # Union candidate pool
-        candidate_indices = sorted(rrf_map.keys(), key=lambda i: rrf_map[i], reverse=True)[:15]
+        candidate_indices = sorted(rrf_map.keys(), key=lambda i: rrf_map[i], reverse=True)[:pool_size]
+        return candidate_indices, bm25_composite, cos_sims, rrf_map, q
+
+    def retrieve_pool(
+        self, raw_query: str, pool_size: int = 40, branch_k: int = 50
+    ) -> List[Dict[str, Any]]:
+        """
+        Returns the raw Layer 2 candidate pool (without Cross-Encoder reranking)
+        for retrieval coverage diagnostics (e.g. Recall@15, Recall@40).
+        """
+        indices, _, _, _, _ = self._fuse_with_scores(raw_query, pool_size=pool_size, branch_k=branch_k)
+        return [dict(self.records[idx]) for idx in indices]
+
+    def search(self, raw_query: str, top_k: int = 10) -> List[SearchCandidate]:
+        """
+        Executes Layer 2 Hybrid Retrieval + Layer 3 Re-Ranking.
+        """
+        candidate_indices, bm25_composite, cos_sims, rrf_map, q = self._fuse_with_scores(
+            raw_query, pool_size=15, branch_k=20
+        )
+        if not candidate_indices:
+            return []
 
         # Convert indices to SearchCandidate objects
         candidates: List[SearchCandidate] = []

@@ -1,0 +1,97 @@
+{
+  "relevance_calibrator": {
+    "method": "platt",
+    "scale": 0.587888,
+    "bias": 1.527907
+  },
+  "chapter_calibrator": {
+    "feature_names": [
+      "top1_logit",
+      "top1_top2_margin",
+      "n_siblings_same_heading",
+      "n_distinct_headings_above",
+      "n_distinct_chapters_above",
+      "is_ambiguous",
+      "query_token_count"
+    ],
+    "weights": [
+      0.0,
+      0.0,
+      -0.0,
+      0.0,
+      -0.0,
+      -0.0,
+      0.0
+    ],
+    "bias": 4.76447,
+    "means": [
+      6.502941,
+      0.032428,
+      21.915663,
+      1.53012,
+      1.060241,
+      0.240964,
+      8.0
+    ],
+    "stds": [
+      1.104449,
+      0.061404,
+      8.158379,
+      1.144261,
+      0.237933,
+      0.427668,
+      1.0
+    ],
+    "fitted": true
+  },
+  "hsn_calibrator": {
+    "feature_names": [
+      "top1_logit",
+      "top1_top2_margin",
+      "n_siblings_same_heading",
+      "n_distinct_headings_above",
+      "n_distinct_chapters_above",
+      "is_ambiguous",
+      "query_token_count"
+    ],
+    "weights": [
+      0.052477,
+      -0.092211,
+      -0.355017,
+      -0.096405,
+      -0.040989,
+      -0.116866,
+      0.0
+    ],
+    "bias": -3.696734,
+    "means": [
+      6.502941,
+      0.032428,
+      21.915663,
+      1.53012,
+      1.060241,
+      0.240964,
+      8.0
+    ],
+    "stds": [
+      1.104449,
+      0.061404,
+      8.158379,
+      1.144261,
+      0.237933,
+      0.427668,
+      1.0
+    ],
+    "fitted": true
+  },
+  "tau_abstain": 0.4,
+  "tau_chapter": 0.5,
+  "tau_exact_hsn": 0.55,
+  "metadata": {
+    "model_path": "C:\\Users\\User\\OneDrive\\Desktop\\GST_Sentinal\\data\\model_versions\\hsn_reranker_v1",
+    "rel_fit_n": 306,
+    "rel_eval_n": 218,
+    "query_fit_n": 83,
+    "query_eval_n": 60
+  }
+}

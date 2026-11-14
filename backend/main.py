@@ -977,13 +977,20 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
             v2_res = v2_pipe.classify(base_product)
             v2_verification = {
                 "status": v2_res.status,
+                "prediction_mode": v2_res.prediction_mode,
                 "selected_hsn": v2_res.selected_hsn,
                 "selected_chapter": v2_res.selected_chapter,
                 "selected_description": v2_res.selected_description,
                 "confidence": v2_res.confidence,
+                "relevance_confidence": v2_res.relevance_confidence,
+                "chapter_confidence": v2_res.chapter_confidence,
+                "hsn_confidence": v2_res.hsn_confidence,
+                "abstention_reason": v2_res.abstention_reason,
+                "separating_attributes": v2_res.separating_attributes,
                 "clarification_question": v2_res.clarification_question,
                 "clarification_options": v2_res.clarification_options,
                 "statutory_matches": v2_res.statutory_matches,
+                "active_vs_statutory": v2_res.active_vs_statutory,
                 "rationale": v2_res.rationale,
             }
             if v2_res.status == "OUT_OF_SCHEDULE" and chapter_pred_data.get("status") in ("UNRECOGNIZED", "OUT_OF_SCHEDULE", "NEEDS_SELECTION"):
@@ -1029,14 +1036,21 @@ async def classify_hsn_v2(payload: dict):
     res = v2_pipe.classify(product)
     return {
         "status": res.status,
+        "prediction_mode": res.prediction_mode,
         "query": res.query,
         "selected_hsn": res.selected_hsn,
         "selected_chapter": res.selected_chapter,
         "selected_description": res.selected_description,
         "confidence": res.confidence,
+        "relevance_confidence": res.relevance_confidence,
+        "chapter_confidence": res.chapter_confidence,
+        "hsn_confidence": res.hsn_confidence,
+        "abstention_reason": res.abstention_reason,
+        "separating_attributes": res.separating_attributes,
         "clarification_question": res.clarification_question,
         "clarification_options": res.clarification_options,
         "statutory_matches": res.statutory_matches,
+        "active_vs_statutory": res.active_vs_statutory,
         "rationale": res.rationale,
     }
 

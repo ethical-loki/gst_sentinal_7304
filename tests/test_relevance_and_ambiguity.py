@@ -4,7 +4,10 @@ Unit tests for Phase 5: RelevanceClassifier and ModelDrivenAmbiguityResolver.
 
 from unittest.mock import MagicMock
 
-from src.ml.ambiguity_resolver import ModelDrivenAmbiguityResolver
+from src.ml.ambiguity_resolver import (
+    ModelDrivenAmbiguityResolver,
+    identify_separating_attributes,
+)
 from src.ml.product_tariff_reranker import RerankedTariffCandidate
 from src.ml.relevance_classifier import RelationLabel, RelevanceClassifier
 
@@ -92,4 +95,76 @@ def test_all_related_returns_no_relevant_match():
 
     assert res.status == "NO_RELEVANT_MATCH"
     assert res.selected_hsn is None
+
+
+def test_four_class_relevance_labels_and_calibration():
+    mock_reranker = MagicMock()
+    mock_reranker.rerank.return_value = [
+        _make_cand("39233090", "39", "Plastic water bottle", 0.88, "plastic"),
+        _make_cand("39269099", "39", "Other articles of plastics", 0.52, "plastic"),
+        _make_cand("84223000", "84", "Bottle filling machinery", 0.28, "steel"),
+        _make_cand("61091000", "61", "Cotton knitted t-shirts", 0.09, "cotton"),
+    ]
+
+    clf = RelevanceClassifier(
+        reranker=mock_reranker,
+        same_product_threshold=0.725,
+        related_threshold=0.40,
+        unrelated_threshold=0.20,
+    )
+    classified = clf.classify("plastic water bottle", [{}, {}, {}, {}])
+    labels = [c.relation for c in classified]
+    assert labels == [
+        RelationLabel.SAME_PRODUCT,
+        RelationLabel.INSUFFICIENT_INFORMATION,
+        RelationLabel.RELATED_PRODUCT,
+        RelationLabel.UNRELATED,
+    ]
+
+    # Calibrate threshold from unseen examples (score_pairs returns logits)
+    mock_reranker.score_pairs.return_value = [2.3, 1.7, 0.2, -0.8, -1.7]
+    best_thresh, cal_stats = clf.calibrate_from_examples(
+        queries=["q1", "q2", "q3", "q4", "q5"],
+        tariff_rows=[{}, {}, {}, {}, {}],
+        labels=[1, 1, 0, 0, 0],
+    )
+    assert best_thresh >= 0.55
+    assert cal_stats["f1"] == 1.0
+
+
+def test_identify_separating_attributes_same_chapter_different_construction():
+    mock_reranker = MagicMock()
+    mock_reranker.rerank.return_value = [
+        _make_cand("61091000", "61", "T-shirts, knitted or crocheted, of cotton", 0.84, "cotton"),
+        _make_cand("62052000", "62", "Men's shirts, woven, not knitted, of cotton", 0.81, "cotton"),
+    ]
+
+    clf = RelevanceClassifier(reranker=mock_reranker, same_product_threshold=0.725)
+    resolver = ModelDrivenAmbiguityResolver(classifier=clf)
+    res = resolver.resolve("cotton shirt", [{}, {}])
+
+    assert res.status == "AMBIGUOUS_SPECIFICATION"
+    assert "construction" in res.separating_attributes
+    assert "construction" in res.attribute_evidence
+    assert res.clarification_question is not None
+
+
+def test_identify_separating_attributes_complete_vs_parts():
+    from src.ml.relevance_classifier import ClassifiedTariffCandidate
+
+    cands = [
+        ClassifiedTariffCandidate(
+            candidate=_make_cand("87032291", "87", "Motor cars complete assembled vehicles", 0.83, "steel"),
+            relation=RelationLabel.SAME_PRODUCT,
+            confidence=0.83,
+        ),
+        ClassifiedTariffCandidate(
+            candidate=_make_cand("87089900", "87", "Other parts and accessories of motor vehicles", 0.80, "steel"),
+            relation=RelationLabel.SAME_PRODUCT,
+            confidence=0.80,
+        ),
+    ]
+    attrs, evidence = identify_separating_attributes(cands, "motor vehicle")
+    assert "product_completeness" in attrs
+    assert "product_completeness" in evidence
 

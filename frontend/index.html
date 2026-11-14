@@ -5228,25 +5228,50 @@
                     };
                     const v2Colors = {
                         'CLEAR': { bg: 'rgba(16,185,129,0.12)', border: 'rgba(52,211,153,0.45)', badge: '#34d399' },
+                        'CHAPTER_ONLY_CLARIFY': { bg: 'rgba(234,179,8,0.12)', border: 'rgba(250,204,21,0.45)', badge: '#facc15' },
                         'AMBIGUOUS_MATERIAL': { bg: 'rgba(234,179,8,0.12)', border: 'rgba(250,204,21,0.45)', badge: '#facc15' },
+                        'AMBIGUOUS_SPECIFICATION': { bg: 'rgba(234,179,8,0.12)', border: 'rgba(250,204,21,0.45)', badge: '#facc15' },
+                        'CLARIFY_AMBIGUOUS': { bg: 'rgba(234,179,8,0.12)', border: 'rgba(250,204,21,0.45)', badge: '#facc15' },
                         'INSUFFICIENT_INFORMATION': { bg: 'rgba(56,189,248,0.12)', border: 'rgba(56,189,248,0.45)', badge: '#38bdf8' },
                         'OUT_OF_SCHEDULE': { bg: 'rgba(244,63,94,0.12)', border: 'rgba(244,63,94,0.45)', badge: '#fb7185' }
                     };
-                    const st = v2Colors[v2.status] || v2Colors['INSUFFICIENT_INFORMATION'];
-                    const confPctV2 = typeof v2.confidence === 'number' ? (v2.confidence * 100).toFixed(1) + '%' : 'N/A';
+                    const modeKey = v2.prediction_mode || v2.status;
+                    const st = v2Colors[modeKey] || v2Colors[v2.status] || v2Colors['INSUFFICIENT_INFORMATION'];
+                    const pct = (val) => typeof val === 'number' ? (val * 100).toFixed(1) + '%' : 'N/A';
+                    const relPct = pct(typeof v2.relevance_confidence === 'number' ? v2.relevance_confidence : v2.confidence);
+                    const chapPct = pct(v2.chapter_confidence);
+                    const hsnPct = pct(v2.hsn_confidence);
+                    const sepAttrs = Array.isArray(v2.separating_attributes) && v2.separating_attributes.length
+                        ? `<div style="margin-top:6px; font-size:0.72rem; color:#fde68a;">Separating attributes: <strong>${escapeHtml(v2.separating_attributes.join(', '))}</strong></div>`
+                        : '';
+                    const clarHtml = (v2.clarification_question || (Array.isArray(v2.clarification_options) && v2.clarification_options.length))
+                        ? `<div style="margin-top:8px; padding:8px 10px; background:rgba(15,23,42,0.45); border-radius:8px; font-size:0.75rem; color:#e2e8f0;">
+                                ${v2.clarification_question ? `<div style="margin-bottom:4px;">${escapeHtml(v2.clarification_question)}</div>` : ''}
+                                ${Array.isArray(v2.clarification_options) && v2.clarification_options.length
+                                    ? `<ul style="margin:4px 0 0 16px; padding:0; color:#cbd5e1;">${v2.clarification_options.slice(0, 4).map(o => `<li style="margin-bottom:2px;">${escapeHtml(o)}</li>`).join('')}</ul>`
+                                    : ''}
+                           </div>`
+                        : '';
                     return `
                         <div style="background:${st.bg}; border:1px solid ${st.border}; border-radius:10px; padding:12px 14px; margin-top:12px;">
                             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
                                 <span style="font-size:0.74rem; font-weight:800; color:${st.badge}; text-transform:uppercase; letter-spacing:0.04em;">
-                                    🧠 HSN Intelligence V2 (Cross-Encoder): ${escapeHtml(v2.status)}
+                                    🧠 HSN Intelligence V2: ${escapeHtml(modeKey)} ${v2.status && v2.status !== modeKey ? `(${escapeHtml(v2.status)})` : ''}
                                 </span>
                                 <span style="font-size:0.74rem; color:#e2e8f0; font-family:'JetBrains Mono', monospace;">
-                                    ${v2.selected_hsn ? `HSN ${escapeHtml(v2.selected_hsn)} · Ch ${escapeHtml(v2.selected_chapter || '')} · Conf ${confPctV2}` : `Ch ${escapeHtml(v2.selected_chapter || 'N/A')}`}
+                                    ${v2.selected_hsn ? `HSN ${escapeHtml(v2.selected_hsn)} · Ch ${escapeHtml(v2.selected_chapter || '')}` : `Ch ${escapeHtml(v2.selected_chapter || 'N/A')}`}
                                 </span>
                             </div>
-                            <div style="font-size:0.78rem; color:#cbd5e1; line-height:1.45;">
-                                ${escapeHtml(v2.rationale || '')}
+                            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; font-size:0.72rem; font-family:'JetBrains Mono', monospace;">
+                                <span style="background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.25); padding:2px 8px; border-radius:6px; color:#e2e8f0;">Relevance: ${relPct}</span>
+                                <span style="background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.25); padding:2px 8px; border-radius:6px; color:#93c5fd;">Chapter: ${chapPct}</span>
+                                <span style="background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.25); padding:2px 8px; border-radius:6px; color:#86efac;">Exact HSN: ${hsnPct}</span>
                             </div>
+                            <div style="font-size:0.78rem; color:#cbd5e1; line-height:1.45;">
+                                ${escapeHtml(v2.abstention_reason || v2.rationale || '')}
+                            </div>
+                            ${sepAttrs}
+                            ${clarHtml}
                             ${v2.selected_hsn ? `
                             <div style="margin-top:8px; display:flex; justify-content:flex-end;">
                                 <button onclick="window.flagV2Prediction()"

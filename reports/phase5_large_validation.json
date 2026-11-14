@@ -1,0 +1,52 @@
+{
+  "total_cases": 119,
+  "passed_cases": 107,
+  "overall_pass_rate": 0.8992,
+  "elapsed_sec": 348.87,
+  "layer_attribution": {
+    "PASS_EXACT_HSN": 23,
+    "PASS_CHAPTER_MATCH": 48,
+    "PASS_CLARIFICATION": 16,
+    "AMBIGUITY_MISS": 9,
+    "SCHEDULE_FALSE_POSITIVE": 2,
+    "OTHER_MISS": 1,
+    "PASS_OUT_OF_SCHEDULE": 20
+  },
+  "by_category": {
+    "abbreviated": {
+      "total": 16,
+      "passed": 12,
+      "pass_rate": 0.75
+    },
+    "complete_vs_component": {
+      "total": 15,
+      "passed": 15,
+      "pass_rate": 1.0
+    },
+    "inactive_chapter": {
+      "total": 20,
+      "passed": 20,
+      "pass_rate": 1.0
+    },
+    "long_industrial": {
+      "total": 18,
+      "passed": 14,
+      "pass_rate": 0.7778
+    },
+    "missing_material": {
+      "total": 13,
+      "passed": 10,
+      "pass_rate": 0.7692
+    },
+    "short": {
+      "total": 18,
+      "passed": 17,
+      "pass_rate": 0.9444
+    },
+    "similar_different_construction": {
+      "total": 19,
+      "passed": 19,
+      "pass_rate": 1.0
+    }
+  }
+}

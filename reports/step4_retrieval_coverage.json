@@ -1,0 +1,295 @@
+{
+  "total_queries": 200,
+  "elapsed_sec": 11.47,
+  "recall_at_15_exact_hsn": 0.715,
+  "recall_at_40_exact_hsn": 0.86,
+  "recall_at_15_chapter": 0.965,
+  "recall_at_40_chapter": 0.98,
+  "improvement_hsn_15_to_40": 0.145,
+  "by_strategy": {
+    "article_only": {
+      "n": 90,
+      "recall_15_hsn": 0.6222,
+      "recall_40_hsn": 0.8111,
+      "recall_15_chapter": 0.9333,
+      "recall_40_chapter": 0.9556
+    },
+    "invoice_shorthand": {
+      "n": 2,
+      "recall_15_hsn": 0.5,
+      "recall_40_hsn": 1.0,
+      "recall_15_chapter": 1.0,
+      "recall_40_chapter": 1.0
+    },
+    "material_article": {
+      "n": 50,
+      "recall_15_hsn": 0.88,
+      "recall_40_hsn": 0.94,
+      "recall_15_chapter": 1.0,
+      "recall_40_chapter": 1.0
+    },
+    "nl_template": {
+      "n": 58,
+      "recall_15_hsn": 0.7241,
+      "recall_40_hsn": 0.8621,
+      "recall_15_chapter": 0.9828,
+      "recall_40_chapter": 1.0
+    }
+  },
+  "by_chapter": {
+    "19": {
+      "n": 1,
+      "recall_15_hsn": 1.0,
+      "recall_40_hsn": 1.0,
+      "recall_15_chapter": 1.0,
+      "recall_40_chapter": 1.0
+    },
+    "39": {
+      "n": 28,
+      "recall_15_hsn": 0.8571,
+      "recall_40_hsn": 0.8929,
+      "recall_15_chapter": 0.9286,
+      "recall_40_chapter": 0.9643
+    },
+    "61": {
+      "n": 15,
+      "recall_15_hsn": 0.7333,
+      "recall_40_hsn": 0.8,
+      "recall_15_chapter": 1.0,
+      "recall_40_chapter": 1.0
+    },
+    "62": {
+      "n": 23,
+      "recall_15_hsn": 0.7826,
+      "recall_40_hsn": 0.913,
+      "recall_15_chapter": 1.0,
+      "recall_40_chapter": 1.0
+    },
+    "73": {
+      "n": 19,
+      "recall_15_hsn": 0.8421,
+      "recall_40_hsn": 0.8947,
+      "recall_15_chapter": 0.9474,
+      "recall_40_chapter": 1.0
+    },
+    "84": {
+      "n": 58,
+      "recall_15_hsn": 0.6897,
+      "recall_40_hsn": 0.8621,
+      "recall_15_chapter": 1.0,
+      "recall_40_chapter": 1.0
+    },
+    "85": {
+      "n": 41,
+      "recall_15_hsn": 0.5122,
+      "recall_40_hsn": 0.8049,
+      "recall_15_chapter": 0.9512,
+      "recall_40_chapter": 0.9512
+    },
+    "87": {
+      "n": 9,
+      "recall_15_hsn": 0.8889,
+      "recall_40_hsn": 1.0,
+      "recall_15_chapter": 1.0,
+      "recall_40_chapter": 1.0
+    },
+    "94": {
+      "n": 6,
+      "recall_15_hsn": 0.6667,
+      "recall_40_hsn": 0.6667,
+      "recall_15_chapter": 0.6667,
+      "recall_40_chapter": 0.8333
+    }
+  },
+  "sample_missed_at_40": [
+    {
+      "query": "viscose rayon athletic sets",
+      "target_hsn": "61121930",
+      "target_chapter": "61",
+      "strategy": "article_only",
+      "top5_retrieved_hsn": [
+        "85022090",
+        "62144090",
+        "850220",
+        "621440",
+        "85022010"
+      ]
+    },
+    {
+      "query": "machinery",
+      "target_hsn": "84421000",
+      "target_chapter": "84",
+      "strategy": "article_only",
+      "top5_retrieved_hsn": [
+        "84401010",
+        "85431030",
+        "844010",
+        "85437093",
+        "84401090"
+      ]
+    },
+    {
+      "query": "microcontroller circuit electrical machines and apparatus with individual functions",
+      "target_hsn": "85437036",
+      "target_chapter": "85",
+      "strategy": "material_article",
+      "top5_retrieved_hsn": [
+        "85437019",
+        "85437069",
+        "85437099",
+        "85437013",
+        "85437049"
+      ]
+    },
+    {
+      "query": "steel office cupboards",
+      "target_hsn": "94031010",
+      "target_chapter": "94",
+      "strategy": "article_only",
+      "top5_retrieved_hsn": [
+        "73239310",
+        "732393",
+        "73239390",
+        "73239410",
+        "73239420"
+      ]
+    },
+    {
+      "query": "parts of transmission and radar equipment and televisions",
+      "target_hsn": "85299090",
+      "target_chapter": "85",
+      "strategy": "article_only",
+      "top5_retrieved_hsn": [
+        "85291091",
+        "85291011",
+        "85291092",
+        "85291021",
+        "85291019"
+      ]
+    },
+    {
+      "query": "machine-tools presses for forging bending shearing punching metal",
+      "target_hsn": "84626100",
+      "target_chapter": "84",
+      "strategy": "article_only",
+      "top5_retrieved_hsn": [
+        "84622910",
+        "84629110",
+        "84629190",
+        "84629950",
+        "84629960"
+      ]
+    },
+    {
+      "query": "switchgear and circuit protection exceeding - V",
+      "target_hsn": "85352111",
+      "target_chapter": "85",
+      "strategy": "article_only",
+      "top5_retrieved_hsn": [
+        "85362020",
+        "85362010",
+        "85362090",
+        "85362030",
+        "85362040"
+      ]
+    },
+    {
+      "query": "micro-ground aluminum plate base machinery",
+      "target_hsn": "84421000",
+      "target_chapter": "84",
+      "strategy": "nl_template",
+      "top5_retrieved_hsn": [
+        "84328010",
+        "84592100",
+        "843280",
+        "84592910",
+        "84328090"
+      ]
+    },
+    {
+      "query": "LPG camping lanterns containing pyrex glass cylinder for industrial or retail supply",
+      "target_hsn": "94055039",
+      "target_chapter": "94",
+      "strategy": "nl_template",
+      "top5_retrieved_hsn": [
+        "84752900",
+        "84751000",
+        "84752100",
+        "73041120",
+        "39233010"
+      ]
+    },
+    {
+      "query": "ramie sundresses containing pure linen for industrial or retail supply",
+      "target_hsn": "62044990",
+      "target_chapter": "62",
+      "strategy": "nl_template",
+      "top5_retrieved_hsn": [
+        "190110",
+        "62082990",
+        "73041190",
+        "62082910",
+        "730411"
+      ]
+    },
+    {
+      "query": "flat polymer packaging or industrial film",
+      "target_hsn": "39207919",
+      "target_chapter": "39",
+      "strategy": "article_only",
+      "top5_retrieved_hsn": [
+        "39191000",
+        "39199010",
+        "39199090",
+        "391990",
+        "3919"
+      ]
+    },
+    {
+      "query": "other made of permanent neodymium magnet",
+      "target_hsn": "85182290",
+      "target_chapter": "85",
+      "strategy": "nl_template",
+      "top5_retrieved_hsn": [
+        "8505",
+        "85053000",
+        "85052000",
+        "85059000",
+        "85051900"
+      ]
+    },
+    {
+      "query": "other",
+      "target_hsn": "85258200",
+      "target_chapter": "85",
+      "strategy": "article_only",
+      "top5_retrieved_hsn": []
+    },
+    {
+      "query": "polycarbonate optical disc substrate discs tapes solid-state storage media smart cards",
+      "target_hsn": "85231222",
+      "target_chapter": "85",
+      "strategy": "material_article",
+      "top5_retrieved_hsn": [
+        "85235220",
+        "8523",
+        "85238010",
+        "85235290",
+        "85235210"
+      ]
+    },
+    {
+      "query": "gear grinding or gear finishing",
+      "target_hsn": "84612011",
+      "target_chapter": "84",
+      "strategy": "article_only",
+      "top5_retrieved_hsn": [
+        "84601100",
+        "84602940",
+        "84602990",
+        "84614011",
+        "84609090"
+      ]
+    }
+  ]
+}

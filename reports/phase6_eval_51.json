@@ -1,0 +1,60 @@
+{
+  "total_cases": 51,
+  "passed_cases": 47,
+  "overall_pass_rate": 0.9216,
+  "elapsed_sec": 409.49,
+  "prediction_modes": {
+    "CHAPTER_ONLY_CLARIFY": 14,
+    "INSUFFICIENT_INFORMATION": 8,
+    "CLARIFY_AMBIGUOUS": 18,
+    "EXACT_HSN": 2,
+    "OUT_OF_SCHEDULE": 9
+  },
+  "exact_hsn_mode_precision": "1/2",
+  "chapter_only_clarify_chapter_acc": "14/14",
+  "layer_attribution": {
+    "PASS_CHAPTER_MATCH": 17,
+    "PASS_EXACT_HSN": 12,
+    "AMBIGUITY_MISS": 3,
+    "PASS_CLARIFICATION": 10,
+    "SCHEDULE_FALSE_POSITIVE": 1,
+    "PASS_OUT_OF_SCHEDULE": 8
+  },
+  "by_category": {
+    "abbreviated": {
+      "total": 7,
+      "passed": 6,
+      "pass_rate": 0.8571
+    },
+    "complete_vs_component": {
+      "total": 6,
+      "passed": 6,
+      "pass_rate": 1.0
+    },
+    "inactive_chapter": {
+      "total": 8,
+      "passed": 8,
+      "pass_rate": 1.0
+    },
+    "long_industrial": {
+      "total": 8,
+      "passed": 8,
+      "pass_rate": 1.0
+    },
+    "missing_material": {
+      "total": 6,
+      "passed": 5,
+      "pass_rate": 0.8333
+    },
+    "short": {
+      "total": 8,
+      "passed": 6,
+      "pass_rate": 0.75
+    },
+    "similar_different_construction": {
+      "total": 8,
+      "passed": 8,
+      "pass_rate": 1.0
+    }
+  }
+}

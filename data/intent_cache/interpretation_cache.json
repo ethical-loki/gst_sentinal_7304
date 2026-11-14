@@ -4572,5 +4572,79 @@
     "synthesized_search_string": "plastic water bottle | Material: polymers of ethylene | Terms: closed containers, polymers of ethylene",
     "is_cache_hit": false,
     "clarification_merged": false
+  },
+  "2e692a7a1eb790142162c7959e214f70f3a0ee0c337e83d3936a12c9241a3136": {
+    "raw_query": "Instant noodles made from wheat flour",
+    "physical_product": "no",
+    "material": "flour",
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "OUT_OF_SCHEDULE",
+    "grounded_search_terms": [
+      "instant noodles",
+      "wheat flour"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [
+      {
+        "term": "none",
+        "field_source": "material",
+        "reason": "word_not_in_tariff_vocabulary: 'none'"
+      },
+      {
+        "term": "none",
+        "field_source": "construction",
+        "reason": "word_not_in_tariff_vocabulary: 'none'"
+      },
+      {
+        "term": "none",
+        "field_source": "intended_use",
+        "reason": "word_not_in_tariff_vocabulary: 'none'"
+      }
+    ],
+    "top_headings_shown": [
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | PASTA, WHETHER OR NOT COOKED OR STUFFED (WITH MEAT OR OTHER SUBSTANCES) OR OTHERWISE PREPARED, SUCH AS SPAGHETTI, MACARONI, NOODLES, LASAGNE, GNOCCHI, RAVIOLI, CANNELLONI; COUSCOUS, WHETHER OR NOT PREPARED - UNCOOKED PASTA, NOT STUFFED OR OTHERWISE P | pasta spaghetti macaroni noodles lasagne gnocchi ravioli cannelloni couscous vermicelli egg tagliatelle uncooked fettuccine lasagna sheets dry plain p",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | PREPARED FOODS OBTAINED BY THE SWELLING OR ROASTING OF CEREALS OR CEREAL PRODUCTS (FOR EXAMPLE, CORN FLAKES); CEREALS [OTHER THAN MAIZE (CORN) ] IN GRAIN FORM OR IN THE FORM OF FLAKES OR OTHER WORKED GRAINS (EXCEPT FLOUR, GROATS AND MEAL), PRE-COOKED | prepared cereal foods corn flakes puffed cereals breakfast granola muesli pre cooked grain swelled products extruded balls roasted frosted honey rice ",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | MALT EXTRACT; FOOD PREPARATIONS OF FLOUR, GROATS, MEAL, STARCH OR MALT EXTRACT, NOT CONTAINING COCOA OR CONTAINING LESS THAN 40% BY WEIGHT OF COCOA CALCULATED ON A TOTALLY DEFATTED BASIS, NOT ELSEWHERE SPECIFIED OR INCLUDED; FOOD PREPARATIONS OF GOOD | food preparations malt extract dietary supplements nutritional baking mixes dough infant cereal dairy powdered formula baby toddler milk follow weanin",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | TAPIOCA AND SUBSTITUTES THEREFOR PREPARED FROM STARCH, IN THE FORM OF FLAKES, GRAINS, PEARLS, SIFTINGS OR IN SIMILAR FORMS | tapioca sago pearls flakes siftings boba cassava sabudana bubble tea starch",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | BREAD, PASTRY, CAKES, BISCUITS AND OTHER BAKERS WARES, WHETHER OR NOT CONTAINING COCOA; COMMUNION WAFERS, EMPTY CACHETS OF A KIND SUITABLE FOR PHARMACEUTICAL USE, SEALING WAFERS, RICE PAPER AND SIMILAR PRODUCTS; BREAD, PASTRY, CAKES, BISCUITS AND OTH | bread pastry cakes biscuits bakers wares communion wafers sealing rusks waffles crispbread flatbread crisps knackebrod hard crackers rye gingerbread l"
+    ],
+    "is_valid": true,
+    "error_message": "Recognized product 'wheat', but statutory classification falls under Chapter 10 (Cereals), which is outside the active Master file schedule (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94).",
+    "retries_used": 0,
+    "synthesized_search_string": "no | Material: flour | Terms: instant noodles, wheat flour",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "e5a7a4b77578ebd432789b315ffd498c43303ecfdd4f7b6648b7e62243d332e6": {
+    "raw_query": "no | Material: flour | Terms: instant noodles, wheat flour",
+    "physical_product": "noodles",
+    "material": "flour",
+    "construction": "instant noodles",
+    "intended_use": "food preparation",
+    "reading_confidence": "clear",
+    "outcome_type": "OUT_OF_SCHEDULE",
+    "grounded_search_terms": [
+      "instant noodles",
+      "wheat flour",
+      "flour",
+      "food preparation"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | PASTA, WHETHER OR NOT COOKED OR STUFFED (WITH MEAT OR OTHER SUBSTANCES) OR OTHERWISE PREPARED, SUCH AS SPAGHETTI, MACARONI, NOODLES, LASAGNE, GNOCCHI, RAVIOLI, CANNELLONI; COUSCOUS, WHETHER OR NOT PREPARED - UNCOOKED PASTA, NOT STUFFED OR OTHERWISE P | pasta spaghetti macaroni noodles lasagne gnocchi ravioli cannelloni couscous vermicelli egg tagliatelle uncooked fettuccine lasagna sheets dry plain p",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | PREPARED FOODS OBTAINED BY THE SWELLING OR ROASTING OF CEREALS OR CEREAL PRODUCTS (FOR EXAMPLE, CORN FLAKES); CEREALS [OTHER THAN MAIZE (CORN) ] IN GRAIN FORM OR IN THE FORM OF FLAKES OR OTHER WORKED GRAINS (EXCEPT FLOUR, GROATS AND MEAL), PRE-COOKED | prepared cereal foods corn flakes puffed cereals breakfast granola muesli pre cooked grain swelled products extruded balls roasted frosted honey rice ",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | TAPIOCA AND SUBSTITUTES THEREFOR PREPARED FROM STARCH, IN THE FORM OF FLAKES, GRAINS, PEARLS, SIFTINGS OR IN SIMILAR FORMS | tapioca sago pearls flakes siftings boba cassava sabudana bubble tea starch",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | MALT EXTRACT; FOOD PREPARATIONS OF FLOUR, GROATS, MEAL, STARCH OR MALT EXTRACT, NOT CONTAINING COCOA OR CONTAINING LESS THAN 40% BY WEIGHT OF COCOA CALCULATED ON A TOTALLY DEFATTED BASIS, NOT ELSEWHERE SPECIFIED OR INCLUDED; FOOD PREPARATIONS OF GOOD | food preparations malt extract dietary supplements nutritional baking mixes dough infant cereal dairy powdered formula baby toddler milk follow weanin",
+      "Preparations of cereals, flour, starch or milk; pastrycooks products | BREAD, PASTRY, CAKES, BISCUITS AND OTHER BAKERS WARES, WHETHER OR NOT CONTAINING COCOA; COMMUNION WAFERS, EMPTY CACHETS OF A KIND SUITABLE FOR PHARMACEUTICAL USE, SEALING WAFERS, RICE PAPER AND SIMILAR PRODUCTS; BREAD, PASTRY, CAKES, BISCUITS AND OTH | bread pastry cakes biscuits bakers wares communion wafers sealing rusks waffles crispbread flatbread crisps knackebrod hard crackers rye gingerbread l"
+    ],
+    "is_valid": true,
+    "error_message": "Recognized product 'wheat', but statutory classification falls under Chapter 10 (Cereals), which is outside the active Master file schedule (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94).",
+    "retries_used": 0,
+    "synthesized_search_string": "noodles | Material: flour | Construction: instant noodles | Terms: instant noodles, wheat flour, flour, food preparation",
+    "is_cache_hit": false,
+    "clarification_merged": false
   }
 }
