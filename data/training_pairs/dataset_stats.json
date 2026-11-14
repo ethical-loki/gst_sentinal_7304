@@ -1,0 +1,37 @@
+{
+  "source_master_rows": 3904,
+  "leaf_8digit_only": true,
+  "max_queries_per_row": 4,
+  "splits": {
+    "train": {
+      "unique_hsn_codes": 3120,
+      "positive_pairs": 12446,
+      "strategy_counts": {
+        "article_only": 6211,
+        "nl_template": 3068,
+        "material_article": 2975,
+        "invoice_shorthand": 192
+      }
+    },
+    "val": {
+      "unique_hsn_codes": 387,
+      "positive_pairs": 1538,
+      "strategy_counts": {
+        "article_only": 766,
+        "nl_template": 376,
+        "material_article": 370,
+        "invoice_shorthand": 26
+      }
+    },
+    "test": {
+      "unique_hsn_codes": 397,
+      "positive_pairs": 1581,
+      "strategy_counts": {
+        "article_only": 786,
+        "nl_template": 389,
+        "material_article": 378,
+        "invoice_shorthand": 28
+      }
+    }
+  }
+}

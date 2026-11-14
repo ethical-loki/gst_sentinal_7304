@@ -121,6 +121,20 @@ def get_hsn_misclass_scorer():
 
 _hsn_intelligence_engine = None
 _hsn_audit_sentinel = None
+_hsn_v2_pipeline = None
+
+
+def get_hsn_v2_pipeline():
+    global _hsn_v2_pipeline
+    if _hsn_v2_pipeline is None:
+        try:
+            from src.ml.hsn_v2_pipeline import HSNIntelligenceV2
+            _hsn_v2_pipeline = HSNIntelligenceV2()
+            print("[OK] HSNIntelligenceV2 pipeline initialized")
+        except Exception as e:
+            print(f"[WARN] Failed to load HSNIntelligenceV2: {e}")
+            _hsn_v2_pipeline = None
+    return _hsn_v2_pipeline
 
 
 def get_hsn_intelligence_engine():
@@ -911,6 +925,22 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
             disambiguation_data["disambiguation_options"] = []
             disambiguation_data["banner_type"] = "NONE" if chapter_pred_data.get("status") == "UNRECOGNIZED" else "NOT_AVAILABLE"
             disambiguation_data["is_ambiguous"] = False
+            if not disambiguation_data.get("descriptive_report"):
+                disambiguation_data["descriptive_report"] = {
+                    "article_understood_as": f"An item ('{base_product}') queried by user.",
+                    "recommended_hsn": "None (Not available in reference dataset)",
+                    "confidence": "Low",
+                    "confidence_score": 0.0,
+                    "reasoning": (
+                        f"The queried product '{base_product}' does not belong to any of the 9 statutory chapters "
+                        f"available in Master_copy_hsn.xlsx (available chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)."
+                    ),
+                    "other_plausible_candidates": [],
+                    "missing_information": [
+                        "Item belongs to an unindexed Chapter outside Master_copy_hsn.xlsx (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)"
+                    ],
+                    "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
+                }
         else:
             final_opts = disambiguation_data.get("disambiguation_options", [])
             final_opt_chaps = {o.get("chapter_code") for o in final_opts if o.get("chapter_code")}
@@ -922,21 +952,6 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
                 disambiguation_data["banner_type"] = "MULTI_CHAPTER_AMBIGUITY"
             elif disambiguation_data.get("banner_type") not in ("NOT_AVAILABLE", "NONE"):
                 disambiguation_data["banner_type"] = "NOT_AVAILABLE"
-            disambiguation_data["descriptive_report"] = {
-                "article_understood_as": f"An item ('{base_product}') queried by user.",
-                "recommended_hsn": "None (Not available in reference dataset)",
-                "confidence": "Low",
-                "confidence_score": 0.0,
-                "reasoning": (
-                    f"The queried product '{base_product}' does not belong to any of the 9 statutory chapters "
-                    f"available in Master_copy_hsn.xlsx (available chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)."
-                ),
-                "other_plausible_candidates": [],
-                "missing_information": [
-                    "Item belongs to an unindexed Chapter outside Master_copy_hsn.xlsx (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)"
-                ],
-                "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
-            }
 
         logger.info(
             f"[Step1-Context-Aggregator] Product: '{base_product}' -> Chapter {chapter_pred_data.get('chapter')} "
@@ -953,6 +968,31 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
         agg_attrs["processing_state"] = query_facts_data["form"]
     if query_facts_data.get("article"):
         agg_attrs["article_noun"] = query_facts_data["article"]
+
+    # Synchronize with HSN Intelligence V2 (Phases 1-7)
+    v2_verification = None
+    try:
+        v2_pipe = get_hsn_v2_pipeline()
+        if v2_pipe is not None:
+            v2_res = v2_pipe.classify(base_product)
+            v2_verification = {
+                "status": v2_res.status,
+                "selected_hsn": v2_res.selected_hsn,
+                "selected_chapter": v2_res.selected_chapter,
+                "selected_description": v2_res.selected_description,
+                "confidence": v2_res.confidence,
+                "clarification_question": v2_res.clarification_question,
+                "clarification_options": v2_res.clarification_options,
+                "statutory_matches": v2_res.statutory_matches,
+                "rationale": v2_res.rationale,
+            }
+            if v2_res.status == "OUT_OF_SCHEDULE" and chapter_pred_data.get("status") in ("UNRECOGNIZED", "OUT_OF_SCHEDULE", "NEEDS_SELECTION"):
+                chapter_pred_data["status"] = "OUT_OF_SCHEDULE"
+                chapter_pred_data["chapter"] = "NONE"
+                chapter_pred_data["chapter_title"] = f"Out of Active Schedule (Statutory Ch {v2_res.selected_chapter})"
+                chapter_pred_data["reason"] = v2_res.rationale
+    except Exception as e:
+        logger.warning(f"HSNIntelligenceV2 sync skipped: {e}")
 
     return {
         "status": "success",
@@ -972,9 +1012,52 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
         "chapter_prediction": chapter_pred_data,
         "disambiguation": disambiguation_data,
         "intent_extraction": intent_data,
+        "v2_verification": v2_verification,
         "catalogue_version": catalogue_version,
         "index_version": index_version
     }
+
+
+@app.post("/api/v1/hsn-v2/classify")
+async def classify_hsn_v2(payload: dict):
+    product = (payload.get("product") or payload.get("query") or "").strip()
+    if not product:
+        raise HTTPException(status_code=400, detail="Product description is required.")
+    v2_pipe = get_hsn_v2_pipeline()
+    if v2_pipe is None:
+        raise HTTPException(status_code=503, detail="HSNIntelligenceV2 pipeline unavailable.")
+    res = v2_pipe.classify(product)
+    return {
+        "status": res.status,
+        "query": res.query,
+        "selected_hsn": res.selected_hsn,
+        "selected_chapter": res.selected_chapter,
+        "selected_description": res.selected_description,
+        "confidence": res.confidence,
+        "clarification_question": res.clarification_question,
+        "clarification_options": res.clarification_options,
+        "statutory_matches": res.statutory_matches,
+        "rationale": res.rationale,
+    }
+
+
+@app.post("/api/v1/hsn-v2/feedback")
+async def submit_hsn_v2_feedback(payload: dict):
+    query = (payload.get("query") or "").strip()
+    predicted_hsn = (payload.get("predicted_hsn") or "").strip()
+    if not query or not predicted_hsn:
+        raise HTTPException(status_code=400, detail="Both query and predicted_hsn are required.")
+    from src.training.feedback_collector import FeedbackCollector
+    fc = FeedbackCollector()
+    fid = fc.record_pending_feedback(
+        query=query,
+        predicted_hsn=predicted_hsn,
+        predicted_context=str(payload.get("predicted_context") or ""),
+        predicted_score=float(payload.get("predicted_score") or 0.0),
+        customer_selected_hsn=payload.get("customer_selected_hsn"),
+        reason=str(payload.get("reason") or "Flagged from UI"),
+    )
+    return {"status": "recorded", "feedback_id": fid}
 
 
 @app.post("/api/v1/hsn-rag/step2-vector-search")

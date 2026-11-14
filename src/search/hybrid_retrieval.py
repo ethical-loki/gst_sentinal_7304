@@ -149,10 +149,18 @@ class HybridHSNEngine:
         norms[norms == 0] = 1e-10
         self.dense_embeddings = self.dense_embeddings / norms
 
-        # 4. Cross-Encoder Model
+        # 4. Cross-Encoder Model (prefer promoted V2 fine-tuned checkpoint from ModelRegistry)
+        self._using_v2_reranker = False
         try:
             from sentence_transformers import CrossEncoder
-            self.cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2", local_files_only=True)
+            from src.ml.model_registry import ModelRegistry
+            active_path = ModelRegistry().get_active_model_path()
+            if active_path and Path(active_path).exists():
+                self.cross_encoder = CrossEncoder(active_path, max_length=144, local_files_only=True)
+                self._using_v2_reranker = True
+                logger.info(f"[HybridHSNEngine] Loaded V2 fine-tuned CrossEncoder from {active_path}")
+            else:
+                self.cross_encoder = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2", local_files_only=True)
         except Exception as e:
             logger.warning(f"Cross-encoder load skipped: {e}")
             self.cross_encoder = None
@@ -295,8 +303,11 @@ class HybridHSNEngine:
 
         for cand in candidates:
             if self.cross_encoder is not None:
-                # Calibrate ms-marco logit (mean center ~ -7.5) to [0.0, 1.0]
-                calibrated_prob = 1.0 / (1.0 + math.exp(-(cand.cross_encoder_score + 7.5) / 1.5))
+                if getattr(self, "_using_v2_reranker", False):
+                    calibrated_prob = 1.0 / (1.0 + math.exp(-max(-30.0, min(30.0, cand.cross_encoder_score))))
+                else:
+                    # Calibrate ms-marco logit (mean center ~ -7.5) to [0.0, 1.0]
+                    calibrated_prob = 1.0 / (1.0 + math.exp(-(cand.cross_encoder_score + 7.5) / 1.5))
             else:
                 calibrated_prob = max(0.0, min(1.0, cand.vector_score))
 

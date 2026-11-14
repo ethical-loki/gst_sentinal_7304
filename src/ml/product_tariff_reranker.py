@@ -1,0 +1,179 @@
+"""
+Layer 3: Product-to-Tariff Semantic Verification & Reranker
+===========================================================
+Evaluates the semantic relationship between an extracted product intent / query
+and candidate statutory tariff rows using a Cross-Encoder (e.g. BAAI/bge-reranker-v2-m3).
+
+Zero hardcoded product names, HSN codes, or chapter-specific rules are embedded here;
+scoring is purely driven by the model over the candidate tariff context.
+"""
+
+import logging
+import math
+import time
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Sequence, Union
+
+CrossEncoder = None  # Lazy-loaded on first instantiation to keep module imports fast
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_RERANKER_MODEL = "BAAI/bge-reranker-v2-m3"
+BASELINE_RERANKER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+
+
+@dataclass
+class RerankedTariffCandidate:
+    """Structured output for a single reranked tariff candidate."""
+
+    hsn_code: str
+    chapter_code: str
+    description: str
+    relevance_score: float
+    raw_logit: float
+    chapter_title: str = ""
+    heading_4digit_desc: str = ""
+    article_keywords: str = ""
+    material_keywords: str = ""
+    original_index: int = -1
+
+
+def _sigmoid(x: float) -> float:
+    """Numerically stable sigmoid for converting raw logits to [0, 1]."""
+    if x >= 0:
+        return 1.0 / (1.0 + math.exp(-x))
+    exp_x = math.exp(x)
+    return exp_x / (1.0 + exp_x)
+
+
+def _get_field(row: Any, *keys: str, default: str = "") -> str:
+    """Safely extracts a string field from either a dict or an object/Pydantic model."""
+    for key in keys:
+        if isinstance(row, dict):
+            val = row.get(key)
+        else:
+            val = getattr(row, key, None)
+        if val is not None and str(val).strip().lower() not in ("", "nan", "none"):
+            return str(val).strip()
+    return default
+
+
+def format_tariff_context(row: Any) -> str:
+    """
+    Formats a statutory tariff row (dict or SearchCandidate) into a unified
+    structured passage for Cross-Encoder evaluation.
+    """
+    chapter_title = _get_field(row, "chapter_title")
+    heading_desc = _get_field(row, "heading_4digit_desc")
+    hsn_desc = _get_field(
+        row, "statutory_description", "HSN Description", "tariff_item_desc", "description"
+    )
+    article_kw = _get_field(row, "article_keywords", "Article Keywords")
+    material_kw = _get_field(row, "material_keywords", "Material Keywords")
+
+    parts = [p for p in [chapter_title, heading_desc, hsn_desc, article_kw, material_kw] if p]
+    return " | ".join(parts)
+
+
+class ProductTariffReranker:
+    """
+    Cross-Encoder reranker for Product-to-Tariff Semantic Verification.
+    Supports BAAI/bge-reranker-v2-m3, BAAI/bge-reranker-base,
+    cross-encoder/ms-marco-MiniLM-L-6-v2, and fine-tuned local checkpoints.
+    """
+
+    def __init__(
+        self,
+        model_name_or_path: str = DEFAULT_RERANKER_MODEL,
+        device: Optional[str] = None,
+        max_length: int = 512,
+        local_files_only: bool = True,
+        batch_size: int = 16,
+    ):
+        self.model_name_or_path = model_name_or_path
+        if device is None:
+            import torch
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = device
+        self.max_length = max_length
+        self.batch_size = batch_size
+
+        global CrossEncoder
+        if CrossEncoder is None:
+            from sentence_transformers import CrossEncoder as _CrossEncoder
+            CrossEncoder = _CrossEncoder
+
+        logger.info(
+            f"Loading ProductTariffReranker model='{model_name_or_path}' "
+            f"device='{self.device}' local_files_only={local_files_only}"
+        )
+        t0 = time.perf_counter()
+        self.model = CrossEncoder(
+            model_name_or_path,
+            device=self.device,
+            max_length=max_length,
+            local_files_only=local_files_only,
+        )
+        self.load_time_s = time.perf_counter() - t0
+        logger.info(f"Loaded '{model_name_or_path}' in {self.load_time_s:.2f}s")
+
+    def score_pairs(self, pairs: Sequence[Sequence[str]]) -> List[float]:
+        """Scores a list of (query, tariff_context) pairs, returning raw logits."""
+        if not pairs:
+            return []
+        scores = self.model.predict(
+            list(pairs),
+            batch_size=self.batch_size,
+            show_progress_bar=False,
+        )
+        return [float(s) for s in scores]
+
+    def rerank(
+        self,
+        product_intent: str,
+        tariff_rows: Sequence[Any],
+        top_k: Optional[int] = None,
+        normalize_sigmoid: bool = True,
+    ) -> List[RerankedTariffCandidate]:
+        """
+        Reranks candidate tariff rows against the product intent/description.
+
+        Note: Raw Cross-Encoder logits are not calibrated probabilities.
+        `normalize_sigmoid` maps raw logits via standard sigmoid to (0, 1) for
+        consistent ordering, while preserving `raw_logit` for threshold calibration.
+        """
+        if not tariff_rows:
+            return []
+
+        pairs = [[product_intent, format_tariff_context(row)] for row in tariff_rows]
+        raw_scores = self.score_pairs(pairs)
+
+        results: List[RerankedTariffCandidate] = []
+        for idx, (row, raw_score) in enumerate(zip(tariff_rows, raw_scores)):
+            rel_score = _sigmoid(raw_score) if normalize_sigmoid else raw_score
+            results.append(
+                RerankedTariffCandidate(
+                    hsn_code=_get_field(row, "hsn_code", "HSN Code", "code_str"),
+                    chapter_code=_get_field(row, "chapter_code", "chapter_str", "chapter"),
+                    description=_get_field(
+                        row,
+                        "statutory_description",
+                        "HSN Description",
+                        "tariff_item_desc",
+                        "description",
+                    ),
+                    relevance_score=float(rel_score),
+                    raw_logit=float(raw_score),
+                    chapter_title=_get_field(row, "chapter_title"),
+                    heading_4digit_desc=_get_field(row, "heading_4digit_desc"),
+                    article_keywords=_get_field(row, "article_keywords", "Article Keywords"),
+                    material_keywords=_get_field(row, "material_keywords", "Material Keywords"),
+                    original_index=idx,
+                )
+            )
+
+        results.sort(key=lambda r: r.raw_logit, reverse=True)
+        if top_k is not None:
+            return results[:top_k]
+        return results
+

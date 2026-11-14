@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-11-14T11:49:58.652957",
-  "git_commit_hash": "f88ccffd3d9eef6bcddd93fd1a5a0f61db11e06e",
+  "timestamp": "2026-11-14T15:05:11.981351",
+  "git_commit_hash": "0b325379a7bf2e54aba9ada40ed7b91059b7cfce",
   "runs_per_query": 5,
   "total_queries": 5,
   "queries": {
@@ -17,7 +17,7 @@
       "runs": [
         {
           "run": 1,
-          "latency_ms": 22519.1,
+          "latency_ms": 187600.4,
           "chapter": "84",
           "status": "NEEDS_SELECTION",
           "confidence": 0.33,
@@ -29,7 +29,7 @@
         },
         {
           "run": 2,
-          "latency_ms": 1511.5,
+          "latency_ms": 144300.7,
           "chapter": "84",
           "status": "NEEDS_SELECTION",
           "confidence": 0.33,
@@ -41,7 +41,7 @@
         },
         {
           "run": 3,
-          "latency_ms": 1552.9,
+          "latency_ms": 144186.8,
           "chapter": "84",
           "status": "NEEDS_SELECTION",
           "confidence": 0.33,
@@ -53,7 +53,7 @@
         },
         {
           "run": 4,
-          "latency_ms": 1710.3,
+          "latency_ms": 7875914.8,
           "chapter": "84",
           "status": "NEEDS_SELECTION",
           "confidence": 0.33,
@@ -65,7 +65,7 @@
         },
         {
           "run": 5,
-          "latency_ms": 1645.8,
+          "latency_ms": 144329.8,
           "chapter": "84",
           "status": "NEEDS_SELECTION",
           "confidence": 0.33,
@@ -221,7 +221,7 @@
             "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "laptop",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -371,7 +371,7 @@
             "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "laptop",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -521,7 +521,7 @@
             "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "laptop",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -671,7 +671,7 @@
             "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "laptop",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -821,7 +821,7 @@
             "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "laptop",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -842,7 +842,7 @@
       "runs": [
         {
           "run": 1,
-          "latency_ms": 1581.1,
+          "latency_ms": 123729.1,
           "chapter": "73",
           "status": "NEEDS_SELECTION",
           "confidence": 0.44,
@@ -854,7 +854,7 @@
         },
         {
           "run": 2,
-          "latency_ms": 1718.2,
+          "latency_ms": 130171.4,
           "chapter": "73",
           "status": "NEEDS_SELECTION",
           "confidence": 0.44,
@@ -866,7 +866,7 @@
         },
         {
           "run": 3,
-          "latency_ms": 1795.1,
+          "latency_ms": 125636.1,
           "chapter": "73",
           "status": "NEEDS_SELECTION",
           "confidence": 0.44,
@@ -878,7 +878,7 @@
         },
         {
           "run": 4,
-          "latency_ms": 1565.0,
+          "latency_ms": 128403.1,
           "chapter": "73",
           "status": "NEEDS_SELECTION",
           "confidence": 0.44,
@@ -890,7 +890,7 @@
         },
         {
           "run": 5,
-          "latency_ms": 1283.6,
+          "latency_ms": 134809.3,
           "chapter": "73",
           "status": "NEEDS_SELECTION",
           "confidence": 0.44,
@@ -1129,7 +1129,7 @@
             "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "stainless steel water bottle | Material: iron or steel | Construction: non-knitted or crocheted | Terms: stainless steel bottles, iron or steel, non-knitted or crocheted",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -1362,7 +1362,7 @@
             "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "stainless steel water bottle | Material: iron or steel | Construction: non-knitted or crocheted | Terms: stainless steel bottles, iron or steel, non-knitted or crocheted",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -1595,7 +1595,7 @@
             "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "stainless steel water bottle | Material: iron or steel | Construction: non-knitted or crocheted | Terms: stainless steel bottles, iron or steel, non-knitted or crocheted",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -1828,7 +1828,7 @@
             "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "stainless steel water bottle | Material: iron or steel | Construction: non-knitted or crocheted | Terms: stainless steel bottles, iron or steel, non-knitted or crocheted",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -2061,7 +2061,7 @@
             "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "stainless steel water bottle | Material: iron or steel | Construction: non-knitted or crocheted | Terms: stainless steel bottles, iron or steel, non-knitted or crocheted",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -2082,7 +2082,7 @@
       "runs": [
         {
           "run": 1,
-          "latency_ms": 1128.9,
+          "latency_ms": 137517.6,
           "chapter": "62",
           "status": "AMBIGUOUS_MATERIAL",
           "confidence": 0.45,
@@ -2094,7 +2094,7 @@
         },
         {
           "run": 2,
-          "latency_ms": 1260.8,
+          "latency_ms": 144862.6,
           "chapter": "62",
           "status": "AMBIGUOUS_MATERIAL",
           "confidence": 0.45,
@@ -2106,7 +2106,7 @@
         },
         {
           "run": 3,
-          "latency_ms": 1378.2,
+          "latency_ms": 141900.9,
           "chapter": "62",
           "status": "AMBIGUOUS_MATERIAL",
           "confidence": 0.45,
@@ -2118,7 +2118,7 @@
         },
         {
           "run": 4,
-          "latency_ms": 1416.0,
+          "latency_ms": 145353.8,
           "chapter": "62",
           "status": "AMBIGUOUS_MATERIAL",
           "confidence": 0.45,
@@ -2130,7 +2130,7 @@
         },
         {
           "run": 5,
-          "latency_ms": 1922.3,
+          "latency_ms": 151372.6,
           "chapter": "62",
           "status": "AMBIGUOUS_MATERIAL",
           "confidence": 0.45,
@@ -2272,7 +2272,7 @@
             "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "cotton t-shirt | Material: cotton | Construction: fabric | Terms: cotton t-shirt, cotton, fabric, clothing",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -2408,7 +2408,7 @@
             "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "cotton t-shirt | Material: cotton | Construction: fabric | Terms: cotton t-shirt, cotton, fabric, clothing",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -2544,7 +2544,7 @@
             "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "cotton t-shirt | Material: cotton | Construction: fabric | Terms: cotton t-shirt, cotton, fabric, clothing",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -2680,7 +2680,7 @@
             "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "cotton t-shirt | Material: cotton | Construction: fabric | Terms: cotton t-shirt, cotton, fabric, clothing",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -2816,7 +2816,7 @@
             "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "cotton t-shirt | Material: cotton | Construction: fabric | Terms: cotton t-shirt, cotton, fabric, clothing",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -2837,7 +2837,7 @@
       "runs": [
         {
           "run": 1,
-          "latency_ms": 1831.2,
+          "latency_ms": 194058.2,
           "chapter": "NONE",
           "status": "UNRECOGNIZED",
           "confidence": 0.0,
@@ -2849,7 +2849,7 @@
         },
         {
           "run": 2,
-          "latency_ms": 1670.0,
+          "latency_ms": 198892.6,
           "chapter": "NONE",
           "status": "UNRECOGNIZED",
           "confidence": 0.0,
@@ -2861,7 +2861,7 @@
         },
         {
           "run": 3,
-          "latency_ms": 1367.5,
+          "latency_ms": 197858.9,
           "chapter": "NONE",
           "status": "UNRECOGNIZED",
           "confidence": 0.0,
@@ -2873,7 +2873,7 @@
         },
         {
           "run": 4,
-          "latency_ms": 1581.4,
+          "latency_ms": 200753.6,
           "chapter": "NONE",
           "status": "UNRECOGNIZED",
           "confidence": 0.0,
@@ -2885,7 +2885,7 @@
         },
         {
           "run": 5,
-          "latency_ms": 1424.8,
+          "latency_ms": 207284.6,
           "chapter": "NONE",
           "status": "UNRECOGNIZED",
           "confidence": 0.0,
@@ -2935,11 +2935,11 @@
           "disambiguation": {
             "is_ambiguous": false,
             "banner_type": "NONE",
-            "banner_title": "MULTI-CHAPTER AMBIGUITY DETECTED",
-            "clarification_question": "What material and construction is the unspecified item?",
+            "banner_title": "SELECT SPECIFIC VARIANT / SPECIFICATION",
+            "clarification_question": "Which specification of woven fabrics | Construction: fabric | Terms: women's blouses, skirts, shorts, pants applies under Chapter 62 (Articles of apparel and clothing accessories, not knitted or crocheted)?",
             "disambiguation_options": [],
             "direct_match": null,
-            "distinct_chapters_count": 2,
+            "distinct_chapters_count": 1,
             "descriptive_report": {
               "article_understood_as": "Query 'aunty' is unrecognized.",
               "recommended_hsn": "Needs confirmation",
@@ -2956,19 +2956,119 @@
           },
           "intent_extraction": {
             "raw_query": "aunty",
-            "physical_product": "unspecified item",
+            "physical_product": "woven fabrics",
             "material": null,
-            "construction": null,
-            "intended_use": null,
-            "reading_confidence": "unclear",
+            "construction": "fabric",
+            "intended_use": "clothing",
+            "reading_confidence": "clear",
             "outcome_type": "UNRECOGNIZED",
-            "grounded_search_terms": [],
-            "unstated_attributes": [
-              "physical product type",
-              "constituent material",
-              "principal function"
+            "grounded_search_terms": [
+              "women's blouses",
+              "skirts",
+              "shorts",
+              "pants",
+              "shirts",
+              "jeans",
+              "panties",
+              "pyjamas",
+              "bedding",
+              "sheets",
+              "dressing gowns",
+              "blouses",
+              "wool or fine animal hair",
+              "fabric",
+              "clothing"
             ],
-            "dropped_terms": [],
+            "unstated_attributes": [
+              "material"
+            ],
+            "dropped_terms": [
+              {
+                "term": "dressies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "bathing suits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'bathing'"
+              },
+              {
+                "term": "skirt tops",
+                "field_source": "search_terms",
+                "reason": "words_do_not_cooccur_in_same_row: ['skirt', 'tops']"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "pantsuits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+              },
+              {
+                "term": "dressies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "pantsuits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+              },
+              {
+                "term": "dressies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "pantsuits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+              }
+            ],
             "top_headings_shown": [
               "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | BOARDS, PANELS, CONSOLES, DESKS, CABINETS AND OTHER BASES, EQUIPPED WITH TWO OR MORE APPARATUS OF HEADING  OR , FOR ELECTRIC CONTROL OR THE DISTRIBUTION OF ELECTRICITY, INCLUDING THOSE INCORPORATING INSTRUMENTS OR APPARATUS OF CHAPTER 90, AND NUM; FO | boards panels consoles desks for electricity control master classification category comprehensive electrical goods line sub voltage not exceeding prod",
               "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | BABY CARRIAGES AND PARTS THEREOF; BABY CARRIAGES AND PARTS THEREOF BABY CARRIAGES AND PARTS THEREOF: BABY CARRIAGES; BABY CARRIAGES AND PARTS THEREOF BABY CARRIAGES AND PARTS THEREOF PARTS | baby carriages and strollers parts thereof master category perambulators pushchairs buggies prams folding infant twin travel system stroller replaceme",
@@ -2979,8 +3079,8 @@
             "is_valid": false,
             "error_message": "Unable to identify a physical commodity from query 'aunty'. Clarification required.",
             "retries_used": 0,
-            "synthesized_search_string": "unspecified item",
-            "is_cache_hit": true,
+            "synthesized_search_string": "woven fabrics | Construction: fabric | Terms: women's blouses, skirts, shorts, pants",
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -3024,11 +3124,11 @@
           "disambiguation": {
             "is_ambiguous": false,
             "banner_type": "NONE",
-            "banner_title": "MULTI-CHAPTER AMBIGUITY DETECTED",
-            "clarification_question": "What material and construction is the unspecified item?",
+            "banner_title": "SELECT SPECIFIC VARIANT / SPECIFICATION",
+            "clarification_question": "Which specification of woven fabrics | Construction: fabric | Terms: women's blouses, skirts, shorts, pants applies under Chapter 62 (Articles of apparel and clothing accessories, not knitted or crocheted)?",
             "disambiguation_options": [],
             "direct_match": null,
-            "distinct_chapters_count": 2,
+            "distinct_chapters_count": 1,
             "descriptive_report": {
               "article_understood_as": "Query 'aunty' is unrecognized.",
               "recommended_hsn": "Needs confirmation",
@@ -3045,19 +3145,119 @@
           },
           "intent_extraction": {
             "raw_query": "aunty",
-            "physical_product": "unspecified item",
+            "physical_product": "woven fabrics",
             "material": null,
-            "construction": null,
-            "intended_use": null,
-            "reading_confidence": "unclear",
+            "construction": "fabric",
+            "intended_use": "clothing",
+            "reading_confidence": "clear",
             "outcome_type": "UNRECOGNIZED",
-            "grounded_search_terms": [],
-            "unstated_attributes": [
-              "physical product type",
-              "constituent material",
-              "principal function"
+            "grounded_search_terms": [
+              "women's blouses",
+              "skirts",
+              "shorts",
+              "pants",
+              "shirts",
+              "jeans",
+              "panties",
+              "pyjamas",
+              "bedding",
+              "sheets",
+              "dressing gowns",
+              "blouses",
+              "wool or fine animal hair",
+              "fabric",
+              "clothing"
             ],
-            "dropped_terms": [],
+            "unstated_attributes": [
+              "material"
+            ],
+            "dropped_terms": [
+              {
+                "term": "dressies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "bathing suits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'bathing'"
+              },
+              {
+                "term": "skirt tops",
+                "field_source": "search_terms",
+                "reason": "words_do_not_cooccur_in_same_row: ['skirt', 'tops']"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "pantsuits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+              },
+              {
+                "term": "dressies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "pantsuits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+              },
+              {
+                "term": "dressies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "pantsuits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+              }
+            ],
             "top_headings_shown": [
               "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | BOARDS, PANELS, CONSOLES, DESKS, CABINETS AND OTHER BASES, EQUIPPED WITH TWO OR MORE APPARATUS OF HEADING  OR , FOR ELECTRIC CONTROL OR THE DISTRIBUTION OF ELECTRICITY, INCLUDING THOSE INCORPORATING INSTRUMENTS OR APPARATUS OF CHAPTER 90, AND NUM; FO | boards panels consoles desks for electricity control master classification category comprehensive electrical goods line sub voltage not exceeding prod",
               "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | BABY CARRIAGES AND PARTS THEREOF; BABY CARRIAGES AND PARTS THEREOF BABY CARRIAGES AND PARTS THEREOF: BABY CARRIAGES; BABY CARRIAGES AND PARTS THEREOF BABY CARRIAGES AND PARTS THEREOF PARTS | baby carriages and strollers parts thereof master category perambulators pushchairs buggies prams folding infant twin travel system stroller replaceme",
@@ -3068,8 +3268,8 @@
             "is_valid": false,
             "error_message": "Unable to identify a physical commodity from query 'aunty'. Clarification required.",
             "retries_used": 0,
-            "synthesized_search_string": "unspecified item",
-            "is_cache_hit": true,
+            "synthesized_search_string": "woven fabrics | Construction: fabric | Terms: women's blouses, skirts, shorts, pants",
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -3113,11 +3313,11 @@
           "disambiguation": {
             "is_ambiguous": false,
             "banner_type": "NONE",
-            "banner_title": "MULTI-CHAPTER AMBIGUITY DETECTED",
-            "clarification_question": "What material and construction is the unspecified item?",
+            "banner_title": "SELECT SPECIFIC VARIANT / SPECIFICATION",
+            "clarification_question": "Which specification of woven fabrics | Construction: fabric | Terms: women's blouses, skirts, shorts, pants applies under Chapter 62 (Articles of apparel and clothing accessories, not knitted or crocheted)?",
             "disambiguation_options": [],
             "direct_match": null,
-            "distinct_chapters_count": 2,
+            "distinct_chapters_count": 1,
             "descriptive_report": {
               "article_understood_as": "Query 'aunty' is unrecognized.",
               "recommended_hsn": "Needs confirmation",
@@ -3134,19 +3334,119 @@
           },
           "intent_extraction": {
             "raw_query": "aunty",
-            "physical_product": "unspecified item",
+            "physical_product": "woven fabrics",
             "material": null,
-            "construction": null,
-            "intended_use": null,
-            "reading_confidence": "unclear",
+            "construction": "fabric",
+            "intended_use": "clothing",
+            "reading_confidence": "clear",
             "outcome_type": "UNRECOGNIZED",
-            "grounded_search_terms": [],
-            "unstated_attributes": [
-              "physical product type",
-              "constituent material",
-              "principal function"
+            "grounded_search_terms": [
+              "women's blouses",
+              "skirts",
+              "shorts",
+              "pants",
+              "shirts",
+              "jeans",
+              "panties",
+              "pyjamas",
+              "bedding",
+              "sheets",
+              "dressing gowns",
+              "blouses",
+              "wool or fine animal hair",
+              "fabric",
+              "clothing"
             ],
-            "dropped_terms": [],
+            "unstated_attributes": [
+              "material"
+            ],
+            "dropped_terms": [
+              {
+                "term": "dressies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "bathing suits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'bathing'"
+              },
+              {
+                "term": "skirt tops",
+                "field_source": "search_terms",
+                "reason": "words_do_not_cooccur_in_same_row: ['skirt', 'tops']"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "pantsuits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+              },
+              {
+                "term": "dressies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "pantsuits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+              },
+              {
+                "term": "dressies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "pantsuits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+              }
+            ],
             "top_headings_shown": [
               "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | BOARDS, PANELS, CONSOLES, DESKS, CABINETS AND OTHER BASES, EQUIPPED WITH TWO OR MORE APPARATUS OF HEADING  OR , FOR ELECTRIC CONTROL OR THE DISTRIBUTION OF ELECTRICITY, INCLUDING THOSE INCORPORATING INSTRUMENTS OR APPARATUS OF CHAPTER 90, AND NUM; FO | boards panels consoles desks for electricity control master classification category comprehensive electrical goods line sub voltage not exceeding prod",
               "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | BABY CARRIAGES AND PARTS THEREOF; BABY CARRIAGES AND PARTS THEREOF BABY CARRIAGES AND PARTS THEREOF: BABY CARRIAGES; BABY CARRIAGES AND PARTS THEREOF BABY CARRIAGES AND PARTS THEREOF PARTS | baby carriages and strollers parts thereof master category perambulators pushchairs buggies prams folding infant twin travel system stroller replaceme",
@@ -3157,8 +3457,8 @@
             "is_valid": false,
             "error_message": "Unable to identify a physical commodity from query 'aunty'. Clarification required.",
             "retries_used": 0,
-            "synthesized_search_string": "unspecified item",
-            "is_cache_hit": true,
+            "synthesized_search_string": "woven fabrics | Construction: fabric | Terms: women's blouses, skirts, shorts, pants",
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -3202,11 +3502,11 @@
           "disambiguation": {
             "is_ambiguous": false,
             "banner_type": "NONE",
-            "banner_title": "MULTI-CHAPTER AMBIGUITY DETECTED",
-            "clarification_question": "What material and construction is the unspecified item?",
+            "banner_title": "SELECT SPECIFIC VARIANT / SPECIFICATION",
+            "clarification_question": "Which specification of woven fabrics | Construction: fabric | Terms: women's blouses, skirts, shorts, pants applies under Chapter 62 (Articles of apparel and clothing accessories, not knitted or crocheted)?",
             "disambiguation_options": [],
             "direct_match": null,
-            "distinct_chapters_count": 2,
+            "distinct_chapters_count": 1,
             "descriptive_report": {
               "article_understood_as": "Query 'aunty' is unrecognized.",
               "recommended_hsn": "Needs confirmation",
@@ -3223,19 +3523,119 @@
           },
           "intent_extraction": {
             "raw_query": "aunty",
-            "physical_product": "unspecified item",
+            "physical_product": "woven fabrics",
             "material": null,
-            "construction": null,
-            "intended_use": null,
-            "reading_confidence": "unclear",
+            "construction": "fabric",
+            "intended_use": "clothing",
+            "reading_confidence": "clear",
             "outcome_type": "UNRECOGNIZED",
-            "grounded_search_terms": [],
-            "unstated_attributes": [
-              "physical product type",
-              "constituent material",
-              "principal function"
+            "grounded_search_terms": [
+              "women's blouses",
+              "skirts",
+              "shorts",
+              "pants",
+              "shirts",
+              "jeans",
+              "panties",
+              "pyjamas",
+              "bedding",
+              "sheets",
+              "dressing gowns",
+              "blouses",
+              "wool or fine animal hair",
+              "fabric",
+              "clothing"
             ],
-            "dropped_terms": [],
+            "unstated_attributes": [
+              "material"
+            ],
+            "dropped_terms": [
+              {
+                "term": "dressies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "bathing suits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'bathing'"
+              },
+              {
+                "term": "skirt tops",
+                "field_source": "search_terms",
+                "reason": "words_do_not_cooccur_in_same_row: ['skirt', 'tops']"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "pantsuits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+              },
+              {
+                "term": "dressies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "pantsuits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+              },
+              {
+                "term": "dressies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "pantsuits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+              }
+            ],
             "top_headings_shown": [
               "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | BOARDS, PANELS, CONSOLES, DESKS, CABINETS AND OTHER BASES, EQUIPPED WITH TWO OR MORE APPARATUS OF HEADING  OR , FOR ELECTRIC CONTROL OR THE DISTRIBUTION OF ELECTRICITY, INCLUDING THOSE INCORPORATING INSTRUMENTS OR APPARATUS OF CHAPTER 90, AND NUM; FO | boards panels consoles desks for electricity control master classification category comprehensive electrical goods line sub voltage not exceeding prod",
               "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | BABY CARRIAGES AND PARTS THEREOF; BABY CARRIAGES AND PARTS THEREOF BABY CARRIAGES AND PARTS THEREOF: BABY CARRIAGES; BABY CARRIAGES AND PARTS THEREOF BABY CARRIAGES AND PARTS THEREOF PARTS | baby carriages and strollers parts thereof master category perambulators pushchairs buggies prams folding infant twin travel system stroller replaceme",
@@ -3246,8 +3646,8 @@
             "is_valid": false,
             "error_message": "Unable to identify a physical commodity from query 'aunty'. Clarification required.",
             "retries_used": 0,
-            "synthesized_search_string": "unspecified item",
-            "is_cache_hit": true,
+            "synthesized_search_string": "woven fabrics | Construction: fabric | Terms: women's blouses, skirts, shorts, pants",
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -3291,11 +3691,11 @@
           "disambiguation": {
             "is_ambiguous": false,
             "banner_type": "NONE",
-            "banner_title": "MULTI-CHAPTER AMBIGUITY DETECTED",
-            "clarification_question": "What material and construction is the unspecified item?",
+            "banner_title": "SELECT SPECIFIC VARIANT / SPECIFICATION",
+            "clarification_question": "Which specification of woven fabrics | Construction: fabric | Terms: women's blouses, skirts, shorts, pants applies under Chapter 62 (Articles of apparel and clothing accessories, not knitted or crocheted)?",
             "disambiguation_options": [],
             "direct_match": null,
-            "distinct_chapters_count": 2,
+            "distinct_chapters_count": 1,
             "descriptive_report": {
               "article_understood_as": "Query 'aunty' is unrecognized.",
               "recommended_hsn": "Needs confirmation",
@@ -3312,19 +3712,119 @@
           },
           "intent_extraction": {
             "raw_query": "aunty",
-            "physical_product": "unspecified item",
+            "physical_product": "woven fabrics",
             "material": null,
-            "construction": null,
-            "intended_use": null,
-            "reading_confidence": "unclear",
+            "construction": "fabric",
+            "intended_use": "clothing",
+            "reading_confidence": "clear",
             "outcome_type": "UNRECOGNIZED",
-            "grounded_search_terms": [],
-            "unstated_attributes": [
-              "physical product type",
-              "constituent material",
-              "principal function"
+            "grounded_search_terms": [
+              "women's blouses",
+              "skirts",
+              "shorts",
+              "pants",
+              "shirts",
+              "jeans",
+              "panties",
+              "pyjamas",
+              "bedding",
+              "sheets",
+              "dressing gowns",
+              "blouses",
+              "wool or fine animal hair",
+              "fabric",
+              "clothing"
             ],
-            "dropped_terms": [],
+            "unstated_attributes": [
+              "material"
+            ],
+            "dropped_terms": [
+              {
+                "term": "dressies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "bathing suits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'bathing'"
+              },
+              {
+                "term": "skirt tops",
+                "field_source": "search_terms",
+                "reason": "words_do_not_cooccur_in_same_row: ['skirt', 'tops']"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "pantsuits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+              },
+              {
+                "term": "dressies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "pantsuits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+              },
+              {
+                "term": "dressies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+              },
+              {
+                "term": "nightwear",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+              },
+              {
+                "term": "hoodies",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+              },
+              {
+                "term": "pantsuits",
+                "field_source": "search_terms",
+                "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+              }
+            ],
             "top_headings_shown": [
               "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | BOARDS, PANELS, CONSOLES, DESKS, CABINETS AND OTHER BASES, EQUIPPED WITH TWO OR MORE APPARATUS OF HEADING  OR , FOR ELECTRIC CONTROL OR THE DISTRIBUTION OF ELECTRICITY, INCLUDING THOSE INCORPORATING INSTRUMENTS OR APPARATUS OF CHAPTER 90, AND NUM; FO | boards panels consoles desks for electricity control master classification category comprehensive electrical goods line sub voltage not exceeding prod",
               "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | BABY CARRIAGES AND PARTS THEREOF; BABY CARRIAGES AND PARTS THEREOF BABY CARRIAGES AND PARTS THEREOF: BABY CARRIAGES; BABY CARRIAGES AND PARTS THEREOF BABY CARRIAGES AND PARTS THEREOF PARTS | baby carriages and strollers parts thereof master category perambulators pushchairs buggies prams folding infant twin travel system stroller replaceme",
@@ -3335,8 +3835,8 @@
             "is_valid": false,
             "error_message": "Unable to identify a physical commodity from query 'aunty'. Clarification required.",
             "retries_used": 0,
-            "synthesized_search_string": "unspecified item",
-            "is_cache_hit": true,
+            "synthesized_search_string": "woven fabrics | Construction: fabric | Terms: women's blouses, skirts, shorts, pants",
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -3357,60 +3857,60 @@
       "runs": [
         {
           "run": 1,
-          "latency_ms": 1494.7,
-          "chapter": "NONE",
+          "latency_ms": 145993.8,
+          "chapter": "39",
           "status": "AMBIGUOUS_MATERIAL",
-          "confidence": 0.4,
+          "confidence": 0.44,
           "banner_type": "MULTI_CHAPTER_AMBIGUITY",
-          "options_count": 0,
+          "options_count": 2,
           "recommended_hsn": "None (Not available in reference dataset)",
           "descriptive_report_confidence": "Low",
           "is_accurate": true
         },
         {
           "run": 2,
-          "latency_ms": 1550.4,
-          "chapter": "NONE",
+          "latency_ms": 150140.9,
+          "chapter": "39",
           "status": "AMBIGUOUS_MATERIAL",
-          "confidence": 0.4,
+          "confidence": 0.44,
           "banner_type": "MULTI_CHAPTER_AMBIGUITY",
-          "options_count": 0,
+          "options_count": 2,
           "recommended_hsn": "None (Not available in reference dataset)",
           "descriptive_report_confidence": "Low",
           "is_accurate": true
         },
         {
           "run": 3,
-          "latency_ms": 1493.0,
-          "chapter": "NONE",
+          "latency_ms": 152311.7,
+          "chapter": "39",
           "status": "AMBIGUOUS_MATERIAL",
-          "confidence": 0.4,
+          "confidence": 0.44,
           "banner_type": "MULTI_CHAPTER_AMBIGUITY",
-          "options_count": 0,
+          "options_count": 2,
           "recommended_hsn": "None (Not available in reference dataset)",
           "descriptive_report_confidence": "Low",
           "is_accurate": true
         },
         {
           "run": 4,
-          "latency_ms": 1536.9,
-          "chapter": "NONE",
+          "latency_ms": 156509.4,
+          "chapter": "39",
           "status": "AMBIGUOUS_MATERIAL",
-          "confidence": 0.4,
+          "confidence": 0.44,
           "banner_type": "MULTI_CHAPTER_AMBIGUITY",
-          "options_count": 0,
+          "options_count": 2,
           "recommended_hsn": "None (Not available in reference dataset)",
           "descriptive_report_confidence": "Low",
           "is_accurate": true
         },
         {
           "run": 5,
-          "latency_ms": 1501.8,
-          "chapter": "NONE",
+          "latency_ms": 165545.2,
+          "chapter": "39",
           "status": "AMBIGUOUS_MATERIAL",
-          "confidence": 0.4,
+          "confidence": 0.44,
           "banner_type": "MULTI_CHAPTER_AMBIGUITY",
-          "options_count": 0,
+          "options_count": 2,
           "recommended_hsn": "None (Not available in reference dataset)",
           "descriptive_report_confidence": "Low",
           "is_accurate": true
@@ -3442,9 +3942,9 @@
           "chapter_prediction": {
             "product_name": "water bottle",
             "normalized": "water bottle",
-            "chapter": "NONE",
-            "chapter_title": "Material Ambiguity",
-            "confidence": 0.4,
+            "chapter": "39",
+            "chapter_title": "Plastics and articles thereof",
+            "confidence": 0.44,
             "status": "AMBIGUOUS_MATERIAL",
             "alternatives": [],
             "evidence": [
@@ -3454,9 +3954,16 @@
                 "hsn_code": "3923 30 10",
                 "description": "ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS - CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES: INSULATED WARE",
                 "score": 98.5
+              },
+              {
+                "chapter": "84",
+                "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+                "hsn_code": "8422 90 10",
+                "description": "DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAINERS;",
+                "score": 78.5
               }
             ],
-            "reason": "High-confidence statutory classification in Chapter 39",
+            "reason": "Status: AMBIGUOUS_MATERIAL. Multiple candidate tariff items identified under GIR compliance. User selection required to finalize 8-digit HSN code.",
             "catalogue_version": "v1.0.0-closed98",
             "index_version": "bge-m3-lineage-v1",
             "total_active_chapters": 9
@@ -3464,11 +3971,42 @@
           "disambiguation": {
             "is_ambiguous": true,
             "banner_type": "MULTI_CHAPTER_AMBIGUITY",
-            "banner_title": "CONSTITUENT MATERIAL REQUIRED",
-            "clarification_question": "What material and construction is the water bottle?",
-            "disambiguation_options": [],
+            "banner_title": "MULTI-CHAPTER AMBIGUITY DETECTED",
+            "clarification_question": "What material and construction is the water bottle | Construction: closed | Terms: water bottle, closed, container?",
+            "disambiguation_options": [
+              {
+                "option_id": "OPT_39233010_1",
+                "label": "[3923 30 10] ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS - CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES: INSULATED WARE",
+                "chapter_code": "39",
+                "chapter_title": "Plastics and articles thereof",
+                "hsn_code": "3923 30 10",
+                "hsn_description": "ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS - CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES: INSULATED WARE",
+                "material_keywords": "polyethylene terephthalate (PET), stretch blow-moulded virgin resin",
+                "article_keywords": "plastic bottles for beverages and pharmaceuticals, blow-moulded PET mineral water bottles",
+                "score": 98.5,
+                "confidence_pct": 39.4,
+                "is_chapter_representative": true,
+                "is_duplicate_description": false,
+                "is_truncated": false
+              },
+              {
+                "option_id": "OPT_84229010_2",
+                "label": "[8422 90 10] DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAINERS;",
+                "chapter_code": "84",
+                "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+                "hsn_code": "8422 90 10",
+                "hsn_description": "DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAINERS;",
+                "material_keywords": "stainless steel 304 food-grade contact parts, aluminum framing, food-grade silicone seals, acetal conveyor, specialized component material for machinery for filling, closing, sealing or labelling bottles, cans, boxes, bags or other containers - machinery for capsuling bottles, jars, tubes and similar containers, metallurgical specification variant 385",
+                "article_keywords": "dishwashing bottle washing filling closing labelling packing machines, machinery for filling, closing, sealing or labelling bottles, cans, boxes, bags or other containers - machinery for capsuling bottles, jars, tubes and similar containers, precision engineered equipment, mechanical configuration variant 385",
+                "score": 78.5,
+                "confidence_pct": 31.4,
+                "is_chapter_representative": true,
+                "is_duplicate_description": false,
+                "is_truncated": true
+              }
+            ],
             "direct_match": null,
-            "distinct_chapters_count": 1,
+            "distinct_chapters_count": 2,
             "descriptive_report": {
               "article_understood_as": "An item ('water bottle') queried by user.",
               "recommended_hsn": "None (Not available in reference dataset)",
@@ -3489,7 +4027,7 @@
             "construction": "closed",
             "intended_use": "container",
             "reading_confidence": "clear",
-            "outcome_type": "AMBIGUOUS_MATERIAL",
+            "outcome_type": "SUCCESS",
             "grounded_search_terms": [
               "water bottle",
               "plastic",
@@ -3510,10 +4048,10 @@
               "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | STEAM OR OTHER VAPOUR GENERATING BOILERS (OTHER THAN CENTRAL HEATING HOT WATER BOILERS CAPABLE ALSO OF PRODUCING LOW PRESSURE STEAM); SUPER-HEATED WATER BOILERS - STEAM OR OTHER VAPOUR GENERATING BOILERS; STEAM OR OTHER VAPOUR GENERATING BOILERS (OTH | steam and vapour generating boilers master classification category industrial machinery apparatus other watertube with production exceeding precision "
             ],
             "is_valid": true,
-            "error_message": "Statutory classification depends on constituent material and construction. Product 'water bottle' exists across multiple chapters (e.g. Chapter 39 Plastics vs Chapter 73 Steel). Material is required.",
+            "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "water bottle | Construction: closed | Terms: water bottle, closed, container",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -3544,9 +4082,9 @@
           "chapter_prediction": {
             "product_name": "water bottle",
             "normalized": "water bottle",
-            "chapter": "NONE",
-            "chapter_title": "Material Ambiguity",
-            "confidence": 0.4,
+            "chapter": "39",
+            "chapter_title": "Plastics and articles thereof",
+            "confidence": 0.44,
             "status": "AMBIGUOUS_MATERIAL",
             "alternatives": [],
             "evidence": [
@@ -3556,9 +4094,16 @@
                 "hsn_code": "3923 30 10",
                 "description": "ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS - CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES: INSULATED WARE",
                 "score": 98.5
+              },
+              {
+                "chapter": "84",
+                "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+                "hsn_code": "8422 90 10",
+                "description": "DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAINERS;",
+                "score": 78.5
               }
             ],
-            "reason": "High-confidence statutory classification in Chapter 39",
+            "reason": "Status: AMBIGUOUS_MATERIAL. Multiple candidate tariff items identified under GIR compliance. User selection required to finalize 8-digit HSN code.",
             "catalogue_version": "v1.0.0-closed98",
             "index_version": "bge-m3-lineage-v1",
             "total_active_chapters": 9
@@ -3566,11 +4111,42 @@
           "disambiguation": {
             "is_ambiguous": true,
             "banner_type": "MULTI_CHAPTER_AMBIGUITY",
-            "banner_title": "CONSTITUENT MATERIAL REQUIRED",
-            "clarification_question": "What material and construction is the water bottle?",
-            "disambiguation_options": [],
+            "banner_title": "MULTI-CHAPTER AMBIGUITY DETECTED",
+            "clarification_question": "What material and construction is the water bottle | Construction: closed | Terms: water bottle, closed, container?",
+            "disambiguation_options": [
+              {
+                "option_id": "OPT_39233010_1",
+                "label": "[3923 30 10] ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS - CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES: INSULATED WARE",
+                "chapter_code": "39",
+                "chapter_title": "Plastics and articles thereof",
+                "hsn_code": "3923 30 10",
+                "hsn_description": "ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS - CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES: INSULATED WARE",
+                "material_keywords": "polyethylene terephthalate (PET), stretch blow-moulded virgin resin",
+                "article_keywords": "plastic bottles for beverages and pharmaceuticals, blow-moulded PET mineral water bottles",
+                "score": 98.5,
+                "confidence_pct": 39.4,
+                "is_chapter_representative": true,
+                "is_duplicate_description": false,
+                "is_truncated": false
+              },
+              {
+                "option_id": "OPT_84229010_2",
+                "label": "[8422 90 10] DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAINERS;",
+                "chapter_code": "84",
+                "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+                "hsn_code": "8422 90 10",
+                "hsn_description": "DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAINERS;",
+                "material_keywords": "stainless steel 304 food-grade contact parts, aluminum framing, food-grade silicone seals, acetal conveyor, specialized component material for machinery for filling, closing, sealing or labelling bottles, cans, boxes, bags or other containers - machinery for capsuling bottles, jars, tubes and similar containers, metallurgical specification variant 385",
+                "article_keywords": "dishwashing bottle washing filling closing labelling packing machines, machinery for filling, closing, sealing or labelling bottles, cans, boxes, bags or other containers - machinery for capsuling bottles, jars, tubes and similar containers, precision engineered equipment, mechanical configuration variant 385",
+                "score": 78.5,
+                "confidence_pct": 31.4,
+                "is_chapter_representative": true,
+                "is_duplicate_description": false,
+                "is_truncated": true
+              }
+            ],
             "direct_match": null,
-            "distinct_chapters_count": 1,
+            "distinct_chapters_count": 2,
             "descriptive_report": {
               "article_understood_as": "An item ('water bottle') queried by user.",
               "recommended_hsn": "None (Not available in reference dataset)",
@@ -3591,7 +4167,7 @@
             "construction": "closed",
             "intended_use": "container",
             "reading_confidence": "clear",
-            "outcome_type": "AMBIGUOUS_MATERIAL",
+            "outcome_type": "SUCCESS",
             "grounded_search_terms": [
               "water bottle",
               "plastic",
@@ -3612,10 +4188,10 @@
               "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | STEAM OR OTHER VAPOUR GENERATING BOILERS (OTHER THAN CENTRAL HEATING HOT WATER BOILERS CAPABLE ALSO OF PRODUCING LOW PRESSURE STEAM); SUPER-HEATED WATER BOILERS - STEAM OR OTHER VAPOUR GENERATING BOILERS; STEAM OR OTHER VAPOUR GENERATING BOILERS (OTH | steam and vapour generating boilers master classification category industrial machinery apparatus other watertube with production exceeding precision "
             ],
             "is_valid": true,
-            "error_message": "Statutory classification depends on constituent material and construction. Product 'water bottle' exists across multiple chapters (e.g. Chapter 39 Plastics vs Chapter 73 Steel). Material is required.",
+            "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "water bottle | Construction: closed | Terms: water bottle, closed, container",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -3646,9 +4222,9 @@
           "chapter_prediction": {
             "product_name": "water bottle",
             "normalized": "water bottle",
-            "chapter": "NONE",
-            "chapter_title": "Material Ambiguity",
-            "confidence": 0.4,
+            "chapter": "39",
+            "chapter_title": "Plastics and articles thereof",
+            "confidence": 0.44,
             "status": "AMBIGUOUS_MATERIAL",
             "alternatives": [],
             "evidence": [
@@ -3658,9 +4234,16 @@
                 "hsn_code": "3923 30 10",
                 "description": "ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS - CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES: INSULATED WARE",
                 "score": 98.5
+              },
+              {
+                "chapter": "84",
+                "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+                "hsn_code": "8422 90 10",
+                "description": "DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAINERS;",
+                "score": 78.5
               }
             ],
-            "reason": "High-confidence statutory classification in Chapter 39",
+            "reason": "Status: AMBIGUOUS_MATERIAL. Multiple candidate tariff items identified under GIR compliance. User selection required to finalize 8-digit HSN code.",
             "catalogue_version": "v1.0.0-closed98",
             "index_version": "bge-m3-lineage-v1",
             "total_active_chapters": 9
@@ -3668,11 +4251,42 @@
           "disambiguation": {
             "is_ambiguous": true,
             "banner_type": "MULTI_CHAPTER_AMBIGUITY",
-            "banner_title": "CONSTITUENT MATERIAL REQUIRED",
-            "clarification_question": "What material and construction is the water bottle?",
-            "disambiguation_options": [],
+            "banner_title": "MULTI-CHAPTER AMBIGUITY DETECTED",
+            "clarification_question": "What material and construction is the water bottle | Construction: closed | Terms: water bottle, closed, container?",
+            "disambiguation_options": [
+              {
+                "option_id": "OPT_39233010_1",
+                "label": "[3923 30 10] ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS - CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES: INSULATED WARE",
+                "chapter_code": "39",
+                "chapter_title": "Plastics and articles thereof",
+                "hsn_code": "3923 30 10",
+                "hsn_description": "ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS - CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES: INSULATED WARE",
+                "material_keywords": "polyethylene terephthalate (PET), stretch blow-moulded virgin resin",
+                "article_keywords": "plastic bottles for beverages and pharmaceuticals, blow-moulded PET mineral water bottles",
+                "score": 98.5,
+                "confidence_pct": 39.4,
+                "is_chapter_representative": true,
+                "is_duplicate_description": false,
+                "is_truncated": false
+              },
+              {
+                "option_id": "OPT_84229010_2",
+                "label": "[8422 90 10] DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAINERS;",
+                "chapter_code": "84",
+                "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+                "hsn_code": "8422 90 10",
+                "hsn_description": "DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAINERS;",
+                "material_keywords": "stainless steel 304 food-grade contact parts, aluminum framing, food-grade silicone seals, acetal conveyor, specialized component material for machinery for filling, closing, sealing or labelling bottles, cans, boxes, bags or other containers - machinery for capsuling bottles, jars, tubes and similar containers, metallurgical specification variant 385",
+                "article_keywords": "dishwashing bottle washing filling closing labelling packing machines, machinery for filling, closing, sealing or labelling bottles, cans, boxes, bags or other containers - machinery for capsuling bottles, jars, tubes and similar containers, precision engineered equipment, mechanical configuration variant 385",
+                "score": 78.5,
+                "confidence_pct": 31.4,
+                "is_chapter_representative": true,
+                "is_duplicate_description": false,
+                "is_truncated": true
+              }
+            ],
             "direct_match": null,
-            "distinct_chapters_count": 1,
+            "distinct_chapters_count": 2,
             "descriptive_report": {
               "article_understood_as": "An item ('water bottle') queried by user.",
               "recommended_hsn": "None (Not available in reference dataset)",
@@ -3693,7 +4307,7 @@
             "construction": "closed",
             "intended_use": "container",
             "reading_confidence": "clear",
-            "outcome_type": "AMBIGUOUS_MATERIAL",
+            "outcome_type": "SUCCESS",
             "grounded_search_terms": [
               "water bottle",
               "plastic",
@@ -3714,10 +4328,10 @@
               "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | STEAM OR OTHER VAPOUR GENERATING BOILERS (OTHER THAN CENTRAL HEATING HOT WATER BOILERS CAPABLE ALSO OF PRODUCING LOW PRESSURE STEAM); SUPER-HEATED WATER BOILERS - STEAM OR OTHER VAPOUR GENERATING BOILERS; STEAM OR OTHER VAPOUR GENERATING BOILERS (OTH | steam and vapour generating boilers master classification category industrial machinery apparatus other watertube with production exceeding precision "
             ],
             "is_valid": true,
-            "error_message": "Statutory classification depends on constituent material and construction. Product 'water bottle' exists across multiple chapters (e.g. Chapter 39 Plastics vs Chapter 73 Steel). Material is required.",
+            "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "water bottle | Construction: closed | Terms: water bottle, closed, container",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -3748,9 +4362,9 @@
           "chapter_prediction": {
             "product_name": "water bottle",
             "normalized": "water bottle",
-            "chapter": "NONE",
-            "chapter_title": "Material Ambiguity",
-            "confidence": 0.4,
+            "chapter": "39",
+            "chapter_title": "Plastics and articles thereof",
+            "confidence": 0.44,
             "status": "AMBIGUOUS_MATERIAL",
             "alternatives": [],
             "evidence": [
@@ -3760,9 +4374,16 @@
                 "hsn_code": "3923 30 10",
                 "description": "ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS - CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES: INSULATED WARE",
                 "score": 98.5
+              },
+              {
+                "chapter": "84",
+                "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+                "hsn_code": "8422 90 10",
+                "description": "DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAINERS;",
+                "score": 78.5
               }
             ],
-            "reason": "High-confidence statutory classification in Chapter 39",
+            "reason": "Status: AMBIGUOUS_MATERIAL. Multiple candidate tariff items identified under GIR compliance. User selection required to finalize 8-digit HSN code.",
             "catalogue_version": "v1.0.0-closed98",
             "index_version": "bge-m3-lineage-v1",
             "total_active_chapters": 9
@@ -3770,11 +4391,42 @@
           "disambiguation": {
             "is_ambiguous": true,
             "banner_type": "MULTI_CHAPTER_AMBIGUITY",
-            "banner_title": "CONSTITUENT MATERIAL REQUIRED",
-            "clarification_question": "What material and construction is the water bottle?",
-            "disambiguation_options": [],
+            "banner_title": "MULTI-CHAPTER AMBIGUITY DETECTED",
+            "clarification_question": "What material and construction is the water bottle | Construction: closed | Terms: water bottle, closed, container?",
+            "disambiguation_options": [
+              {
+                "option_id": "OPT_39233010_1",
+                "label": "[3923 30 10] ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS - CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES: INSULATED WARE",
+                "chapter_code": "39",
+                "chapter_title": "Plastics and articles thereof",
+                "hsn_code": "3923 30 10",
+                "hsn_description": "ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS - CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES: INSULATED WARE",
+                "material_keywords": "polyethylene terephthalate (PET), stretch blow-moulded virgin resin",
+                "article_keywords": "plastic bottles for beverages and pharmaceuticals, blow-moulded PET mineral water bottles",
+                "score": 98.5,
+                "confidence_pct": 39.4,
+                "is_chapter_representative": true,
+                "is_duplicate_description": false,
+                "is_truncated": false
+              },
+              {
+                "option_id": "OPT_84229010_2",
+                "label": "[8422 90 10] DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAINERS;",
+                "chapter_code": "84",
+                "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+                "hsn_code": "8422 90 10",
+                "hsn_description": "DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAINERS;",
+                "material_keywords": "stainless steel 304 food-grade contact parts, aluminum framing, food-grade silicone seals, acetal conveyor, specialized component material for machinery for filling, closing, sealing or labelling bottles, cans, boxes, bags or other containers - machinery for capsuling bottles, jars, tubes and similar containers, metallurgical specification variant 385",
+                "article_keywords": "dishwashing bottle washing filling closing labelling packing machines, machinery for filling, closing, sealing or labelling bottles, cans, boxes, bags or other containers - machinery for capsuling bottles, jars, tubes and similar containers, precision engineered equipment, mechanical configuration variant 385",
+                "score": 78.5,
+                "confidence_pct": 31.4,
+                "is_chapter_representative": true,
+                "is_duplicate_description": false,
+                "is_truncated": true
+              }
+            ],
             "direct_match": null,
-            "distinct_chapters_count": 1,
+            "distinct_chapters_count": 2,
             "descriptive_report": {
               "article_understood_as": "An item ('water bottle') queried by user.",
               "recommended_hsn": "None (Not available in reference dataset)",
@@ -3795,7 +4447,7 @@
             "construction": "closed",
             "intended_use": "container",
             "reading_confidence": "clear",
-            "outcome_type": "AMBIGUOUS_MATERIAL",
+            "outcome_type": "SUCCESS",
             "grounded_search_terms": [
               "water bottle",
               "plastic",
@@ -3816,10 +4468,10 @@
               "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | STEAM OR OTHER VAPOUR GENERATING BOILERS (OTHER THAN CENTRAL HEATING HOT WATER BOILERS CAPABLE ALSO OF PRODUCING LOW PRESSURE STEAM); SUPER-HEATED WATER BOILERS - STEAM OR OTHER VAPOUR GENERATING BOILERS; STEAM OR OTHER VAPOUR GENERATING BOILERS (OTH | steam and vapour generating boilers master classification category industrial machinery apparatus other watertube with production exceeding precision "
             ],
             "is_valid": true,
-            "error_message": "Statutory classification depends on constituent material and construction. Product 'water bottle' exists across multiple chapters (e.g. Chapter 39 Plastics vs Chapter 73 Steel). Material is required.",
+            "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "water bottle | Construction: closed | Terms: water bottle, closed, container",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",
@@ -3850,9 +4502,9 @@
           "chapter_prediction": {
             "product_name": "water bottle",
             "normalized": "water bottle",
-            "chapter": "NONE",
-            "chapter_title": "Material Ambiguity",
-            "confidence": 0.4,
+            "chapter": "39",
+            "chapter_title": "Plastics and articles thereof",
+            "confidence": 0.44,
             "status": "AMBIGUOUS_MATERIAL",
             "alternatives": [],
             "evidence": [
@@ -3862,9 +4514,16 @@
                 "hsn_code": "3923 30 10",
                 "description": "ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS - CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES: INSULATED WARE",
                 "score": 98.5
+              },
+              {
+                "chapter": "84",
+                "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+                "hsn_code": "8422 90 10",
+                "description": "DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAINERS;",
+                "score": 78.5
               }
             ],
-            "reason": "High-confidence statutory classification in Chapter 39",
+            "reason": "Status: AMBIGUOUS_MATERIAL. Multiple candidate tariff items identified under GIR compliance. User selection required to finalize 8-digit HSN code.",
             "catalogue_version": "v1.0.0-closed98",
             "index_version": "bge-m3-lineage-v1",
             "total_active_chapters": 9
@@ -3872,11 +4531,42 @@
           "disambiguation": {
             "is_ambiguous": true,
             "banner_type": "MULTI_CHAPTER_AMBIGUITY",
-            "banner_title": "CONSTITUENT MATERIAL REQUIRED",
-            "clarification_question": "What material and construction is the water bottle?",
-            "disambiguation_options": [],
+            "banner_title": "MULTI-CHAPTER AMBIGUITY DETECTED",
+            "clarification_question": "What material and construction is the water bottle | Construction: closed | Terms: water bottle, closed, container?",
+            "disambiguation_options": [
+              {
+                "option_id": "OPT_39233010_1",
+                "label": "[3923 30 10] ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS - CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES: INSULATED WARE",
+                "chapter_code": "39",
+                "chapter_title": "Plastics and articles thereof",
+                "hsn_code": "3923 30 10",
+                "hsn_description": "ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS - CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES: INSULATED WARE",
+                "material_keywords": "polyethylene terephthalate (PET), stretch blow-moulded virgin resin",
+                "article_keywords": "plastic bottles for beverages and pharmaceuticals, blow-moulded PET mineral water bottles",
+                "score": 98.5,
+                "confidence_pct": 39.4,
+                "is_chapter_representative": true,
+                "is_duplicate_description": false,
+                "is_truncated": false
+              },
+              {
+                "option_id": "OPT_84229010_2",
+                "label": "[8422 90 10] DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAINERS;",
+                "chapter_code": "84",
+                "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances - parts thereof",
+                "hsn_code": "8422 90 10",
+                "hsn_description": "DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAINERS;",
+                "material_keywords": "stainless steel 304 food-grade contact parts, aluminum framing, food-grade silicone seals, acetal conveyor, specialized component material for machinery for filling, closing, sealing or labelling bottles, cans, boxes, bags or other containers - machinery for capsuling bottles, jars, tubes and similar containers, metallurgical specification variant 385",
+                "article_keywords": "dishwashing bottle washing filling closing labelling packing machines, machinery for filling, closing, sealing or labelling bottles, cans, boxes, bags or other containers - machinery for capsuling bottles, jars, tubes and similar containers, precision engineered equipment, mechanical configuration variant 385",
+                "score": 78.5,
+                "confidence_pct": 31.4,
+                "is_chapter_representative": true,
+                "is_duplicate_description": false,
+                "is_truncated": true
+              }
+            ],
             "direct_match": null,
-            "distinct_chapters_count": 1,
+            "distinct_chapters_count": 2,
             "descriptive_report": {
               "article_understood_as": "An item ('water bottle') queried by user.",
               "recommended_hsn": "None (Not available in reference dataset)",
@@ -3897,7 +4587,7 @@
             "construction": "closed",
             "intended_use": "container",
             "reading_confidence": "clear",
-            "outcome_type": "AMBIGUOUS_MATERIAL",
+            "outcome_type": "SUCCESS",
             "grounded_search_terms": [
               "water bottle",
               "plastic",
@@ -3918,10 +4608,10 @@
               "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | STEAM OR OTHER VAPOUR GENERATING BOILERS (OTHER THAN CENTRAL HEATING HOT WATER BOILERS CAPABLE ALSO OF PRODUCING LOW PRESSURE STEAM); SUPER-HEATED WATER BOILERS - STEAM OR OTHER VAPOUR GENERATING BOILERS; STEAM OR OTHER VAPOUR GENERATING BOILERS (OTH | steam and vapour generating boilers master classification category industrial machinery apparatus other watertube with production exceeding precision "
             ],
             "is_valid": true,
-            "error_message": "Statutory classification depends on constituent material and construction. Product 'water bottle' exists across multiple chapters (e.g. Chapter 39 Plastics vs Chapter 73 Steel). Material is required.",
+            "error_message": null,
             "retries_used": 0,
             "synthesized_search_string": "water bottle | Construction: closed | Terms: water bottle, closed, container",
-            "is_cache_hit": true,
+            "is_cache_hit": false,
             "clarification_merged": false
           },
           "catalogue_version": "v1.0.0-closed98",

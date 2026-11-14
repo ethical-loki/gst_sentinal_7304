@@ -87,7 +87,7 @@ for item in QUERIES:
     exp_stat = item["expected_status"]
     exp_ban = item["expected_banner"]
 
-    print(f"\n--- Testing query: '{q}' (Expected: Ch={exp_ch}, Status={exp_stat}, Banner={exp_ban}) ---")
+    print(f"\n--- Testing query: '{q}' (Expected: Ch={exp_ch}, Status={exp_stat}, Banner={exp_ban}) ---", flush=True)
     query_runs = []
     raw_responses = []
 
@@ -96,7 +96,7 @@ for item in QUERIES:
         req_data = json.dumps({"product": q, "use_cache": False}).encode("utf-8")
         req = urllib.request.Request(URL, data=req_data, headers={"Content-Type": "application/json"})
         t0 = time.time()
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with urllib.request.urlopen(req, timeout=300) as resp:
             raw_text = resp.read().decode("utf-8")
             data = json.loads(raw_text)
         latency = round((time.time() - t0) * 1000, 1)
@@ -138,7 +138,7 @@ for item in QUERIES:
             "is_accurate": is_acc
         }
         query_runs.append(record)
-        print(f"  Run {r}: Ch={record['chapter']}, Status={record['status']}, Banner={record['banner_type']}, Options={record['options_count']}, Acc={is_acc} ({latency}ms)")
+        print(f"  Run {r}: Ch={record['chapter']}, Status={record['status']}, Banner={record['banner_type']}, Options={record['options_count']}, Acc={is_acc} ({latency}ms)", flush=True)
 
     # Check stability and accuracy
     chapters = {r["chapter"] for r in query_runs}

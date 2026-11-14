@@ -190,19 +190,119 @@
   },
   "bee4f703865fad5d761a83fcc272a00a82c1035b1a82f0208b1efdd4cd5b38fa": {
     "raw_query": "aunty",
-    "physical_product": "unspecified item",
+    "physical_product": "woven fabrics",
     "material": null,
-    "construction": null,
-    "intended_use": null,
-    "reading_confidence": "unclear",
+    "construction": "fabric",
+    "intended_use": "clothing",
+    "reading_confidence": "clear",
     "outcome_type": "UNRECOGNIZED",
-    "grounded_search_terms": [],
-    "unstated_attributes": [
-      "physical product type",
-      "constituent material",
-      "principal function"
+    "grounded_search_terms": [
+      "women's blouses",
+      "skirts",
+      "shorts",
+      "pants",
+      "shirts",
+      "jeans",
+      "panties",
+      "pyjamas",
+      "bedding",
+      "sheets",
+      "dressing gowns",
+      "blouses",
+      "wool or fine animal hair",
+      "fabric",
+      "clothing"
     ],
-    "dropped_terms": [],
+    "unstated_attributes": [
+      "material"
+    ],
+    "dropped_terms": [
+      {
+        "term": "dressies",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+      },
+      {
+        "term": "nightwear",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+      },
+      {
+        "term": "hoodies",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+      },
+      {
+        "term": "nightwear",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+      },
+      {
+        "term": "bathing suits",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'bathing'"
+      },
+      {
+        "term": "skirt tops",
+        "field_source": "search_terms",
+        "reason": "words_do_not_cooccur_in_same_row: ['skirt', 'tops']"
+      },
+      {
+        "term": "nightwear",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+      },
+      {
+        "term": "hoodies",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+      },
+      {
+        "term": "pantsuits",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+      },
+      {
+        "term": "dressies",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+      },
+      {
+        "term": "nightwear",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+      },
+      {
+        "term": "hoodies",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+      },
+      {
+        "term": "pantsuits",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+      },
+      {
+        "term": "dressies",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'dressies'"
+      },
+      {
+        "term": "nightwear",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+      },
+      {
+        "term": "hoodies",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'hoodies'"
+      },
+      {
+        "term": "pantsuits",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'pantsuits'"
+      }
+    ],
     "top_headings_shown": [
       "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | BOARDS, PANELS, CONSOLES, DESKS, CABINETS AND OTHER BASES, EQUIPPED WITH TWO OR MORE APPARATUS OF HEADING  OR , FOR ELECTRIC CONTROL OR THE DISTRIBUTION OF ELECTRICITY, INCLUDING THOSE INCORPORATING INSTRUMENTS OR APPARATUS OF CHAPTER 90, AND NUM; FO | boards panels consoles desks for electricity control master classification category comprehensive electrical goods line sub voltage not exceeding prod",
       "Vehicles other than railway or tramway rolling-stock, and parts and accessories thereof | BABY CARRIAGES AND PARTS THEREOF; BABY CARRIAGES AND PARTS THEREOF BABY CARRIAGES AND PARTS THEREOF: BABY CARRIAGES; BABY CARRIAGES AND PARTS THEREOF BABY CARRIAGES AND PARTS THEREOF PARTS | baby carriages and strollers parts thereof master category perambulators pushchairs buggies prams folding infant twin travel system stroller replaceme",
@@ -213,7 +313,7 @@
     "is_valid": false,
     "error_message": "Unable to identify a physical commodity from query 'aunty'. Clarification required.",
     "retries_used": 0,
-    "synthesized_search_string": "unspecified item",
+    "synthesized_search_string": "woven fabrics | Construction: fabric | Terms: women's blouses, skirts, shorts, pants",
     "is_cache_hit": false,
     "clarification_merged": false
   },
@@ -384,7 +484,7 @@
     "construction": "closed",
     "intended_use": "container",
     "reading_confidence": "clear",
-    "outcome_type": "AMBIGUOUS_MATERIAL",
+    "outcome_type": "SUCCESS",
     "grounded_search_terms": [
       "water bottle",
       "plastic",
@@ -405,7 +505,7 @@
       "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | STEAM OR OTHER VAPOUR GENERATING BOILERS (OTHER THAN CENTRAL HEATING HOT WATER BOILERS CAPABLE ALSO OF PRODUCING LOW PRESSURE STEAM); SUPER-HEATED WATER BOILERS - STEAM OR OTHER VAPOUR GENERATING BOILERS; STEAM OR OTHER VAPOUR GENERATING BOILERS (OTH | steam and vapour generating boilers master classification category industrial machinery apparatus other watertube with production exceeding precision "
     ],
     "is_valid": true,
-    "error_message": "Statutory classification depends on constituent material and construction. Product 'water bottle' exists across multiple chapters (e.g. Chapter 39 Plastics vs Chapter 73 Steel). Material is required.",
+    "error_message": null,
     "retries_used": 0,
     "synthesized_search_string": "water bottle | Construction: closed | Terms: water bottle, closed, container",
     "is_cache_hit": false,
@@ -420,16 +520,12 @@
     "reading_confidence": "clear",
     "outcome_type": "SUCCESS",
     "grounded_search_terms": [
+      "cast iron kitchen tawa",
       "iron",
       "cast iron"
     ],
     "unstated_attributes": [],
     "dropped_terms": [
-      {
-        "term": "cast iron kitchen tawa",
-        "field_source": "search_terms",
-        "reason": "word_not_in_tariff_vocabulary: 'tawa'"
-      },
       {
         "term": "kitchen appliance",
         "field_source": "intended_use",
@@ -446,7 +542,7 @@
     "is_valid": true,
     "error_message": null,
     "retries_used": 0,
-    "synthesized_search_string": "cast iron kitchen tawa | Material: iron | Construction: cast iron | Terms: iron, cast iron",
+    "synthesized_search_string": "cast iron kitchen tawa | Material: iron | Construction: cast iron | Terms: cast iron kitchen tawa, iron, cast iron",
     "is_cache_hit": false,
     "clarification_merged": false
   },
@@ -568,11 +664,11 @@
   "4b5ae08d15db2a60675e848356cfe8bb1c56a32b1fbf931a9db2fe760b4062f7": {
     "raw_query": "welded structural steel square hollow tube",
     "physical_product": "copper sheet",
-    "material": null,
+    "material": "steel",
     "construction": "sheet metal",
     "intended_use": null,
     "reading_confidence": "clear",
-    "outcome_type": "AMBIGUOUS_MATERIAL",
+    "outcome_type": "SUCCESS",
     "grounded_search_terms": [
       "copper sheet",
       "copper",
@@ -597,9 +693,9 @@
       "Articles of iron or steel | TUBE OR PIPE FITTINGS (FOR EXAMPLE, COUPLINGS, ELBOWS, SLEEVES), OF IRON OR STEEL - CAST FITTINGS; OF NON-MALLEABLE CAST IRON; TUBE OR PIPE FITTINGS (FOR EXAMPLE, COUPLINGS, ELBOWS, SLEEVES), OF IRON OR STEEL - CAST FITTINGS : OF NON-MALLEABLE CAST I | tube pipe fittings master category couplings elbows sleeves flanges tees reducers cast iron non malleable sanitary soil bends drainage branches rainwa"
     ],
     "is_valid": true,
-    "error_message": "Statutory classification depends on constituent material and construction. Product 'welded structural steel square hollow tube' exists across multiple chapters (e.g. Chapter 39 Plastics vs Chapter 73 Steel). Material is required.",
+    "error_message": null,
     "retries_used": 0,
-    "synthesized_search_string": "copper sheet | Construction: sheet metal | Terms: copper sheet, sheet metal",
+    "synthesized_search_string": "copper sheet | Material: steel | Construction: sheet metal | Terms: copper sheet, copper, sheet metal",
     "is_cache_hit": false,
     "clarification_merged": false
   },
@@ -702,7 +798,7 @@
     "raw_query": "hardened steel machine screws",
     "physical_product": "hardened steel screw",
     "material": "steel",
-    "construction": null,
+    "construction": "threaded article",
     "intended_use": null,
     "reading_confidence": "clear",
     "outcome_type": "SUCCESS",
@@ -710,15 +806,11 @@
       "hardened steel screw",
       "steel screw",
       "steel thread",
-      "steel"
+      "steel",
+      "threaded article"
     ],
     "unstated_attributes": [],
     "dropped_terms": [
-      {
-        "term": "threaded article",
-        "field_source": "construction",
-        "reason": "words_do_not_cooccur_in_same_row: ['threaded', 'article']"
-      },
       {
         "term": "for use with metal by forging, hammering, die forging (excluding rolling mills)",
         "field_source": "intended_use",
@@ -735,7 +827,7 @@
     "is_valid": true,
     "error_message": null,
     "retries_used": 0,
-    "synthesized_search_string": "hardened steel screw | Material: steel | Terms: hardened steel screw, steel screw, steel thread, steel",
+    "synthesized_search_string": "hardened steel screw | Material: steel | Construction: threaded article | Terms: hardened steel screw, steel screw, steel thread, steel",
     "is_cache_hit": false,
     "clarification_merged": false
   },
@@ -813,7 +905,7 @@
       {
         "term": "presse stellastock",
         "field_source": "search_terms",
-        "reason": "word_not_in_tariff_vocabulary: 'presse'"
+        "reason": "word_not_in_tariff_vocabulary: 'stellastock'"
       },
       {
         "term": "pressurized cooking appliance",
@@ -880,7 +972,7 @@
   "2cd25263e47f723da9d3019cf14ee76b4477f29c7ea8188ad4e91b940d38baae": {
     "raw_query": "Amul spray milk powder tin",
     "physical_product": "spray milk powder tin",
-    "material": null,
+    "material": "milk",
     "construction": null,
     "intended_use": "food preparation",
     "reading_confidence": "clear",
@@ -924,7 +1016,7 @@
     "is_valid": true,
     "error_message": "Recognized product 'milk', but statutory classification falls under Chapter 04 (Dairy produce; birds eggs; natural honey), which is outside the active Master file schedule (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94).",
     "retries_used": 0,
-    "synthesized_search_string": "spray milk powder tin | Terms: food preparation",
+    "synthesized_search_string": "spray milk powder tin | Material: milk | Terms: iron or steel, food preparation",
     "is_cache_hit": false,
     "clarification_merged": false
   },
@@ -1012,7 +1104,7 @@
     "construction": "line pipe",
     "intended_use": "for oil or gas pipeline",
     "reading_confidence": "clear",
-    "outcome_type": "AMBIGUOUS_MATERIAL",
+    "outcome_type": "SUCCESS",
     "grounded_search_terms": [
       "iron or steel",
       "line pipe",
@@ -1046,7 +1138,7 @@
       "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | STEAM OR OTHER VAPOUR GENERATING BOILERS (OTHER THAN CENTRAL HEATING HOT WATER BOILERS CAPABLE ALSO OF PRODUCING LOW PRESSURE STEAM); SUPER-HEATED WATER BOILERS - STEAM OR OTHER VAPOUR GENERATING BOILERS; STEAM OR OTHER VAPOUR GENERATING BOILERS (OTH | steam and vapour generating boilers master classification category industrial machinery apparatus other watertube with production exceeding precision "
     ],
     "is_valid": true,
-    "error_message": "Statutory classification depends on constituent material and construction. Product 'Astral CPVC hot water plumbing pipe' exists across multiple chapters (e.g. Chapter 39 Plastics vs Chapter 73 Steel). Material is required.",
+    "error_message": null,
     "retries_used": 0,
     "synthesized_search_string": "Astral CPVC hot water plumbing pipe | Construction: line pipe | Terms: line pipe, for oil or gas pipeline",
     "is_cache_hit": false,
@@ -3427,6 +3519,1057 @@
     "error_message": "Unable to identify a physical commodity from query 'something something'. Clarification required.",
     "retries_used": 0,
     "synthesized_search_string": "knitwear | Construction: fabric | Terms: women's suits, jeans, panties, blazers",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "4ae7667e860a0564ebaa4fbc6b60a5fe2d19dee22fb3df479ea4b736e88781e3": {
+    "raw_query": "woven fabrics | Construction: fabric | Terms: women's blouses, skirts, shorts, pants",
+    "physical_product": "women's blouses, skirts, shorts, pants",
+    "material": "fabric",
+    "construction": "fabric",
+    "intended_use": "clothing",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "women's blouses",
+      "skirts",
+      "shorts",
+      "pants",
+      "fabric",
+      "clothing"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES; OF SILK OR SILK WASTE; WOMENS OR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES - OF SILK OR SILK WASTE : OF SILK; WOMENS OR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES - OF SILK OR SILK WASTE : OTHER; WOMENS O | womens blouses and tops master category girls shirts shirt tunics silk pure formal wild tussar noil blend wool fine merino winter cotton button casual",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED; WOMENS OR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED - OF COTTON; OF MAN-MADE FIBRES; WOMENS OR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED  | womens knitted blouses and tops master category knit jersey shirts crochet peplum cotton button front collared man made fibre poly rayon polyester geo",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS SUITS, ENSEMBLES, JACKETS, BLAZERS, DRESSES, SKIRTS, DIVIDED SKIRTS, TROUSERS, BIB AND BRACE OVERALLS, BREECHES AND SHORTS (OTHER THAN SWIMWEAR) ---- SUITS; WOMENS OR GIRLS SUITS, ENSEMBLES, JACKETS, BLAZERS, DRESSES, SKIRTS, DIVIDED  | womens tailoring and apparel master category suits dresses skirts jackets trousers shorts wool formal skirt tailored trouser executive cotton pant bus",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS SUITS, ENSEMBLES, JACKETS, BLAZERS, DRESSES, SKIRTS, DIVIDED SKIRTS, TROUSERS, BIB AND BRACE OVERALLS, BREECHES AND SHORTS (OTHER THAN SWIM WEAR), KNITTED OR CROCHETED ---- SUITS; WOMENS OR GIRLS SUITS, ENSEMBLES, JACKETS, BLAZERS, DR | womens knitted tailoring and apparel master category knit suits dresses skirts jersey jackets leggings shorts wool merino skirt tailored cotton pant d",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | GARMENTS, MADE UP OF FABRICS OF HEADING , , ,  OR ; OF FABRICS OF HEADING  OR :; GARMENTS, MADE UP OF FABRICS OF HEADING , , ,  OR  - OF FABRICS OF HEADING  OR ; PERSONAL PROTECTIVE GARMENTS FOR SURGICAL/MEDICAL USE (FELT OR NONWOVEN) CONFORMING TO I | technical protective apparel master category garments felt nonwoven coated fabric waterproof clothing disposable gowns coveralls cleanroom suits indus"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "women's blouses, skirts, shorts, pants | Material: fabric | Construction: fabric | Terms: women's blouses, skirts, shorts, pants",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "61b10c50b697473b26909aee22482401839fd7f03be3ba5ac37a64346114b064": {
+    "raw_query": "stainless steel water bottle | Material: iron or steel | Construction: non-knitted or crocheted | Terms: stainless steel bottles, iron or steel, non-knitted or crocheted",
+    "physical_product": "stainless steel water bottle",
+    "material": "iron or steel",
+    "construction": "non-knitted or crocheted",
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "stainless steel bottles",
+      "iron or steel",
+      "non-knitted or crocheted"
+    ],
+    "unstated_attributes": [
+      "material",
+      "construction",
+      "intended use"
+    ],
+    "dropped_terms": [
+      {
+        "term": "stainless steel water bottle",
+        "field_source": "search_terms",
+        "reason": "words_do_not_cooccur_in_same_row: ['stainless', 'steel', 'water', 'bottle']"
+      },
+      {
+        "term": "iron or steel water bottles",
+        "field_source": "search_terms",
+        "reason": "exceeds_4_words"
+      },
+      {
+        "term": "stainless steel water bottles",
+        "field_source": "search_terms",
+        "reason": "words_do_not_cooccur_in_same_row: ['stainless', 'steel', 'water', 'bottles']"
+      },
+      {
+        "term": "for drinking water",
+        "field_source": "intended_use",
+        "reason": "word_not_in_tariff_vocabulary: 'drinking'"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of iron or steel | SANITARY WARE AND PARTS THEREOF, OF IRON OR STEEL; SANITARY WARE AND PARTS THEREOF, OF IRON OR STEEL - SINKS AND WASH BASINS, OF STAINLESS STEEL; SANITARY WARE AND PARTS THEREOF, OF IRON OR STEEL - BATHS : OF CAST IRON, WHETHER OR NOT ENAMELLED; SANI | sanitary ware and parts master category sinks wash basins baths flushing cisterns kitchen stainless steel undermount double bowl commercial prep cast ",
+      "Articles of iron or steel | TUBE OR PIPE FITTINGS (FOR EXAMPLE, COUPLINGS, ELBOWS, SLEEVES), OF IRON OR STEEL - CAST FITTINGS; OF NON-MALLEABLE CAST IRON; TUBE OR PIPE FITTINGS (FOR EXAMPLE, COUPLINGS, ELBOWS, SLEEVES), OF IRON OR STEEL - CAST FITTINGS : OF NON-MALLEABLE CAST I | tube pipe fittings master category couplings elbows sleeves flanges tees reducers cast iron non malleable sanitary soil bends drainage branches rainwa",
+      "Articles of iron or steel | TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PARTS THEREOF, OF IRON OR STEEL; IRON OR STEEL WOOL; POT SCOURERS AND SCOURING OR POLISHING PADS, GLOVES AND THE LIKE, OF IRON OR STEEL; TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PARTS THEREOF, OF I | household table and kitchen articles master category pots pans stainless steel utensils cast iron cookware wool pot scourers scouring pads metal clean",
+      "Articles of iron or steel | CONTAINERS FOR COMPRESSED OR LIQUEFIED GAS, OF IRON OR STEEL; CONTAINERS FOR COMPRESSED OR LIQUEFIED GAS, OF IRON OR STEEL - CONTAINERS FOR COMPRESSED OR LIQUEFIED GAS, OF IRON OR STEEL : LIQUEFIED PETROLEUM GAS (LPG) CYLINDER; CONTAINERS FOR COMPRES | containers for compressed liquefied gas master category cylinders pressure bottles cryogenic vessels and industrial lpg domestic cooking petroleum low",
+      "Articles of iron or steel | STRANDED WIRE, ROPES, CABLES, PLAITED BANDS, SLINGS AND THE LIKE, OF IRON OR STEEL, NOT ELECTRICALLY INSULATED; STRANDED WIRE, ROPES AND CABLES; STRANDED WIRE, ROPES, CABLES, PLAITED BANDS, SLINGS AND THE LIKE, OF IRON OR STEEL, NOT ELECTRICALLY INSU | stranded wire ropes cables slings master category lifting elevator braided and non insulated steel for cranes hoists crane hoisting suspension prestre"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "stainless steel water bottle | Material: iron or steel | Construction: non-knitted or crocheted | Terms: stainless steel bottles, iron or steel, non-knitted or crocheted",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "076113ede13dcb52056f8ac6502b8870e0908311255c8a165592d9a3d1fe43de": {
+    "raw_query": "cotton t-shirt | Material: cotton | Construction: fabric | Terms: cotton t-shirt, cotton, fabric, clothing",
+    "physical_product": "cotton t-shirt",
+    "material": "cotton",
+    "construction": "fabric",
+    "intended_use": "clothing",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "cotton t-shirt",
+      "cotton",
+      "fabric",
+      "clothing"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED; WOMENS OR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED - OF COTTON; OF MAN-MADE FIBRES; WOMENS OR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED  | womens knitted blouses and tops master category knit jersey shirts crochet peplum cotton button front collared man made fibre poly rayon polyester geo",
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS SHIRTS, KNITTED OR CROCHETED; OF COTTON; MENS OR BOYS SHIRTS, KNITTED OR CROCHETED - OF COTTON : SHIRTS, HAND CROCHETED; MENS OR BOYS SHIRTS, KNITTED OR CROCHETED - OF COTTON : KNIT SHIRTS (OTHER THAN T-SHIRTS) AND SWEAT SHIRTS, OTHER T | mens knitted shirts master category polo knit button down crocheted cotton sweatshirts hand artisan crochet open weave resort pique collared crewneck ",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES; OF SILK OR SILK WASTE; WOMENS OR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES - OF SILK OR SILK WASTE : OF SILK; WOMENS OR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES - OF SILK OR SILK WASTE : OTHER; WOMENS O | womens blouses and tops master category girls shirts shirt tunics silk pure formal wild tussar noil blend wool fine merino winter cotton button casual",
+      "Articles of apparel and clothing accessories, knitted or crocheted | T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED; T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED - OF COTTON; OF OTHER TEXTILE MATERIALS; T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED -OF OTHER TEXTILE MATERIALS : OF SYNT | shirts and vests master category crewneck neck tees singlets tank tops muscle cotton athletic undershirts other textile synthetic performance silk moi",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | HANDKERCHIEFS; HANDKERCHIEFS - OF SILK OR SILK WASTE; HANDKERCHIEFS - OF COTTON; OTHER; HANDKERCHIEFS - OTHER : OF MAN-MADE FIBRES; HANDKERCHIEFS - OTHER : OF OTHER TEXTILE MATERIALS | handkerchiefs master category pocket squares bandanas silk pure twill hankies monogrammed cotton woven mens white printed other textile linen syntheti"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "cotton t-shirt | Material: cotton | Construction: fabric | Terms: cotton t-shirt, cotton, fabric, clothing",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "5ad1fd74b0dfda8904307f9eeb9925db9bae07fb57c3c20cbadd3ca4020f663a": {
+    "raw_query": "water bottle | Construction: closed | Terms: water bottle, closed, container",
+    "physical_product": "water bottle",
+    "material": null,
+    "construction": "closed",
+    "intended_use": "container",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "water bottle",
+      "closed",
+      "container",
+      "polymers of vinyl chloride or other halogenated olefins"
+    ],
+    "unstated_attributes": [
+      "material"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Plastics and articles thereof | ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS; BOXES, CASES, CRATES AND SIMILAR ARTICLES; ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHE | articles for conveyance packing goods master category boxes cases crates sacks bags bottles caps and similar plastic beverage heavy duty bottle transp",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAIN | dishwashing bottle washing filling closing labelling packing machines master classification category industrial machinery and apparatus for sealing bo",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | HYDRAULIC TURBINES, WATER WHEELS, ANDREGULATORS THEREFOR - HYDRAULIC TURBINES AND WATER WHEELS; HYDRAULIC TURBINES, WATER WHEELS, AND REGULATORS THEREFOR - HYDRAULIC TURBINES AND WATER WHEELS : OF A POWER NOT EXCEEDING 1,000 KW; OF A POWER EXCEEDING  | hydraulic turbines water wheels and regulators master classification category industrial machinery apparatus power not exceeding precision engineered ",
+      "Plastics and articles thereof | BUILDERS WARE OF PLASTICS, NOT ELSEWHERE SPECIFIED OR INCLUDED; BUILDERS WARE OF PLASTICS, NOT ELSEWHERE SPECIFIED OR INCLUDED - RESERVOIRS, TANKS, VATS AND SIMILAR CONTAINERS, OF A CAPACITY EXCEEDING 300 L; BUILDERS WARE OF PLASTICS, NOT ELSEWHERE S | builders ware plastics not elsewhere specified master category reservoirs tanks vats capacity exceeding rotomoulded overhead water storage loft doors ",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | STEAM OR OTHER VAPOUR GENERATING BOILERS (OTHER THAN CENTRAL HEATING HOT WATER BOILERS CAPABLE ALSO OF PRODUCING LOW PRESSURE STEAM); SUPER-HEATED WATER BOILERS - STEAM OR OTHER VAPOUR GENERATING BOILERS; STEAM OR OTHER VAPOUR GENERATING BOILERS (OTH | steam and vapour generating boilers master classification category industrial machinery apparatus other watertube with production exceeding precision "
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "water bottle | Construction: closed | Terms: water bottle, closed, container",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "03609114a8ca202bcfae7e800e0830e05a48f9690c362977fc289c18ad6c2669": {
+    "raw_query": "cast iron kitchen tawa | Material: iron | Construction: cast iron | Terms: cast iron kitchen tawa, iron, cast iron",
+    "physical_product": "cast iron kitchen tawa",
+    "material": "iron",
+    "construction": "cast iron",
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "cast iron kitchen tawa",
+      "iron",
+      "cast iron"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [
+      {
+        "term": "kitchen appliance",
+        "field_source": "intended_use",
+        "reason": "words_do_not_cooccur_in_same_row: ['kitchen', 'appliance']"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of iron or steel | OTHER CAST ARTICLES OF IRON OR STEEL; OTHER CAST ARTICLES OF IRON OR STEEL - OF NON-MALLEABLE CAST IRON; OTHER CAST ARTICLES OF IRON OR STEEL - OTHER : GRINDING BALLS AND SIMILAR ARTICLES FOR MILLS; OTHER; OTHER CAST ARTICLES OF IRON OR STEEL - OTHER | other cast articles iron steel master category manhole covers grinding balls engineering castings non malleable heavy counterweights machine tool beds",
+      "Articles of iron or steel | TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PARTS THEREOF, OF IRON OR STEEL; IRON OR STEEL WOOL; POT SCOURERS AND SCOURING OR POLISHING PADS, GLOVES AND THE LIKE, OF IRON OR STEEL; TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PARTS THEREOF, OF I | household table and kitchen articles master category pots pans stainless steel utensils cast iron cookware wool pot scourers scouring pads metal clean",
+      "Articles of iron or steel | SANITARY WARE AND PARTS THEREOF, OF IRON OR STEEL; SANITARY WARE AND PARTS THEREOF, OF IRON OR STEEL - SINKS AND WASH BASINS, OF STAINLESS STEEL; SANITARY WARE AND PARTS THEREOF, OF IRON OR STEEL - BATHS : OF CAST IRON, WHETHER OR NOT ENAMELLED; SANI | sanitary ware and parts master category sinks wash basins baths flushing cisterns kitchen stainless steel undermount double bowl commercial prep cast ",
+      "Articles of iron or steel | STOVES, RANGES, GRATES, COOKERS (INCLUDING THOSE WITH SUBSIDIARY BOILERS FOR CENTRAL HEATING), BARBECUES, BRAZIERS, GAS-RINGS, PLATE WARMERS AND SIMILAR NON-ELECTRIC DOMESTIC APPLIANCES, AND PARTS THEREOF, OF IRON OR STEEL - COOKING APPLIANCES AND PL | stoves ranges grates cookers master category non electric cooking appliances gas liquid fuel heaters solid for cooktops kitchen domestic multi burner ",
+      "Articles of iron or steel | TUBE OR PIPE FITTINGS (FOR EXAMPLE, COUPLINGS, ELBOWS, SLEEVES), OF IRON OR STEEL - CAST FITTINGS; OF NON-MALLEABLE CAST IRON; TUBE OR PIPE FITTINGS (FOR EXAMPLE, COUPLINGS, ELBOWS, SLEEVES), OF IRON OR STEEL - CAST FITTINGS : OF NON-MALLEABLE CAST I | tube pipe fittings master category couplings elbows sleeves flanges tees reducers cast iron non malleable sanitary soil bends drainage branches rainwa"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "cast iron kitchen tawa | Material: iron | Construction: cast iron | Terms: cast iron kitchen tawa, iron, cast iron",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "2dc8cd7cc2d5cc227de94afadad793aa967aea32f36535bf5b162a808b9f602b": {
+    "raw_query": "electric ceiling fan | Construction: non-woven fabric | Terms: electric ceiling fan, fan, non-woven fabric",
+    "physical_product": "electric ceiling fan",
+    "material": "non-woven fabric",
+    "construction": "non-woven fabric",
+    "intended_use": "electric ceiling fan",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "electric ceiling fan",
+      "fan",
+      "non-woven fabric"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | AIR CONDITIONING MACHINES, COMPRISING A MOTOR- DRIVEN FAN AND ELEMENTS FOR CHANGING THE TEMPERATURE AND HUMIDITY, INCLUDING THOSE MACHINES IN WHICH THE HUMIDITY CANNOT BE SEPARATELY REGULATED; OF A KIND DESIGNED TO BE FIXED TO A WINDOW, WALL, CEILING | air conditioning machines and systems master classification category industrial machinery apparatus sub kind designed fixed window wall ceiling floor ",
+      "Articles of iron or steel | CLOTH (INCLUDING ENDLESS BANDS), GRILL, NETTING AND FENCING, OF IRON OR STEEL WIRE; EXPANDED METAL OF IRON OR STEEL - WOVEN CLOTH; CLOTH (INCLUDING ENDLESS BANDS), GRILL, NETTING AND FENCING, OF IRON OR STEEL WIRE; EXPANDED METAL OF IRON OR STEEL - W | wire cloth grill netting and fencing master category woven mesh welded expanded metal endless bands for machinery continuous belts papermaking machine",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | GARMENTS, MADE UP OF FABRICS OF HEADING , , ,  OR ; OF FABRICS OF HEADING  OR :; GARMENTS, MADE UP OF FABRICS OF HEADING , , ,  OR  - OF FABRICS OF HEADING  OR ; PERSONAL PROTECTIVE GARMENTS FOR SURGICAL/MEDICAL USE (FELT OR NONWOVEN) CONFORMING TO I | technical protective apparel master category garments felt nonwoven coated fabric waterproof clothing disposable gowns coveralls cleanroom suits indus",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | HANDKERCHIEFS; HANDKERCHIEFS - OF SILK OR SILK WASTE; HANDKERCHIEFS - OF COTTON; OTHER; HANDKERCHIEFS - OTHER : OF MAN-MADE FIBRES; HANDKERCHIEFS - OTHER : OF OTHER TEXTILE MATERIALS | handkerchiefs master category pocket squares bandanas silk pure twill hankies monogrammed cotton woven mens white printed other textile linen syntheti",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | TIES, BOW TIES AND CRAVATS; OF SILK OR SILK WASTE; TIES, BOW TIES AND CRAVATS - OF SILK OR SILK WASTE; KHADI; OTHER; TIES, BOW TIES AND CRAVATS - OF MAN-MADE FIBRES; OF OTHER TEXTILE MATERIALS; TIES, BOW TIES AND CRAVATS - OF OTHER TEXTILE MATERIALS  | neckwear master category neckties ties bow cravats ascots silk woven jacquard formal khadi handspun swadeshi tuxedo synthetic polyester microfiber pre"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "electric ceiling fan | Material: non-woven fabric | Construction: non-woven fabric | Terms: electric ceiling fan, fan, non-woven fabric",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "a51f8b9220c5b2d50a1b8677010a50b57111dd5fafb49a07ecaeb1b0baee0a49": {
+    "raw_query": "knitted cotton socks | Material: cotton | Construction: knit | Terms: knitted cotton socks, cotton, knit, socks",
+    "physical_product": "knitted cotton socks",
+    "material": "cotton",
+    "construction": "knit",
+    "intended_use": "socks",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "knitted cotton socks",
+      "cotton",
+      "knit",
+      "socks"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS SHIRTS, KNITTED OR CROCHETED; OF COTTON; MENS OR BOYS SHIRTS, KNITTED OR CROCHETED - OF COTTON : SHIRTS, HAND CROCHETED; MENS OR BOYS SHIRTS, KNITTED OR CROCHETED - OF COTTON : KNIT SHIRTS (OTHER THAN T-SHIRTS) AND SWEAT SHIRTS, OTHER T | mens knitted shirts master category polo knit button down crocheted cotton sweatshirts hand artisan crochet open weave resort pique collared crewneck ",
+      "Articles of apparel and clothing accessories, knitted or crocheted | OTHER GARMENTS, KNITTED OR CROCHETED; OTHER GARMENTS, KNITTED OR CROCHETED - OF WOOL OR FINE ANIMAL HAIR; OTHER GARMENTS, KNITTED OR CROCHETED - OF COTTON; OF MAN-MADE FIBRES; OTHER GARMENTS, KNITTED OR CROCHETED - OF MAN-MADE FIBRES : OF SYNTHETIC F | other knitted garments master category specialized knitwear kurtas bodysuits dancewear overalls wool knit merino thermal jumpsuits woolen ethnic tunic",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED; WOMENS OR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED - OF COTTON; OF MAN-MADE FIBRES; WOMENS OR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED  | womens knitted blouses and tops master category knit jersey shirts crochet peplum cotton button front collared man made fibre poly rayon polyester geo",
+      "Articles of apparel and clothing accessories, knitted or crocheted | PANTYHOSE, TIGHTS, STOCKINGS, SOCKS AND OTHER HOSIERY,INCLUDING GRADUATED COMPRE SSION HOSIERY (FOR EXAMPLE, STOCKINGS FOR VARICOSE VEINS) AND FOOTWEAR WITHOUT APPLIED SOLES, KNITTED OR CROCHETED; GRADUATED COMPRESSION HOSIERY(EX.FOR VARICOSE VEINS); | hosiery and socks master category pantyhose tights stockings compression graduated varicose vein medical flight synthetic fibres dtex opaque silk hose",
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS' SUITS, ENSEMBLES, JACKETS, BLAZERS,TROUSERS, BIBAND BRACE OVERALLS, BREECHES AND SHORTS (OTHER THAN SWIM WEAR), KNITTED OR CROCHETED; SUITS; SUITS OF SILK; SUITS OF COTTON; SUITS OF ARTIFICIAL FIBRES; OTHER SUITS; MENS OR BOYS SUITS, E | mens knitted tailoring master category knit suits ensembles blazers jersey trousers shorts tailored two piece silk formal tuxedos evening cotton casua"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "knitted cotton socks | Material: cotton | Construction: knit | Terms: knitted cotton socks, cotton, knit, socks",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "42ba06b56fe2801f78aacb5ad721071cd9333607b12b3960b874bdd5b196033a": {
+    "raw_query": "insulated plastic ice box container | Material: plastic | Construction: closed | Terms: plastic, closed, storage",
+    "physical_product": "insulated plastic ice box container",
+    "material": "plastic",
+    "construction": "closed",
+    "intended_use": "storage",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "insulated plastic containers",
+      "plastic",
+      "closed",
+      "storage"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [
+      {
+        "term": "insulated plastic ice box container",
+        "field_source": "search_terms",
+        "reason": "exceeds_4_words"
+      },
+      {
+        "term": "closed plastic containers",
+        "field_source": "search_terms",
+        "reason": "words_do_not_cooccur_in_same_row: ['closed', 'plastic', 'containers']"
+      }
+    ],
+    "top_headings_shown": [
+      "Plastics and articles thereof | OTHER ARTICLES OF PLASTICS AND ARTICLES OF OTHER MATERIALS OF HEADINGS  TO ; OFFICE OR SCHOOL SUPPLIES; OTHER ARTICLES OF PLASTICS AND ARTICLES OF OTHER MATERIALS OF HEADINGS  TO  - OFFICE OR SCHOOL SUPPLIES: OFFICE SUPPLIES OF A KIND CLASSIFIED AS S | other fabricated article plastics industrial commercial technical plastic product",
+      "Plastics and articles thereof | ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS; BOXES, CASES, CRATES AND SIMILAR ARTICLES; ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHE | articles for conveyance packing goods master category boxes cases crates sacks bags bottles caps and similar plastic beverage heavy duty bottle transp",
+      "Plastics and articles thereof | OTHER PLATES, SHEETS, FILM, FOIL AND STRIP, OF PLASTICS, NON-CELLULAR AND NOT REINFORCED, LAMINATED, SUPPORTED OR SIMILARLY COMBINED WITH OTHER MATERIALS; OF POLYMERS OF EHTYLENE; OTHER PLATES, SHEETS, FILM, FOIL AND STRIP, OF PLASTICS, NON - CELLULA | non cellular plastic plate sheet film foil strip flat polymer packaging industrial",
+      "Plastics and articles thereof | TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), OF PLASTICS - ARTIFICIAL GUTS (SAUSAGE CASINGS) OF HARDENED PROTEIN OR OF CELLULOSIC MATERIALS:; TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, | tubes pipes and hoses fittings therefor master category artificial guts hardened proteins collagen sausage casings cellulosic plastic materials viscos",
+      "Plastics and articles thereof | TABLEWARE, KITCHENWARE, OTHER HOUSEHOLD ARTICLES AND HYGIENIC OR TOILET ARTICLES, OF PLASTICS; TABLEWARE AND KITCHENWARE; TABLEWARE, KITCHENWARE, OTHER HOUSEHOLD ARTICLES AND HYGIENIC OR TOILET ARTICLES, OF PLASTICS - TABLEWARE AND KITCHENWARE : INSU | tableware kitchenware other household and toilet articles master category plastics melamine dinner plates soup bowls serving platters plastic microwav"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "insulated plastic ice box container | Material: plastic | Construction: closed | Terms: insulated plastic containers, plastic, closed, storage",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "bcfb8e64c0b63369ccefaed3d9be6583fdfed87c84200ae072615b8b06569182": {
+    "raw_query": "copper sheet | Material: steel | Construction: sheet metal | Terms: copper sheet, copper, sheet metal",
+    "physical_product": "copper sheet",
+    "material": "steel",
+    "construction": "sheet metal",
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "copper sheet",
+      "copper",
+      "sheet metal",
+      "furniture",
+      "bedding",
+      "mattress",
+      "kitchen",
+      "prefabricated building",
+      "steel"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [
+      {
+        "term": "lamp fixture",
+        "field_source": "search_terms",
+        "reason": "words_do_not_cooccur_in_same_row: ['lamp', 'fixture']"
+      },
+      {
+        "term": "furniture, bedding, mattresses, lamp fixtures, prefabricated buildings",
+        "field_source": "intended_use",
+        "reason": "words_do_not_cooccur_in_same_row: ['furniture', 'bedding', 'mattresses', 'lamp', 'fixtures', 'prefabricated', 'buildings']"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of iron or steel | SHEET PILING OF IRON OR STEEL, WHETHER OR NOT DRILLED, PUNCHED OR MADE FROM ASSEMBLED ELEMENTS; WELDED ANGLES, SHAPES AND SECTIONS, OF IRON OR STEEL; SHEET PILING OF IRON OR STEEL, WHETHER OR NOT DRILLED, PUNCHED OR MADE FROM ASSEMBLED ELEMENTS; WELD | sheet piling master category welded angles structural shapes sections interlocked piles retaining wall cofferdam sheets trench shoring and framing pro",
+      "Articles of iron or steel | NAILS, TACKS, DRAWING PINS, CORRUGATED NAILS, STAPLES (OTHER THAN THOSE OF HEADING ) AND SIMILAR ARTICLES, OF IRON OR STEEL, WHETHER OR NOT WITH HEADS OF OTHER MATERIAL, BUT EXCLUDING SUCH ARTICLES WITH HEADS OF COPPER; NAILS, TACKS, DRAWING PINS, CO | nails tacks drawing pins staples master category fasteners without thread construction collated and non threaded wire common round flat head timber wo",
+      "Plastics and articles thereof | OTHER PLATES, SHEETS, FILM, FOIL AND STRIP, OF PLASTICS, NON-CELLULAR AND NOT REINFORCED, LAMINATED, SUPPORTED OR SIMILARLY COMBINED WITH OTHER MATERIALS; OF POLYMERS OF EHTYLENE; OTHER PLATES, SHEETS, FILM, FOIL AND STRIP, OF PLASTICS, NON - CELLULA | non cellular plastic plate sheet film foil strip flat polymer packaging industrial",
+      "Articles of iron or steel | CLOTH (INCLUDING ENDLESS BANDS), GRILL, NETTING AND FENCING, OF IRON OR STEEL WIRE; EXPANDED METAL OF IRON OR STEEL - WOVEN CLOTH; CLOTH (INCLUDING ENDLESS BANDS), GRILL, NETTING AND FENCING, OF IRON OR STEEL WIRE; EXPANDED METAL OF IRON OR STEEL - W | wire cloth grill netting and fencing master category woven mesh welded expanded metal endless bands for machinery continuous belts papermaking machine",
+      "Furniture; bedding, mattresses, mattress supports, cushions and similar stuffed furnishing; lamps and lighting fittings, not elsewhere specified or included; illuminated signs, illuminated name-plates and the like; prefabricated building | OTHER FURNITURE AND PARTS THEREOF; METAL FURNITURE OF A KIND USED IN OFFICES; OTHER FURNITURE AND PARTS THEREOF - METAL FURNITURE OF A KIND USED IN OFFICES: OF STEEL; OTHER FURNITURE AND PARTS THEREOF - METAL FURNITURE OF A KIND USED IN OFFICES: OTHE | other furniture and parts master category office bedroom kitchen cabinets shelving units tables metal steel filing desks lockers cupboards almirahs la"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "copper sheet | Material: steel | Construction: sheet metal | Terms: copper sheet, copper, sheet metal, furniture",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "4124cafae019e9be1ed0d480f98b17191d47834ee9cd8a7e5948f55dd3bf7c35": {
+    "raw_query": "nightwear pyjamas | Material: cotton | Construction: knitted | Terms: pyjamas, cotton, knitted",
+    "physical_product": "nightwear pyjamas",
+    "material": "cotton",
+    "construction": "knitted",
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "pyjamas",
+      "cotton",
+      "knitted"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [
+      {
+        "term": "nightwear pyjamas",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+      },
+      {
+        "term": "nightwear pyjamas knitted",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+      },
+      {
+        "term": "nightwear pyjamas",
+        "field_source": "intended_use",
+        "reason": "word_not_in_tariff_vocabulary: 'nightwear'"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS UNDERPANTS, BRIEFS, NIGHTSHIRTS, PYJAMAS, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES, KNITTED OR CROCHETED ---- UNDERPANTS AND BRIEFS; MENS OR BOYS UNDERPANTS, BRIEFS, NIGHTSHIRTS, PYJAMAS, BATHROBES, DRESSING GOWNS AND SIMILAR ARTI | mens knitted underwear and sleepwear master category underpants briefs boxer pyjamas bathrobes cotton knit trunks synthetic artificial performance qui",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | MEN'S OR BOYS SINGLETS AND OTHER VESTS, UNDERPANTS, BRIEFS, NIGHTSHIRTS, PYJAMAS, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES ---- UNDERPANTS AND BRIF; MENS OR BOYS SINGLETS AND OTHER VESTS, UNDERPANTS, BRIEFS, NIGHTSHIRTS, PYJAMAS, BATHROBES, DRE | mens underwear and sleepwear master category singlets undershirts underpants briefs pyjamas bathrobes cotton woven boxers boxer shorts trunks other te",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'S OR GIRLS SLIPS, PETTICOATS, BRIEFS, PANTIES, NIGHT DRESSES, PYJAMAS, NEGLIGEES, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES, KNITTED OR CROCHETED ---- SLIPS AND PETTICOATS; OF MAN-MADE FIBRES; WOMENS OR GIRLS SLIPS, PETTICOATS, BRIEFS, PAN | womens knitted lingerie and sleepwear master category slips panties briefs nightdresses pyjamas bathrobes synthetic poly petticoats nylon tricot under",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'SOR GIRLS SINGLETS AND OTHER VESTS, SLIPS, PETTICOATS, BRIEFS, PANTIES, NIGHTDRESSES, PYJAMAS, NEGLIGES, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES ---- SLIPS AND PETTICOATS; WOMENS OR GIRLS SINGLETS AND OTHER VESTS, SLIPS, PETTICOATS, BRIE | womens lingerie and sleepwear master category slips petticoats nightdresses pyjamas negligees bathrobes panties synthetic polyester half anti static u",
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS SHIRTS, KNITTED OR CROCHETED; OF COTTON; MENS OR BOYS SHIRTS, KNITTED OR CROCHETED - OF COTTON : SHIRTS, HAND CROCHETED; MENS OR BOYS SHIRTS, KNITTED OR CROCHETED - OF COTTON : KNIT SHIRTS (OTHER THAN T-SHIRTS) AND SWEAT SHIRTS, OTHER T | mens knitted shirts master category polo knit button down crocheted cotton sweatshirts hand artisan crochet open weave resort pique collared crewneck "
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "nightwear pyjamas | Material: cotton | Construction: knitted | Terms: pyjamas, cotton, knitted",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "1f96e8adfd5febc29501f6688f57ee844f27de73265df8103ed898ab568f7140": {
+    "raw_query": "solar photovoltaic module panel | Construction: flat panel display modules | Terms: solar photovoltaic module panel, flat panel display modules",
+    "physical_product": "flat panel display modules",
+    "material": null,
+    "construction": "flat panel display modules",
+    "intended_use": "display screens",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "flat panel display modules",
+      "electricity",
+      "sound recording",
+      "plastic",
+      "display screens"
+    ],
+    "unstated_attributes": [
+      "color",
+      "size",
+      "shape",
+      "material"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | FLAT PANEL DISPLAY MODULES, WHETHER OR NOT INCORPORATING TOUCH-SENSITIVE SCREENS TELEVISION CAMERAS, DIGITAL CAMERAS AND VIDEO CAMERA RECORDERS:; RECORDS, TAPES AND OTHER RECORDED MEDIA FOR SOUND OR OTHER SIMILARLY RECORDED PHENOMENA, INCLUDING MATRI | flat panel display modules lcd oled master classification category comprehensive electrical goods line records tapes and other recorded media for soun",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | SEMICONDUCTOR DEVICES (FOR EXAMPLE, DIODES, TRANSISTORS, SEMICONDUCTOR BASED TRANSDUCERS); PHOTOSENSITIVE SEMICONDUCTOR, DEVICES, INCLUDING PHOTOVOLTAIC CELLS WHETHER OR NOT ASSEMBLED IN MODULES OR MADE UP INTO PANELS; LIGHT-EMITTING DIODES (LED), WH | diodes transistors and semiconductor devices led master classification category comprehensive electrical goods line similar semi conductor photosensit",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MACHINES AND APPARATUS OF A KIND USED SOLELY SEMICONDUCTOR BOULES OR WAFERS, SEMICONDUCTOR DEVICES, ELECTRONIC INTEGRATED CIRCUITS OR FLAT PANEL DISPLAYS; MACHINES AND APPARATUS SPECIFIED IN NOTE 11(C) TO THIS CHAPTER; PARTS AND ACCESSORIES; MACHINES | machines for semiconductor wafer and flat panel manufacturing master classification category industrial machinery apparatus apparutus kind used solely",
+      "Plastics and articles thereof | SELF-ADHESIVE PLATES, SHEETS, FILM, FOIL, TAPE, STRIP AND OTHER FLAT SHAPES, OF PLASTICS, WHETHER OR NOT IN ROLLS; SELF - ADHESIVE PLATES, SHEETS, FILM, FOIL, TAPE, STRIP AND OTHER FLAT SHAPES, OF PLASTICS, WHETHER OR NOT IN ROLLS - IN ROLLS OF WIDTH | self adhesive plates sheets film foil tape strip master category sticky tapes labels rolls width not exceeding packaging electrical masking other flat",
+      "Plastics and articles thereof | OTHER PLATES, SHEETS, FILM, FOIL AND STRIP, OF PLASTICS, NON-CELLULAR AND NOT REINFORCED, LAMINATED, SUPPORTED OR SIMILARLY COMBINED WITH OTHER MATERIALS; OF POLYMERS OF EHTYLENE; OTHER PLATES, SHEETS, FILM, FOIL AND STRIP, OF PLASTICS, NON - CELLULA | non cellular plastic plate sheet film foil strip flat polymer packaging industrial"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "flat panel display modules | Construction: flat panel display modules | Terms: flat panel display modules, electricity, sound recording, display screens",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "0a1acb42511965b50f3d556a5973fb2f058b3e10e50fb194761240060402e4a0": {
+    "raw_query": "hardened steel screw | Material: steel | Construction: threaded article | Terms: hardened steel screw, steel screw, steel thread, steel",
+    "physical_product": "hardened steel screw",
+    "material": "steel",
+    "construction": "threaded article",
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "hardened steel screw",
+      "steel screw",
+      "steel thread",
+      "steel",
+      "threaded article"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [
+      {
+        "term": "used as a screw",
+        "field_source": "intended_use",
+        "reason": "words_do_not_cooccur_in_same_row: ['used', 'screw']"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of iron or steel | SCREWS, BOLTS, NUTS, COACH-SCREWS, SCREW HOOKS, RIVETS, COTTERS, COTTER-PINS, WASHERS (INCLUDING SPRING WASHERS) AND SIMILAR ARTICLES, OF IRON OR STEEL - THREADED ARTICLES; COACH SCREWS; SCREWS, BOLTS, NUTS, COACH-SCREWS, SCREW HOOKS, RIVETS, COTTERS | screws bolts nuts coach rivets cotters washers master category threaded and non fasteners heavy wood lag railway track for wooden sleepers fixing spik",
+      "Articles of iron or steel | NAILS, TACKS, DRAWING PINS, CORRUGATED NAILS, STAPLES (OTHER THAN THOSE OF HEADING ) AND SIMILAR ARTICLES, OF IRON OR STEEL, WHETHER OR NOT WITH HEADS OF OTHER MATERIAL, BUT EXCLUDING SUCH ARTICLES WITH HEADS OF COPPER; NAILS, TACKS, DRAWING PINS, CO | nails tacks drawing pins staples master category fasteners without thread construction collated and non threaded wire common round flat head timber wo",
+      "Articles of iron or steel | OTHER CAST ARTICLES OF IRON OR STEEL; OTHER CAST ARTICLES OF IRON OR STEEL - OF NON-MALLEABLE CAST IRON; OTHER CAST ARTICLES OF IRON OR STEEL - OTHER : GRINDING BALLS AND SIMILAR ARTICLES FOR MILLS; OTHER; OTHER CAST ARTICLES OF IRON OR STEEL - OTHER | other cast articles iron steel master category manhole covers grinding balls engineering castings non malleable heavy counterweights machine tool beds",
+      "Articles of iron or steel | OTHER ARTICLES OF IRON OR STEEL - FORGED OR STAMPED, BUT NOT FURTHER WORKED; OTHER ARTICLES OF IRON OR STEEL - FORGED OR STAMPED, BUT NOT FURTHER WORKED : GRINDING BALLS AND SIMILAR ARTICLES FOR MILLS; OTHER; OTHER ARTICLES OF IRON OR STEEL - FORGED  | other articles iron steel master category forged stamped wire fabricated metal goods grinding balls and cylpebs for mills ball mill tumbling media dro",
+      "Articles of iron or steel | RAILWAY OR TRAMWAY TRACK CONSTRUCTION MATERIAL OF IRON OR STEEL, THE FOLLOWING: RAILS, CHECK-RAILS AND RACK RAILS, SWITCH BLADES, CROSSING FROGS, POINT RODS AND OTHER CROSSING PIECES, SLEEPERS (CROSS-TIES), FISH- PLATES, CHAIRS, CHAIR WEDGES, SOLE PL | railway track construction material master category rails check switch blades crossing frogs sleepers fishplates train tracks tramway crane heavy main"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "hardened steel screw | Material: steel | Construction: threaded article | Terms: hardened steel screw, steel screw, steel thread, steel",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "e14b2aed6cba56ca1b22b410a8ed6d8190a3c933e39582c933a1055e76695ed0": {
+    "raw_query": "Dell Inspiron 15 laptop computer | Construction: glass | Terms: insulated, wireless, glass",
+    "physical_product": "Dell Inspiron 15 laptop computer",
+    "material": "glass",
+    "construction": "glass",
+    "intended_use": "personal use",
+    "reading_confidence": "clear",
+    "outcome_type": "OUT_OF_SCHEDULE",
+    "grounded_search_terms": [
+      "insulated",
+      "wireless",
+      "glass",
+      "personal use"
+    ],
+    "unstated_attributes": [
+      "insulation",
+      "construction type"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | ELECTRICAL INSULATORS OF ANY MATERIAL; ELECTRICAL INSULATORS OF ANY MATERIAL - OF GLASS; OF CERAMICS; ELECTRICAL INSULATORS OF ANY MATERIAL - OF CERAMICS: - PORCELAIN DISCS AND STRINGS : PORCELAIN BELOW 6.6 KV; ELECTRICAL INSULATORS OF ANY MATERIAL - | electrical insulators any material master classification category comprehensive goods line glass specific tariff configuration item sub ceramics produ",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MACHINES FOR ASSEMBLING ELECTRIC OR ELECTRONIC LAMPS, TUBES OR VALVES OR FLASHBULBS, IN GLASS ENVELOPES; MACHINES OR MANUFACTURING OR HOT WORKING GLASS OR GLASSWARE; MACHINES FOR ASSEMBLING ELECTRIC OR ELECTRONIC LAMPS, TUBES OR VALVES OR FLASH-BULBS | machines for assembling electric lamps tubes and glass working master classification category industrial machinery apparatus flash bulbs envelopes man",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | INSULATED (INCLUDING ENAMELLED OR ANODISED) WIRE, CABLE (INCLUDING CO-AXIAL CABLE) AND OTHER INSULATED ELECTRIC CONDUCTORS, WHETHER OR NOT FITTED WITH CONNECTORS; OPTICAL FIBRE CABLES, MADE UP OF INDIVIDUALLY SHEATHED FIBRES, WHETHER OR NOT ASSEMBLED | insulated electric wire cable and optical fibre cables master classification category comprehensive electrical goods line sub copper product group inc",
+      "Articles of iron or steel | STRANDED WIRE, ROPES, CABLES, PLAITED BANDS, SLINGS AND THE LIKE, OF IRON OR STEEL, NOT ELECTRICALLY INSULATED; STRANDED WIRE, ROPES AND CABLES; STRANDED WIRE, ROPES, CABLES, PLAITED BANDS, SLINGS AND THE LIKE, OF IRON OR STEEL, NOT ELECTRICALLY INSU | stranded wire ropes cables slings master category lifting elevator braided and non insulated steel for cranes hoists crane hoisting suspension prestre",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | TELEPHONE SETS, SMARTPHONES AND OTHER TELEPHONES FOR CELLULAR NETWORKS OR FOR OTHER WIRELESS N ETWO R KS : O THE R APPARAT US F OR THE TRANSMISSION OR RECEPTION OF VICE, IMAGES OR O T HE R D ATA , IN CL U DI NG A P PA RAT US FOR COMMUNICATION IN A WI | telephone sets smartphones and transmission apparatus master classification category comprehensive electrical goods line sub with cordless handsets pr"
+    ],
+    "is_valid": true,
+    "error_message": "Recognized product 'glass', but statutory classification falls under Chapter 70 (Glass and glassware), which is outside the active Master file schedule (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94).",
+    "retries_used": 0,
+    "synthesized_search_string": "Dell Inspiron 15 laptop computer | Material: glass | Construction: glass | Terms: insulated, wireless, glass",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "c8c51b736a4d2979a50226bafa92df7b49798a71296ba084ec5bd037c7c6acb5": {
+    "raw_query": "pressure cooker 5 liter | Material: iron or steel | Construction: tank | Terms: iron or steel, tank, food preparation",
+    "physical_product": "pressure cooker 5 liter",
+    "material": "iron or steel",
+    "construction": "tank",
+    "intended_use": "food preparation",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "pressure cooker",
+      "5 liter",
+      "tank",
+      "food preparation",
+      "iron or steel"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of iron or steel | TANKS, CASKS, DRUMS, CANS, BOXES AND SIMILAR CONTAINERS, FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY NOT EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL | tanks casks drums cans boxes master category capacity under liters shipping containers tin more industrial barrels steel liter tight head chemical clo",
+      "Articles of iron or steel | CONTAINERS FOR COMPRESSED OR LIQUEFIED GAS, OF IRON OR STEEL; CONTAINERS FOR COMPRESSED OR LIQUEFIED GAS, OF IRON OR STEEL - CONTAINERS FOR COMPRESSED OR LIQUEFIED GAS, OF IRON OR STEEL : LIQUEFIED PETROLEUM GAS (LPG) CYLINDER; CONTAINERS FOR COMPRES | containers for compressed liquefied gas master category cylinders pressure bottles cryogenic vessels and industrial lpg domestic cooking petroleum low",
+      "Articles of iron or steel | RESERVOIRS, TANKS, VATS AND SIMILAR CONTAINERS FOR ANY MATERIAL (OTHER THAN COMPRESSED OR LIQUEFIED GAS), OF IRON OR STEEL, OF A CAPACITY EXCEEDING 300 L, WHETHER OR NOT LINED OR HEAT-INSULATED, BUT NOT FITTED WITH MECHANICAL OR THERMAL EQUIPMENT; RE | reservoirs tanks vats and similar containers master category capacity exceeding liters stationary storage vessels bulk liquid solid industrial process",
+      "Articles of iron or steel | OTHER CAST ARTICLES OF IRON OR STEEL; OTHER CAST ARTICLES OF IRON OR STEEL - OF NON-MALLEABLE CAST IRON; OTHER CAST ARTICLES OF IRON OR STEEL - OTHER : GRINDING BALLS AND SIMILAR ARTICLES FOR MILLS; OTHER; OTHER CAST ARTICLES OF IRON OR STEEL - OTHER | other cast articles iron steel master category manhole covers grinding balls engineering castings non malleable heavy counterweights machine tool beds",
+      "Articles of iron or steel | RAILWAY OR TRAMWAY TRACK CONSTRUCTION MATERIAL OF IRON OR STEEL, THE FOLLOWING: RAILS, CHECK-RAILS AND RACK RAILS, SWITCH BLADES, CROSSING FROGS, POINT RODS AND OTHER CROSSING PIECES, SLEEPERS (CROSS-TIES), FISH- PLATES, CHAIRS, CHAIR WEDGES, SOLE PL | railway track construction material master category rails check switch blades crossing frogs sleepers fishplates train tracks tramway crane heavy main"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "pressure cooker 5 liter | Material: iron or steel | Construction: tank | Terms: pressure cooker, 5 liter, tank, food preparation",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "68f9234941e3dcec0269e8dd88e54a0a7ec326ab2955b6ece1184e5630a2eb03": {
+    "raw_query": "electric table fan | Construction: table kitchen or other household articles | Terms: electric table fan, electric table, fan, table kitchen or other household articles",
+    "physical_product": "electric table fan",
+    "material": "articles",
+    "construction": "table kitchen or other household articles",
+    "intended_use": "electric table fan",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "electric table fan",
+      "electric table",
+      "fan",
+      "iron or steel",
+      "table kitchen or other household articles"
+    ],
+    "unstated_attributes": [
+      "material"
+    ],
+    "dropped_terms": [
+      {
+        "term": "table kitchen or other household articles",
+        "field_source": "search_terms",
+        "reason": "exceeds_4_words"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of iron or steel | TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PARTS THEREOF, OF IRON OR STEEL; IRON OR STEEL WOOL; POT SCOURERS AND SCOURING OR POLISHING PADS, GLOVES AND THE LIKE, OF IRON OR STEEL; TABLE, KITCHEN OR OTHER HOUSEHOLD ARTICLES AND PARTS THEREOF, OF I | household table and kitchen articles master category pots pans stainless steel utensils cast iron cookware wool pot scourers scouring pads metal clean",
+      "Plastics and articles thereof | TABLEWARE, KITCHENWARE, OTHER HOUSEHOLD ARTICLES AND HYGIENIC OR TOILET ARTICLES, OF PLASTICS; TABLEWARE AND KITCHENWARE; TABLEWARE, KITCHENWARE, OTHER HOUSEHOLD ARTICLES AND HYGIENIC OR TOILET ARTICLES, OF PLASTICS - TABLEWARE AND KITCHENWARE : INSU | tableware kitchenware other household and toilet articles master category plastics melamine dinner plates soup bowls serving platters plastic microwav",
+      "Articles of iron or steel | STOVES, RANGES, GRATES, COOKERS (INCLUDING THOSE WITH SUBSIDIARY BOILERS FOR CENTRAL HEATING), BARBECUES, BRAZIERS, GAS-RINGS, PLATE WARMERS AND SIMILAR NON-ELECTRIC DOMESTIC APPLIANCES, AND PARTS THEREOF, OF IRON OR STEEL - COOKING APPLIANCES AND PL | stoves ranges grates cookers master category non electric cooking appliances gas liquid fuel heaters solid for cooktops kitchen domestic multi burner ",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | ELECTRIC (INCLUDING ELECTRICALLY HEATED GAS), LASER OR OTHER LIGHT OR PHOTO BEAM, ULTRASONIC, ELECTRON BEAM, MAGNETIC PULSE OR PLASMA ARC SOLDERING, BRAZING OR WELDING MACHINES AND APPARATUS, WHETHER OR NOT CAPABLE OF CUTTING; ELECTRIC MACHINES AND A | electric welding brazing and soldering machines master classification category comprehensive electrical goods line including electrically heated gas l",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | ELECTRO-MECHANICAL DOMESTIC APPLIANCES, WITH SELF CONTAINED ELECTRIC MOTOR, OTHER THAN VACUUM CLEANERS OF HEADING .; ELECTRO-MECHANICAL DOMESTIC APPLIANCES, WITH SELF-CONTAINED ELECTRIC MOTOR VACUUM CLEANERS, INCLUDING DRY AND WET VACUUM CLEANERS; EL | electro mechanical domestic food appliances master classification category comprehensive electrical goods line with self contained electric motor vacu"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "electric table fan | Material: articles | Construction: table kitchen or other household articles | Terms: electric table fan, electric table, fan, iron or steel",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "bae2306cd28a89d795b6d81efd53e84e0c9c8e2144f1bc2671d36023454c3d65": {
+    "raw_query": "raymond woven wool blazer coat | Material: wool | Construction: woven | Terms: wool, woven, outerwear",
+    "physical_product": "raymond woven wool blazer coat",
+    "material": "wool",
+    "construction": "woven",
+    "intended_use": "outerwear",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "wool",
+      "woven",
+      "outerwear"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [
+      {
+        "term": "raymond woven wool blazer coat",
+        "field_source": "search_terms",
+        "reason": "exceeds_4_words"
+      },
+      {
+        "term": "raymond woven wool blazer",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'raymond'"
+      },
+      {
+        "term": "raymond woven wool blazer coat",
+        "field_source": "search_terms",
+        "reason": "exceeds_4_words"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS OVERCOATS, CARCOATS, CAPES, CLOAKS, ANORAKS (INCLUDING SKIJACKETS), WIND-CHEATERS, WINDJACKETS AND SIMILAR ARTICLES, KNITTED OR CROCHETED, OTHER THAN THOSE OF HEADING ; MENS OR BOYS OVERCOATS, CARCOATS, CAPES, CLOAKS, ANORAKS (INCLUDING | mens knitted outerwear category overcoats carcoats capes cloaks anoraks ski jackets wind cheaters windjackets wool tailored knit double heavy cashmere",
+      "Articles of apparel and clothing accessories, not knitted or crocheted | WOMEN'S OR GIRLS OVERCOATS, CAR-COATS, CAPES, CLOAKS, ANORAKS (INCLUDING SKIJACKETS), WIND-CHEATERS, WIND-JACKETS AND SIMILAR ARTICLES, OTHER THAN THOSE OF HEADING  ---- OVERCOATS, RAINCOATS, CAR-COATS, CAPES, CLOAKS AND SIMILAR ARTICLES; OF WOOL OR  | womens outerwear category overcoats car coats capes cloaks anoraks ski jackets windcheaters wool and tailored winter pea wraps ponchos shawl collar co",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS OVERCOATS,CAR-COATS, CAPES, CLOAKS,ANORAKS (INCLUDING SKIJACKETS), WIND-CHEATERS, WINDJACKETS AND SIMILAR ARTICLES, NITTED OR CROCHETED, OTHER HAN THOSE OF HEADING ; WOMENS OR GIRLS OVERCOATS, CAR-COATS, CAPES, CLOAKS, ANORAKS (INCLUD | womens knitted outerwear category knit overcoats car coats capes cloaks anoraks ski jackets wool tailored cotton jersey trench synthetic man made wind",
+      "Articles of apparel and clothing accessories, knitted or crocheted | JERSEYS, PULLOVERS, CARDIGANS, WAISTCOATS AND SIMILAR ARTICLES, KNITTED OR CROCHETED ---- OF WOOL OR FINE ANIMAL HAIR; OF WOOL; JERSEYS, PULLOVERS, CARDIGANS, WAISTCOATS AND SIMILAR ARTICLES, KNITTED OR CROCHETED - OF WOOL OR FINE ANIMAL HAIR :OF WOO | sweaters and knitwear master category jerseys pullovers cardigans waistcoats knit vests jumpers wool woolen crewneck neck buttoned cable ribbed slipov",
+      "Articles of apparel and clothing accessories, knitted or crocheted | OTHER GARMENTS, KNITTED OR CROCHETED; OTHER GARMENTS, KNITTED OR CROCHETED - OF WOOL OR FINE ANIMAL HAIR; OTHER GARMENTS, KNITTED OR CROCHETED - OF COTTON; OF MAN-MADE FIBRES; OTHER GARMENTS, KNITTED OR CROCHETED - OF MAN-MADE FIBRES : OF SYNTHETIC F | other knitted garments master category specialized knitwear kurtas bodysuits dancewear overalls wool knit merino thermal jumpsuits woolen ethnic tunic"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "raymond woven wool blazer coat | Material: wool | Construction: woven | Terms: wool, woven, outerwear",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "c2fc92f68a3cedc0680c9b070c6a6f6c39a193592bc0d28fd35ea8c7afe5463e": {
+    "raw_query": "Luminous Solar Inverter Battery | Construction: not specified | Terms: not specified, lighting",
+    "physical_product": "Luminous solar inverters",
+    "material": "specified",
+    "construction": "not specified",
+    "intended_use": "lighting",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "luminaire",
+      "lighting fittings",
+      "lights",
+      "not specified",
+      "lighting"
+    ],
+    "unstated_attributes": [
+      "type",
+      "brand"
+    ],
+    "dropped_terms": [
+      {
+        "term": "luminous solar inverters",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'luminous'"
+      },
+      {
+        "term": "non-metallic",
+        "field_source": "material",
+        "reason": "words_do_not_cooccur_in_same_row: ['non', 'metallic']"
+      }
+    ],
+    "top_headings_shown": [
+      "Furniture; bedding, mattresses, mattress supports, cushions and similar stuffed furnishing; lamps and lighting fittings, not elsewhere specified or included; illuminated signs, illuminated name-plates and the like; prefabricated building | LUMINAIRES AND LIGHTING FITTINGS INCLUDING SEARCHLIGHTS AND SPOTLIGHTS AND PARTS THEREOF, NOT ELSEWHERE SPECIFIED OR INCLUDED; ILLUMINATED SIGNS, ILLUMINATED NAME-PLATES AND THE LIKE, HAVING A PERMANENTLY FIXED LIGHT SOURCE, AND PARTS THEREOF NOT ELS | luminaires and lighting fittings master category chandeliers wall sconces table lamps streetlights spotlights illuminated signs ceiling pendant hangin",
+      "Furniture; bedding, mattresses, mattress supports, cushions and similar stuffed furnishing; lamps and lighting fittings, not elsewhere specified or included; illuminated signs, illuminated name-plates and the like; prefabricated building | PREFABRICATED BUILDINGS; PREFABRICATED BUILDINGS - GREEN HOUSES: GREEN HOUSE-IN READY TO ASSEMBLE SETS; PREFABRICATED BUILDINGS - GREEN HOUSES: OTHER; PREFABRICATED BUILDINGS - OTHER : PREFABRICATED HOUSING MATERIAL; PREFABRICATED BUILDINGS - OTHER : | prefabricated buildings master category modular houses pre engineered greenhouses cold storage rooms silos sectional site office cabins ready assemble",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | CARBON ELECTRODES, CARBON BRUSHES, LAMP CARBONS, BATTERY CARBONS AND OTHER ARTICLES OF GRAPHITE OR OTHER CARBON, WITH OR WITHOUT METAL, OF A KIND USED FOR ELECTRICAL PURPOSES ELECTRODES; CARBON ELECTRODES, CARBON BRUSHES, LAMP CARBONS, BATTERY CARBON | carbon electrodes brushes and graphite articles master classification category comprehensive electrical goods line battery carbons other with without ",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | WASTE AND SCRAP OF PRIMARY CELLS, PRIMARY BATTERIES AND ELECTRIC ACCUMULATORS; SPENT PRIMARY CELLS, SPENT PRIMARY BATTERIES AND SPENT ELECTRIC ACCUMULATORS; ELECTRICAL PARTS OF MACHINERY OR APPARATUS, NOT SPECIFIED OR INCLUDED ELSEWHERE IN THIS CHAPT | waste and scrap primary cells batteries master classification category comprehensive electrical goods line parts machinery apparatus not specified inc",
+      "Furniture; bedding, mattresses, mattress supports, cushions and similar stuffed furnishing; lamps and lighting fittings, not elsewhere specified or included; illuminated signs, illuminated name-plates and the like; prefabricated building | SEATS (OTHER THAN THOSE OF HEADING ), WHETHER OR NOT CONVERTIBLE INTO BEDS, AND PARTS THEREOF; SEATS (OTHER THAN THOSE OF HEADING ), WHETHER OR NOT CONVERTIBLE INTO BEDS, AND PARTS THEREOF SEATS OF A KIND USED FOR AIRCRAFT; SEATS (OTHER THAN THOSE OF | seating furniture master category chairs sofas armchairs stools convertible bed seats bench aircraft pilot airplane passenger cockpit crew aviation re"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "Luminous solar inverters | Material: specified | Construction: not specified | Terms: luminaire, lighting fittings, lights, not specified",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "4f06b2838dd160af1a811d47cd486d5185db448c88a66f48855c1dc7a05293d8": {
+    "raw_query": "Astral CPVC hot water plumbing pipe | Construction: line pipe | Terms: line pipe, for oil or gas pipeline",
+    "physical_product": "Astral CPVC hot water plumbing pipe",
+    "material": null,
+    "construction": "line pipe",
+    "intended_use": "for oil or gas pipeline",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "line pipe",
+      "oil or gas pipeline",
+      "for oil or gas pipeline"
+    ],
+    "unstated_attributes": [
+      "material",
+      "construction",
+      "intended_use"
+    ],
+    "dropped_terms": [
+      {
+        "term": "Astral CPVC hot water plumbing pipe",
+        "field_source": "search_terms",
+        "reason": "exceeds_4_words"
+      },
+      {
+        "term": "PCV pipe",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'pcv'"
+      },
+      {
+        "term": "PCV pipe",
+        "field_source": "material",
+        "reason": "word_not_in_tariff_vocabulary: 'pcv'"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of iron or steel | TUBES, PIPES AND HOLLOW PROFILES, SEAMLESS, OF IRON (OTHER THAN CAST IRON) OR STEEL - LINE PIPE OF A KIND USED FOR OIL AND GAS PIPELINES; TUBES, PIPES AND HOLLOW PROFILES, SEAMLESS, OF IRON (OTHER THAN CAST IRON) OR STEEL - LINE PIPE OF A KIND USED F | seamless tubes pipes and hollow profiles master category oil gas line pipe casing tubing drill iron for pipelines transmission pipeline steel hydrocar",
+      "Articles of iron or steel | OTHER TUBES, PIPES AND HOLLOW PROFILES (FOR EXAMPLE, OPEN SEAM OR WELDED, RIVETED OR SIMILARLY CLOSED), OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES; OTHER TUBES, PIPES AND HOLLOW PROFILES (FOR EXAMPLE, OPEN SEAM OR WELDED, RI | small and medium welded tubes pipes hollow profiles master category outer diameter circular shaped line iron for oil gas gathering lines steel flowlin",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | PRODUCER GAS OR WATER GAS GENERATORS, WITH OR WITHOUT THEIR PURIFIERS; ACETYLENE GAS GENERATORS AND SIMILAR WATER PROCESS GAS GENERATORS, WITH OR WITHOUT THEIR PURIFIERS; PRODUCER GAS OR WATER GAS GENERATORS, WITH OR WITHOUT THEIR PURIFIERS; ACETYLEN | producer gas water and acetylene generators master classification category industrial machinery apparatus sub similar process with without their purif",
+      "Articles of iron or steel | OTHER TUBES AND PIPES (FOR EXAMPLE, WELDED, RIVETED OR SIMILARLY CLOSED), HAVING CIRCULAR CROSS-SECTIONS, THE EXTERNAL DIAMETER OF WHICH EXCEEDS 406.4 MM, OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES; LONGITUDINALLY SUBMERGED  | large diameter welded tubes and pipes master category external exceeding line pipe casing longitudinally submerged arc lsaw galvanized iron outer othe",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | STEAM OR OTHER VAPOUR GENERATING BOILERS (OTHER THAN CENTRAL HEATING HOT WATER BOILERS CAPABLE ALSO OF PRODUCING LOW PRESSURE STEAM); SUPER-HEATED WATER BOILERS - STEAM OR OTHER VAPOUR GENERATING BOILERS; STEAM OR OTHER VAPOUR GENERATING BOILERS (OTH | steam and vapour generating boilers master classification category industrial machinery apparatus other watertube with production exceeding precision "
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "Astral CPVC hot water plumbing pipe | Construction: line pipe | Terms: line pipe, oil or gas pipeline, for oil or gas pipeline",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "d9ce17eb05bd3017a33ef5fea1517e931b07f53dfb96ee5fd790d66a5f14a9de": {
+    "raw_query": "double door frost free refrigerator | Construction: closed | Terms: electricity, closed",
+    "physical_product": "double door frost-free refrigerator",
+    "material": null,
+    "construction": "closed",
+    "intended_use": "storage",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "electricity",
+      "iron or steel",
+      "closed",
+      "storage"
+    ],
+    "unstated_attributes": [
+      "closed design",
+      "electricity",
+      "closed construction",
+      "material"
+    ],
+    "dropped_terms": [
+      {
+        "term": "frost-free refrigerator",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'frost'"
+      },
+      {
+        "term": "closed design",
+        "field_source": "search_terms",
+        "reason": "words_do_not_cooccur_in_same_row: ['closed', 'design']"
+      },
+      {
+        "term": "closed construction",
+        "field_source": "search_terms",
+        "reason": "words_do_not_cooccur_in_same_row: ['closed', 'construction']"
+      }
+    ],
+    "top_headings_shown": [
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | REFRIGERATORS, FREEZERS AND OTHER REFRIGERATING OR FREEZING EQUIPMENT, ELECTRIC OR OTHER; HEAT PUMPS OTHER THAN AIR CONDITIONING MACHINES OF HEADING .5; COMBINED REFRIGERATOR-FREEZERS, FITTED WITH SEPARATE EXTERNAL DOORS OR DRAWERS, OR COMBINATIONS T | refrigerators freezers and refrigerating heat pumps master classification category industrial machinery apparatus sub combined refrigerator fitted wit",
+      "Electrical machinery and equipment and parts thereof; sound recorders and reproducers, television image and sound recorders and reproducers, and parts and accessories of such articles | BOARDS, PANELS, CONSOLES, DESKS, CABINETS AND OTHER BASES, EQUIPPED WITH TWO OR MORE APPARATUS OF HEADING  OR , FOR ELECTRIC CONTROL OR THE DISTRIBUTION OF ELECTRICITY, INCLUDING THOSE INCORPORATING INSTRUMENTS OR APPARATUS OF CHAPTER 90, AND NUM; FO | boards panels consoles desks for electricity control master classification category comprehensive electrical goods line sub voltage not exceeding prod",
+      "Articles of iron or steel | OTHER TUBES AND PIPES (FOR EXAMPLE, WELDED, RIVETED OR SIMILARLY CLOSED), HAVING CIRCULAR CROSS-SECTIONS, THE EXTERNAL DIAMETER OF WHICH EXCEEDS 406.4 MM, OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES; LONGITUDINALLY SUBMERGED  | large diameter welded tubes and pipes master category external exceeding line pipe casing longitudinally submerged arc lsaw galvanized iron outer othe",
+      "Articles of iron or steel | OTHER TUBES, PIPES AND HOLLOW PROFILES (FOR EXAMPLE, OPEN SEAM OR WELDED, RIVETED OR SIMILARLY CLOSED), OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES; OTHER TUBES, PIPES AND HOLLOW PROFILES (FOR EXAMPLE, OPEN SEAM OR WELDED, RI | small and medium welded tubes pipes hollow profiles master category outer diameter circular shaped line iron for oil gas gathering lines steel flowlin",
+      "Furniture; bedding, mattresses, mattress supports, cushions and similar stuffed furnishing; lamps and lighting fittings, not elsewhere specified or included; illuminated signs, illuminated name-plates and the like; prefabricated building | PREFABRICATED BUILDINGS; PREFABRICATED BUILDINGS - GREEN HOUSES: GREEN HOUSE-IN READY TO ASSEMBLE SETS; PREFABRICATED BUILDINGS - GREEN HOUSES: OTHER; PREFABRICATED BUILDINGS - OTHER : PREFABRICATED HOUSING MATERIAL; PREFABRICATED BUILDINGS - OTHER : | prefabricated buildings master category modular houses pre engineered greenhouses cold storage rooms silos sectional site office cabins ready assemble"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "double door frost-free refrigerator | Construction: closed | Terms: electricity, closed, storage",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "da952c6b1bf3ddd703952382d15caf8317fcf6acf23889eeadbd79593dd3a079": {
+    "raw_query": "seamless cold drawn carbon steel boiler tube | Material: carbon steel | Terms: carbon steel boiler tube, carbon steel, oil and gas pipeline",
+    "physical_product": "carbon steel boiler tube",
+    "material": "carbon steel",
+    "construction": "seamless",
+    "intended_use": "oil and gas pipeline",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "carbon steel boiler tube",
+      "carbon steel",
+      "oil and gas pipeline",
+      "seamless"
+    ],
+    "unstated_attributes": [
+      "material"
+    ],
+    "dropped_terms": [],
+    "top_headings_shown": [
+      "Articles of iron or steel | TUBES, PIPES AND HOLLOW PROFILES, SEAMLESS, OF IRON (OTHER THAN CAST IRON) OR STEEL - LINE PIPE OF A KIND USED FOR OIL AND GAS PIPELINES; TUBES, PIPES AND HOLLOW PROFILES, SEAMLESS, OF IRON (OTHER THAN CAST IRON) OR STEEL - LINE PIPE OF A KIND USED F | seamless tubes pipes and hollow profiles master category oil gas line pipe casing tubing drill iron for pipelines transmission pipeline steel hydrocar",
+      "Articles of iron or steel | OTHER TUBES, PIPES AND HOLLOW PROFILES (FOR EXAMPLE, OPEN SEAM OR WELDED, RIVETED OR SIMILARLY CLOSED), OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES; OTHER TUBES, PIPES AND HOLLOW PROFILES (FOR EXAMPLE, OPEN SEAM OR WELDED, RI | small and medium welded tubes pipes hollow profiles master category outer diameter circular shaped line iron for oil gas gathering lines steel flowlin",
+      "Articles of iron or steel | TUBE OR PIPE FITTINGS (FOR EXAMPLE, COUPLINGS, ELBOWS, SLEEVES), OF IRON OR STEEL - CAST FITTINGS; OF NON-MALLEABLE CAST IRON; TUBE OR PIPE FITTINGS (FOR EXAMPLE, COUPLINGS, ELBOWS, SLEEVES), OF IRON OR STEEL - CAST FITTINGS : OF NON-MALLEABLE CAST I | tube pipe fittings master category couplings elbows sleeves flanges tees reducers cast iron non malleable sanitary soil bends drainage branches rainwa",
+      "Articles of iron or steel | OTHER TUBES AND PIPES (FOR EXAMPLE, WELDED, RIVETED OR SIMILARLY CLOSED), HAVING CIRCULAR CROSS-SECTIONS, THE EXTERNAL DIAMETER OF WHICH EXCEEDS 406.4 MM, OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES; LONGITUDINALLY SUBMERGED  | large diameter welded tubes and pipes master category external exceeding line pipe casing longitudinally submerged arc lsaw galvanized iron outer othe",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | METAL-ROLLING MILLS AND ROLLS THEREFOR; METAL-ROLLING MILLS AND ROLLS THEREFOR TUBE MILLS; HOT OR COMBINATION HOT AND COLD; METAL-ROLLING MILLS AND ROLLS THEREFOR - OTHER ROLLING MILLS: HOT OR COMBINATION HOT AND COLD: HOT; METAL-ROLLING MILLS AND RO | metal rolling mills and rolls therefor master classification category industrial machinery apparatus tube precision engineered equipment sub hot combi"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "carbon steel boiler tube | Material: carbon steel | Construction: seamless | Terms: carbon steel boiler tube, carbon steel, oil and gas pipeline, seamless",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "5c24468e60943f210ce886c464836d5c24807aaaa91292dbdffdd5497983226a": {
+    "raw_query": "men's sports wear | Material: cotton | Construction: knit | Terms: sportswear, cotton, knit",
+    "physical_product": "men's sports wear",
+    "material": "cotton",
+    "construction": "knit",
+    "intended_use": "sportswear",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "clothing accessories",
+      "knit",
+      "cotton",
+      "sportswear"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [
+      {
+        "term": "sports wear",
+        "field_source": "search_terms",
+        "reason": "words_do_not_cooccur_in_same_row: ['sports', 'wear']"
+      },
+      {
+        "term": "men's sports",
+        "field_source": "search_terms",
+        "reason": "words_do_not_cooccur_in_same_row: ['men', 'sports']"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS SHIRTS, KNITTED OR CROCHETED; OF COTTON; MENS OR BOYS SHIRTS, KNITTED OR CROCHETED - OF COTTON : SHIRTS, HAND CROCHETED; MENS OR BOYS SHIRTS, KNITTED OR CROCHETED - OF COTTON : KNIT SHIRTS (OTHER THAN T-SHIRTS) AND SWEAT SHIRTS, OTHER T | mens knitted shirts master category polo knit button down crocheted cotton sweatshirts hand artisan crochet open weave resort pique collared crewneck ",
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS' SUITS, ENSEMBLES, JACKETS, BLAZERS,TROUSERS, BIBAND BRACE OVERALLS, BREECHES AND SHORTS (OTHER THAN SWIM WEAR), KNITTED OR CROCHETED; SUITS; SUITS OF SILK; SUITS OF COTTON; SUITS OF ARTIFICIAL FIBRES; OTHER SUITS; MENS OR BOYS SUITS, E | mens knitted tailoring master category knit suits ensembles blazers jersey trousers shorts tailored two piece silk formal tuxedos evening cotton casua",
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS UNDERPANTS, BRIEFS, NIGHTSHIRTS, PYJAMAS, BATHROBES, DRESSING GOWNS AND SIMILAR ARTICLES, KNITTED OR CROCHETED ---- UNDERPANTS AND BRIEFS; MENS OR BOYS UNDERPANTS, BRIEFS, NIGHTSHIRTS, PYJAMAS, BATHROBES, DRESSING GOWNS AND SIMILAR ARTI | mens knitted underwear and sleepwear master category underpants briefs boxer pyjamas bathrobes cotton knit trunks synthetic artificial performance qui",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS SUITS, ENSEMBLES, JACKETS, BLAZERS, DRESSES, SKIRTS, DIVIDED SKIRTS, TROUSERS, BIB AND BRACE OVERALLS, BREECHES AND SHORTS (OTHER THAN SWIM WEAR), KNITTED OR CROCHETED ---- SUITS; WOMENS OR GIRLS SUITS, ENSEMBLES, JACKETS, BLAZERS, DR | womens knitted tailoring and apparel master category knit suits dresses skirts jersey jackets leggings shorts wool merino skirt tailored cotton pant d",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED; WOMENS OR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED - OF COTTON; OF MAN-MADE FIBRES; WOMENS OR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED  | womens knitted blouses and tops master category knit jersey shirts crochet peplum cotton button front collared man made fibre poly rayon polyester geo"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "men's sports wear | Material: cotton | Construction: knit | Terms: clothing accessories, knit, cotton, sportswear",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "f5e3b740c76bbec9cb575f327201c241d32c8fad5d332fe392c5b660bfe97955": {
+    "raw_query": "deep freezer",
+    "physical_product": "deep freezer",
+    "material": null,
+    "construction": null,
+    "intended_use": "storage",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "iron or steel",
+      "storage"
+    ],
+    "unstated_attributes": [
+      "closed_container",
+      "iron_or_steel",
+      "material"
+    ],
+    "dropped_terms": [
+      {
+        "term": "deep freezer",
+        "field_source": "search_terms",
+        "reason": "words_do_not_cooccur_in_same_row: ['deep', 'freezer']"
+      },
+      {
+        "term": "closed container",
+        "field_source": "search_terms",
+        "reason": "words_do_not_cooccur_in_same_row: ['closed', 'container']"
+      },
+      {
+        "term": "closed container",
+        "field_source": "construction",
+        "reason": "words_do_not_cooccur_in_same_row: ['closed', 'container']"
+      }
+    ],
+    "top_headings_shown": [
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | REFRIGERATORS, FREEZERS AND OTHER REFRIGERATING OR FREEZING EQUIPMENT, ELECTRIC OR OTHER; HEAT PUMPS OTHER THAN AIR CONDITIONING MACHINES OF HEADING .5; COMBINED REFRIGERATOR-FREEZERS, FITTED WITH SEPARATE EXTERNAL DOORS OR DRAWERS, OR COMBINATIONS T | refrigerators freezers and refrigerating heat pumps master classification category industrial machinery apparatus sub combined refrigerator fitted wit",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | AUTOMATIC GOODS-VENDING MACHINES (FOR EXAMPLE, POSTAGE STAMPS, CIGARETTE, FOOD OR BEVERAGE MACHINES), INCLUDING MONEY CHANGING MACHINES - AUTOMATIC BEVERAGE-VENDING MACHINES; INCORPORATING HEATING OR REFRIGERATING DEVICES; AUTOMATIC GOODS-VENDING MAC | automatic goods vending machines money changing master classification category industrial machinery and apparatus sub incorporating heating refrigerat",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | MACHINERY, NOT SPECIFIED OR INCLUDED ELSEWHERE IN THIS CHAPTER, FOR THE INDUSTRIAL PREPARATION OR MANUFACTURE OF FOOD OR DRINK,OTHER THAN MACHINERY FOR THE EXTRACTION OR PREPARATION OF ANIMAL OR FIXED VEGETABLE ORMACHINERY, NOT SPECIFIED OR INCLUDED  | industrial machinery for preparation food drink master classification category and apparatus sub bakery the manufacture macaroni spaghetti similar pro",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | HARVESTING OR THRESHING MACHINERY, INCLUDING STRAW OR FODDER BALERS; GRASS OR HAY MOWERS; MACHINES FOR CLEANING, SORTING OR GRADING EGGS, FRUIT OR OTHER AGRICULTURAL PRODUCE, OTHER THAN MACHINERY OF HEADING  - MOWERS FOR LAWNS, PARKS OR SPORTS-GROUND | harvesting threshing mowers and sorting machinery master classification category industrial apparatus sub powered with the cutting device rotating hor",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAIN | dishwashing bottle washing filling closing labelling packing machines master classification category industrial machinery and apparatus for sealing bo"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "deep freezer | Terms: storage",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "9782c639cb0609386c2304df591a27d712b8bfa073f7fcce6513ee200e25525a": {
+    "raw_query": "high tensile hex head galvanized bolts | Construction: line pipe of a kind used for oil or gas pipelines | Terms: line pipe of a kind used for oil or gas pipelines",
+    "physical_product": "high tensile hex head galvanized bolts",
+    "material": null,
+    "construction": "line pipe",
+    "intended_use": "oil or gas pipeline",
+    "reading_confidence": "clear",
+    "outcome_type": "AMBIGUOUS_MATERIAL",
+    "grounded_search_terms": [
+      "iron or steel",
+      "line pipe",
+      "oil or gas pipeline"
+    ],
+    "unstated_attributes": [
+      "material",
+      "construction",
+      "intended_use"
+    ],
+    "dropped_terms": [
+      {
+        "term": "high tensile hex head galvanized bolts",
+        "field_source": "search_terms",
+        "reason": "exceeds_4_words"
+      },
+      {
+        "term": "line pipe of a kind used for oil or gas pipelines",
+        "field_source": "search_terms",
+        "reason": "exceeds_4_words"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of iron or steel | TUBES, PIPES AND HOLLOW PROFILES, SEAMLESS, OF IRON (OTHER THAN CAST IRON) OR STEEL - LINE PIPE OF A KIND USED FOR OIL AND GAS PIPELINES; TUBES, PIPES AND HOLLOW PROFILES, SEAMLESS, OF IRON (OTHER THAN CAST IRON) OR STEEL - LINE PIPE OF A KIND USED F | seamless tubes pipes and hollow profiles master category oil gas line pipe casing tubing drill iron for pipelines transmission pipeline steel hydrocar",
+      "Articles of iron or steel | OTHER TUBES, PIPES AND HOLLOW PROFILES (FOR EXAMPLE, OPEN SEAM OR WELDED, RIVETED OR SIMILARLY CLOSED), OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES; OTHER TUBES, PIPES AND HOLLOW PROFILES (FOR EXAMPLE, OPEN SEAM OR WELDED, RI | small and medium welded tubes pipes hollow profiles master category outer diameter circular shaped line iron for oil gas gathering lines steel flowlin",
+      "Articles of iron or steel | OTHER TUBES AND PIPES (FOR EXAMPLE, WELDED, RIVETED OR SIMILARLY CLOSED), HAVING CIRCULAR CROSS-SECTIONS, THE EXTERNAL DIAMETER OF WHICH EXCEEDS 406.4 MM, OF IRON OR STEEL - LINE PIPE OF A KIND USED FOR OIL OR GAS PIPELINES; LONGITUDINALLY SUBMERGED  | large diameter welded tubes and pipes master category external exceeding line pipe casing longitudinally submerged arc lsaw galvanized iron outer othe",
+      "Articles of iron or steel | TUBE OR PIPE FITTINGS (FOR EXAMPLE, COUPLINGS, ELBOWS, SLEEVES), OF IRON OR STEEL - CAST FITTINGS; OF NON-MALLEABLE CAST IRON; TUBE OR PIPE FITTINGS (FOR EXAMPLE, COUPLINGS, ELBOWS, SLEEVES), OF IRON OR STEEL - CAST FITTINGS : OF NON-MALLEABLE CAST I | tube pipe fittings master category couplings elbows sleeves flanges tees reducers cast iron non malleable sanitary soil bends drainage branches rainwa",
+      "Articles of iron or steel | CONTAINERS FOR COMPRESSED OR LIQUEFIED GAS, OF IRON OR STEEL; CONTAINERS FOR COMPRESSED OR LIQUEFIED GAS, OF IRON OR STEEL - CONTAINERS FOR COMPRESSED OR LIQUEFIED GAS, OF IRON OR STEEL : LIQUEFIED PETROLEUM GAS (LPG) CYLINDER; CONTAINERS FOR COMPRES | containers for compressed liquefied gas master category cylinders pressure bottles cryogenic vessels and industrial lpg domestic cooking petroleum low"
+    ],
+    "is_valid": true,
+    "error_message": "Statutory classification depends on constituent material and construction. Product 'high tensile hex head galvanized bolts | Construction: line pipe of a kind used for oil or gas pipelines | Terms: line pipe of a kind used for oil or gas pipelines' spans multiple statutory chapters (Articles of iron or steel; Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof; Furniture; bedding, mattresses, mattress supports, cushions and similar stuffed furnishing; lamps and lighting fittings, not elsewhere specified or included; illuminated signs, illuminated name-plates and the like; prefabricated building). Material is required.",
+    "retries_used": 0,
+    "synthesized_search_string": "high tensile hex head galvanized bolts | Construction: line pipe | Terms: line pipe, oil or gas pipeline",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "325dd90f627723044ad7ce48f33a99ce5f30b264a32504d0e367c47369fa75a3": {
+    "raw_query": "knitted circular jersey fabric cotton spandex polo | Material: cotton | Construction: fabric | Terms: cotton, fabric, sportswear",
+    "physical_product": "knitted circular jersey fabric cotton spandex polo",
+    "material": "cotton",
+    "construction": "fabric",
+    "intended_use": "sportswear",
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "material: cotton",
+      "cotton",
+      "fabric",
+      "sportswear"
+    ],
+    "unstated_attributes": [],
+    "dropped_terms": [
+      {
+        "term": "knitted circular jersey fabric cotton spandex polo",
+        "field_source": "search_terms",
+        "reason": "exceeds_4_words"
+      },
+      {
+        "term": "construction: fabric",
+        "field_source": "search_terms",
+        "reason": "words_do_not_cooccur_in_same_row: ['construction', 'fabric']"
+      },
+      {
+        "term": "terms: cotton, fabric, sportswear",
+        "field_source": "search_terms",
+        "reason": "word_not_in_tariff_vocabulary: 'terms'"
+      }
+    ],
+    "top_headings_shown": [
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS SHIRTS, KNITTED OR CROCHETED; OF COTTON; MENS OR BOYS SHIRTS, KNITTED OR CROCHETED - OF COTTON : SHIRTS, HAND CROCHETED; MENS OR BOYS SHIRTS, KNITTED OR CROCHETED - OF COTTON : KNIT SHIRTS (OTHER THAN T-SHIRTS) AND SWEAT SHIRTS, OTHER T | mens knitted shirts master category polo knit button down crocheted cotton sweatshirts hand artisan crochet open weave resort pique collared crewneck ",
+      "Articles of apparel and clothing accessories, knitted or crocheted | WOMEN'SOR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED; WOMENS OR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED - OF COTTON; OF MAN-MADE FIBRES; WOMENS OR GIRLS BLOUSES, SHIRTS AND SHIRT-BLOUSES, KNITTED OR CROCHETED  | womens knitted blouses and tops master category knit jersey shirts crochet peplum cotton button front collared man made fibre poly rayon polyester geo",
+      "Articles of apparel and clothing accessories, knitted or crocheted | MEN'S OR BOYS' SUITS, ENSEMBLES, JACKETS, BLAZERS,TROUSERS, BIBAND BRACE OVERALLS, BREECHES AND SHORTS (OTHER THAN SWIM WEAR), KNITTED OR CROCHETED; SUITS; SUITS OF SILK; SUITS OF COTTON; SUITS OF ARTIFICIAL FIBRES; OTHER SUITS; MENS OR BOYS SUITS, E | mens knitted tailoring master category knit suits ensembles blazers jersey trousers shorts tailored two piece silk formal tuxedos evening cotton casua",
+      "Articles of apparel and clothing accessories, knitted or crocheted | T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED; T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED - OF COTTON; OF OTHER TEXTILE MATERIALS; T-SHIRTS, SINGLETS AND OTHER VESTS, KNITTED OR CROCHETED -OF OTHER TEXTILE MATERIALS : OF SYNT | shirts and vests master category crewneck neck tees singlets tank tops muscle cotton athletic undershirts other textile synthetic performance silk moi",
+      "Articles of apparel and clothing accessories, knitted or crocheted | TRACK SUITS, SKI SUITS AND SWIMWEAR, KNITTED OR CROCHETED ---- TRACK SUITS; TRACK SUITS, SKI SUITS AND SWIMWEAR, KNITTED OR CROCHETED - TRACK SUITS : OF COTTON; TRACK SUITS, SKI SUITS AND SWIMWEAR, KNITTED OR CROCHETED - TRACK SUITS : OF SYNTHETIC FI | sports apparel master category track suits ski swimwear athletic warm ups cotton jogging fleece tracksuits synthetic polyester nylon training shiny tr"
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "knitted circular jersey fabric cotton spandex polo | Material: cotton | Construction: fabric | Terms: material: cotton, cotton, fabric, sportswear",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "4a47b66a4723bc48bcd946b93ecb184196030a2b619b99191727509c1c871a63": {
+    "raw_query": "plastic water bottle",
+    "physical_product": "plastic water bottle",
+    "material": "plastic",
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "AMBIGUOUS_MATERIAL",
+    "grounded_search_terms": [
+      "closed containers",
+      "polymers of ethylene"
+    ],
+    "unstated_attributes": [
+      "material",
+      "construction",
+      "intended use"
+    ],
+    "dropped_terms": [
+      {
+        "term": "plastic water bottle",
+        "field_source": "search_terms",
+        "reason": "words_do_not_cooccur_in_same_row: ['plastic', 'water', 'bottle']"
+      },
+      {
+        "term": "closed container",
+        "field_source": "search_terms",
+        "reason": "words_do_not_cooccur_in_same_row: ['closed', 'container']"
+      },
+      {
+        "term": "closed bottles",
+        "field_source": "search_terms",
+        "reason": "words_do_not_cooccur_in_same_row: ['closed', 'bottles']"
+      },
+      {
+        "term": "closed container",
+        "field_source": "construction",
+        "reason": "words_do_not_cooccur_in_same_row: ['closed', 'container']"
+      },
+      {
+        "term": "for drinking water",
+        "field_source": "intended_use",
+        "reason": "word_not_in_tariff_vocabulary: 'drinking'"
+      }
+    ],
+    "top_headings_shown": [
+      "Plastics and articles thereof | ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS; BOXES, CASES, CRATES AND SIMILAR ARTICLES; ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHE | articles for conveyance packing goods master category boxes cases crates sacks bags bottles caps and similar plastic beverage heavy duty bottle transp",
+      "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof | DISH WASHING MACHINES; MACHINERY FOR CLEANING OR DRYING BOTTLES OR OTHER CONTAINERS; MACHINERY FOR FILLING, CLOSING, SEALING OR LABELLING BOTTLES, CANS, BOXES, BAGS OR OTHER CONTAINERS; MACHINERY FOR CAPSULING BOTTLES, JARS, TUBES AND SIMILAR CONTAIN | dishwashing bottle washing filling closing labelling packing machines master classification category industrial machinery and apparatus for sealing bo",
+      "Plastics and articles thereof | OTHER ARTICLES OF PLASTICS AND ARTICLES OF OTHER MATERIALS OF HEADINGS  TO ; OFFICE OR SCHOOL SUPPLIES; OTHER ARTICLES OF PLASTICS AND ARTICLES OF OTHER MATERIALS OF HEADINGS  TO  - OFFICE OR SCHOOL SUPPLIES: OFFICE SUPPLIES OF A KIND CLASSIFIED AS S | other fabricated article plastics industrial commercial technical plastic product",
+      "Plastics and articles thereof | BUILDERS WARE OF PLASTICS, NOT ELSEWHERE SPECIFIED OR INCLUDED; BUILDERS WARE OF PLASTICS, NOT ELSEWHERE SPECIFIED OR INCLUDED - RESERVOIRS, TANKS, VATS AND SIMILAR CONTAINERS, OF A CAPACITY EXCEEDING 300 L; BUILDERS WARE OF PLASTICS, NOT ELSEWHERE S | builders ware plastics not elsewhere specified master category reservoirs tanks vats capacity exceeding rotomoulded overhead water storage loft doors ",
+      "Plastics and articles thereof | TABLEWARE, KITCHENWARE, OTHER HOUSEHOLD ARTICLES AND HYGIENIC OR TOILET ARTICLES, OF PLASTICS; TABLEWARE AND KITCHENWARE; TABLEWARE, KITCHENWARE, OTHER HOUSEHOLD ARTICLES AND HYGIENIC OR TOILET ARTICLES, OF PLASTICS - TABLEWARE AND KITCHENWARE : INSU | tableware kitchenware other household and toilet articles master category plastics melamine dinner plates soup bowls serving platters plastic microwav"
+    ],
+    "is_valid": true,
+    "error_message": "Statutory classification depends on constituent material and construction. Product 'plastic water bottle' spans multiple statutory chapters (Plastics and articles thereof; Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof). Material is required.",
+    "retries_used": 0,
+    "synthesized_search_string": "plastic water bottle | Material: plastic | Terms: closed containers, polymers of ethylene",
+    "is_cache_hit": false,
+    "clarification_merged": false
+  },
+  "a7a238a8208302612f0538c2ec01f2631cb21dca47ea413ae9a4a0f99d6690a9": {
+    "raw_query": "plastic water bottle | Material: plastic | Terms: closed containers, polymers of ethylene",
+    "physical_product": "plastic water bottle",
+    "material": "polymers of ethylene",
+    "construction": null,
+    "intended_use": null,
+    "reading_confidence": "clear",
+    "outcome_type": "SUCCESS",
+    "grounded_search_terms": [
+      "closed containers",
+      "polymers of ethylene"
+    ],
+    "unstated_attributes": [
+      "closed_container",
+      "polyethylene"
+    ],
+    "dropped_terms": [
+      {
+        "term": "closed container",
+        "field_source": "construction",
+        "reason": "words_do_not_cooccur_in_same_row: ['closed', 'container']"
+      },
+      {
+        "term": "for drinking purposes",
+        "field_source": "intended_use",
+        "reason": "word_not_in_tariff_vocabulary: 'drinking'"
+      }
+    ],
+    "top_headings_shown": [
+      "Plastics and articles thereof | ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHER CLOSURES, OF PLASTICS; BOXES, CASES, CRATES AND SIMILAR ARTICLES; ARTICLES FOR THE CONVEYANCE OR PACKING OF GOODS, OF PLASTICS; STOPPERS, LIDS, CAPS AND OTHE | articles for conveyance packing goods master category boxes cases crates sacks bags bottles caps and similar plastic beverage heavy duty bottle transp",
+      "Plastics and articles thereof | POLYMERS OF ETHYLENE, IN PRIMARY FORMS; POLYETHYLENE HAVING A SPECIFIC GRAVITY OF LESS THAN 0.94; POLYMERS OF ETHYLENE, IN PRIMARY FORMS - POLYETHYLENE HAVING A SPECIFIC GRAVITY OF LESS THAN 0.94 : LINEAR LOW DENSITY POLYETHYLENE (LLDPE); LOW DENSITY | polymers ethylene master category polyethylene raw materials virgin polymer resins specific gravity less than low density film grade linear lldpe gran",
+      "Plastics and articles thereof | WASTE, PARINGS AND SCRAP, OF PLASTICS; WASTE, PARINGS AND SCRAP, OF PLASTICS - OF POLYMERS OF ETHYLENE; WASTE, PARINGS AND SCRAP, OF PLASTICS - OF POLYMERS OF STYRENE; OF POLYMERS OF VINYL CHLORIDE; WASTE, PARINGS AND SCRAP, OF PLASTICS - OF POLYMERS | waste parings and scrap plastics master category plastic recycling raw material polymers ethylene ldpe hdpe clean shredded regrind styrene crushed eps",
+      "Plastics and articles thereof | MONOFILAMENT OF WHICH ANY CROSS-SECTIONAL DIMENSION EXCEEDS 1 MM, RODS, STICKS AND PROFILE SHAPES, WHETHER OR NOT SURFACE-WORKED BUT NOT OTHERWISE WORKED, OF PLASTICS; OF POLYMERS OF ETHYLENE; MONOFILAMENT OF WHICH ANY CROSS - SECTIONAL DIMENSION EXC | monofilament cross section over rods sticks and profile shapes master category polymers ethylene polyethylene dimension exceeding heavy synthetic brus",
+      "Plastics and articles thereof | BUILDERS WARE OF PLASTICS, NOT ELSEWHERE SPECIFIED OR INCLUDED; BUILDERS WARE OF PLASTICS, NOT ELSEWHERE SPECIFIED OR INCLUDED - RESERVOIRS, TANKS, VATS AND SIMILAR CONTAINERS, OF A CAPACITY EXCEEDING 300 L; BUILDERS WARE OF PLASTICS, NOT ELSEWHERE S | builders ware plastics not elsewhere specified master category reservoirs tanks vats capacity exceeding rotomoulded overhead water storage loft doors "
+    ],
+    "is_valid": true,
+    "error_message": null,
+    "retries_used": 0,
+    "synthesized_search_string": "plastic water bottle | Material: polymers of ethylene | Terms: closed containers, polymers of ethylene",
     "is_cache_hit": false,
     "clarification_merged": false
   }

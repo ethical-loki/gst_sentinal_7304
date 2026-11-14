@@ -1,0 +1,32 @@
+{
+  "negatives_per_positive": 2,
+  "splits": {
+    "train": {
+      "total_positives": 12446,
+      "total_negatives_mined": 19298,
+      "cross_chapter_negatives": 7593,
+      "same_chapter_diff_heading_negatives": 11705,
+      "skipped_same_hsn": 8754,
+      "skipped_same_heading_safeguard": 149249,
+      "skipped_keyword_overlap_safeguard": 1561
+    },
+    "val": {
+      "total_positives": 1538,
+      "total_negatives_mined": 2448,
+      "cross_chapter_negatives": 957,
+      "same_chapter_diff_heading_negatives": 1491,
+      "skipped_same_hsn": 1083,
+      "skipped_same_heading_safeguard": 18086,
+      "skipped_keyword_overlap_safeguard": 75
+    },
+    "test": {
+      "total_positives": 1581,
+      "total_negatives_mined": 2423,
+      "cross_chapter_negatives": 920,
+      "same_chapter_diff_heading_negatives": 1503,
+      "skipped_same_hsn": 1115,
+      "skipped_same_heading_safeguard": 19684,
+      "skipped_keyword_overlap_safeguard": 142
+    }
+  }
+}

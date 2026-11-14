@@ -5221,11 +5221,74 @@
 
                 ${chapHtml}
                 ${reportHtml}
+                ${(() => {
+                    const v2 = data.v2_verification;
+                    if (!v2) return '';
+                    window._lastV2FeedbackPayload = {
+                        query: data.base_product || '',
+                        predicted_hsn: v2.selected_hsn || '',
+                        predicted_context: v2.selected_description || '',
+                        predicted_score: Number(v2.confidence || 0)
+                    };
+                    const v2Colors = {
+                        'CLEAR': { bg: 'rgba(16,185,129,0.12)', border: 'rgba(52,211,153,0.45)', badge: '#34d399' },
+                        'AMBIGUOUS_MATERIAL': { bg: 'rgba(234,179,8,0.12)', border: 'rgba(250,204,21,0.45)', badge: '#facc15' },
+                        'INSUFFICIENT_INFORMATION': { bg: 'rgba(56,189,248,0.12)', border: 'rgba(56,189,248,0.45)', badge: '#38bdf8' },
+                        'OUT_OF_SCHEDULE': { bg: 'rgba(244,63,94,0.12)', border: 'rgba(244,63,94,0.45)', badge: '#fb7185' }
+                    };
+                    const st = v2Colors[v2.status] || v2Colors['INSUFFICIENT_INFORMATION'];
+                    const confPctV2 = typeof v2.confidence === 'number' ? (v2.confidence * 100).toFixed(1) + '%' : 'N/A';
+                    return `
+                        <div style="background:${st.bg}; border:1px solid ${st.border}; border-radius:10px; padding:12px 14px; margin-top:12px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+                                <span style="font-size:0.74rem; font-weight:800; color:${st.badge}; text-transform:uppercase; letter-spacing:0.04em;">
+                                    🧠 HSN Intelligence V2 (Cross-Encoder): ${escapeHtml(v2.status)}
+                                </span>
+                                <span style="font-size:0.74rem; color:#e2e8f0; font-family:'JetBrains Mono', monospace;">
+                                    ${v2.selected_hsn ? `HSN ${escapeHtml(v2.selected_hsn)} · Ch ${escapeHtml(v2.selected_chapter || '')} · Conf ${confPctV2}` : `Ch ${escapeHtml(v2.selected_chapter || 'N/A')}`}
+                                </span>
+                            </div>
+                            <div style="font-size:0.78rem; color:#cbd5e1; line-height:1.45;">
+                                ${escapeHtml(v2.rationale || '')}
+                            </div>
+                            ${v2.selected_hsn ? `
+                            <div style="margin-top:8px; display:flex; justify-content:flex-end;">
+                                <button onclick="window.flagV2Prediction()"
+                                    style="background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.4); color:#fda4af; padding:4px 10px; border-radius:6px; font-size:0.72rem; cursor:pointer; font-weight:700;">
+                                    ⚑ Flag Incorrect Prediction
+                                </button>
+                            </div>` : ''}
+                        </div>
+                    `;
+                })()}
             `;
 
             box.style.display = 'block';
             box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
+
+        window.flagV2Prediction = async function() {
+            const p = window._lastV2FeedbackPayload;
+            if (!p || !p.predicted_hsn) return;
+            try {
+                const resp = await fetch('/api/v1/hsn-v2/feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        query: p.query,
+                        predicted_hsn: p.predicted_hsn,
+                        predicted_context: p.predicted_context,
+                        predicted_score: p.predicted_score,
+                        reason: 'Flagged by user in Step 1 UI'
+                    })
+                });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const res = await resp.json();
+                showToast(`✓ Feedback recorded (${res.feedback_id}) for expert review.`);
+            } catch (err) {
+                showToast(`❌ Failed to record feedback: ${err.message}`);
+            }
+        };
 
         function selectDisambiguationOption(label, chapterCode, hsnCode) {
             const inp = document.getElementById('stepProductInput');
