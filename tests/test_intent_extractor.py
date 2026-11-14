@@ -22,6 +22,7 @@ def extractor():
     """Initializes IntentExtractor in deterministic mode for instant CI evaluation."""
     ext = IntentExtractor()
     ext._llm_client = DeterministicLLMClient()
+    ext.interpretation_cache = {}
     return ext
 
 

@@ -316,7 +316,6 @@ class HSNRAGApplicationLayer:
         dynamically using generalized tariff trade vocabularies without hardcoding product entries.
         """
         q_lower = desc.lower()
-        ch_info = self.categorize_chapter_01_99(q_lower)
 
         # -------------------------------------------------------------
         # 1. DYNAMIC CONSTITUENT MATERIAL EXTRACTOR
@@ -440,7 +439,7 @@ class HSNRAGApplicationLayer:
         elif has_honey:
             func_use = "Edible food product"
         else:
-            func_use = ch_info.get("chapter_label", "General commercial goods")
+            func_use = "General commercial goods"
 
         # -------------------------------------------------------------
         # 4. DYNAMIC AMBIGUITY & CLARIFICATION DECISION
@@ -516,10 +515,6 @@ class HSNRAGApplicationLayer:
             keywords.append("coffee roasted")
         if is_mounted and has_friction:
             keywords.extend(["mounted brake pads", "motor vehicle brakes"])
-        if ch_info.get("priority_headings"):
-            keywords.extend(ch_info["priority_headings"][:2])
-        if ch_info.get("statutory_keywords"):
-            keywords.extend(ch_info["statutory_keywords"][:3])
 
         return AttributeExtractionResult(
             product_normalized=norm_name,
@@ -567,9 +562,7 @@ class HSNRAGApplicationLayer:
 
         # Assemble Relevant Legal Notes based on active candidate chapters and statutory notes map
         retrieved_notes = [STATUTORY_LEGAL_NOTES["GIR_1"], STATUTORY_LEGAL_NOTES["GIR_3A"]]
-        q_norm = extraction.product_normalized.lower()
-        ch_info = self.categorize_chapter_01_99(q_norm)
-        active_chapters = set(ch_info.get("target_chapters", []))
+        active_chapters = set()
         for c in candidates:
             c_ch = str(c.get("chapter", "")).zfill(2)
             if c_ch:
@@ -1397,279 +1390,6 @@ class HSNRAGApplicationLayer:
         "94": "94 - Furniture; bedding, mattresses, mattress supports, cushions and similar stuffed furnishing; lamps and lighting fittings, not elsewhere specified or included; illuminated signs, illuminated name-plates and the like; prefabricated building"
     }
 
-    def categorize_chapter_01_99(self, text: str) -> Dict[str, Any]:
-        """
-        100% Dynamic Chapter 01–99 Categorizer & WCO Heading Resolver over HSN_SAC (1).xlsx.
-        1. Maps product terminology to the Official Chapter 01–99 Taxonomy (OFFICIAL_CHAPTER_01_99_MAP)
-           and applies GIR 1 Section/Chapter legal exclusions.
-        2. Bridges modern retail vocabulary to WCO statutory English terms (zero hardcoded HSN codes).
-        3. Dynamically scores and selects the matching 4-digit headings directly from HSN_SAC (1).xlsx (cat['h4_meta']).
-        """
-        t = (text or "").lower()
-        statutory_keywords: List[str] = []
-        excluded_chapters: Set[str] = set()
-        target_chapters: List[str] = []
-        priority_headings: List[str] = []
-
-        # 1. Apparel & Clothing (Chapter 61 Knitted/Crocheted vs Chapter 62 Not Knitted/Woven)
-        is_hoodie_pullover = bool(re.search(r"\b(hoodie|hoodies|sweatshirt|sweatshirts|pullover|pullovers|cardigan|cardigans|sweater|sweaters|jersey|jerseys|waistcoat|waistcoats|fleece)\b", t))
-        is_tshirt_vest = bool(re.search(r"\b(t-shirt|tshirt|t-shirts|tshirts|tee|singlets?|vests?)\b", t))
-        is_apparel = is_hoodie_pullover or is_tshirt_vest or bool(re.search(r"\b(shirt|shirts|trouser|trousers|pants|jeans|shorts|jacket|jackets|coat|coats|overcoat|anorak|windcheater|dress|dresses|skirt|skirts|blouse|saree|sari|kurta|suit|blazer|garment|garments|apparel|clothing|tracksuit|swimwear|leggings|socks|hosiery|gloves)\b", t))
-
-        if is_apparel:
-            # Finished apparel featuring embroidery is classified in Ch 61/62, NEVER Ch 52 raw cotton or Ch 58 embroidery in the piece
-            excluded_chapters.update({"50", "51", "52", "53", "54", "55", "56", "58", "59", "60"})
-            is_knitted = bool(re.search(r"\b(knit|knitted|loop-knitted|crocheted|jersey|fleece|hoodie|hoodies|sweatshirt|sweatshirts|pullover|pullovers|cardigan|cardigans|sweater|sweaters|t-shirt|tshirt|tee|leggings|socks)\b", t)) and "not knitted" not in t
-            is_woven = bool(re.search(r"\b(woven|not knitted|denim|chinos|chambray|poplin|twill|linen shirt|formal shirt|blazer|saree|sari)\b", t)) and not is_hoodie_pullover
-
-            if is_knitted or (is_hoodie_pullover and not is_woven):
-                target_chapters.append("61")
-                excluded_chapters.add("62")
-                if is_hoodie_pullover:
-                    statutory_keywords.extend(["jerseys", "pullovers", "cardigans", "waistcoats", "knitted", "crocheted"])
-                elif is_tshirt_vest:
-                    statutory_keywords.extend(["t-shirts", "singlets", "vests", "knitted", "crocheted"])
-                elif "glove" in t:
-                    statutory_keywords.extend(["gloves", "mittens", "mitts", "knitted", "crocheted"])
-                elif "sock" in t or "hosiery" in t:
-                    statutory_keywords.extend(["panty", "hose", "tights", "stockings", "socks", "hosiery", "knitted"])
-                elif "jacket" in t or "coat" in t or "anorak" in t or "wind" in t:
-                    statutory_keywords.extend(["overcoats", "car-coats", "capes", "cloaks", "anoraks", "wind-cheaters", "jackets", "knitted"])
-                elif "trouser" in t or "pant" in t or "short" in t or "legging" in t:
-                    statutory_keywords.extend(["trousers", "bib", "brace", "overalls", "breeches", "shorts", "knitted"])
-                elif "shirt" in t:
-                    statutory_keywords.extend(["shirts", "blouses", "knitted", "crocheted"])
-                else:
-                    statutory_keywords.extend(["garments", "knitted", "crocheted"])
-            elif is_woven:
-                target_chapters.append("62")
-                excluded_chapters.add("61")
-                if "shirt" in t:
-                    statutory_keywords.extend(["shirts", "not", "knitted"])
-                elif "trouser" in t or "pant" in t or "jeans" in t or "denim" in t:
-                    statutory_keywords.extend(["trousers", "breeches", "shorts", "denim"])
-                elif "jacket" in t or "coat" in t or "anorak" in t:
-                    statutory_keywords.extend(["overcoats", "anoraks", "wind-cheaters", "jackets"])
-            else:
-                target_chapters.extend(["61", "62"])
-
-        # 2. Toys, Collectibles, Action Figures, Plushies, Gaming Consoles (Chapter 95)
-        if re.search(r"\b(action figure|figurine|plush|plushie|stuffed toy|doll|dolls|scale model|toy|toys|puzzle|board game|video game console|gamepad|gaming controller|articulated)\b", t):
-            target_chapters.append("95")
-            if "console" in t or "controller" in t or "gamepad" in t:
-                statutory_keywords.extend(["video", "game", "consoles", "machines", "parlour", "games"])
-            else:
-                statutory_keywords.extend(["tricycles", "scooters", "pedal", "cars", "wheeled", "dolls", "toys", "reduced-size", "scale", "models", "recreational", "puzzles"])
-
-        # 3. Bags, Backpacks, Wallets, Cases, Pouches, Luggage (Chapter 42)
-        if re.search(r"\b(backpack|rucksack|handbag|tote bag|wallet|purse|briefcase|suitcase|luggage|travel bag|school bag|laptop bag|pouch|holster)\b", t):
-            target_chapters.append("42")
-            statutory_keywords.extend(["trunks", "suit-cases", "vanity-cases", "executive-cases", "brief-cases", "school", "satchels", "rucksacks", "handbags", "wallets", "purses", "containers"])
-
-        # 4. Footwear, Sneakers, Shoes, Boots, Sandals (Chapter 64)
-        if re.search(r"\b(shoe|shoes|footwear|sneaker|sneakers|boot|boots|sandal|sandals|slipper|slippers|loafer|loafers|cleats)\b", t):
-            target_chapters.append("64")
-            if "textile" in t or "mesh" in t or "canvas" in t or "fabric" in t:
-                statutory_keywords.extend(["footwear", "outer", "soles", "uppers", "textile", "materials", "sports"])
-            elif "leather" in t and "synthetic" not in t and "faux" not in t:
-                statutory_keywords.extend(["footwear", "outer", "soles", "uppers", "leather", "sports"])
-            elif "rubber" in t or "plastic" in t or "pvc" in t or "synthetic" in t or "pu " in t:
-                statutory_keywords.extend(["other", "footwear", "outer", "soles", "uppers", "rubber", "plastics", "sports"])
-            else:
-                statutory_keywords.extend(["footwear", "outer", "soles", "uppers", "sports"])
-
-        # 5. Perfumery, Cosmetics, Skincare, Shampoo, Essential Oils (Chapter 33)
-        if re.search(r"\b(perfume|eau de|fragrance|cologne|lipstick|mascara|cosmetic|makeup|make-up|skincare|face cream|moisturizer|serum|sunscreen|suntan|lotion|shampoo|conditioner|toothpaste|deodorant)\b", t):
-            target_chapters.append("33")
-            if "perfume" in t or "eau de" in t or "fragrance" in t or "cologne" in t:
-                statutory_keywords.extend(["perfumes", "toilet", "waters"])
-            elif "shampoo" in t or "hair" in t or "conditioner" in t:
-                statutory_keywords.extend(["preparations", "use", "on", "the", "hair", "shampoos"])
-            elif "tooth" in t or "dental" in t or "oral" in t:
-                statutory_keywords.extend(["oral", "dental", "hygiene", "dentifrices"])
-            else:
-                statutory_keywords.extend(["beauty", "make-up", "preparations", "care", "skin", "sunscreen", "suntan"])
-
-        # 6. Coffee, Tea, Spices (Chapter 09) vs Cocoa/Chocolate (Chapter 18) vs Honey (Chapter 04) vs Botanical Herbs/Plants (Chapter 12)
-        if "coffee" in t and "mug" not in t and "cup" not in t and "maker" not in t and "machine" not in t and "table" not in t:
-            target_chapters.append("09")
-            excluded_chapters.add("18")
-            statutory_keywords.extend(["coffee", "roasted", "decaffeinated", "husks", "skins", "substitutes"])
-        elif re.search(r"\b(tea|green tea|black tea|oolong tea|matcha|tea leaves|tea bags)\b", t) and not re.search(r"\b(mug|cup|table|towel|shirt|infuser)\b", t):
-            if re.search(r"\b(chamomile|herbal|blossoms|medicinal|tisane|flower|flowers)\b", t):
-                target_chapters.extend(["12", "09"])
-                statutory_keywords.extend(["plants", "parts", "flowers", "dried", "pharmacy", "perfumery", "herbal", "tea"])
-            else:
-                target_chapters.append("09")
-                statutory_keywords.extend(["tea", "flavoured", "green", "black"])
-        elif re.search(r"\b(chamomile|herbal|tisane|medicinal plant)\b", t):
-            target_chapters.extend(["12", "09"])
-            statutory_keywords.extend(["plants", "parts", "flowers", "dried", "pharmacy", "perfumery"])
-        elif "honey" in t and "artificial" not in t:
-            target_chapters.append("04")
-            statutory_keywords.extend(["natural", "honey"])
-
-        # 7. Base Metal Fasteners & Hardware (Ch 73 Iron/Steel, Ch 74 Copper, Ch 76 Aluminium)
-        if re.search(r"\b(bolt|bolts|screw|screws|nut|nuts|fastener|fasteners|rivet|rivets|washer|washers|threaded rod|studs|hex bolt)\b", t):
-            if any(w in t for w in ["copper", "brass", "bronze"]):
-                target_chapters.append("74")
-                statutory_keywords.extend(["screws", "bolts", "nuts", "copper", "washers", "rivets"])
-            elif any(w in t for w in ["aluminium", "aluminum"]):
-                target_chapters.append("76")
-                statutory_keywords.extend(["aluminium", "nails", "tacks", "staples", "screws", "bolts"])
-            else:
-                target_chapters.append("73")
-                statutory_keywords.extend(["screws", "bolts", "nuts", "coach-screws", "screw", "hooks", "rivets", "cotters", "washers", "iron", "steel", "threaded"])
-
-        # 8. Pipes, Tubes, Hoses & Valves (Ch 39 Plastics, Ch 73 Iron/Steel, Ch 74 Copper, Ch 76 Aluminium, Ch 84 Valves)
-        if re.search(r"\b(valve|valves|butterfly valve|ball valve|gate valve|check valve|globe valve|relief valve|cocks|taps)\b", t):
-            target_chapters.append("84")
-            excluded_chapters.add("85")
-            statutory_keywords.extend(["taps", "cocks", "valves", "appliances", "pipes", "boiler", "shells", "tanks", "vats", "pressure-reducing"])
-        elif re.search(r"\b(pipe|pipes|tube|tubes|piping|tubing)\b", t):
-            if any(w in t for w in ["pvc", "vinyl", "plastic", "plastics", "hdpe", "polyethylene", "polypropylene", "cpvc", "upvc", "acrylic"]):
-                target_chapters.append("39")
-                statutory_keywords.extend(["tubes", "pipes", "hoses", "fittings", "plastics", "rigid", "polymers", "vinyl", "chloride"])
-            elif any(w in t for w in ["aluminium", "aluminum"]):
-                target_chapters.append("76")
-                statutory_keywords.extend(["aluminium", "tubes", "pipes", "alloys"])
-            elif any(w in t for w in ["copper", "brass", "bronze"]):
-                target_chapters.append("74")
-                statutory_keywords.extend(["copper", "tubes", "pipes", "refined", "alloys", "brass"])
-            elif "welded" in t or "erw" in t:
-                target_chapters.append("73")
-                statutory_keywords.extend(["other", "tubes", "pipes", "hollow", "profiles", "welded", "riveted", "iron", "steel"])
-            elif any(w in t for w in ["steel", "iron", "stainless", "carbon", "seamless", "line pipe"]):
-                target_chapters.append("73")
-                statutory_keywords.extend(["tubes", "pipes", "hollow", "profiles", "seamless", "iron", "steel", "line", "pipelines"])
-
-        # 8. Computers, Peripherals, Electronics, Semiconductors, Audio, Batteries (Ch 84 & Ch 85)
-        if re.search(r"\b(laptop|notebook computer|desktop pc|personal computer|gaming pc|keyboard|gaming mouse|optical mouse|scanner|printer)\b", t):
-            target_chapters.append("84")
-            statutory_keywords.extend(["automatic", "data", "processing", "machines", "units", "magnetic", "optical", "readers"])
-        if re.search(r"\b(earbuds|earphones|headphones|headset|bluetooth speaker|loudspeaker|microphone)\b", t):
-            target_chapters.append("85")
-            statutory_keywords.extend(["microphones", "loudspeakers", "headphones", "earphones", "combined", "amplifiers"])
-        if re.search(r"\b(microprocessor|microcontroller|integrated circuit|fpga|asic|mosfet|semiconductor chip)\b", t):
-            target_chapters.append("85")
-            statutory_keywords.extend(["electronic", "integrated", "circuits", "processors", "controllers", "memories", "amplifiers"])
-        if re.search(r"\b(lithium-ion|li-ion|power bank|powerbank|rechargeable battery|battery pack|accumulator)\b", t):
-            target_chapters.append("85")
-            statutory_keywords.extend(["electric", "accumulators", "separators", "rectangular", "square", "lithium-ion"])
-        if re.search(r"\b(ssd|solid state drive|flash drive|usb drive|sd card|memory card)\b", t):
-            target_chapters.append("85")
-            statutory_keywords.extend(["discs", "tapes", "solid-state", "non-volatile", "storage", "devices", "media"])
-        if re.search(r"\b(smartphone|mobile phone|cellular phone|wi-fi router|network switch|smartwatch|smart watch)\b", t):
-            target_chapters.append("85")
-            statutory_keywords.extend(["telephone", "sets", "smartphones", "cellular", "networks", "transmission", "reception", "voice", "images", "data"])
-
-        # 9. Measuring, Checking, Optical, Medical Instruments (Chapter 90)
-        if re.search(r"\b(thermometer|pyrometer|manometer|pressure gauge|multimeter|oscilloscope|spectrometer|microscope|stethoscope|glucometer)\b", t):
-            target_chapters.append("90")
-            excluded_chapters.update({"84", "85"})
-            if "thermometer" in t or "pyrometer" in t:
-                statutory_keywords.extend(["hydrometers", "thermometers", "pyrometers", "barometers", "hygrometers", "psychrometers"])
-            elif "pressure" in t or "manometer" in t or "flow" in t:
-                statutory_keywords.extend(["instruments", "apparatus", "measuring", "checking", "flow", "level", "pressure", "liquids", "gases", "manometers"])
-
-        # 10. Automotive Parts & Mounted Brake Pads (Chapter 87 vs Chapter 68)
-        if "brake" in t and ("pad" in t or "lining" in t or "mounted" in t or "car" in t or "vehicle" in t):
-            if "unmounted" not in t:
-                target_chapters.append("87")
-                excluded_chapters.add("68")
-                statutory_keywords.extend(["parts", "accessories", "motor", "vehicles", "brakes", "servo-brakes"])
-
-        # 11. Rubber & Unvulcanised / Vulcanised Sheets (Chapter 40)
-        if "rubber" in t:
-            target_chapters.append("40")
-            if "unvulcanis" in t or "unvulcaniz" in t:
-                statutory_keywords.extend(["compounded", "rubber", "unvulcanised", "primary", "forms", "plates", "sheets", "strip"])
-            elif "conveyor" in t or "belting" in t:
-                statutory_keywords.extend(["conveyor", "transmission", "belts", "belting", "vulcanised", "rubber"])
-            elif "mat" in t or "mousepad" in t or "sheet" in t or "gasket" in t or "seal" in t:
-                statutory_keywords.extend(["plates", "sheets", "strip", "rods", "profile", "shapes", "vulcanised", "rubber", "gaskets", "washers", "seals"])
-
-        # 12. Ceramic Tableware (Ch 69), Vacuum Flasks (Ch 96), Drinking Bottles (Ch 39 / Ch 73), Printed Books/Posters (Ch 49), Services (Ch 99)
-        if re.search(r"\b(ceramic mug|porcelain mug|coffee mug|teacup|ceramic bowl|dinnerware|tableware of porcelain|ceramic plate)\b", t):
-            target_chapters.append("69")
-            statutory_keywords.extend(["tableware", "kitchenware", "household", "toilet", "articles", "porcelain", "china", "ceramics"])
-        if re.search(r"\b(vacuum flask|thermos|insulated bottle|insulated tumbler|insulated flask)\b", t):
-            target_chapters.append("96")
-            statutory_keywords.extend(["vacuum", "flasks", "vessels", "complete", "cases"])
-        elif re.search(r"\b(bottle|bottles|water bottle|water bottles|drinking bottle)\b", t):
-            if any(w in t for w in ["steel", "stainless", "ss", "metal", "iron"]):
-                target_chapters.append("73")
-                priority_headings.append("7323")
-                statutory_keywords.extend(["table", "kitchen", "household", "articles", "stainless", "steel", "utensils", "bottle"])
-            elif any(w in t for w in ["plastic", "pet", "hdpe", "polypropylene", "polymer", "resin"]):
-                target_chapters.append("39")
-                priority_headings.append("3923")
-                statutory_keywords.extend(["articles", "conveyance", "packing", "goods", "plastics", "carboys", "bottles", "flasks"])
-        if re.search(r"\b(printed book|hardcover|paperback|artbook|manga|comic book|brochure|poster|art print)\b", t):
-            target_chapters.append("49")
-            statutory_keywords.extend(["printed", "books", "brochures", "leaflets", "printed", "matter", "pictures", "designs", "photographs"])
-        if re.search(r"\b(consulting service|software development service|cloud hosting|saas|maintenance service|legal service|accounting service|freight transport|rental service)\b", t):
-            target_chapters.append("99")
-            statutory_keywords.extend(["services", "professional", "technical", "business", "information", "technology", "support", "transport", "leasing", "rental"])
-
-        # Dynamically discover priority 4-digit headings directly from HSN_SAC (1).xlsx (cat['h4_meta'])
-        cat = self._get_dynamic_catalog_index()
-        h4_meta = cat.get("h4_meta", {})
-        tariff_vocab = cat.get("tariff_vocab_stems", set())
-
-        combined_query = f"{t} {' '.join(statutory_keywords)}"
-        q_raw_toks = set(re.findall(r"\b[a-z]{3,}\b", combined_query))
-        q_stems = {w.rstrip("s") if len(w) > 3 else w for w in q_raw_toks}
-        if tariff_vocab:
-            q_stems = q_stems & tariff_vocab
-
-        scored_h4s = []
-        for h4, meta in h4_meta.items():
-            ch = meta["chapter"]
-            if ch in excluded_chapters or h4 in excluded_chapters:
-                continue
-            if target_chapters and ch not in target_chapters:
-                continue
-            h_desc_up = meta["heading_desc"].upper()
-            if h_desc_up.startswith("OMITTED") or "DEPRECATED" in h_desc_up:
-                continue
-            # Exclude primary cell heading when rechargeable/lithium-ion accumulator is queried
-            if ("accumulator" in statutory_keywords or "lithium-ion" in t or "rechargeable" in t) and "primary" in meta["heading_desc"].lower():
-                continue
-
-            h_overlap = len(q_stems & meta["heading_stems"])
-            c_overlap = len(q_stems & meta["child_stems"])
-            if h_overlap == 0 and c_overlap == 0:
-                continue
-            h_score = (2.5 * h_overlap / max(1, min(6, len(meta["heading_stems"])))) + (1.0 * c_overlap / max(1, min(8, len(q_stems))))
-            scored_h4s.append((h_score, h_overlap, c_overlap, h4))
-
-        scored_h4s.sort(key=lambda x: (round(x[0], 4), x[1], x[2], -int(x[3])), reverse=True)
-        discovered_h4s = [item[3] for item in scored_h4s[:4]]
-        # Merge pre-assigned priority headings with discovered ones
-        for h in discovered_h4s:
-            if h not in priority_headings:
-                priority_headings.append(h)
-
-        VALID_MASTER_CHAPTERS = {"19", "39", "61", "62", "73", "84", "85", "87", "94"}
-        if not target_chapters and priority_headings:
-            target_chapters.append(priority_headings[0][:2])
-
-        target_chapters = [c for c in target_chapters if c in VALID_MASTER_CHAPTERS]
-        priority_headings = [h for h in priority_headings if h[:2] in VALID_MASTER_CHAPTERS]
-
-        primary_ch = target_chapters[0] if target_chapters else None
-        chapter_label = self.OFFICIAL_CHAPTER_01_99_MAP.get(primary_ch, "Out of Schedule (Master file covers Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94)") if primary_ch else "Out of Schedule (Master file covers Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94)"
-
-        return {
-            "chapter_code": primary_ch,
-            "chapter_label": chapter_label,
-            "target_chapters": target_chapters,
-            "priority_headings": priority_headings,
-            "statutory_keywords": list(dict.fromkeys(statutory_keywords)),
-            "excluded_chapters": excluded_chapters
-        }
-
     def _generate_dynamic_suggestions_for_product(
         self,
         product_desc: str,
@@ -1686,7 +1406,7 @@ class HSNRAGApplicationLayer:
         """
         cat = self._get_dynamic_catalog_index()
         by_h4 = cat["by_h4"]
-        ch_info = self.categorize_chapter_01_99(product_desc)
+        ch_info = {"priority_headings": [c.get("hsn_code", "")[:4] for c in (top_candidates or []) if c.get("hsn_code")]}
 
         options: List[str] = []
         seen_opts: set = set()
@@ -1783,7 +1503,7 @@ class HSNRAGApplicationLayer:
             _add_opt(f"{c_short.title()} ({c.get('hsn_code', '')})")
 
         primary_h4 = matched_h4s[0] if matched_h4s else "Tariff"
-        ch_badge = ch_info["chapter_label"]
+        ch_badge = ch_info.get("chapter_label", "Tariff Schedule")
         if auditor_eval and auditor_eval.get("status") == "NEED_CLARIFICATION" and auditor_eval.get("user_prompt_suggestion"):
             prompt_q = f"[{ch_badge}] {auditor_eval['user_prompt_suggestion']} (Or paste full Product Description below)"
             missing_attrs = auditor_eval.get("missing_attributes") or [f"Chapter: {ch_badge}", "Product Description (Material, Construction, End-Use)"]
@@ -1825,13 +1545,11 @@ class HSNRAGApplicationLayer:
             base_ext = self._extract_attributes_deterministic(f"{base_clean} {clarif_clean}".strip())
             existing_attributes = base_ext.attributes.model_dump()
 
-        ch_info = self.categorize_chapter_01_99(combined_raw)
-
         # Dynamically extract material, form, use, and mounted state from combined tokens
         mat_normalized = existing_attributes.get("material") or ""
         raw_proc = existing_attributes.get("processing_state") or ""
         form_normalized = raw_proc if raw_proc.lower() not in ("", "finished", "finished article", "unknown") else ""
-        use_normalized = existing_attributes.get("function_use") or ch_info["chapter_label"]
+        use_normalized = existing_attributes.get("function_use") or "Commercial Commodity"
         mount_normalized = existing_attributes.get("mounted_state") or "not_applicable"
 
         # Dynamic constituent material & processing state extraction under WCO Taxonomy
@@ -1903,14 +1621,14 @@ class HSNRAGApplicationLayer:
             "processing_state": form_normalized or "Specific Commodity",
             "function_use": use_normalized,
             "mounted_state": mount_normalized,
-            "chapter_category": ch_info["chapter_label"]
+            "chapter_category": "Official Tariff Schedule"
         }
 
         return {
             "stage": "STAGE_1_CONTEXT_AGGREGATOR",
             "base_product": base_clean,
             "user_clarification": clarif_clean,
-            "chapter_categorization": ch_info,
+            "chapter_categorization": {"chapter_label": "Official Tariff Schedule"},
             "aggregated_attributes": aggregated_attributes,
             "master_search_string": master_search_string
         }
@@ -1933,11 +1651,10 @@ class HSNRAGApplicationLayer:
         by_h4 = cat["by_h4"]
 
         q_lower = master_search_string.lower()
-        ch_info = self.categorize_chapter_01_99(q_lower)
-        priority_h4s = ch_info["priority_headings"]
-        target_chapters = set(ch_info["target_chapters"])
-        excluded_chapters = ch_info["excluded_chapters"]
-        stat_kw = ch_info["statutory_keywords"]
+        priority_h4s = []
+        target_chapters = set()
+        excluded_chapters = set()
+        stat_kw = []
 
         # Dynamically filter non-tariff tokens using the official vocabulary of HSN_SAC (1).xlsx (cat['tariff_vocab_stems'])
         structural_meta_words = {
@@ -2179,7 +1896,7 @@ class HSNRAGApplicationLayer:
         return {
             "stage": "STAGE_2_VECTOR_SEARCH_INDEX",
             "master_search_string": master_search_string,
-            "chapter_categorization": ch_info,
+            "chapter_categorization": {"priority_headings": priority_h4s, "chapter_label": "Official Tariff Schedule"},
             "total_tariff_records_indexed": total_records,
             "top_3_candidates": top_3,
             "top_3_official_matches": top_3
@@ -2326,8 +2043,7 @@ class HSNRAGApplicationLayer:
         # RULE 3: EXCLUSION CHECK (GIR 1 Chapter Notes)
         # Dynamically exclude options that belong to chapters legally excluded by Chapter Categorizer
         filtered_options = []
-        ch_categorization = self.categorize_chapter_01_99(combined_text)
-        excluded_set = set(ch_categorization.get("excluded_chapters", set()))
+        excluded_set = set()
         for opt in active_options:
             code_clean = str(opt.get("hsn_code", "")).replace(" ", "")
             opt_ch = code_clean[:2]

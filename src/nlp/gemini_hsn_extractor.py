@@ -271,13 +271,9 @@ class GeminiHSNExtractor:
         q_raw = query.lower()
 
         # Step 1: Broad Section & Chapter Routing
-        from src.nlp.hsn_rag_layer import HSNRAGApplicationLayer
-        rag = HSNRAGApplicationLayer.get_instance()
-        ch_info = rag.categorize_chapter_01_99(f"{query} {multi_head.head1_core_entity} {multi_head.head2_material_composition} {multi_head.head3_manufacturing_form}")
-        
-        target_ch = ch_info.get("chapter_code", "99")
-        ch_name = ch_info.get("chapter_label", "Miscellaneous")
-        priority_headings = ch_info.get("priority_headings", [])
+        target_ch = "NONE"
+        ch_name = "Not in Master Schedule"
+        priority_headings = []
 
         # Step 2 & 3: Filter all candidates strictly within the routed Chapter
         chapter_candidates = self.chapter_map.get(target_ch, [])

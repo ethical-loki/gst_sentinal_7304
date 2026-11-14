@@ -519,9 +519,18 @@ class IntentExtractor:
                 f"The config file is the strict single source of truth. Allowed providers: {sorted(valid_production_providers)}"
             )
 
+        # Strict active model agreement verification (Item 8)
+        model_name = self.config.get("model_name", "")
+        expected_model = "qwen2.5-0.5b-instruct"
+        if model_name != expected_model:
+            raise RuntimeError(
+                f"Active model agreement failure: Config specifies model '{model_name}', "
+                f"but production model must be '{expected_model}'. Startup halted on mismatch."
+            )
+
         if provider == "ollama":
             self._llm_client = OllamaLLMClient(
-                model_name=self.config.get("model_name", "qwen2.5:0.5b"),
+                model_name=model_name,
                 base_url=self.config.get("ollama_base_url", "http://localhost:11434")
             )
         elif provider == "local_transformers":
@@ -537,7 +546,10 @@ class IntentExtractor:
             client._ensure_loaded()
             self._llm_client = client
 
-        logger.info(f"[IntentExtractor] Config verified. Active real LLM provider: '{provider}', model: '{self.config.get('model_name')}'")
+        logger.info(
+            f"[IntentExtractor] Active model agreement verified: Config, startup log, and cache keys "
+            f"agree on '{expected_model}'. Provider: '{provider}'."
+        )
         return self._llm_client
 
     def _initialize(self):
@@ -968,7 +980,11 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
         # Check 3: AMBIGUOUS_MATERIAL
         multi_material_articles = {"bottle", "bottles", "botal", "flask", "flasks", "pipe", "pipes", "tube", "tubes", "gloves", "tank", "box", "container"}
         has_multi = any(re.search(rf"\b{re.escape(a)}\b", q_norm) for a in multi_material_articles)
-        if has_multi and not intent.material:
+        mat_in_query = False
+        if intent.material:
+            mat_words = [w for w in re.findall(r"\b[a-zA-Z]{3,}\b", intent.material.lower()) if w not in ("and", "the", "for", "with")]
+            mat_in_query = any(w in q_norm for w in mat_words)
+        if has_multi and not mat_in_query:
             return "AMBIGUOUS_MATERIAL", (
                 f"Statutory classification depends on constituent material and construction. Product '{raw_query}' "
                 f"exists across multiple chapters (e.g. Chapter 39 Plastics vs Chapter 73 Steel). Material is required."
@@ -1019,7 +1035,7 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
     # Pipeline Execution
     # =================================================================
 
-    def extract_intent(self, query: str, clarification: str = "") -> IntentExtractionResult:
+    def extract_intent(self, query: str, clarification: str = "", use_cache: bool = True) -> IntentExtractionResult:
         """
         Full 5-step Intent Extraction Pipeline with Caching, Row-Level Grounding,
         and Scope Classification.
@@ -1042,7 +1058,7 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
 
         # 1. Deterministic Cache Check
         cache_key = self._get_cache_key(raw_query)
-        if cache_key in self.interpretation_cache:
+        if use_cache and cache_key in self.interpretation_cache:
             cached_dict = self.interpretation_cache[cache_key]
             res = IntentExtractionResult.model_validate(cached_dict)
             res.is_cache_hit = True

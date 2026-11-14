@@ -305,19 +305,10 @@ class DeepSeekHSNVerifier:
         if not q_tokens or not self.tariff_tokens_index:
             return None
 
-        # Dynamic WCO Chapter Categorization
-        try:
-            from src.nlp.hsn_rag_layer import HSNRAGApplicationLayer
-            ch_info = HSNRAGApplicationLayer.get_instance().categorize_chapter_01_99(query)
-            target_chapters = set(ch_info.get("target_chapters", []))
-            excluded_chapters = set(ch_info.get("excluded_chapters", []))
-            priority_headings = set(ch_info.get("priority_headings", []))
-            statutory_keywords = set(ch_info.get("statutory_keywords", []))
-        except Exception:
-            target_chapters = set()
-            excluded_chapters = set()
-            priority_headings = set()
-            statutory_keywords = set()
+        target_chapters = set()
+        excluded_chapters = set()
+        priority_headings = set()
+        statutory_keywords = set()
 
         expanded: Set[str] = set(q_tokens).union(statutory_keywords)
 

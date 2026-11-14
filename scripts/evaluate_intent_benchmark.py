@@ -2,19 +2,25 @@
 scripts/evaluate_intent_benchmark.py
 ===================================
 Comprehensive evaluation runner for the HSN Intent Extraction & Hybrid Classification Engine.
-Evaluates queries across 8 categories:
+Evaluates queries across all statutory categories with:
 1. Intent Extraction Accuracy (%)
-2. Grounding Precision (%) against Human-Curated Labels (Non-circular)
-3. Clarification Rate (%)
-4. Abstention Rate (%)
-5. Top-1 & Top-3 Retrieval Accuracy (%)
-6. Per-Category Breakdown (Mathematically exact sum)
-7. Appends run and git commit hash to data/intent_cache/benchmark_history.jsonl
+2. Grounding Precision & Recall (%) against Human-Curated Labels (Non-circular)
+3. 4-Quadrant Metric Analysis:
+   - Correct Classification (in-scope correctly classified)
+   - Correct Abstention (out-of-scope/unrecognized correctly abstained)
+   - Wrong Classification (misclassified)
+   - Wrong Abstention (in-scope query falsely abstained)
+4. Top-1 & Top-3 Statutory Accuracy (%)
+5. Progress logging per query with flush
+6. Exact Numerators & Denominators for every metric
+7. Git commit hash and config SHA-256 hash logging
+8. Persists report to reports/held_out_benchmark_results.json
 """
 
 import json
 import time
 import sys
+import hashlib
 import subprocess
 from datetime import datetime
 from pathlib import Path
@@ -26,21 +32,40 @@ from src.nlp.intent_extractor import IntentExtractor, DeterministicLLMClient
 from src.search.ambiguity_controller import evaluate_product_ambiguity
 
 
+def compute_file_sha256(path: Path) -> str:
+    if path.exists():
+        content = path.read_bytes()
+        return hashlib.sha256(content).hexdigest()[:16]
+    return "unknown"
+
+
 def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, Any]:
     with open(benchmark_file, "r", encoding="utf-8") as f:
         cases: List[Dict[str, Any]] = json.load(f)
 
-    print("\n" + "=" * 76)
+    base_dir = Path(__file__).resolve().parent.parent
+    config_path = base_dir / "config" / "intent_extraction_config.json"
+    config_hash = compute_file_sha256(config_path)
+
+    # Fetch Git commit hash
+    git_hash = "unknown"
+    try:
+        git_hash = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    except Exception:
+        pass
+
+    print("\n" + "=" * 78)
     print(f"STARTING HSN INTENT & HYBRID CLASSIFICATION EVALUATION: {label}")
     print(f"File: {benchmark_file.name} | Total cases: {len(cases)}")
-    print("=" * 76)
+    print(f"Git Commit Hash: {git_hash} | Config Hash: {config_hash}")
+    print("=" * 78, flush=True)
 
     extractor = IntentExtractor.get_instance()
     if "--deterministic" in sys.argv:
-        print("[INFO] Running in deterministic test-double mode")
+        print("[INFO] Running in deterministic test-double mode", flush=True)
         extractor._llm_client = DeterministicLLMClient()
     else:
-        print(f"[INFO] Running with real production LLM: {type(extractor._llm_client).__name__}")
+        print(f"[INFO] Running with real production LLM: {type(extractor._llm_client).__name__}", flush=True)
 
     total_cases = len(cases)
     intent_correct_count = 0
@@ -52,6 +77,18 @@ def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, A
     top3_correct_count = 0
     clarification_count = 0
     abstention_count = 0
+
+    # 4-Quadrant Metric Tracking
+    # Quadrant 1: Correct Classification (In-scope expected, correctly classified)
+    # Quadrant 2: Correct Abstention (Out-of-scope/unrecognized expected, correctly abstained)
+    # Quadrant 3: Wrong Classification (Misclassified)
+    # Quadrant 4: Wrong Abstention (In-scope expected, falsely abstained)
+    total_in_scope = 0
+    total_out_scope = 0
+    correct_classification = 0
+    correct_abstention = 0
+    wrong_classification = 0
+    wrong_abstention = 0
 
     category_stats: Dict[str, Dict[str, int]] = {}
 
@@ -66,12 +103,20 @@ def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, A
         exp_chap = tc.get("expected_chapter")
         exp_terms = [t.lower() for t in tc.get("expected_grounded_terms", [])]
 
+        is_case_in_scope = bool(exp_chap and exp_chap != "NONE" and exp_outcome not in ("OUT_OF_SCHEDULE", "UNRECOGNIZED"))
+        if is_case_in_scope:
+            total_in_scope += 1
+        else:
+            total_out_scope += 1
+
         if cat not in category_stats:
             category_stats[cat] = {"total": 0, "intent_correct": 0, "retrieval_correct": 0, "abstain": 0, "clarify": 0}
         category_stats[cat]["total"] += 1
 
-        # 1. Run Intent Extraction
+        # 1. Run Intent Extraction with timing
+        q_t0 = time.perf_counter()
         intent_res = extractor.extract_intent(q)
+        q_lat = (time.perf_counter() - q_t0) * 1000.0
 
         # Evaluate Intent Accuracy
         conf_match = (intent_res.reading_confidence == exp_conf) if exp_conf else True
@@ -113,7 +158,8 @@ def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, A
                     grounding_passed_terms += 1
 
         # Track Abstention vs Clarification
-        if intent_res.outcome_type in ("UNRECOGNIZED", "OUT_OF_SCHEDULE"):
+        is_system_abstained = (intent_res.outcome_type in ("UNRECOGNIZED", "OUT_OF_SCHEDULE"))
+        if is_system_abstained:
             abstention_count += 1
             category_stats[cat]["abstain"] += 1
         elif intent_res.outcome_type == "AMBIGUOUS_MATERIAL":
@@ -121,10 +167,9 @@ def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, A
             category_stats[cat]["clarify"] += 1
 
         # 3. Run Layer 4 Ambiguity / Retrieval if outcome was SUCCESS
-        retrieval_hit = False
+        pred_chaps = []
         if intent_res.outcome_type == "SUCCESS":
             ambig_res = evaluate_product_ambiguity(intent_res.synthesized_search_string or q)
-            pred_chaps = []
             if ambig_res.direct_match:
                 pred_chaps.append(ambig_res.direct_match.chapter_code)
             for opt in ambig_res.disambiguation_options:
@@ -135,19 +180,36 @@ def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, A
                 if pred_chaps and pred_chaps[0] == exp_chap:
                     top1_correct_count += 1
                     top3_correct_count += 1
-                    retrieval_hit = True
                     category_stats[cat]["retrieval_correct"] += 1
                 elif exp_chap in pred_chaps[:3]:
                     top3_correct_count += 1
-                    retrieval_hit = True
                     category_stats[cat]["retrieval_correct"] += 1
+
+        # 4. 4-Quadrant Metric Evaluation
+        if is_case_in_scope:
+            if is_system_abstained:
+                # In-scope query falsely abstained -> Wrong Abstention
+                wrong_abstention += 1
+            elif pred_chaps and (pred_chaps[0] == exp_chap or exp_chap in pred_chaps[:3]):
+                # In-scope query correctly classified -> Correct Classification
+                correct_classification += 1
+            else:
+                # In-scope query classified to wrong chapter -> Wrong Classification
+                wrong_classification += 1
         else:
-            # Out of schedule or unrecognized appropriately handled
-            if exp_outcome in ("OUT_OF_SCHEDULE", "UNRECOGNIZED", "AMBIGUOUS_MATERIAL"):
+            if is_system_abstained:
+                # Out-of-scope query correctly abstained -> Correct Abstention
+                correct_abstention += 1
                 top1_correct_count += 1
                 top3_correct_count += 1
-                retrieval_hit = True
                 category_stats[cat]["retrieval_correct"] += 1
+            else:
+                # Out-of-scope query falsely classified into a chapter -> Wrong Classification
+                wrong_classification += 1
+
+        # Progress log per query
+        status_tag = intent_res.outcome_type
+        print(f"[{idx:02d}/{total_cases}] '{q[:26]:<26}' -> {status_tag:<18} ({q_lat:.0f}ms)", flush=True)
 
     total_latency_ms = round((time.perf_counter() - t0) * 1000.0, 1)
     avg_latency_ms = round(total_latency_ms / total_cases, 2)
@@ -164,23 +226,31 @@ def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, A
     abstention_rate_pct = round((abstention_count / total_cases) * 100.0, 2)
     clarification_rate_pct = round((clarification_count / total_cases) * 100.0, 2)
 
-    # Fetch Git commit hash
-    git_hash = "unknown"
-    try:
-        git_hash = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-    except Exception:
-        pass
+    # 4-Quadrant Percentages
+    correct_class_pct = round((correct_classification / max(1, total_in_scope)) * 100.0, 2)
+    correct_abstain_pct = round((correct_abstention / max(1, total_out_scope)) * 100.0, 2)
+    wrong_class_pct = round((wrong_classification / total_cases) * 100.0, 2)
+    wrong_abstain_pct = round((wrong_abstention / max(1, total_in_scope)) * 100.0, 2)
+    statutory_decision_acc_pct = round(((correct_classification + correct_abstention) / total_cases) * 100.0, 2)
 
     # -------------------------------------------------------------
     # Render Formatted Terminal Report
     # -------------------------------------------------------------
-    print("\n" + "=" * 76)
+    print("\n" + "=" * 78)
     print(f"                HSN CLASSIFICATION BENCHMARK REPORT: {label}                ")
-    print("=" * 76)
+    print("=" * 78)
     print(f"Git Commit Hash:                {git_hash}")
-    print(f"Total Test Queries:             {total_cases}")
+    print(f"Config SHA-256 Hash:            {config_hash}")
+    print(f"Total Test Queries:             {total_cases} (In-Scope: {total_in_scope}, Out-of-Scope: {total_out_scope})")
     print(f"Total Evaluation Time:          {total_latency_ms} ms (avg {avg_latency_ms} ms/query)")
-    print("-" * 76)
+    print("-" * 78)
+    print("4-QUADRANT PERFORMANCE METRICS (Abstentions Separated from Errors):")
+    print(f"  1. Correct Classification:    {correct_class_pct}% ({correct_classification}/{total_in_scope} in-scope)")
+    print(f"  2. Correct Abstention:        {correct_abstain_pct}% ({correct_abstention}/{total_out_scope} out-of-scope)")
+    print(f"  3. Wrong Classification:      {wrong_class_pct}% ({wrong_classification}/{total_cases} total)")
+    print(f"  4. Wrong Abstention (False):  {wrong_abstain_pct}% ({wrong_abstention}/{total_in_scope} in-scope)")
+    print(f"  >> Overall Decision Accuracy: {statutory_decision_acc_pct}% ({correct_classification + correct_abstention}/{total_cases})")
+    print("-" * 78)
     print(f"Intent Extraction Accuracy:     {intent_accuracy_pct}% ({intent_correct_count}/{total_cases})")
     print(f"Row-Level Grounding Precision:  {grounding_precision_pct}% ({grounding_passed_terms}/{grounding_total_terms} terms)")
     print(f"Row-Level Grounding Recall:     {grounding_recall_pct}% ({grounding_recalled_terms}/{grounding_total_expected} expected terms)")
@@ -188,7 +258,7 @@ def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, A
     print(f"Top-3 Statutory Accuracy:       {top3_accuracy_pct}% ({top3_correct_count}/{total_cases})")
     print(f"Abstention Rate:                {abstention_rate_pct}% ({abstention_count}/{total_cases})")
     print(f"Clarification Rate:             {clarification_rate_pct}% ({clarification_count}/{total_cases})")
-    print("=" * 76)
+    print("=" * 78)
 
     print("\nCATEGORY PERFORMANCE BREAKDOWN:")
     print(f"{'Category':<24} | {'Total':<5} | {'Intent Acc':<14} | {'Retrieval':<14} | {'Abstain':<7} | {'Clarify':<7}")
@@ -202,20 +272,32 @@ def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, A
         print(f"{cat:<24} | {tot:<5} | {i_acc_str:<14} | {r_acc_str:<14} | {stats['abstain']:<7} | {stats['clarify']:<7}")
     print("=" * 80)
 
-    # -------------------------------------------------------------
-    # Append Record to Historical Log
-    # -------------------------------------------------------------
-    history_file = Path(__file__).resolve().parent.parent / "data" / "intent_cache" / "benchmark_history.jsonl"
-    history_file.parent.mkdir(parents=True, exist_ok=True)
+    # Persist Report Artifact
+    reports_dir = base_dir / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    report_file = reports_dir / "held_out_benchmark_results.json"
 
     record = {
         "timestamp": datetime.now().isoformat(),
+        "label": label,
+        "dataset_file": benchmark_file.name,
         "git_commit_hash": git_hash,
-        "dataset_name": benchmark_file.name,
-        "dataset_label": label,
-        "total_queries": total_cases,
-        "total_latency_ms": total_latency_ms,
-        "avg_latency_ms": avg_latency_ms,
+        "config_sha256": config_hash,
+        "total_cases": total_cases,
+        "total_in_scope": total_in_scope,
+        "total_out_scope": total_out_scope,
+        "four_quadrant_metrics": {
+            "correct_classification_pct": correct_class_pct,
+            "correct_classification_fraction": f"{correct_classification}/{total_in_scope}",
+            "correct_abstention_pct": correct_abstain_pct,
+            "correct_abstention_fraction": f"{correct_abstention}/{total_out_scope}",
+            "wrong_classification_pct": wrong_class_pct,
+            "wrong_classification_fraction": f"{wrong_classification}/{total_cases}",
+            "wrong_abstention_pct": wrong_abstain_pct,
+            "wrong_abstention_fraction": f"{wrong_abstention}/{total_in_scope}",
+            "statutory_decision_accuracy_pct": statutory_decision_acc_pct,
+            "statutory_decision_accuracy_fraction": f"{correct_classification + correct_abstention}/{total_cases}"
+        },
         "intent_accuracy_pct": intent_accuracy_pct,
         "intent_accuracy_fraction": f"{intent_correct_count}/{total_cases}",
         "grounding_precision_pct": grounding_precision_pct,
@@ -223,18 +305,20 @@ def run_benchmark(benchmark_file: Path, label: str = "BENCHMARK") -> Dict[str, A
         "grounding_recall_pct": grounding_recall_pct,
         "grounding_recall_fraction": f"{grounding_recalled_terms}/{grounding_total_expected}",
         "top1_accuracy_pct": top1_accuracy_pct,
+        "top1_accuracy_fraction": f"{top1_correct_count}/{total_cases}",
         "top3_accuracy_pct": top3_accuracy_pct,
+        "top3_accuracy_fraction": f"{top3_correct_count}/{total_cases}",
         "abstention_rate_pct": abstention_rate_pct,
         "clarification_rate_pct": clarification_rate_pct,
         "category_breakdown": category_stats
     }
 
     try:
-        with open(history_file, "a", encoding="utf-8") as f:
-            f.write(json.dumps(record) + "\n")
-        print(f"\nBenchmark run successfully logged to {history_file.relative_to(history_file.parent.parent.parent)}")
+        with open(report_file, "w", encoding="utf-8") as f:
+            json.dump(record, f, indent=2)
+        print(f"\nFull benchmark report artifact persisted to {report_file.relative_to(base_dir)}")
     except Exception as e:
-        print(f"Failed to append to history log: {e}")
+        print(f"Failed to persist report artifact: {e}")
 
     return record
 

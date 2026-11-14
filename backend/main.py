@@ -722,13 +722,22 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
                 desc_rep = disambiguation_data.get("descriptive_report") or {}
                 calculated_conf = float(desc_rep.get("confidence_score", 45.0)) / 100.0
 
+                opt_chaps = {o.get("chapter_code") for o in valid_opts if o.get("chapter_code")}
+                if len(opt_chaps) > 1:
+                    status = "AMBIGUOUS_MATERIAL"
+                    banner_type = "MULTI_CHAPTER_AMBIGUITY"
+                else:
+                    status = "NEEDS_SELECTION"
+                    banner_type = "SAME_CHAPTER_VARIANT"
+
+                disambiguation_data["banner_type"] = banner_type
                 chapter_pred_data = {
                     "product_name": base_product,
                     "normalized": base_product.lower(),
                     "chapter": first_opt.get("chapter_code", "NONE"),
                     "chapter_title": first_opt.get("chapter_title", "Multiple Candidates"),
                     "confidence": min(calculated_conf, 0.49),  # Capped: undecided 8-digit code cannot report high confidence
-                    "status": "ABSTAIN",  # Needs user selection to finalize 8-digit code
+                    "status": status,  # Explicit status: NEEDS_SELECTION or AMBIGUOUS_MATERIAL
                     "alternatives": [],
                     "evidence": [
                         {
@@ -740,7 +749,7 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
                         }
                         for o in valid_opts[:5]
                     ],
-                    "reason": "Multiple candidate tariff items identified under GIR compliance. User selection required to finalize 8-digit HSN code.",
+                    "reason": f"Status: {status}. Multiple candidate tariff items identified under GIR compliance. User selection required to finalize 8-digit HSN code.",
                     "catalogue_version": catalogue_version,
                     "index_version": index_version,
                     "total_active_chapters": len(VALID_MASTER_CHAPTERS)
@@ -763,7 +772,7 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
                     "chapter": top_cand.chapter_code,
                     "chapter_title": top_cand.chapter_title,
                     "confidence": min(round(top_cand.final_score, 2), 0.49),
-                    "status": "ABSTAIN",
+                    "status": "NEEDS_SELECTION",
                     "alternatives": [],
                     "evidence": [
                         {
@@ -775,7 +784,7 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
                         }
                         for c in valid_cands[:5]
                     ],
-                    "reason": "Multiple candidate tariff items identified under GIR compliance. User selection required to finalize 8-digit HSN code.",
+                    "reason": "Status: NEEDS_SELECTION. Multiple candidate tariff items identified under GIR compliance. User selection required to finalize 8-digit HSN code.",
                     "catalogue_version": catalogue_version,
                     "index_version": index_version,
                     "total_active_chapters": len(VALID_MASTER_CHAPTERS)
@@ -787,7 +796,7 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
                     "chapter": "NONE",
                     "chapter_title": "Not in Master Schedule",
                     "confidence": 0.0,
-                    "status": "ABSTAIN",
+                    "status": "UNRECOGNIZED",
                     "alternatives": [],
                     "evidence": [],
                     "reason": (
@@ -801,7 +810,7 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
 
         # Handle distinct outcome types from Intent Extraction (UNRECOGNIZED, OUT_OF_SCHEDULE, AMBIGUOUS_MATERIAL)
         if intent_data and (intent_data.get("outcome_type") == "UNRECOGNIZED" or intent_data.get("reading_confidence") == "unclear"):
-            chapter_pred_data["status"] = "ABSTAIN"
+            chapter_pred_data["status"] = "UNRECOGNIZED"
             chapter_pred_data["confidence"] = 0.0
             chapter_pred_data["chapter"] = "NONE"
             chapter_pred_data["chapter_title"] = "Unrecognized Query"
@@ -813,6 +822,7 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
             disambiguation_data["is_ambiguous"] = False
             disambiguation_data["banner_type"] = "NONE"
             disambiguation_data["direct_match"] = None
+            disambiguation_data["disambiguation_options"] = []
             disambiguation_data["descriptive_report"] = {
                 "article_understood_as": f"Query '{base_product}' is unrecognized.",
                 "recommended_hsn": "Needs confirmation",
@@ -832,7 +842,7 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
                 )
             }
         elif intent_data and intent_data.get("outcome_type") == "OUT_OF_SCHEDULE":
-            chapter_pred_data["status"] = "ABSTAIN"
+            chapter_pred_data["status"] = "OUT_OF_SCHEDULE"
             chapter_pred_data["confidence"] = 0.0
             chapter_pred_data["chapter"] = "NONE"
             chapter_pred_data["chapter_title"] = "Out of Schedule"
@@ -843,8 +853,6 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
             disambiguation_data["direct_match"] = None
             disambiguation_data["is_ambiguous"] = False
             disambiguation_data["banner_type"] = "NOT_AVAILABLE"
-            disambiguation_data["disambiguation_options"] = []
-            disambiguation_data["distinct_chapters_count"] = 0
             disambiguation_data["descriptive_report"] = {
                 "article_understood_as": f"Commodity ('{base_product}') identified outside the 9 active chapters.",
                 "recommended_hsn": "None (Chapter outside active schedule)",
@@ -853,17 +861,13 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
                 "reasoning": intent_data.get("error_message") or "Statutory classification falls outside loaded schedule.",
                 "other_plausible_candidates": [],
                 "missing_information": ["Target chapter not loaded in active Master dataset (active: 19, 39, 61, 62, 73, 84, 85, 87, 94)"],
-                "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing.",
-                "formatted_text": (
-                    f"Article understood as: Commodity ('{base_product}') identified outside the 9 active chapters.\n\n"
-                    f"Recommended HSN: None (Chapter outside active schedule)\n"
-                    f"Confidence: Low\n"
-                    f"Reasoning: {intent_data.get('error_message') or 'Statutory classification falls outside loaded schedule.'}\n\n"
-                    f"Missing information that would change the result (if any): Target chapter not loaded in active Master dataset (active: 19, 39, 61, 62, 73, 84, 85, 87, 94)\n\n"
-                    f"Verification note: Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
-                )
+                "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
             }
         elif intent_data and intent_data.get("outcome_type") == "AMBIGUOUS_MATERIAL":
+            chapter_pred_data["status"] = "AMBIGUOUS_MATERIAL"
+            chapter_pred_data["confidence"] = 0.40
+            chapter_pred_data["chapter"] = "NONE"
+            chapter_pred_data["chapter_title"] = "Material Ambiguity"
             disambiguation_data["direct_match"] = None
             disambiguation_data["is_ambiguous"] = True
             disambiguation_data["banner_type"] = "MULTI_CHAPTER_AMBIGUITY"
@@ -872,7 +876,7 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
         else:
             rep = disambiguation_data.get("descriptive_report") or {}
             if not disambiguation_data.get("disambiguation_options") and (rep.get("confidence") == "Low" or "Unrecognized commercial query" in str(rep.get("article_understood_as"))):
-                chapter_pred_data["status"] = "ABSTAIN"
+                chapter_pred_data["status"] = "UNRECOGNIZED"
                 chapter_pred_data["confidence"] = min(chapter_pred_data.get("confidence", 0.0), 0.35)
                 chapter_pred_data["reason"] = (
                     f"Query '{base_product}' is unrecognized or confidence threshold (0.50) is not met. "
@@ -881,44 +885,56 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
 
         # Enforce strict membership in Master dataset chapters
         if chapter_pred_data.get("chapter") not in VALID_MASTER_CHAPTERS:
-            out_of_sched_msg = (
-                f"The queried product '{base_product}' does not belong to any of the 9 statutory chapters "
-                f"available in Master_copy_hsn.xlsx (available chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)."
-            )
-            chapter_pred_data["status"] = "ABSTAIN"
-            chapter_pred_data["chapter"] = "NONE"
-            chapter_pred_data["chapter_title"] = "Not in Master Schedule"
-            chapter_pred_data["confidence"] = 0.0
-            chapter_pred_data["evidence"] = []
-            chapter_pred_data["alternatives"] = []
-            chapter_pred_data["reason"] = (
-                f"Product '{base_product}' cannot be mapped to Master_copy_hsn.xlsx. "
-                f"The master dataset exclusively covers Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94."
-            )
-            disambiguation_data["direct_match"] = None
-            disambiguation_data["is_ambiguous"] = False
-            disambiguation_data["banner_type"] = "NOT_AVAILABLE"
+            if chapter_pred_data.get("status") == "AMBIGUOUS_MATERIAL":
+                # Multi-chapter material ambiguity: preserve AMBIGUOUS_MATERIAL and banner
+                disambiguation_data["is_ambiguous"] = True
+                disambiguation_data["banner_type"] = "MULTI_CHAPTER_AMBIGUITY"
+            else:
+                out_status = "OUT_OF_SCHEDULE" if (intent_data and intent_data.get("outcome_type") == "OUT_OF_SCHEDULE") else "UNRECOGNIZED"
+                chapter_pred_data["status"] = out_status
+                chapter_pred_data["chapter"] = "NONE"
+                chapter_pred_data["chapter_title"] = "Not in Master Schedule"
+                chapter_pred_data["confidence"] = 0.0
+                chapter_pred_data["evidence"] = []
+                chapter_pred_data["alternatives"] = []
+                chapter_pred_data["reason"] = (
+                    f"Product '{base_product}' cannot be mapped to Master_copy_hsn.xlsx. "
+                    f"The master dataset exclusively covers Chapters 19, 39, 61, 62, 73, 84, 85, 87, 94."
+                )
+                disambiguation_data["direct_match"] = None
+                disambiguation_data["is_ambiguous"] = False
+                disambiguation_data["banner_type"] = "NOT_AVAILABLE"
+
+        # Final banner check: MULTI_CHAPTER_AMBIGUITY ONLY when options span > 1 distinct chapters
+        if chapter_pred_data.get("status") in ("UNRECOGNIZED", "OUT_OF_SCHEDULE"):
             disambiguation_data["disambiguation_options"] = []
-            disambiguation_data["distinct_chapters_count"] = 0
+            disambiguation_data["banner_type"] = "NONE" if chapter_pred_data.get("status") == "UNRECOGNIZED" else "NOT_AVAILABLE"
+            disambiguation_data["is_ambiguous"] = False
+        else:
+            final_opts = disambiguation_data.get("disambiguation_options", [])
+            final_opt_chaps = {o.get("chapter_code") for o in final_opts if o.get("chapter_code")}
+            if len(final_opt_chaps) > 1:
+                disambiguation_data["banner_type"] = "MULTI_CHAPTER_AMBIGUITY"
+            elif len(final_opt_chaps) == 1:
+                disambiguation_data["banner_type"] = "SAME_CHAPTER_VARIANT"
+            elif chapter_pred_data.get("status") == "AMBIGUOUS_MATERIAL":
+                disambiguation_data["banner_type"] = "MULTI_CHAPTER_AMBIGUITY"
+            elif disambiguation_data.get("banner_type") not in ("NOT_AVAILABLE", "NONE"):
+                disambiguation_data["banner_type"] = "NOT_AVAILABLE"
             disambiguation_data["descriptive_report"] = {
                 "article_understood_as": f"An item ('{base_product}') queried by user.",
                 "recommended_hsn": "None (Not available in reference dataset)",
                 "confidence": "Low",
                 "confidence_score": 0.0,
-                "reasoning": out_of_sched_msg,
+                "reasoning": (
+                    f"The queried product '{base_product}' does not belong to any of the 9 statutory chapters "
+                    f"available in Master_copy_hsn.xlsx (available chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)."
+                ),
                 "other_plausible_candidates": [],
                 "missing_information": [
                     "Item belongs to an unindexed Chapter outside Master_copy_hsn.xlsx (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)"
                 ],
-                "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing.",
-                "formatted_text": (
-                    f"Article understood as: An item ('{base_product}') queried by user.\n\n"
-                    f"Recommended HSN: None (Not available in reference dataset)\n"
-                    f"Confidence: Low\n"
-                    f"Reasoning: {out_of_sched_msg}\n\n"
-                    f"Missing information that would change the result (if any): Item belongs to an unindexed Chapter outside Master_copy_hsn.xlsx (active chapters: 19, 39, 61, 62, 73, 84, 85, 87, 94)\n\n"
-                    f"Verification note: Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
-                )
+                "verification_note": "Codes should be checked against the current official CBIC/GST HSN schedule before filing or invoicing."
             }
 
         logger.info(

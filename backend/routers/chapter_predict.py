@@ -74,10 +74,19 @@ class HealthResponse(BaseModel):
 @router.post("/api/chapter/predict", response_model=ChapterPrediction)
 async def predict_single_chapter(req: PredictRequest):
     """
-    Predicts the most likely 2-digit HSN chapter (01–99) for a single product description.
+    Predicts the most likely 2-digit HSN chapter for a single product description strictly from active Master chapters.
     """
+    VALID_MASTER = {"19", "39", "61", "62", "73", "84", "85", "87", "94"}
     predictor = ChapterPredictor.get_instance()
     pred = predictor.predict(req.product_name, top_k=req.top_k)
+    if pred.chapter not in VALID_MASTER:
+        pred.chapter = "NONE"
+        pred.chapter_title = "Not in Master Schedule"
+        pred.confidence = 0.0
+        pred.status = "ABSTAIN"
+        pred.evidence = []
+        pred.alternatives = []
+        pred.reason = f"Product '{req.product_name}' falls outside active Master chapters (19, 39, 61, 62, 73, 84, 85, 87, 94)."
     return pred
 
 

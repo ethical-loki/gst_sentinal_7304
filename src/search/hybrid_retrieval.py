@@ -57,10 +57,12 @@ STOPWORDS = {
 
 
 def tokenize(text: str) -> List[str]:
-    """Lightweight whitespace & punctuation tokenizer with stopword suppression."""
+    """Lightweight whitespace & punctuation tokenizer with stopword suppression and hyphenated compound preservation."""
     if not text:
         return []
     clean = text.lower()
+    # Expand single-character hyphenated compounds (e.g. t-shirt -> tshirts shirt, v-neck -> vneck neck)
+    clean = re.sub(r"\b([a-zA-Z0-9])-([a-zA-Z0-9]+)\b", r"\1\2 \2", clean)
     words = re.findall(r"\b[a-zA-Z0-9]{2,}\b", clean)
     return [w for w in words if w not in STOPWORDS]
 
@@ -300,28 +302,6 @@ class HybridHSNEngine:
 
             norm_rrf = (cand.rrf_score / max_rrf) if max_rrf > 0 else 0.5
             blended_score = 0.45 * norm_rrf + 0.55 * calibrated_prob
-
-            cand_mat_text = f"{cand.material_keywords} {cand.article_keywords}".lower()
-            mat_match = re.search(r"Material:\s*([^\n|]+)", q, re.IGNORECASE)
-            query_mat = mat_match.group(1).strip().lower() if mat_match else ""
-
-            # If no explicit 'Material:' prefix, detect material keywords from query
-            if not query_mat:
-                common_materials = ["stainless steel", "steel", "iron", "cotton", "plastic", "plastics", "wood", "aluminum", "glass", "silk", "wool", "leather"]
-                for cm in common_materials:
-                    if re.search(rf"\b{re.escape(cm)}\b", q.lower()):
-                        query_mat = cm
-                        break
-
-            if query_mat:
-                m_tokens = set(tokenize(query_mat))
-                cand_tokens = set(tokenize(cand_mat_text))
-                if m_tokens and m_tokens.issubset(cand_tokens):
-                    blended_score = min(1.0, blended_score * 1.30)
-                elif m_tokens and cand_tokens and not m_tokens.intersection(cand_tokens):
-                    # Specified material conflicts with candidate's material keywords
-                    blended_score *= 0.35
-
             cand.final_score = round(float(blended_score), 4)
 
         # -------------------------------------------------------------

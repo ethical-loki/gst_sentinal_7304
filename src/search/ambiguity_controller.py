@@ -28,9 +28,9 @@ import math
 import json
 import logging
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Set
 from pydantic import BaseModel, Field
-from src.search.hybrid_retrieval import SearchCandidate, HybridHSNEngine
+from src.search.hybrid_retrieval import SearchCandidate, HybridHSNEngine, tokenize
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +96,8 @@ class DescriptiveReport(BaseModel):
 class AmbiguityEvaluationResult(BaseModel):
     query: str
     is_ambiguous: bool
+    status: str = "NEEDS_SELECTION"  # "SUCCESS" | "NEEDS_SELECTION" | "AMBIGUOUS_MATERIAL" | "OUT_OF_SCHEDULE" | "UNRECOGNIZED"
+    resolved_chapter: Optional[str] = None
     banner_type: str  # "NONE" | "SAME_CHAPTER_VARIANT" | "MULTI_CHAPTER_AMBIGUITY" | "AUTO_LOCKED"
     banner_title: str
     clarification_question: Optional[str] = None
@@ -148,9 +150,15 @@ class SmartAmbiguityController:
     def __init__(self, hybrid_engine: Optional[HybridHSNEngine] = None):
         self.engine = hybrid_engine or HybridHSNEngine.get_instance()
 
-    def evaluate(self, user_query: str) -> AmbiguityEvaluationResult:
-        q = (user_query or "").strip()
-        candidates = self.engine.search(q, top_k=10)
+    def evaluate(
+        self,
+        user_query: str = "",
+        candidates: Optional[List[SearchCandidate]] = None,
+        query: Optional[str] = None
+    ) -> AmbiguityEvaluationResult:
+        q = (query or user_query or "").strip()
+        if candidates is None:
+            candidates = self.engine.search(q, top_k=10)
 
         if not candidates:
             empty_report = DescriptiveReport(
@@ -165,6 +173,8 @@ class SmartAmbiguityController:
             return AmbiguityEvaluationResult(
                 query=q,
                 is_ambiguous=False,
+                status="UNRECOGNIZED",
+                resolved_chapter="NONE",
                 banner_type="NONE",
                 banner_title="No matching tariff line found",
                 clarification_question=None,
@@ -179,69 +189,96 @@ class SmartAmbiguityController:
         top2 = candidates[1] if len(candidates) > 1 else None
 
         # -------------------------------------------------------------
-        # Rule 1: Auto-Lock High Confidence Guardrails
+        # Generic Material Resolution Protocol (No arbitrary multipliers)
+        # Extract material terms from query/intent against Master file vocabulary
         # -------------------------------------------------------------
-        direct_card, is_locked = self._evaluate_auto_lock(q, candidates)
-        if is_locked and direct_card:
-            report = self._build_descriptive_report(
-                query=q,
-                is_ambiguous=False,
-                top1=top1,
-                top2=top2,
-                candidates=candidates
-            )
+        mat_tokens = self._extract_material_terms(q)
 
-            return AmbiguityEvaluationResult(
-                query=q,
-                is_ambiguous=False,
-                banner_type="AUTO_LOCKED",
-                banner_title="High-Confidence Statutory Classification Locked",
-                clarification_question=None,
-                direct_match=direct_card,
-                disambiguation_options=[],
-                distinct_chapters_count=1,
-                top_candidates_count=1,
-                descriptive_report=report
-            )
+        if mat_tokens:
+            material_filtered_candidates = []
+            # First check if any candidate's chapter title directly matches the material
+            chap_title_matches = [
+                c for c in candidates
+                if bool(mat_tokens.intersection({w.rstrip("s") for w in tokenize(c.chapter_title)}))
+            ]
+            if chap_title_matches:
+                material_filtered_candidates = chap_title_matches
+            else:
+                for c in candidates:
+                    cand_text = f"{c.chapter_title} {c.material_keywords} {c.article_keywords}".lower()
+                    cand_stems = {w.rstrip("s") for w in tokenize(cand_text)}
+                    if bool(mat_tokens.intersection(cand_stems)):
+                        material_filtered_candidates.append(c)
+
+            # If material matching isolates candidates to one chapter, use them
+            if material_filtered_candidates:
+                mat_chapters = {c.chapter_code for c in material_filtered_candidates}
+                if len(mat_chapters) == 1:
+                    candidates = material_filtered_candidates
+                    top1 = candidates[0]
+                    top2 = candidates[1] if len(candidates) > 1 else None
+        # Identify truly competing candidates
+        competing_candidates = [
+            c for c in candidates
+            if c.final_score >= 0.20 and (top1.final_score - c.final_score) <= 0.15 and (c.final_score / max(0.001, top1.final_score)) >= 0.75
+        ]
+        if not mat_tokens:
+            # If query did not specify material, check if alternative chapters match a multi-material commodity noun
+            q_nouns = set(tokenize(q.lower())).intersection(self.COMMODITY_ARTICLE_NOUNS)
+            if q_nouns:
+                for c in candidates:
+                    if c.chapter_code != top1.chapter_code and c.final_score >= 0.50:
+                        cand_art_stems = {w.rstrip("s") for w in tokenize(f"{c.article_keywords} {c.statutory_description}")}
+                        if any(n.rstrip("s") in cand_art_stems for n in q_nouns):
+                            if c not in competing_candidates:
+                                competing_candidates.append(c)
+
+        if not competing_candidates:
+            competing_candidates = [top1]
+
+        distinct_competing_chapters = list(dict.fromkeys(c.chapter_code for c in competing_candidates))
+        distinct_count = len(distinct_competing_chapters)
 
         # -------------------------------------------------------------
-        # Multi-Candidate Ambiguity Resolution
+        # Auto-Lock Guardrails: ONLY when strictly 1 chapter and 1 decisive leaf
         # -------------------------------------------------------------
-        distinct_chapters = list(dict.fromkeys(c.chapter_code for c in candidates))
-        distinct_count = len(distinct_chapters)
+        if distinct_count == 1:
+            direct_card, is_locked = self._evaluate_auto_lock(q, candidates)
+            if is_locked and direct_card and len(competing_candidates) <= 1:
+                report = self._build_descriptive_report(
+                    query=q,
+                    is_ambiguous=False,
+                    top1=top1,
+                    top2=top2,
+                    candidates=candidates
+                )
+
+                return AmbiguityEvaluationResult(
+                    query=q,
+                    is_ambiguous=False,
+                    status="SUCCESS",
+                    resolved_chapter=direct_card.chapter_code,
+                    banner_type="AUTO_LOCKED",
+                    banner_title="High-Confidence Statutory Classification Locked",
+                    clarification_question=None,
+                    direct_match=direct_card,
+                    disambiguation_options=[],
+                    distinct_chapters_count=1,
+                    top_candidates_count=1,
+                    descriptive_report=report
+                )
 
         ui_options: List[UIRecommendationCard] = []
 
-        if distinct_count == 1:
-            # Same-Chapter Variant
-            banner_type = "SAME_CHAPTER_VARIANT"
-            banner_title = "SELECT SPECIFIC VARIANT / SPECIFICATION"
-            ch_title = top1.chapter_title
-            clarif_q = f"Which specification of {q} applies under Chapter {top1.chapter_code} ({ch_title})?"
-
-            for idx, c in enumerate(candidates[:6]):
-                ui_options.append(UIRecommendationCard(
-                    option_id=f"OPT_{c.hsn_code}_{idx+1}",
-                    label=f"[{format_hsn_code(c.hsn_code)}] {c.statutory_description}",
-                    chapter_code=c.chapter_code,
-                    chapter_title=c.chapter_title,
-                    hsn_code=format_hsn_code(c.hsn_code),
-                    hsn_description=c.statutory_description,
-                    material_keywords=c.material_keywords,
-                    article_keywords=c.article_keywords,
-                    score=round(c.final_score * 100.0, 1),
-                    confidence_pct=round(min(c.final_score * 45.0, 45.0), 1),  # Capped because undecided
-                    is_chapter_representative=(idx == 0)
-                ))
-
-        else:
-            # Multi-Chapter Ambiguity
+        if distinct_count > 1:
+            # Multi-chapter ambiguity due to competing/unstated materials
+            status = "AMBIGUOUS_MATERIAL"
             banner_type = "MULTI_CHAPTER_AMBIGUITY"
             banner_title = "MULTI-CHAPTER AMBIGUITY DETECTED"
             clarif_q = f"What material and construction is the {q}?"
 
             seen_ch = set()
-            for idx, c in enumerate(candidates):
+            for idx, c in enumerate(competing_candidates):
                 if c.chapter_code not in seen_ch:
                     seen_ch.add(c.chapter_code)
                     ui_options.append(UIRecommendationCard(
@@ -259,6 +296,44 @@ class SmartAmbiguityController:
                     ))
                 if len(ui_options) >= 5:
                     break
+        else:
+            # Resolved to single chapter: multiple 8-digit leaves exist within this chapter
+            status = "NEEDS_SELECTION"
+            banner_type = "SAME_CHAPTER_VARIANT"
+            banner_title = "SELECT SPECIFIC VARIANT / SPECIFICATION"
+            ch_title = top1.chapter_title
+            clarif_q = f"Which specification of {q} applies under Chapter {top1.chapter_code} ({ch_title})?"
+
+            same_ch_cands = [c for c in candidates if c.chapter_code == top1.chapter_code]
+            for idx, c in enumerate(same_ch_cands[:6]):
+                ui_options.append(UIRecommendationCard(
+                    option_id=f"OPT_{c.hsn_code}_{idx+1}",
+                    label=f"[{format_hsn_code(c.hsn_code)}] {c.statutory_description}",
+                    chapter_code=c.chapter_code,
+                    chapter_title=c.chapter_title,
+                    hsn_code=format_hsn_code(c.hsn_code),
+                    hsn_description=c.statutory_description,
+                    material_keywords=c.material_keywords,
+                    article_keywords=c.article_keywords,
+                    score=round(c.final_score * 100.0, 1),
+                    confidence_pct=round(min(c.final_score * 45.0, 45.0), 1),
+                    is_chapter_representative=(idx == 0)
+                ))
+
+        # Enforce Banner Invariant: MULTI_CHAPTER_AMBIGUITY ONLY when options span > 1 distinct chapters
+        distinct_opt_chaps = {opt.chapter_code for opt in ui_options if opt.chapter_code}
+        if len(distinct_opt_chaps) > 1:
+            banner_type = "MULTI_CHAPTER_AMBIGUITY"
+            banner_title = "MULTI-CHAPTER AMBIGUITY DETECTED"
+            status = "AMBIGUOUS_MATERIAL"
+        elif len(distinct_opt_chaps) == 1:
+            banner_type = "SAME_CHAPTER_VARIANT"
+            banner_title = "SELECT SPECIFIC VARIANT / SPECIFICATION"
+            status = "NEEDS_SELECTION"
+        else:
+            banner_type = "NONE"
+            banner_title = ""
+            status = "UNRECOGNIZED"
 
         # Disambiguate duplicate labels
         disambiguate_candidate_labels(ui_options)
@@ -271,18 +346,58 @@ class SmartAmbiguityController:
             candidates=candidates
         )
 
+        resolved_chapter = top1.chapter_code if status in ("SUCCESS", "NEEDS_SELECTION") else "NONE"
+
         return AmbiguityEvaluationResult(
             query=q,
-            is_ambiguous=True,
+            is_ambiguous=(status == "AMBIGUOUS_MATERIAL"),
+            status=status,
+            resolved_chapter=resolved_chapter,
             banner_type=banner_type,
             banner_title=banner_title,
             clarification_question=clarif_q,
             direct_match=None,
             disambiguation_options=ui_options,
-            distinct_chapters_count=distinct_count,
+            distinct_chapters_count=len(distinct_opt_chaps),
             top_candidates_count=len(candidates),
             descriptive_report=report
         )
+
+    evaluate_ambiguity = evaluate
+
+    COMMODITY_ARTICLE_NOUNS = {
+        "bottle", "bottles", "pipe", "pipes", "tube", "tubes", "machine", "machines",
+        "flask", "flasks", "water", "grade", "resin", "beverage", "beverages", "food",
+        "liquid", "gas", "oil", "fluid", "box", "boxes", "case", "cases", "container",
+        "containers", "apparatus", "equipment", "tool", "tools", "fitting", "fittings",
+        "valve", "valves", "pump", "pumps", "motor", "motors", "engine", "engines",
+        "vehicle", "vehicles", "part", "parts", "piece", "pieces", "unit", "units",
+        "item", "items", "commodity", "commodities", "product", "products", "good", "goods"
+    }
+
+    def _get_all_material_vocab(self) -> Set[str]:
+        if not hasattr(self, "_cached_mat_vocab"):
+            vocab = set()
+            for row in self.engine.records:
+                mat_str = row.get("material_keywords") or ""
+                for tok in tokenize(mat_str):
+                    tok_low = tok.lower().rstrip("s")
+                    if (
+                        len(tok_low) > 2
+                        and tok_low not in self.COMMODITY_ARTICLE_NOUNS
+                        and tok_low not in (
+                            "and", "the", "for", "with", "other", "not", "elsewhere",
+                            "specified", "article", "articles", "parts", "goods", "kind", "used"
+                        )
+                    ):
+                        vocab.add(tok_low)
+            self._cached_mat_vocab = vocab
+        return self._cached_mat_vocab
+
+    def _extract_material_terms(self, text: str) -> Set[str]:
+        vocab = self._get_all_material_vocab()
+        q_tokens = {w.lower().rstrip("s") for w in tokenize(text)}
+        return q_tokens.intersection(vocab)
 
     def _evaluate_auto_lock(self, q: str, candidates: List[SearchCandidate]) -> Tuple[Optional[UIRecommendationCard], bool]:
         """Evaluates auto-lock guardrails (reranker >= 0.85, margin >= 0.15, 8-digit leaf, no material ambiguity)."""
