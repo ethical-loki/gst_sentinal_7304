@@ -61,7 +61,11 @@ class LLMIntentOutput(BaseModel):
 
     physical_product: str = Field(
         ...,
-        description="The generic physical product, resolving any brand, slang, or colloquial names."
+        description="The generic physical product (finished commercial article), resolving any brand, slang, or colloquial names."
+    )
+    finished_article: Optional[str] = Field(
+        None,
+        description="Primary finished commercial article being classified, separated from ingredients, components, or packaging."
     )
     material: Optional[str] = Field(
         None,
@@ -74,6 +78,18 @@ class LLMIntentOutput(BaseModel):
     intended_use: Optional[str] = Field(
         None,
         description="Principal function or application if stated by the user."
+    )
+    ingredients_or_additives: List[str] = Field(
+        default_factory=list,
+        description="Secondary ingredients, seasonings, coatings, or additives (not the finished article)."
+    )
+    components_or_parts: List[str] = Field(
+        default_factory=list,
+        description="Sub-components, attachments, or accessories of the finished article."
+    )
+    packaging_or_presentation: Optional[str] = Field(
+        None,
+        description="Packaging or retail presentation if stated (e.g. retail packet, bulk, kit)."
     )
     search_terms: List[str] = Field(
         default_factory=list,
@@ -108,7 +124,7 @@ class LLMIntentOutput(BaseModel):
         except Exception:
             return "clear"
 
-    @field_validator("search_terms", "unstated_attributes", mode="before")
+    @field_validator("search_terms", "unstated_attributes", "ingredients_or_additives", "components_or_parts", mode="before")
     @classmethod
     def normalize_str_list(cls, v: Any) -> List[str]:
         if isinstance(v, list):
@@ -127,9 +143,14 @@ class DroppedTerm(BaseModel):
 class IntentExtractionResult(BaseModel):
     raw_query: str
     physical_product: str
+    finished_article: Optional[str] = None
     material: Optional[str] = None
     construction: Optional[str] = None
     intended_use: Optional[str] = None
+    ingredients_or_additives: List[str] = Field(default_factory=list)
+    components_or_parts: List[str] = Field(default_factory=list)
+    packaging_or_presentation: Optional[str] = None
+    attribute_relationships: List[Dict[str, Any]] = Field(default_factory=list)
     reading_confidence: str
     outcome_type: str = "SUCCESS"  # SUCCESS | AMBIGUOUS_MATERIAL | OUT_OF_SCHEDULE | UNRECOGNIZED
     grounded_search_terms: List[str]
@@ -677,12 +698,18 @@ CRITICAL RULES:
 
 7. NO MATERIAL GUESSING: ONLY populate 'material' if the user explicitly stated a constituent material in the query (e.g. 'steel water bottle' -> 'steel'). If the user did NOT state the material (e.g. 'laptop', 'water bottle', 't-shirt'), you MUST set 'material': null and list 'material' in 'unstated_attributes'. NEVER assume or invent 'plastic', 'metal', etc. when unstated.
 
+8. FINISHED ARTICLE VS SUPPORTING ATTRIBUTES: Always identify the primary finished commercial article in 'finished_article' and 'physical_product'. Do NOT mistake secondary ingredients, seasonings, coatings, sub-components, or packaging for the finished article (e.g. for 'instant noodles made from wheat flour with spices in retail packet', finished_article is 'instant noodles', while 'wheat flour'/'spices' are ingredients and 'retail packet' is packaging).
+
 STRICT JSON SCHEMA:
 {{
   "physical_product": "string",
+  "finished_article": "string",
   "material": "string or null",
   "construction": "string or null",
   "intended_use": "string or null",
+  "ingredients_or_additives": ["ingredient 1"],
+  "components_or_parts": ["component 1"],
+  "packaging_or_presentation": "string or null",
   "search_terms": ["term 1", "term 2"],
   "unstated_attributes": ["attribute 1", "attribute 2"],
   "reading_confidence": "clear | partial | unclear"
@@ -851,16 +878,19 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
         raw_query: str,
         intent: LLMIntentOutput,
         grounded_terms: List[str],
-        top_headings: List[str]
+        top_headings: List[str],
+        finished_article: Optional[str] = None,
     ) -> Tuple[str, Optional[str]]:
         """
         Determines the 4 outcome states:
         1. UNRECOGNIZED: No physical product identified (vague/nonsense).
-        2. OUT_OF_SCHEDULE: Product recognized but its chapter is outside Master_copy_hsn.
+        2. OUT_OF_SCHEDULE: Finished commercial article itself belongs outside Master_copy_hsn
+           (secondary ingredients/components/packaging must NOT trigger OUT_OF_SCHEDULE).
         3. AMBIGUOUS_MATERIAL: Product spans multiple loaded chapters; material unstated.
         4. SUCCESS: Clear product mapped to valid loaded schedule.
         """
         q_norm = raw_query.lower().strip()
+        article_head = (finished_article or intent.finished_article or intent.physical_product or raw_query).lower().strip()
 
         # Check 1: UNRECOGNIZED
         vague_tokens = {"gadget", "item", "thing", "stuff", "aunty", "something", "anything", "xyz"}
@@ -871,7 +901,14 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
         ):
             return "UNRECOGNIZED", f"Unable to identify a physical commodity from query '{raw_query}'. Clarification required."
 
-        # Check 2: OUT_OF_SCHEDULE
+        # Check whether the finished article itself is grounded in the active 9-chapter schedule
+        head_tokens = [t for t in tokenize(article_head) if len(t) >= 3]
+        head_has_active_match = any(
+            (t in self.word_to_rows) or (t.rstrip("s") in self.word_to_rows)
+            for t in head_tokens
+        )
+
+        # Check 2: OUT_OF_SCHEDULE (evaluate ONLY against the finished article head, never secondary ingredients)
         out_of_schedule_indicators = {
             "apple": ("08", "Edible fruit and nuts"),
             "apples": ("08", "Edible fruit and nuts"),
@@ -911,8 +948,28 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
         }
 
         for keyword, (ch_code, ch_title) in out_of_schedule_indicators.items():
-            if re.search(rf"\b{re.escape(keyword)}\b", q_norm):
+            # Only trigger if the keyword is the finished article itself (not an ingredient/material/component modifier
+            # on an active-schedule finished article).
+            if re.search(rf"\b{re.escape(keyword)}\b", article_head):
                 # Disambiguate Apple Inc brand from edible fruit
+                if keyword in ("apple", "apples") and any(tech in q_norm for tech in ["macbook", "iphone", "ipad", "laptop", "computer", "phone", "watch", "airpods"]):
+                    continue
+                # If the finished article head has other grounded active-schedule article nouns (e.g. "leather chair", "glass bottle"),
+                # do not mark OUT_OF_SCHEDULE based on a modifier word.
+                other_head_tokens = [t for t in head_tokens if t not in tokenize(keyword)]
+                other_active = any(
+                    (t in self.word_to_rows) or (t.rstrip("s") in self.word_to_rows)
+                    for t in other_head_tokens
+                )
+                if other_active and grounded_terms:
+                    continue
+                if ch_code not in VALID_SCHEDULE_CHAPTERS:
+                    return "OUT_OF_SCHEDULE", (
+                        f"Recognized product '{keyword}', but statutory classification falls under Chapter {ch_code} "
+                        f"({ch_title}), which is outside the active Master file schedule (active chapters: "
+                        f"{', '.join(sorted(VALID_SCHEDULE_CHAPTERS))})."
+                    )
+            elif not head_has_active_match and not grounded_terms and re.search(rf"\b{re.escape(keyword)}\b", q_norm):
                 if keyword in ("apple", "apples") and any(tech in q_norm for tech in ["macbook", "iphone", "ipad", "laptop", "computer", "phone", "watch", "airpods"]):
                     continue
                 if ch_code not in VALID_SCHEDULE_CHAPTERS:
@@ -948,7 +1005,7 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
     def _get_cache_key(self, query: str) -> str:
         model_name = self.config.get("model_name", "deterministic")
         q_norm = " ".join(query.lower().split())
-        return hashlib.sha256(f"{q_norm}::{model_name}::{self.file_hash[:16]}".encode()).hexdigest()
+        return hashlib.sha256(f"v2_stage1_struct::{q_norm}::{model_name}::{self.file_hash[:16]}".encode()).hexdigest()
 
     def _record_trace(self, trace_data: Dict[str, Any]):
         traces_file = self.cache_dir / "traces.jsonl"
@@ -1074,17 +1131,50 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
                 if grounded_terms:
                     break
 
+        # 4b. Structural finished-article vs supporting-attribute decomposition (100% general)
+        from src.nlp.product_intent_analyzer import analyze_product_intent
+        struct_intent = analyze_product_intent(raw_query, clarification=clarification)
+        resolved_finished = (
+            intent_output.finished_article
+            or struct_intent.finished_article
+            or grounded_fields.get("physical_product")
+            or intent_output.physical_product
+        )
+        # Prefer structural head if LLM physical_product accidentally absorbed an ingredient/packaging
+        if (
+            struct_intent.finished_article
+            and intent_output.physical_product
+            and any(
+                ing.lower() in intent_output.physical_product.lower()
+                for ing in struct_intent.ingredients_or_additives
+            )
+        ):
+            resolved_finished = struct_intent.finished_article
+
+        merged_ingredients = list(dict.fromkeys(
+            (intent_output.ingredients_or_additives or []) + struct_intent.ingredients_or_additives
+        ))
+        merged_components = list(dict.fromkeys(
+            (intent_output.components_or_parts or []) + struct_intent.components_or_parts
+        ))
+        merged_packaging = intent_output.packaging_or_presentation or struct_intent.packaging_or_presentation
+
         # 5. Determine Outcome Category
         outcome_type, outcome_reason = self._determine_outcome_type(
-            raw_query, intent_output, grounded_terms, top_headings
+            raw_query,
+            intent_output,
+            grounded_terms,
+            top_headings,
+            finished_article=resolved_finished,
         )
 
         is_valid = (outcome_type != "UNRECOGNIZED")
 
-        # Build synthesized search string
+        # Build synthesized search string (finished article anchored first)
         synth_parts = []
-        if grounded_fields.get("physical_product"):
-            synth_parts.append(grounded_fields["physical_product"])
+        primary_anchor = resolved_finished or grounded_fields.get("physical_product")
+        if primary_anchor:
+            synth_parts.append(primary_anchor)
         # Only include material if it was actually grounded AND stated in user query
         stated_material = None
         if grounded_fields.get("material"):
@@ -1127,10 +1217,15 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
 
         result = IntentExtractionResult(
             raw_query=raw_query,
-            physical_product=grounded_fields["physical_product"] or intent_output.physical_product,
+            physical_product=grounded_fields["physical_product"] or resolved_finished or intent_output.physical_product,
+            finished_article=resolved_finished,
             material=stated_material,
-            construction=grounded_fields.get("construction"),
-            intended_use=grounded_fields.get("intended_use"),
+            construction=grounded_fields.get("construction") or struct_intent.processing_form,
+            intended_use=grounded_fields.get("intended_use") or struct_intent.function_use,
+            ingredients_or_additives=merged_ingredients,
+            components_or_parts=merged_components,
+            packaging_or_presentation=merged_packaging,
+            attribute_relationships=struct_intent.to_dict().get("attribute_relationships", []),
             reading_confidence=intent_output.reading_confidence,
             outcome_type=outcome_type,
             grounded_search_terms=grounded_terms,

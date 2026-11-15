@@ -1606,21 +1606,38 @@ class HSNRAGApplicationLayer:
         if "mounted" in combined_raw and "unmounted" not in combined_raw:
             mount_normalized = "mounted"
 
-        parts = [base_clean]
-        if clarif_clean and clarif_clean.lower() not in base_clean.lower() and len(clarif_clean) > 15:
+        from src.nlp.product_intent_analyzer import analyze_product_intent
+        struct_intent = analyze_product_intent(base_clean, clarification=clarif_clean)
+
+        if not mat_normalized and struct_intent.constituent_materials:
+            mat_normalized = ", ".join(struct_intent.constituent_materials[:2])
+        if not form_normalized and struct_intent.processing_form:
+            form_normalized = struct_intent.processing_form
+        if use_normalized == "Commercial Commodity" and struct_intent.function_use:
+            use_normalized = struct_intent.function_use
+
+        article_anchor = struct_intent.finished_article or base_clean
+        parts = [article_anchor]
+        if clarif_clean and clarif_clean.lower() not in article_anchor.lower() and len(clarif_clean) > 15:
             parts.append(clarif_clean)
-        # Avoid repeating material text in synthesized search string if already present in base product
-        if mat_normalized and mat_normalized.lower() not in base_clean.lower():
+        # Avoid repeating material text in synthesized search string if already present in article anchor
+        if mat_normalized and mat_normalized.lower() not in article_anchor.lower():
             parts.append(f"Material: {mat_normalized}")
-        if form_normalized and form_normalized.lower() not in base_clean.lower() and form_normalized.lower() not in ("not_applicable", "none", "finished article"):
+        if form_normalized and form_normalized.lower() not in article_anchor.lower() and form_normalized.lower() not in ("not_applicable", "none", "finished article"):
             parts.append(f"Form: {form_normalized}")
+        if struct_intent.function_use and struct_intent.function_use.lower() not in article_anchor.lower():
+            parts.append(f"Use: {struct_intent.function_use}")
         master_search_string = ", ".join(parts) + "."
 
         aggregated_attributes = {
+            "finished_article": article_anchor,
             "material": mat_normalized or None,
             "processing_state": form_normalized or "Specific Commodity",
             "function_use": use_normalized,
             "mounted_state": mount_normalized,
+            "ingredients_or_additives": struct_intent.ingredients_or_additives,
+            "components_or_parts": struct_intent.components_or_parts,
+            "packaging_or_presentation": struct_intent.packaging_or_presentation,
             "chapter_category": "Official Tariff Schedule"
         }
 
@@ -1630,6 +1647,7 @@ class HSNRAGApplicationLayer:
             "user_clarification": clarif_clean,
             "chapter_categorization": {"chapter_label": "Official Tariff Schedule"},
             "aggregated_attributes": aggregated_attributes,
+            "product_intent": struct_intent.to_dict(),
             "master_search_string": master_search_string
         }
 

@@ -655,7 +655,8 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
 
     # --- Intent Extraction Stage (Vocabulary Retrieval + LLM Translation + File Grounding) ---
     intent_data = None
-    search_query_for_retrieval = base_product
+    product_intent = s1.get("product_intent") or {}
+    search_query_for_retrieval = product_intent.get("article_search_query") or base_product
     try:
         from src.nlp.intent_extractor import get_intent_extractor
         extractor = get_intent_extractor()
@@ -1008,6 +1009,7 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
         "base_product": s1.get("base_product"),
         "user_clarification": s1.get("user_clarification"),
         "aggregated_attributes": agg_attrs,
+        "product_intent": product_intent,
         "query_facts": {
             "product_name": base_product,
             "article_noun": query_facts_data.get("article"),
