@@ -5437,12 +5437,18 @@
                 </div>`;
 
             const evSum = res.evidence_summary || {};
+            const hier = res.hierarchy_context || {};
             const evSumHtml = (typeof evSum.retained_count === 'number') ? `
                 <div style="margin-top:4px; font-size:0.7rem; color:#cbd5e1; display:flex; flex-wrap:wrap; gap:8px;">
                     <span>Supported: <strong style="color:#34d399;">${evSum.supported_count || 0}</strong></span>
                     <span>Possibly Supported: <strong style="color:#fbbf24;">${evSum.possibly_supported_count || 0}</strong></span>
-                    <span>Insufficient Evidence: <strong style="color:#94a3b8;">${evSum.insufficient_evidence_count || 0}</strong></span>
+                    <span>Insufficient Evidence Filtered: <strong style="color:#94a3b8;">${evSum.insufficient_evidence_filtered_count || 0}</strong></span>
                     <span>Contradicted Filtered: <strong style="color:#fda4af;">${evSum.contradicted_filtered_count || 0}</strong></span>
+                    ${evSum.parent_records_excluded_count ? `<span>Parent Headings (Hierarchy Only): <strong style="color:#a5b4fc;">${evSum.parent_records_excluded_count}</strong></span>` : ''}
+                </div>` : '';
+            const hierHtml = (Array.isArray(hier.parent_codes) && hier.parent_codes.length) ? `
+                <div style="margin-top:4px; font-size:0.69rem; color:#94a3b8;">
+                    <strong>Hierarchy Context (4/6-digit headings):</strong> ${escapeHtml(hier.parent_codes.slice(0, 8).join(', '))}
                 </div>` : '';
 
             panel.innerHTML = `
@@ -5451,6 +5457,7 @@
                     <span>${completeBadge} (${disc.qualifying_candidates || 0} qualifying / ${disc.total_retrieved || 0} examined)</span>
                 </div>
                 ${evSumHtml}
+                ${hierHtml}
                 ${clarHtml}
                 ${bestHtml}
                 ${otherSameHtml}

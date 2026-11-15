@@ -181,6 +181,157 @@ def test_multi_candidate_engine_filters_contradicted_and_exposes_evidence_summar
 def test_ui_renders_candidate_evidence_summary_and_status():
     for ui_rel in ("static/index.html", "frontend/index.html"):
         html = Path(ui_rel).read_text(encoding="utf-8")
-        for token in ("evidence_summary", "evidence_status", "evidence_trace", "Contradicted Filtered"):
+        for token in (
+            "evidence_summary",
+            "evidence_status",
+            "evidence_trace",
+            "Contradicted Filtered",
+            "insufficient_evidence_filtered_count",
+            "Hierarchy Context",
+        ):
             assert token in html, f"Missing '{token}' in {ui_rel}"
+
+
+def test_phase14_generic_modifiers_construction_and_semantic_only_guard():
+    # 1. Generic modifier ("women") must NOT match unrelated garment ("women's trousers" vs "women's suit")
+    intent_suit = analyze_product_intent("women's suit")
+    rec_trouser = {
+        "hsn_code": "62046200",
+        "code_length": 8,
+        "chapter_code": "62",
+        "chapter_title": "Articles of apparel and clothing accessories, not knitted or crocheted",
+        "statutory_description": "Trousers, bib and brace overalls, breeches and shorts, of cotton",
+        "tariff_item_desc": "Trousers of cotton",
+        "article_keywords": "women's trousers, cotton pants",
+        "material_keywords": "cotton",
+    }
+    prof_trouser = build_candidate_profile(rec_trouser, None)
+    ev_trouser = evaluate_candidate_evidence(intent_suit, prof_trouser, "RELATED_PRODUCT", 0.72)
+    assert not ev_trouser.article_matches
+    # Semantic similarity alone without article/material evidence must stay INSUFFICIENT_EVIDENCE
+    assert ev_trouser.status == INSUFFICIENT_EVIDENCE
+
+    # 2. Knitted vs not-knitted construction contradiction
+    intent_knit = analyze_product_intent("knitted cotton t-shirt for men")
+    ev_woven = evaluate_candidate_evidence(intent_knit, prof_trouser, "SAME_PRODUCT", 0.80)
+    assert ev_woven.status == CONTRADICTED
+    assert any("Construction contradiction" in c for c in ev_woven.contradictions)
+
+    # 3. No double-counting of the same article stem
+    rec_tshirt = {
+        "hsn_code": "61091000",
+        "code_length": 8,
+        "chapter_code": "61",
+        "chapter_title": "Articles of apparel and clothing accessories, knitted or crocheted",
+        "statutory_description": "T-shirts, singlets and other vests, knitted or crocheted, of cotton",
+        "tariff_item_desc": "T-shirts, singlets and other vests, of cotton",
+        "article_keywords": "t-shirt, t-shirts, cotton tee",
+        "material_keywords": "cotton",
+    }
+    prof_tshirt = build_candidate_profile(rec_tshirt, None)
+    ev_knit = evaluate_candidate_evidence(intent_knit, prof_tshirt, "SAME_PRODUCT", 0.90)
+    assert ev_knit.status == SUPPORTED
+    assert len(ev_knit.article_matches) == 1
+
+
+def test_phase14_parent_records_excluded_from_customer_facing_leaves(tmp_path):
+    from src.training.feedback_collector import FeedbackCollector
+
+    class _LeafAndParentHybrid:
+        total_records = 2
+
+        def _expand_abbreviated_query(self, q: str):
+            return q.lower(), q.lower().split()
+
+        def retrieve_with_lineage(self, raw_query: str, branch_k: int = 30):
+            return [
+                {
+                    "hsn_code": "8413",
+                    "code_length": 4,
+                    "chapter_code": "84",
+                    "chapter_title": "Nuclear reactors, boilers, machinery",
+                    "statutory_description": "Pumps for liquids",
+                    "tariff_item_desc": "Pumps for liquids",
+                    "article_keywords": "liquid pumps",
+                    "material_keywords": "",
+                    "source_record_id": "p4",
+                    "retrieval_source": "bm25",
+                    "bm25_score": 1.0,
+                    "vector_score": 0.9,
+                    "rrf_score": 0.03,
+                },
+                {
+                    "hsn_code": "84137010",
+                    "code_length": 8,
+                    "chapter_code": "84",
+                    "chapter_title": "Nuclear reactors, boilers, machinery",
+                    "statutory_description": "Primarily designed to handle water: Centrifugal pumps",
+                    "tariff_item_desc": "Centrifugal pumps for water",
+                    "article_keywords": "centrifugal pumps, water pumps",
+                    "material_keywords": "",
+                    "source_record_id": "l8",
+                    "retrieval_source": "bm25+dense",
+                    "bm25_score": 0.95,
+                    "vector_score": 0.92,
+                    "rrf_score": 0.035,
+                },
+            ]
+
+    class _LeafParentClassifier:
+        calibration_bundle = None
+        reranker = MagicMock()
+
+        def classify(self, product_intent: str, tariff_rows):
+            out = []
+            for r in tariff_rows:
+                cand = RerankedTariffCandidate(
+                    hsn_code=r["hsn_code"],
+                    chapter_code=r["chapter_code"],
+                    description=r["statutory_description"],
+                    relevance_score=0.90,
+                    raw_logit=2.2,
+                    article_keywords=r["article_keywords"],
+                    material_keywords=r["material_keywords"],
+                    chapter_title=r["chapter_title"],
+                    tariff_level="HEADING_4DIGIT" if len(r["hsn_code"]) == 4 else "LEAF_8DIGIT",
+                )
+                out.append(ClassifiedTariffCandidate(candidate=cand, relation=RelationLabel.SAME_PRODUCT, confidence=0.90, relevance_confidence=0.90))
+            return out
+
+    stat = MagicMock()
+    stat.compare_active_vs_statutory.return_value = StatutoryComparisonResult(
+        query="centrifugal water pump",
+        is_out_of_schedule=False,
+        best_active_score=0.90,
+        best_inactive_score=0.1,
+        reason="Active",
+    )
+    eng = MultiCandidateEngine(
+        hybrid_engine=_LeafAndParentHybrid(),
+        relevance_classifier=_LeafParentClassifier(),
+        statutory_index=stat,
+        feedback_collector=FeedbackCollector(feedback_dir=tmp_path),
+    )
+    res = eng.classify_adaptive("centrifugal water pump", page=1, page_size=20)
+    assert [c["hsn_code"] for c in res["candidates"]] == ["84137010"]
+    assert res["evidence_summary"]["parent_records_excluded_count"] == 1
+    assert "8413" in res["hierarchy_context"]["parent_codes"]
+
+
+def test_phase14_whether_or_not_containing_is_not_treated_as_exclusion():
+    intent_biscuit = analyze_product_intent("sweet biscuits containing cocoa")
+    rec_biscuit = {
+        "hsn_code": "19053100",
+        "code_length": 8,
+        "chapter_code": "19",
+        "chapter_title": "Preparations of cereals, flour, starch or milk; pastrycooks products",
+        "statutory_description": "Sweet biscuits, whether or not containing cocoa",
+        "tariff_item_desc": "Sweet biscuits",
+        "article_keywords": "sweet biscuits, biscuits",
+        "material_keywords": "flour, sugar, cocoa",
+    }
+    prof = build_candidate_profile(rec_biscuit, None)
+    ev = evaluate_candidate_evidence(intent_biscuit, prof, "SAME_PRODUCT", 0.90)
+    assert ev.status != CONTRADICTED
+    assert not ev.contradictions
 

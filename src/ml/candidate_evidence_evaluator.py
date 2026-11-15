@@ -44,6 +44,20 @@ _STOPWORDS = {
     "included", "thereof", "parts", "articles", "goods", "products", "made",
 }
 
+# Generic qualifiers/demographics/modifiers that must NOT serve as standalone article identity proof
+_GENERIC_MODIFIERS = {
+    "women", "woman", "men", "man", "girl", "boy", "infant", "child", "children",
+    "household", "kitchen", "table", "industrial", "commercial", "domestic",
+    "electric", "electrical", "manual", "automatic", "portable", "general",
+    "type", "kind", "size", "shape", "new", "used", "suitable", "similar",
+    "item", "items", "fitting", "fittings", "accessory", "accessories",
+    "material", "non", "less", "more", "weight", "containing", "whether", "exceeding",
+    "retail", "pack", "packet", "prepared", "preparation", "preparations",
+    "knitted", "crocheted", "knit", "woven", "seamless", "welded", "forged",
+    "cast", "molded", "moulded", "extruded", "roasted", "unroasted", "instant",
+    "dried", "dehydrated", "frozen", "chilled", "laminated", "coated", "plated",
+}
+
 # Broad mutually-exclusive material families derived from WCO tariff structure
 _MATERIAL_FAMILIES: Dict[str, Set[str]] = {
     "plastics": {"plastic", "plastics", "polymer", "polymers", "pvc", "hdpe", "ldpe", "polyethylene", "polypropylene", "polystyrene", "polycarbonate", "abs", "acrylic", "vinyl", "nylon", "resin"},
@@ -208,33 +222,49 @@ def evaluate_candidate_evidence(
     the candidate's normalized statutory profile.
     """
     head_tokens = _tokenize_content(product_intent.finished_article)
-    # Remove pure material tokens from head_tokens when checking article-noun overlap
+    # Remove pure material tokens and generic modifiers when checking core article identity
     all_mat_cues = {_stem(c) for cues in _MATERIAL_FAMILIES.values() for c in cues if " " not in c}
-    article_core_tokens = head_tokens - all_mat_cues
+    generic_stems = {_stem(g) for g in _GENERIC_MODIFIERS}
+    article_core_tokens = head_tokens - all_mat_cues - generic_stems
     if not article_core_tokens:
-        article_core_tokens = head_tokens
+        article_core_tokens = (head_tokens - all_mat_cues) or head_tokens
 
-    # 1. Article identity matching (Article Keywords + consumer synonyms + statutory descriptions)
+    # 1. Article identity matching (deduplicated by canonical stem; no generic-modifier phrase inflation)
     article_matches: List[str] = []
+    seen_art_stems: Set[str] = set()
     art_phrase_pool = profile.article_keywords + profile.consumer_synonyms
     head_low = product_intent.finished_article.lower()
     for phrase in art_phrase_pool:
-        if phrase and (phrase in head_low or any(_stem(w) in article_core_tokens for w in phrase.split() if len(w) >= 3)):
-            if phrase not in article_matches:
+        if not phrase:
+            continue
+        p_toks = _tokenize_content(phrase) - all_mat_cues - generic_stems
+        if phrase in head_low or (p_toks and p_toks.issubset(article_core_tokens)):
+            canon = " ".join(sorted(p_toks)) if p_toks else phrase
+            if canon not in seen_art_stems:
+                seen_art_stems.add(canon)
                 article_matches.append(phrase)
     for tok in sorted(article_core_tokens & profile.article_tokens):
-        if tok not in article_matches:
+        if tok not in seen_art_stems and not any(tok in _tokenize_content(m) for m in article_matches):
+            seen_art_stems.add(tok)
             article_matches.append(tok)
 
-    # 2. Material & composition matching
+    # 2. Material & composition matching (evaluated separately from article identity)
     query_mat_text = " ".join(product_intent.constituent_materials)
     query_mat_tokens = _tokenize_content(query_mat_text) | (head_tokens & all_mat_cues)
     query_mat_fams = _detect_material_families(query_mat_tokens, f"{product_intent.finished_article} {query_mat_text}")
 
-    material_matches: List[str] = sorted(query_mat_tokens & profile.material_tokens)
+    material_matches: List[str] = []
+    seen_mat_stems: Set[str] = set()
+    for tok in sorted(query_mat_tokens & profile.material_tokens):
+        if tok not in seen_mat_stems:
+            seen_mat_stems.add(tok)
+            material_matches.append(tok)
     for kw in profile.material_keywords:
-        if kw and kw in f"{head_low} {query_mat_text.lower()}" and kw not in material_matches:
-            material_matches.append(kw)
+        if kw and kw in f"{head_low} {query_mat_text.lower()}":
+            kw_stem = _stem(kw)
+            if kw_stem not in seen_mat_stems:
+                seen_mat_stems.add(kw_stem)
+                material_matches.append(kw)
 
     # 3. Chapter compatibility (supporting evidence only, never standalone proof)
     intent_all_tokens = _tokenize_content(
@@ -247,7 +277,6 @@ def evaluate_candidate_evidence(
     missing_attributes: List[str] = []
 
     if query_mat_fams and profile.material_families:
-        # Check if ALL query material families conflict with ALL candidate material families
         has_compatible = False
         for qf in query_mat_fams:
             if qf in profile.material_families:
@@ -264,11 +293,29 @@ def evaluate_candidate_evidence(
                 f"Material contradiction: query states {sorted(query_mat_fams)}, candidate specifies {sorted(profile.material_families)}"
             )
     elif not query_mat_fams and profile.material_families:
-        # Missing information is NEVER treated as a contradiction
         missing_attributes.append(f"material ({'/'.join(sorted(profile.material_families))})")
 
-    # Negative statutory phrasing check (e.g., "not containing X", "other than X")
-    cand_desc_low = f"{profile.tariff_item_desc} {profile.statutory_description}".lower()
+    # Processing / construction contradiction checks (e.g. knitted vs not knitted or crocheted)
+    proc_low = f"{product_intent.processing_form or ''} {product_intent.finished_article}".lower()
+    cand_hier_low = f"{profile.chapter_title} {profile.heading_4digit_desc} {profile.subheading_6digit_desc} {profile.tariff_item_desc} {profile.statutory_description}".lower()
+    if re.search(r"\b(?:knitted|crocheted|knit)\b", proc_low) and not re.search(r"\bnot\s+knitted\b", proc_low):
+        if re.search(r"\bnot\s+knitted(?:\s+or\s+crocheted)?\b", cand_hier_low) or re.search(r"\bwoven\b", cand_hier_low):
+            contradictions.append("Construction contradiction: query specifies knitted/crocheted, candidate is not knitted / woven")
+    elif re.search(r"\b(?:woven|not\s+knitted)\b", proc_low):
+        if re.search(r"\bknitted\s+or\s+crocheted\b", cand_hier_low) and not re.search(r"\bnot\s+knitted\b", cand_hier_low):
+            contradictions.append("Construction contradiction: query specifies woven/not knitted, candidate is knitted or crocheted")
+    if re.search(r"\bseamless\b", proc_low) and re.search(r"\bwelded\b", cand_hier_low) and not re.search(r"\bseamless\b", cand_hier_low):
+        contradictions.append("Construction contradiction: query specifies seamless, candidate is welded")
+    if re.search(r"\broasted\b", proc_low) and re.search(r"\bnot\s+roasted\b|\bunroasted\b", cand_hier_low):
+        contradictions.append("Process contradiction: query specifies roasted, candidate is unroasted")
+
+    # Negative statutory phrasing check (e.g., "not containing X", "other than X"),
+    # explicitly ignoring permissive "whether or not containing X" clauses.
+    cand_desc_low = re.sub(
+        r"\bwhether\s+or\s+not\s+containing\b",
+        "optionally_containing",
+        f"{profile.tariff_item_desc} {profile.statutory_description}".lower(),
+    )
     neg_matches = re.findall(r"\b(?:not\s+containing|other\s+than\s+(?:of\s+)?|excluding)\s+([a-z0-9\s]{3,30}?)(?:[,;]|$)", cand_desc_low)
     query_full_low = f"{product_intent.finished_article} {query_mat_text} {' '.join(product_intent.ingredients_or_additives)}".lower()
     for neg_phrase in neg_matches:
@@ -276,14 +323,14 @@ def evaluate_candidate_evidence(
         if neg_toks and neg_toks.issubset(_tokenize_content(query_full_low)):
             contradictions.append(f"Statutory exclusion matched: '{neg_phrase.strip()}'")
 
-    # 5. Evidence-based verdict
+    # 5. Evidence-based verdict (semantic similarity alone NEVER suffices without article or material evidence)
     if contradictions:
         status = CONTRADICTED
         ev_score = 0.0
     elif article_matches and (material_matches or not query_mat_fams) and not missing_attributes and relation_value == "SAME_PRODUCT":
         status = SUPPORTED
         ev_score = min(1.0, 0.65 * cross_encoder_confidence + 0.25 + (0.10 if material_matches else 0.0))
-    elif article_matches or relation_value in ("SAME_PRODUCT", "RELATED_PRODUCT"):
+    elif article_matches or material_matches:
         status = POSSIBLY_SUPPORTED
         ev_score = min(0.95, 0.60 * cross_encoder_confidence + (0.20 if article_matches else 0.05) + (0.10 if material_matches else 0.0))
     else:

@@ -25,18 +25,28 @@ def main() -> None:
     eng = MultiCandidateEngine()
     df = pd.read_parquet(ROOT / "data" / "eval" / "independent_exact_hsn_eval.parquet")
 
-    # Add representative cases for chapters not already in independent_12 (19, 61, 73, 87)
+    # Add representative independently verified cases across all 9 active chapters (19, 39, 61, 62, 73, 84, 85, 87, 94)
     extra_cases = [
         {"query": "instant noodles made from wheat flour", "expected_hsn": "19023010", "expected_chapter": "19"},
+        {"query": "sweet biscuits containing cocoa", "expected_hsn": "19053100", "expected_chapter": "19"},
+        {"query": "plastic water bottle made of polyethylene", "expected_hsn": "39233090", "expected_chapter": "39"},
         {"query": "knitted cotton t-shirt for men", "expected_hsn": "61091000", "expected_chapter": "61"},
+        {"query": "knitted woollen sweater pullover", "expected_hsn": "61101110", "expected_chapter": "61"},
+        {"query": "woven cotton shirt for men", "expected_hsn": "62052000", "expected_chapter": "62"},
         {"query": "stainless steel screws and bolts", "expected_hsn": "73181500", "expected_chapter": "73"},
+        {"query": "seamless stainless steel tubes and pipes", "expected_hsn": "73044900", "expected_chapter": "73"},
         {"query": "brake pads for passenger motor cars", "expected_hsn": "87083000", "expected_chapter": "87"},
+        {"query": "safety air bags with inflator system for motor vehicles", "expected_hsn": "87089500", "expected_chapter": "87"},
+        {"query": "swivel office chair with variable height adjustment", "expected_hsn": "94013000", "expected_chapter": "94"},
+        {"query": "wooden bedroom furniture bed", "expected_hsn": "94035010", "expected_chapter": "94"},
     ]
     rows_eval = df.to_dict(orient="records") + extra_cases
 
     total_init = 0
     total_retained = 0
     total_contradicted = 0
+    total_insuff_filtered = 0
+    total_parents_excluded = 0
     false_rejections = 0
     pool_hits = 0
     exact_cov = 0
@@ -56,9 +66,13 @@ def main() -> None:
         init_c = int(ev_sum.get("initial_retrieved") or res["discovery"]["total_retrieved"])
         ret_c = int(ev_sum.get("retained_count") or res["all_candidates_count"])
         contra_c = int(ev_sum.get("contradicted_filtered_count") or 0)
+        insuff_f = int(ev_sum.get("insufficient_evidence_filtered_count") or 0)
+        par_ex = int(ev_sum.get("parent_records_excluded_count") or 0)
         total_init += init_c
         total_retained += ret_c
         total_contradicted += contra_c
+        total_insuff_filtered += insuff_f
+        total_parents_excluded += par_ex
 
         c_hsns = [c["hsn_code"] for c in res["candidates"]]
         hit = exp in c_hsns
@@ -92,6 +106,8 @@ def main() -> None:
         "mean_initial_retrieval_count": round(total_init / max(n, 1), 2),
         "mean_final_retained_count": round(total_retained / max(n, 1), 2),
         "total_contradicted_filtered": total_contradicted,
+        "total_insufficient_evidence_filtered": total_insuff_filtered,
+        "total_parents_excluded": total_parents_excluded,
         "false_rejection_count": false_rejections,
         "candidate_recall": round(pool_hits / max(n, 1), 4),
         "exact_hsn_coverage": round(exact_cov / max(n, 1), 4),

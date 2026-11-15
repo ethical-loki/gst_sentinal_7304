@@ -548,10 +548,23 @@ class MultiCandidateEngine:
             reranker=self.classifier.reranker,
         )
 
-        # 3. Separate 8-digit leaf tariff items from 4/6-digit parent headings (preserve both)
+        # 3. Separate 8-digit leaf tariff items from 4/6-digit parent headings.
+        # Keep parents in hierarchy_context for explanation/clarification, never as customer-facing options when leaves exist.
         leaf_qualifying = [c for c in qualifying if _is_leaf_8digit(c)]
         parent_qualifying = [c for c in qualifying if not _is_leaf_8digit(c)]
-        qualifying_ordered = leaf_qualifying + parent_qualifying
+
+        ev_backed_leaves = [
+            c for c in leaf_qualifying
+            if evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status") in (SUPPORTED, POSSIBLY_SUPPORTED)
+        ]
+        insuff_filtered_count = 0
+        if ev_backed_leaves:
+            insuff_filtered_count = len(leaf_qualifying) - len(ev_backed_leaves)
+            qualifying_ordered = ev_backed_leaves
+        elif leaf_qualifying:
+            qualifying_ordered = leaf_qualifying
+        else:
+            qualifying_ordered = parent_qualifying
 
         # Group qualifying candidates reversibly without losing any record
         groups, hsn_to_group = group_candidates(qualifying_ordered)
@@ -560,7 +573,7 @@ class MultiCandidateEngine:
         bundle = getattr(self.classifier, "calibration_bundle", None)
         same = [c for c in qualifying_ordered if c.relation == RelationLabel.SAME_PRODUCT]
         same_leaves = [c for c in same if _is_leaf_8digit(c)]
-        same_parents = [c for c in same if not _is_leaf_8digit(c)]
+        same_parents = [c for c in parent_qualifying if c.relation == RelationLabel.SAME_PRODUCT]
         insuff = [c for c in qualifying_ordered if c.relation == RelationLabel.INSUFFICIENT_INFORMATION]
         related = [c for c in qualifying_ordered if c.relation == RelationLabel.RELATED_PRODUCT]
 
@@ -806,7 +819,9 @@ class MultiCandidateEngine:
                 "supported_count": sum(1 for c in all_formatted if c.get("evidence_status") == SUPPORTED),
                 "possibly_supported_count": sum(1 for c in all_formatted if c.get("evidence_status") == POSSIBLY_SUPPORTED),
                 "insufficient_evidence_count": sum(1 for c in all_formatted if c.get("evidence_status") == INSUFFICIENT_EVIDENCE),
+                "insufficient_evidence_filtered_count": insuff_filtered_count,
                 "contradicted_filtered_count": contradicted_count,
+                "parent_records_excluded_count": len(parent_qualifying) if leaf_qualifying else 0,
             },
             "best_supported_candidate": all_formatted[0] if all_formatted else None,
             "categorized_candidates": {
@@ -928,7 +943,9 @@ class MultiCandidateEngine:
                 "supported_count": 0,
                 "possibly_supported_count": 0,
                 "insufficient_evidence_count": 0,
+                "insufficient_evidence_filtered_count": 0,
                 "contradicted_filtered_count": 0,
+                "parent_records_excluded_count": 0,
             },
             "best_supported_candidate": None,
             "categorized_candidates": {
