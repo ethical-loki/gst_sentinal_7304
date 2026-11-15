@@ -221,3 +221,88 @@ def test_numeric_constraints_and_sibling_distinction():
     assert res_miss["winner_has_clear_evidence"] is False
     assert res_miss["missing_numeric_constraints"] is True
 
+
+def test_phase15_priority3_exact_hsn_sibling_safety():
+    from src.ml.ambiguity_resolver import analyze_sibling_distinctions
+    from src.ml.relevance_classifier import ClassifiedTariffCandidate
+
+    # 1. 19023010 (DRIED) vs 19023090 (OTHER) on "instant noodles made from wheat flour":
+    # Neither "dried" nor "cooked/other" is stated -> must NOT grant winner_has_clear_evidence
+    n_dried = ClassifiedTariffCandidate(
+        candidate=RerankedTariffCandidate(
+            hsn_code="19023010", chapter_code="19",
+            description="PASTA... - DRIED",
+            tariff_item_desc="DRIED",
+            subheading_6digit_desc="OTHER PASTA",
+            article_keywords="dried pasta, dried noodles",
+            relevance_score=0.90, raw_logit=2.5,
+        ),
+        relation=RelationLabel.SAME_PRODUCT, confidence=0.90,
+    )
+    n_other = ClassifiedTariffCandidate(
+        candidate=RerankedTariffCandidate(
+            hsn_code="19023090", chapter_code="19",
+            description="PASTA... - OTHER",
+            tariff_item_desc="OTHER",
+            subheading_6digit_desc="OTHER PASTA",
+            article_keywords="instant noodles, cooked noodles",
+            relevance_score=0.94, raw_logit=3.1,
+        ),
+        relation=RelationLabel.SAME_PRODUCT, confidence=0.94,
+    )
+    res_noodles = analyze_sibling_distinctions([n_other, n_dried], "instant noodles made from wheat flour")
+    assert res_noodles["winner_has_clear_evidence"] is False
+
+    # 2. 39233010 (INSULATED WARE) vs 39233090 (OTHER) on "plastic water bottle made of polyethylene":
+    # "insulated" is NOT stated -> must NOT grant winner_has_clear_evidence via article_keywords alone
+    b_ins = ClassifiedTariffCandidate(
+        candidate=RerankedTariffCandidate(
+            hsn_code="39233010", chapter_code="39",
+            description="CARBOYS, BOTTLES, FLASKS... - INSULATED WARE",
+            tariff_item_desc="INSULATED WARE",
+            subheading_6digit_desc="CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES",
+            article_keywords="plastic bottles for beverages, blow-moulded PET mineral water bottles",
+            relevance_score=0.93, raw_logit=2.9,
+        ),
+        relation=RelationLabel.SAME_PRODUCT, confidence=0.93,
+    )
+    b_other = ClassifiedTariffCandidate(
+        candidate=RerankedTariffCandidate(
+            hsn_code="39233090", chapter_code="39",
+            description="CARBOYS, BOTTLES, FLASKS... - OTHER",
+            tariff_item_desc="OTHER",
+            subheading_6digit_desc="CARBOYS, BOTTLES, FLASKS AND SIMILAR ARTICLES",
+            article_keywords="plastic carboys, jerrycans",
+            relevance_score=0.88, raw_logit=2.1,
+        ),
+        relation=RelationLabel.SAME_PRODUCT, confidence=0.88,
+    )
+    res_bottle = analyze_sibling_distinctions([b_ins, b_other], "plastic water bottle made of polyethylene")
+    assert res_bottle["winner_has_clear_evidence"] is False
+
+    # 3. 94035010 (BED STEAD) vs 94035090 (OTHER) on "wooden bedroom furniture bed":
+    # "bed" directly matches BED STEAD -> winner_has_clear_evidence MUST remain True
+    f_bed = ClassifiedTariffCandidate(
+        candidate=RerankedTariffCandidate(
+            hsn_code="94035010", chapter_code="94",
+            description="WOODEN FURNITURE OF A KIND USED IN THE BED ROOM - BED STEAD",
+            tariff_item_desc="BED STEAD",
+            subheading_6digit_desc="WOODEN FURNITURE OF A KIND USED IN THE BED ROOM",
+            relevance_score=0.94, raw_logit=3.0,
+        ),
+        relation=RelationLabel.SAME_PRODUCT, confidence=0.94,
+    )
+    f_other = ClassifiedTariffCandidate(
+        candidate=RerankedTariffCandidate(
+            hsn_code="94035090", chapter_code="94",
+            description="WOODEN FURNITURE OF A KIND USED IN THE BED ROOM - OTHER",
+            tariff_item_desc="OTHER",
+            subheading_6digit_desc="WOODEN FURNITURE OF A KIND USED IN THE BED ROOM",
+            relevance_score=0.89, raw_logit=2.2,
+        ),
+        relation=RelationLabel.SAME_PRODUCT, confidence=0.89,
+    )
+    res_bed = analyze_sibling_distinctions([f_bed, f_other], "wooden bedroom furniture bed")
+    assert res_bed["winner_has_clear_evidence"] is True
+
+

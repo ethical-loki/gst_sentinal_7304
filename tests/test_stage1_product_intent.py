@@ -140,3 +140,45 @@ def test_ui_renders_stage1_product_intent_fields():
         ):
             assert token in html, f"Missing '{token}' in {ui_rel}"
 
+
+def test_phase15_priority2_parenthesis_and_multi_noun_extraction():
+    # Case 2: Must NOT truncate at "(" in "(FOR EXAMPLE, ...)"
+    c2 = analyze_product_intent(
+        "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR (FOR EXAMPLE, JOINTS, ELBOWS, FLANGES), "
+        "OF PLASTICS - ARTIFICIAL GUTS (SAUSAGE CASINGS) OF HARDENED PROTEIN OR OF CELLULOSIC MATERIALS "
+        "- OF ADDITION POLYMERISATION PRODUCTS (plasticised flexible polyvinyl chloride)"
+    )
+    assert not c2.finished_article.endswith("(")
+    assert "TUBES" in c2.finished_article.upper() or "GUTS" in c2.finished_article.upper()
+    assert any("for example" in r.value.lower() for r in c2.attribute_relationships)
+    assert any("polyvinyl chloride" in m.lower() for m in c2.constituent_materials)
+
+    # Case 9: Must NOT truncate at "(" in "(FOR EXAMPLE, RECTIFIERS)"
+    c9 = analyze_product_intent(
+        "ELECTRICAL TRANSFORMERS, STATIC CONVERTERS (FOR EXAMPLE, RECTIFIERS) AND INDUCTORS "
+        "- DIP BRIDGE RECTIFIER (transformer core steel)"
+    )
+    assert not c9.finished_article.endswith("(")
+    assert "DIP BRIDGE RECTIFIER" in c9.finished_article.upper() or "TRANSFORMERS" in c9.finished_article.upper()
+    assert any("transformer core steel" in m.lower() for m in c9.constituent_materials)
+
+    # Case 4: Multi-garment heading narrowed to specific finished article "SUITS"
+    c4 = analyze_product_intent(
+        "WOMEN'SOR GIRLS SUITS, ENSEMBLES, JACKETS, BLAZERS, DRESSES, SKIRTS, DIVIDED SKIRTS, "
+        "TROUSERS, BIB AND BRACE OVERALLS, BREECHES AND SHORTS (OTHER THAN SWIMWEAR) - SUITS "
+        "- OF OTHER TEXTILE MATERIALS - EMBROIDERED WITH LUCKNOW CHIKAN CRAFT (linen)"
+    )
+    assert c4.finished_article.upper() == "SUITS"
+    assert "BLAZERS" not in c4.finished_article.upper()
+    assert any(r.role == "STATUTORY_HEADING_CONTEXT" for r in c4.attribute_relationships)
+
+    # Case 3: Preserves full head without breaking on "(ETHYLENE TEREPHTHALATE)"
+    c3 = analyze_product_intent(
+        "OTHER PLATES, SHEETS, FILM, FOIL AND STRIP, OF PLASTICS, NON-CELLULAR AND NOT REINFORCED, "
+        "LAMINATED, SUPPORTED OR SIMILARLY COMBINED WITH OTHER MATERIALS - OF POLY (ETHYLENE TEREPHTHALATE) "
+        "(non-cellular unreinforced plastic resin 39206210)"
+    )
+    assert "PLATES" in c3.finished_article.upper()
+    assert not c3.finished_article.endswith("(")
+
+

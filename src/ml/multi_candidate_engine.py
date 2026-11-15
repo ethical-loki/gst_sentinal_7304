@@ -577,8 +577,31 @@ class MultiCandidateEngine:
         insuff = [c for c in qualifying_ordered if c.relation == RelationLabel.INSUFFICIENT_INFORMATION]
         related = [c for c in qualifying_ordered if c.relation == RelationLabel.RELATED_PRODUCT]
 
-        # Dynamic statutory & numerical distinction analysis over top competing 8-digit leaves
-        dist_analysis = analyze_sibling_distinctions(same_leaves[:20], effective_query) if same_leaves else {
+        # Dynamic statutory & numerical distinction analysis over top competing 8-digit leaves,
+        # including INSUFFICIENT_INFORMATION siblings under the winning 6-digit subheading so
+        # unresolved 6-digit sibling competition is never hidden by a single SAME_PRODUCT label.
+        dist_pool = list(same_leaves[:20])
+        if same_leaves:
+            top_sub6 = same_leaves[0].candidate.hsn_code[:6]
+            seen_dist_hsn = {c.candidate.hsn_code for c in dist_pool}
+            for c in qualifying_ordered:
+                if (
+                    _is_leaf_8digit(c)
+                    and c.candidate.hsn_code[:6] == top_sub6
+                    and c.candidate.hsn_code not in seen_dist_hsn
+                    and c.relation != RelationLabel.RELATED_PRODUCT
+                ):
+                    dist_pool.append(c)
+                    seen_dist_hsn.add(c.candidate.hsn_code)
+                    if len(dist_pool) >= 20:
+                        break
+        has_competing_sub6_leaves = len(dist_pool) > 1 and any(
+            c.candidate.hsn_code[:6] == same_leaves[0].candidate.hsn_code[:6]
+            and c.candidate.hsn_code != same_leaves[0].candidate.hsn_code
+            for c in dist_pool
+        ) if same_leaves else False
+
+        dist_analysis = analyze_sibling_distinctions(dist_pool, effective_query) if dist_pool else {
             "per_candidate": [],
             "ranked_indices": [],
             "winner_idx": None,
@@ -588,8 +611,13 @@ class MultiCandidateEngine:
             "distinguishing_phrases": {},
         }
         if same_leaves and dist_analysis.get("ranked_indices"):
-            head_reordered = [same_leaves[i] for i in dist_analysis["ranked_indices"]]
-            same_leaves = head_reordered + same_leaves[20:]
+            reordered_dist = [dist_pool[i] for i in dist_analysis["ranked_indices"]]
+            same_set = {id(c) for c in same_leaves}
+            head_reordered = [c for c in reordered_dist if id(c) in same_set]
+            for c in same_leaves:
+                if c not in head_reordered:
+                    head_reordered.append(c)
+            same_leaves = head_reordered
             seen_ids = {id(c) for c in same_leaves}
             qualifying_ordered = same_leaves + [c for c in qualifying_ordered if id(c) not in seen_ids]
             groups, hsn_to_group = group_candidates(qualifying_ordered)
@@ -708,14 +736,14 @@ class MultiCandidateEngine:
                 clarification_reason = (
                     f"{len(same_leaves)} SAME_PRODUCT leaf candidates span {len(unique_headings)} distinct headings."
                 )
-            elif len(same_leaves) > 1 and hsn_conf < tau_exact:
+            elif len(same_leaves) > 1 or has_competing_sub6_leaves:
                 prediction_mode = "CHAPTER_ONLY_CLARIFY"
                 final_chapter = same_leaves[0].candidate.chapter_code
                 requires_clarification = True
                 clarification_reason = (
-                    f"Heading {same_leaves[0].candidate.hsn_code[:4]} supported, but {len(same_leaves)} leaf tariff items compete."
+                    f"Heading {same_leaves[0].candidate.hsn_code[:4]} supported, but {max(len(same_leaves), len(dist_pool))} leaf tariff items compete without decisive statutory distinction."
                 )
-            elif hsn_conf >= tau_exact and (len(same_leaves) == 1 or distinction_conf >= 0.05):
+            elif hsn_conf >= tau_exact:
                 prediction_mode = "EXACT_HSN"
                 final_hsn = same_leaves[0].candidate.hsn_code
                 final_chapter = same_leaves[0].candidate.chapter_code

@@ -182,7 +182,7 @@ def build_candidate_profile(raw_rec: Optional[Dict[str, Any]], candidate: Any) -
     mat_kws = _split_kw_list(getattr(candidate, "material_keywords", None) or rec.get("material_keywords") or "")
     cons_syns = _split_kw_list(rec.get("consumer_synonyms") or "")
 
-    art_text = " ".join([item_desc, stat_desc, sub6_desc, " ".join(art_kws), " ".join(cons_syns)])
+    art_text = " ".join([item_desc, stat_desc, sub6_desc, hd4_desc, " ".join(art_kws), " ".join(cons_syns)])
     mat_text = " ".join([" ".join(mat_kws), item_desc, stat_desc, sub6_desc, hd4_desc])
 
     art_tokens = _tokenize_content(art_text)
@@ -227,7 +227,7 @@ def evaluate_candidate_evidence(
     generic_stems = {_stem(g) for g in _GENERIC_MODIFIERS}
     article_core_tokens = head_tokens - all_mat_cues - generic_stems
     if not article_core_tokens:
-        article_core_tokens = (head_tokens - all_mat_cues) or head_tokens
+        article_core_tokens = head_tokens - all_mat_cues
 
     # 1. Article identity matching (deduplicated by canonical stem; no generic-modifier phrase inflation)
     article_matches: List[str] = []
@@ -323,14 +323,19 @@ def evaluate_candidate_evidence(
         if neg_toks and neg_toks.issubset(_tokenize_content(query_full_low)):
             contradictions.append(f"Statutory exclusion matched: '{neg_phrase.strip()}'")
 
-    # 5. Evidence-based verdict (semantic similarity alone NEVER suffices without article or material evidence)
+    # 5. Evidence-based verdict (semantic similarity alone NEVER suffices;
+    # material overlap alone NEVER establishes finished-article identity when the query states an article)
+    has_article_query = bool(article_core_tokens)
+    has_cand_article_vocab = bool(profile.article_tokens or profile.article_keywords or profile.consumer_synonyms)
+    material_only_no_article = bool(material_matches) and not article_matches and has_article_query and has_cand_article_vocab
+
     if contradictions:
         status = CONTRADICTED
         ev_score = 0.0
     elif article_matches and (material_matches or not query_mat_fams) and not missing_attributes and relation_value == "SAME_PRODUCT":
         status = SUPPORTED
         ev_score = min(1.0, 0.65 * cross_encoder_confidence + 0.25 + (0.10 if material_matches else 0.0))
-    elif article_matches or material_matches:
+    elif article_matches or (material_matches and not material_only_no_article):
         status = POSSIBLY_SUPPORTED
         ev_score = min(0.95, 0.60 * cross_encoder_confidence + (0.20 if article_matches else 0.05) + (0.10 if material_matches else 0.0))
     else:
@@ -342,6 +347,8 @@ def evaluate_candidate_evidence(
         f"material_match={material_matches[:3] or 'none'}",
         f"chapter_compat={chapter_compatible}",
     ]
+    if material_only_no_article:
+        trace_parts.append("guard=material_only_no_article")
     if missing_attributes:
         trace_parts.append(f"missing={missing_attributes}")
     if contradictions:

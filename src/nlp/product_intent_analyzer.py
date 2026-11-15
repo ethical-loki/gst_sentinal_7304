@@ -132,11 +132,29 @@ class ProductIntentStructure:
         }
 
 
+def _paren_depth_mask(text: str) -> List[bool]:
+    """Returns a per-character boolean mask: True when inside parentheses (...)."""
+    mask: List[bool] = []
+    depth = 0
+    for ch in text:
+        if ch == "(":
+            depth += 1
+            mask.append(True)
+        elif ch == ")":
+            mask.append(depth > 0)
+            if depth > 0:
+                depth -= 1
+        else:
+            mask.append(depth > 0)
+    return mask
+
+
 def _split_top_level_clauses(text: str) -> Tuple[str, List[Tuple[str, str]]]:
     """
     Splits a commercial description into:
       1. The leading head phrase (candidate finished article + direct modifiers)
       2. A list of (marker, trailing_clause_text) tuples in order of appearance.
+    Never splits inside balanced parentheses (e.g. "(for example, ...)").
     """
     cleaned = re.sub(r"\s+", " ", (text or "").strip())
     if not cleaned:
@@ -152,7 +170,8 @@ def _split_top_level_clauses(text: str) -> Tuple[str, List[Tuple[str, str]]]:
         re.IGNORECASE,
     )
 
-    matches = list(pattern.finditer(cleaned))
+    in_paren = _paren_depth_mask(cleaned)
+    matches = [m for m in pattern.finditer(cleaned) if not in_paren[m.start()]]
     if not matches:
         return cleaned, []
 
@@ -273,7 +292,58 @@ def analyze_product_intent(description: str, clarification: str = "") -> Product
     if processing_form:
         relationships.append(AttributeRelationship("processing_form", processing_form, "PROCESSING_FORM", "head"))
 
-    finished_article = head.strip() or combined
+    # Clean balanced parenthetical examples/qualifiers/material notes from head
+    # without truncating at an opening parenthesis.
+    clean_head = head.strip()
+    paren_spans = list(re.finditer(r"\(([^()]+)\)", clean_head))
+    if paren_spans:
+        kept_parts: List[str] = []
+        last_idx = 0
+        for pm in paren_spans:
+            kept_parts.append(clean_head[last_idx:pm.start()])
+            inner = pm.group(1).strip()
+            inner_low = inner.lower()
+            is_example_or_excl = bool(
+                re.match(r"^(?:for\s+example|e\.g\.|such\s+as|including|other\s+than)\b", inner_low)
+            )
+            is_trailing = pm.end() == len(clean_head)
+            if is_example_or_excl:
+                relationships.append(
+                    AttributeRelationship("qualifier_or_example", inner, "QUALIFIER_OR_EXAMPLE", "parenthetical")
+                )
+            elif is_trailing:
+                if inner not in constituent_materials:
+                    constituent_materials.append(inner)
+                relationships.append(
+                    AttributeRelationship("material_or_note", inner, "CONSTITUENT_MATERIAL", "parenthetical")
+                )
+            else:
+                kept_parts.append(pm.group(0))
+            last_idx = pm.end()
+        kept_parts.append(clean_head[last_idx:])
+        clean_head = re.sub(r"\s+", " ", "".join(kept_parts)).strip(" ,;-")
+
+    # If head is a multi-segment statutory chain ("HEADING, A, B, C - SPECIFIC ARTICLE - OF MATERIAL"),
+    # focus finished_article on the specific article segment when the first segment is a broad list.
+    if " - " in clean_head:
+        segs = [s.strip(" ,;") for s in clean_head.split(" - ") if s.strip(" ,;")]
+        if len(segs) >= 2 and segs[0].count(",") >= 3:
+            _qualifier_prefix = re.compile(
+                r"^(?:of\s+|other\b|parts\b|embroidered\b|unbleached\b|bleached\b|dyed\b|printed\b)",
+                re.IGNORECASE,
+            )
+            specific = None
+            for seg in reversed(segs[1:]):
+                if not _qualifier_prefix.match(seg):
+                    specific = seg
+                    break
+            if specific:
+                relationships.append(
+                    AttributeRelationship("statutory_heading_context", segs[0], "STATUTORY_HEADING_CONTEXT", "head")
+                )
+                clean_head = specific
+
+    finished_article = clean_head or head.strip() or combined
     relationships.insert(0, AttributeRelationship("finished_article", finished_article, "FINISHED_ARTICLE", "head"))
 
     packaging_str = "; ".join(packaging_parts) if packaging_parts else None

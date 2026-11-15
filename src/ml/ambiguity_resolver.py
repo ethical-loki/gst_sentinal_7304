@@ -328,15 +328,22 @@ def analyze_sibling_distinctions(
     ) and best["numeric_status"] != "MATCH"
 
     # Winner has clear evidence only if not contradicted, not missing required numeric spec,
-    # and either numeric MATCH or clear lexical + evidence margin
+    # and statutory leaf evidence (numeric MATCH or direct non-residual tariff_item_desc match)
+    # clearly distinguishes it from competing siblings.
+    has_competing_non_residual = any(
+        not x["is_residual_other"] for x in ranked[1:]
+    )
+    residual_blocked = best["is_residual_other"] and has_competing_non_residual
+    statutory_leaf_clear = (
+        best["numeric_status"] == "MATCH"
+        or (not best["is_residual_other"] and best["t8_hit_ratio"] >= 0.5 and margin >= 0.15)
+        or (len(ranked) == 1 and best["lex_ratio"] >= 0.35)
+    )
     clear_ev = (
         best["numeric_status"] != "CONFLICT"
         and not missing_num
-        and (
-            best["numeric_status"] == "MATCH"
-            or (best["t8_hit_ratio"] >= 0.5 and margin >= 0.15)
-            or (best["lex_ratio"] >= 0.35 and margin >= 0.20)
-        )
+        and not residual_blocked
+        and statutory_leaf_clear
     )
 
     return {

@@ -335,3 +335,46 @@ def test_phase14_whether_or_not_containing_is_not_treated_as_exclusion():
     assert ev.status != CONTRADICTED
     assert not ev.contradictions
 
+
+def test_phase15_priority1_article_identity_protection():
+    # 1. Material-only overlap without finished-article match must NOT become POSSIBLY_SUPPORTED
+    intent_tshirt = analyze_product_intent("knitted cotton t-shirt for men")
+    rec_socks = {
+        "hsn_code": "61159500",
+        "code_length": 8,
+        "chapter_code": "61",
+        "chapter_title": "Articles of apparel and clothing accessories, knitted or crocheted",
+        "heading_4digit_desc": "Panty hose, tights, stockings, socks and other hosiery",
+        "statutory_description": "Socks and hosiery of cotton, knitted or crocheted",
+        "tariff_item_desc": "Of cotton",
+        "article_keywords": "socks, hosiery, stockings",
+        "material_keywords": "cotton",
+    }
+    prof_socks = build_candidate_profile(rec_socks, None)
+    ev_socks = evaluate_candidate_evidence(intent_tshirt, prof_socks, "SAME_PRODUCT", 0.85)
+    assert ev_socks.status == INSUFFICIENT_EVIDENCE
+    assert "material_only_no_article" in ev_socks.trace_summary
+
+    # 2. When article_keywords is empty, heading_4digit_desc provides article identity evidence
+    rec_tshirt_other = {
+        "hsn_code": "61091000",
+        "code_length": 8,
+        "chapter_code": "61",
+        "chapter_title": "Articles of apparel and clothing accessories, knitted or crocheted",
+        "heading_4digit_desc": "T-shirts, singlets and other vests, knitted or crocheted",
+        "statutory_description": "Of cotton",
+        "tariff_item_desc": "Of cotton",
+        "article_keywords": "",
+        "material_keywords": "cotton",
+    }
+    prof_tshirt = build_candidate_profile(rec_tshirt_other, None)
+    ev_tshirt = evaluate_candidate_evidence(intent_tshirt, prof_tshirt, "SAME_PRODUCT", 0.90)
+    assert ev_tshirt.status == SUPPORTED
+    assert ev_tshirt.article_matches
+
+    # 3. Pure material query (no article noun) is not rejected on missing article match
+    intent_mat_only = analyze_product_intent("cotton")
+    ev_mat_only = evaluate_candidate_evidence(intent_mat_only, prof_socks, "SAME_PRODUCT", 0.70)
+    assert ev_mat_only.status == POSSIBLY_SUPPORTED
+
+
