@@ -31,8 +31,18 @@ from src.ml.ambiguity_resolver import (
     identify_separating_attributes,
 )
 from src.ml.confidence_calibrator import extract_query_confidence_features
+from src.ml.candidate_evidence_evaluator import (
+    CONTRADICTED,
+    INSUFFICIENT_EVIDENCE,
+    POSSIBLY_SUPPORTED,
+    SUPPORTED,
+    build_candidate_profile,
+    consolidate_duplicate_records,
+    evaluate_candidate_evidence,
+)
 from src.ml.product_tariff_reranker import classify_tariff_level, format_tariff_context
 from src.ml.relevance_classifier import ClassifiedTariffCandidate, RelationLabel, RelevanceClassifier
+from src.nlp.product_intent_analyzer import analyze_product_intent
 from src.search.hybrid_retrieval import HybridHSNEngine
 from src.search.statutory_master_index import StatutoryMasterIndex
 from src.training.feedback_collector import FeedbackCollector
@@ -484,9 +494,51 @@ class MultiCandidateEngine:
         if not effective_query:
             return self._empty_response(orig, confirmed, page, page_size, t_total0)
 
+        product_intent = analyze_product_intent(effective_query)
+
         # 1. Adaptive Discovery (dynamic expansion, no fixed top-K cap)
         disc = self.discoverer.discover(effective_query, exhaustive=exhaustive)
-        qualifying = disc.qualifying_classified
+        consolidated = consolidate_duplicate_records(disc.qualifying_classified)
+
+        # Dataset-driven evidence evaluation (uses enriched_master_hsn.parquet fields)
+        evidence_by_hsn: Dict[str, Dict[str, Any]] = {}
+        qualifying: List[ClassifiedTariffCandidate] = []
+        contradicted_reasons: List[str] = []
+        contradicted_count = 0
+        for c in consolidated:
+            raw = disc.raw_records_by_id.get(c.candidate.hsn_code, {})
+            prof = build_candidate_profile(raw, c.candidate)
+            ev_res = evaluate_candidate_evidence(
+                product_intent=product_intent,
+                profile=prof,
+                relation_value=c.relation.value,
+                cross_encoder_confidence=c.confidence,
+            )
+            ev_dict = ev_res.to_dict()
+            evidence_by_hsn[c.candidate.hsn_code] = ev_dict
+            if ev_res.status == CONTRADICTED:
+                contradicted_count += 1
+                if len(contradicted_reasons) < 15:
+                    contradicted_reasons.append(
+                        f"HSN {c.candidate.hsn_code} CONTRADICTED: {'; '.join(ev_res.contradictions)}"
+                    )
+                continue
+            qualifying.append(c)
+
+        # Order qualifying by evidence verdict -> relation priority -> confidence
+        _ev_rank = {SUPPORTED: 0, POSSIBLY_SUPPORTED: 1, INSUFFICIENT_EVIDENCE: 2}
+        _rel_rank = {
+            RelationLabel.SAME_PRODUCT: 0,
+            RelationLabel.INSUFFICIENT_INFORMATION: 1,
+            RelationLabel.RELATED_PRODUCT: 2,
+        }
+        qualifying.sort(
+            key=lambda c: (
+                _ev_rank.get(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status", POSSIBLY_SUPPORTED), 2),
+                _rel_rank.get(c.relation, 3),
+                -c.confidence,
+            )
+        )
 
         # 2. Independent 98-chapter statutory comparison
         best_active_score = qualifying[0].confidence if qualifying else 0.0
@@ -676,6 +728,7 @@ class MultiCandidateEngine:
             else:
                 reasons.append(f"Score delta vs top-1: {c.confidence - top_score:+.4f}.")
 
+            ev_info = evidence_by_hsn.get(c.candidate.hsn_code, {})
             all_formatted.append({
                 "rank": rank,
                 "hsn_code": c.candidate.hsn_code,
@@ -685,6 +738,8 @@ class MultiCandidateEngine:
                 "source_record_id": raw.get("source_record_id", f"hsn_{c.candidate.hsn_code}"),
                 "retrieval_source": raw.get("retrieval_source", "hybrid"),
                 "relevance_category": c.relation.value,
+                "evidence_status": ev_info.get("status", POSSIBLY_SUPPORTED),
+                "evidence_trace": ev_info,
                 "retrieval_score": raw.get("rrf_score"),
                 "raw_logit": round(c.candidate.raw_logit, 4),
                 "relevance_confidence": c.relevance_confidence or c.confidence,
@@ -745,6 +800,14 @@ class MultiCandidateEngine:
                 "missing_numeric_constraints": bool(dist_analysis.get("missing_numeric_constraints")),
                 "distinguishing_phrases": dist_analysis.get("distinguishing_phrases", {}),
             },
+            "evidence_summary": {
+                "initial_retrieved": disc.total_retrieved,
+                "retained_count": len(all_formatted),
+                "supported_count": sum(1 for c in all_formatted if c.get("evidence_status") == SUPPORTED),
+                "possibly_supported_count": sum(1 for c in all_formatted if c.get("evidence_status") == POSSIBLY_SUPPORTED),
+                "insufficient_evidence_count": sum(1 for c in all_formatted if c.get("evidence_status") == INSUFFICIENT_EVIDENCE),
+                "contradicted_filtered_count": contradicted_count,
+            },
             "best_supported_candidate": all_formatted[0] if all_formatted else None,
             "categorized_candidates": {
                 "same_product": [c for c in all_formatted if c["relevance_category"] == RelationLabel.SAME_PRODUCT.value],
@@ -770,8 +833,8 @@ class MultiCandidateEngine:
             "pagination": pagination_meta,
             "audit": {
                 "retrieval_sources": disc.retrieval_sources,
-                "candidates_discarded": disc.candidates_discarded,
-                "discard_reasons": disc.discard_reasons,
+                "candidates_discarded": disc.candidates_discarded + contradicted_count,
+                "discard_reasons": (disc.discard_reasons + contradicted_reasons)[:20],
                 "execution_metrics": {
                     "retrieval_time_ms": disc.retrieval_time_ms,
                     "reranking_time_ms": disc.reranking_time_ms,
@@ -858,6 +921,14 @@ class MultiCandidateEngine:
                 "discovery_complete": True,
                 "stopping_reason": "empty_query",
                 "expansion_rounds": 0,
+            },
+            "evidence_summary": {
+                "initial_retrieved": 0,
+                "retained_count": 0,
+                "supported_count": 0,
+                "possibly_supported_count": 0,
+                "insufficient_evidence_count": 0,
+                "contradicted_filtered_count": 0,
             },
             "best_supported_candidate": None,
             "categorized_candidates": {

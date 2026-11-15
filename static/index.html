@@ -5347,17 +5347,26 @@
                 ? '<span style="color:#34d399; font-weight:700;">✓ Discovery Complete</span>'
                 : '<span style="color:#fbbf24; font-weight:700;">⚠ Discovery Incomplete (Budget Reached)</span>';
 
-            const renderCandCard = (c, badgeColor = '#93c5fd') => `
+            const renderCandCard = (c, badgeColor = '#93c5fd') => {
+                const evStatus = c.evidence_status || '';
+                const evTrace = c.evidence_trace && c.evidence_trace.trace_summary ? c.evidence_trace.trace_summary : '';
+                const evColor = evStatus === 'SUPPORTED' ? '#34d399' : (evStatus === 'POSSIBLY_SUPPORTED' ? '#fbbf24' : '#94a3b8');
+                return `
                 <div style="margin-top:6px; padding:6px 8px; background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.2); border-radius:6px; font-size:0.72rem;">
                     <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px; color:#e2e8f0; font-family:'JetBrains Mono', monospace;">
                         <span><strong>#${c.rank} HSN ${escapeHtml(c.hsn_code)}</strong> (Ch ${escapeHtml(c.chapter_code)}${c.tariff_level ? ` · ${escapeHtml(c.tariff_level)}` : ''})</span>
-                        <span style="color:${badgeColor};">${escapeHtml(c.relevance_category)} · Rel ${(Number(c.relevance_confidence || 0) * 100).toFixed(1)}%</span>
+                        <span>
+                            ${evStatus ? `<span style="color:${evColor}; font-weight:700;">[${escapeHtml(evStatus)}]</span> · ` : ''}
+                            <span style="color:${badgeColor};">${escapeHtml(c.relevance_category)} · Rel ${(Number(c.relevance_confidence || 0) * 100).toFixed(1)}%</span>
+                        </span>
                     </div>
                     <div style="color:#cbd5e1; margin-top:2px;">${escapeHtml(c.hsn_description || '')}</div>
+                    ${evTrace ? `<div style="color:#7dd3fc; font-size:0.68rem; margin-top:2px;"><strong>Evidence:</strong> ${escapeHtml(evTrace)}</div>` : ''}
                     ${Array.isArray(c.differences) && c.differences.length ? `<div style="color:#fde68a; font-size:0.68rem; margin-top:2px;"><strong>Differences:</strong> ${escapeHtml(c.differences.slice(0, 4).join(' | '))}</div>` : ''}
                     <div style="color:#94a3b8; font-size:0.68rem; margin-top:2px;">${escapeHtml((c.match_reasons || []).join(' | '))}</div>
                 </div>
             `;
+            };
 
             const bestHtml = bestCand ? `
                 <div style="margin-top:8px;">
@@ -5431,11 +5440,21 @@
                     </div>
                 </div>`;
 
+            const evSum = res.evidence_summary || {};
+            const evSumHtml = (typeof evSum.retained_count === 'number') ? `
+                <div style="margin-top:4px; font-size:0.7rem; color:#cbd5e1; display:flex; flex-wrap:wrap; gap:8px;">
+                    <span>Supported: <strong style="color:#34d399;">${evSum.supported_count || 0}</strong></span>
+                    <span>Possibly Supported: <strong style="color:#fbbf24;">${evSum.possibly_supported_count || 0}</strong></span>
+                    <span>Insufficient Evidence: <strong style="color:#94a3b8;">${evSum.insufficient_evidence_count || 0}</strong></span>
+                    <span>Contradicted Filtered: <strong style="color:#fda4af;">${evSum.contradicted_filtered_count || 0}</strong></span>
+                </div>` : '';
+
             panel.innerHTML = `
                 <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; font-size:0.74rem; color:#e2e8f0;">
                     <span><strong>Mode:</strong> ${escapeHtml(res.prediction_mode)} ${res.final_hsn ? `· Final HSN ${escapeHtml(res.final_hsn)}` : '· No forced HSN (clarification/discovery)'}</span>
                     <span>${completeBadge} (${disc.qualifying_candidates || 0} qualifying / ${disc.total_retrieved || 0} examined)</span>
                 </div>
+                ${evSumHtml}
                 ${clarHtml}
                 ${bestHtml}
                 ${otherSameHtml}

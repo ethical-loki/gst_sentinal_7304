@@ -1,0 +1,185 @@
+{
+  "total_cases": 16,
+  "chapters_covered": [
+    "19",
+    "39",
+    "61",
+    "62",
+    "73",
+    "84",
+    "85",
+    "87",
+    "94"
+  ],
+  "mean_initial_retrieval_count": 199.69,
+  "mean_final_retained_count": 64.31,
+  "total_contradicted_filtered": 49,
+  "false_rejection_count": 0,
+  "candidate_recall": 1.0,
+  "exact_hsn_coverage": 0.0625,
+  "exact_hsn_hits": 0,
+  "correct_abstention_rate": 0.9375,
+  "mean_latency_ms": 47331.88,
+  "cases": [
+    {
+      "chapter": "39",
+      "expected_hsn": "39159061",
+      "initial_retrieved": 203,
+      "retained": 28,
+      "contradicted_filtered": 0,
+      "pool_hit": true,
+      "mode": "CHAPTER_ONLY_CLARIFY",
+      "latency_ms": 23947.3
+    },
+    {
+      "chapter": "39",
+      "expected_hsn": "39173220",
+      "initial_retrieved": 204,
+      "retained": 28,
+      "contradicted_filtered": 0,
+      "pool_hit": true,
+      "mode": "CHAPTER_ONLY_CLARIFY",
+      "latency_ms": 53004.3
+    },
+    {
+      "chapter": "39",
+      "expected_hsn": "39206210",
+      "initial_retrieved": 237,
+      "retained": 168,
+      "contradicted_filtered": 0,
+      "pool_hit": true,
+      "mode": "MULTIPLE_CANDIDATES",
+      "latency_ms": 53441.8
+    },
+    {
+      "chapter": "62",
+      "expected_hsn": "62043991",
+      "initial_retrieved": 247,
+      "retained": 229,
+      "contradicted_filtered": 0,
+      "pool_hit": true,
+      "mode": "MULTIPLE_CANDIDATES",
+      "latency_ms": 54129.1
+    },
+    {
+      "chapter": "73",
+      "expected_hsn": "73239910",
+      "initial_retrieved": 206,
+      "retained": 55,
+      "contradicted_filtered": 0,
+      "pool_hit": true,
+      "mode": "MULTIPLE_CANDIDATES",
+      "latency_ms": 47445.0
+    },
+    {
+      "chapter": "84",
+      "expected_hsn": "84119100",
+      "initial_retrieved": 163,
+      "retained": 24,
+      "contradicted_filtered": 0,
+      "pool_hit": true,
+      "mode": "CHAPTER_ONLY_CLARIFY",
+      "latency_ms": 33570.2
+    },
+    {
+      "chapter": "84",
+      "expected_hsn": "84136020",
+      "initial_retrieved": 200,
+      "retained": 52,
+      "contradicted_filtered": 0,
+      "pool_hit": true,
+      "mode": "CHAPTER_ONLY_CLARIFY",
+      "latency_ms": 53410.1
+    },
+    {
+      "chapter": "84",
+      "expected_hsn": "84137010",
+      "initial_retrieved": 200,
+      "retained": 51,
+      "contradicted_filtered": 0,
+      "pool_hit": true,
+      "mode": "CHAPTER_ONLY_CLARIFY",
+      "latency_ms": 57488.0
+    },
+    {
+      "chapter": "85",
+      "expected_hsn": "85044021",
+      "initial_retrieved": 227,
+      "retained": 32,
+      "contradicted_filtered": 0,
+      "pool_hit": true,
+      "mode": "CHAPTER_ONLY_CLARIFY",
+      "latency_ms": 58818.3
+    },
+    {
+      "chapter": "85",
+      "expected_hsn": "85086000",
+      "initial_retrieved": 162,
+      "retained": 12,
+      "contradicted_filtered": 0,
+      "pool_hit": true,
+      "mode": "MULTIPLE_CANDIDATES",
+      "latency_ms": 40906.9
+    },
+    {
+      "chapter": "85",
+      "expected_hsn": "85119000",
+      "initial_retrieved": 203,
+      "retained": 102,
+      "contradicted_filtered": 0,
+      "pool_hit": true,
+      "mode": "CHAPTER_ONLY_CLARIFY",
+      "latency_ms": 65994.2
+    },
+    {
+      "chapter": "94",
+      "expected_hsn": "94055039",
+      "initial_retrieved": 238,
+      "retained": 156,
+      "contradicted_filtered": 0,
+      "pool_hit": true,
+      "mode": "MULTIPLE_CANDIDATES",
+      "latency_ms": 74459.1
+    },
+    {
+      "chapter": "19",
+      "expected_hsn": "19023010",
+      "initial_retrieved": 155,
+      "retained": 7,
+      "contradicted_filtered": 0,
+      "pool_hit": true,
+      "mode": "EXACT_HSN",
+      "latency_ms": 38112.1
+    },
+    {
+      "chapter": "61",
+      "expected_hsn": "61091000",
+      "initial_retrieved": 228,
+      "retained": 60,
+      "contradicted_filtered": 49,
+      "pool_hit": true,
+      "mode": "MULTIPLE_CANDIDATES",
+      "latency_ms": 35788.5
+    },
+    {
+      "chapter": "73",
+      "expected_hsn": "73181500",
+      "initial_retrieved": 160,
+      "retained": 17,
+      "contradicted_filtered": 0,
+      "pool_hit": true,
+      "mode": "CHAPTER_ONLY_CLARIFY",
+      "latency_ms": 41724.4
+    },
+    {
+      "chapter": "87",
+      "expected_hsn": "87083000",
+      "initial_retrieved": 162,
+      "retained": 8,
+      "contradicted_filtered": 0,
+      "pool_hit": true,
+      "mode": "MULTIPLE_CANDIDATES",
+      "latency_ms": 25070.8
+    }
+  ]
+}
