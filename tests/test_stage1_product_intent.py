@@ -125,3 +125,18 @@ def test_intent_extractor_does_not_misclassify_ingredients_as_out_of_schedule():
     )
     assert outcome_apple == "OUT_OF_SCHEDULE"
 
+
+def test_ui_renders_stage1_product_intent_fields():
+    from pathlib import Path
+
+    for ui_rel in ("static/index.html", "frontend/index.html"):
+        html = Path(ui_rel).read_text(encoding="utf-8")
+        for token in (
+            "data.product_intent",
+            "Finished Commercial Article",
+            "Ingredients / Additives",
+            "Components / Parts",
+            "Packaging / Presentation",
+        ):
+            assert token in html, f"Missing '{token}' in {ui_rel}"
+

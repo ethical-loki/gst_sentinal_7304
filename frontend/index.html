@@ -5165,13 +5165,17 @@
                 `;
             }
 
-            const headNoun = attrs.article_noun || (data.query_facts && data.query_facts.article_noun);
+            const pi = data.product_intent || {};
+            const headNoun = pi.finished_article || attrs.article_noun || (data.query_facts && data.query_facts.article_noun);
+            const piIngredients = Array.isArray(pi.ingredients_or_additives) ? pi.ingredients_or_additives : [];
+            const piComponents = Array.isArray(pi.components_or_parts) ? pi.components_or_parts : [];
+            const piPackaging = pi.packaging_or_presentation || '';
             const showMounted = attrs.mounted_state && attrs.mounted_state !== 'not_applicable' && attrs.mounted_state !== 'none';
             body.innerHTML = `
                 <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:12px;">
                     ${headNoun ? `
                     <div style="background:rgba(9,14,26,0.8); border:1px solid rgba(244,114,182,0.3); border-radius:8px; padding:10px 12px;">
-                        <span style="font-size:0.7rem; color:#f472b6; font-weight:700; text-transform:uppercase;">Head Noun / Article</span>
+                        <span style="font-size:0.7rem; color:#f472b6; font-weight:700; text-transform:uppercase;">Finished Commercial Article</span>
                         <div style="font-size:0.9rem; color:#f8fafc; font-weight:700; margin-top:2px;">
                             ${escapeHtml(headNoun)}
                         </div>
@@ -5181,6 +5185,27 @@
                         <span style="font-size:0.7rem; color:#818cf8; font-weight:700; text-transform:uppercase;">Constituent Material</span>
                         <div style="font-size:0.9rem; color:#f8fafc; font-weight:700; margin-top:2px;">
                             ${escapeHtml(attrs.material)}
+                        </div>
+                    </div>` : ''}
+                    ${piIngredients.length ? `
+                    <div style="background:rgba(9,14,26,0.8); border:1px solid rgba(251,191,36,0.25); border-radius:8px; padding:10px 12px;">
+                        <span style="font-size:0.7rem; color:#fbbf24; font-weight:700; text-transform:uppercase;">Ingredients / Additives</span>
+                        <div style="font-size:0.86rem; color:#f8fafc; font-weight:600; margin-top:2px;">
+                            ${escapeHtml(piIngredients.join(', '))}
+                        </div>
+                    </div>` : ''}
+                    ${piComponents.length ? `
+                    <div style="background:rgba(9,14,26,0.8); border:1px solid rgba(45,212,191,0.25); border-radius:8px; padding:10px 12px;">
+                        <span style="font-size:0.7rem; color:#2dd4bf; font-weight:700; text-transform:uppercase;">Components / Parts</span>
+                        <div style="font-size:0.86rem; color:#f8fafc; font-weight:600; margin-top:2px;">
+                            ${escapeHtml(piComponents.join(', '))}
+                        </div>
+                    </div>` : ''}
+                    ${piPackaging ? `
+                    <div style="background:rgba(9,14,26,0.8); border:1px solid rgba(148,163,184,0.3); border-radius:8px; padding:10px 12px;">
+                        <span style="font-size:0.7rem; color:#cbd5e1; font-weight:700; text-transform:uppercase;">Packaging / Presentation</span>
+                        <div style="font-size:0.86rem; color:#f8fafc; font-weight:600; margin-top:2px;">
+                            ${escapeHtml(piPackaging)}
                         </div>
                     </div>` : ''}
                     ${attrs.processing_state && attrs.processing_state !== 'not_applicable' && attrs.processing_state !== 'none' ? `
