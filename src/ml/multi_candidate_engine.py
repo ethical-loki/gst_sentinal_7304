@@ -288,10 +288,17 @@ class AdaptiveCandidateDiscoverer:
         if not same_cands and len(insuff_cands) < 3:
             qualifying.extend(rel_cands)
         else:
-            discarded_count += len(rel_cands)
+            # Preserve genuinely relevant RELATED_PRODUCT alternatives separately instead of discarding them
+            qualifying.extend(sorted(rel_cands, key=lambda c: c.confidence, reverse=True))
 
         qualifying = [c for c in qualifying if c.relation in min_qualifying_relation]
-        qualifying.sort(key=lambda c: c.confidence, reverse=True)
+        # Order: SAME_PRODUCT first, then INSUFFICIENT_INFORMATION, then RELATED_PRODUCT (each by confidence desc)
+        rel_priority = {
+            RelationLabel.SAME_PRODUCT: 0,
+            RelationLabel.INSUFFICIENT_INFORMATION: 1,
+            RelationLabel.RELATED_PRODUCT: 2,
+        }
+        qualifying.sort(key=lambda c: (rel_priority.get(c.relation, 3), -c.confidence))
 
         # Ensure `raw_records_by_id` can also be looked up by hsn_code
         by_hsn_raw: Dict[str, Dict[str, Any]] = {}
@@ -738,6 +745,12 @@ class MultiCandidateEngine:
                 "missing_numeric_constraints": bool(dist_analysis.get("missing_numeric_constraints")),
                 "distinguishing_phrases": dist_analysis.get("distinguishing_phrases", {}),
             },
+            "best_supported_candidate": all_formatted[0] if all_formatted else None,
+            "categorized_candidates": {
+                "same_product": [c for c in all_formatted if c["relevance_category"] == RelationLabel.SAME_PRODUCT.value],
+                "related_product": [c for c in all_formatted if c["relevance_category"] == RelationLabel.RELATED_PRODUCT.value],
+                "insufficient_information": [c for c in all_formatted if c["relevance_category"] == RelationLabel.INSUFFICIENT_INFORMATION.value],
+            },
             "candidates": paged_candidates,
             "all_candidates_count": len(all_formatted),
             "candidate_groups": groups,
@@ -845,6 +858,12 @@ class MultiCandidateEngine:
                 "discovery_complete": True,
                 "stopping_reason": "empty_query",
                 "expansion_rounds": 0,
+            },
+            "best_supported_candidate": None,
+            "categorized_candidates": {
+                "same_product": [],
+                "related_product": [],
+                "insufficient_information": [],
             },
             "candidates": [],
             "all_candidates_count": 0,

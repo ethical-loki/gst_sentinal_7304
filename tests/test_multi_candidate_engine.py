@@ -266,6 +266,9 @@ def test_fastapi_adaptive_endpoints_and_ui_wiring(tmp_path, monkeypatch):
             "submitAdaptiveClarification",
             "candidate_groups",
             "discovery_complete",
+            "categorized_candidates",
+            "best_supported_candidate",
+            "RELATED_PRODUCT Alternatives",
         ):
             assert token in html, f"Missing {token} in {ui_rel}"
 
@@ -341,5 +344,101 @@ def test_parent_vs_leaf_never_predicts_parent_as_exact_hsn(tmp_path):
     assert res["clarification"]["required"] is True
     assert res["hierarchy_context"]["parent_candidates"] == 2
     assert res["hierarchy_context"]["leaf_candidates"] == 0
+
+
+def test_related_product_preserved_and_categorized_even_in_exact_hsn(tmp_path):
+    from src.training.feedback_collector import FeedbackCollector
+
+    class _MixedHybrid:
+        total_records = 3
+
+        def _expand_abbreviated_query(self, q: str):
+            return q.lower(), q.lower().split()
+
+        def retrieve_with_lineage(self, raw_query: str, branch_k: int = 30):
+            return [
+                {
+                    "hsn_code": "85086000",
+                    "chapter_code": "85",
+                    "statutory_description": "Other vacuum cleaners",
+                    "source_record_id": "m1",
+                    "retrieval_source": "bm25",
+                    "bm25_score": 1.0,
+                    "vector_score": 0.9,
+                    "rrf_score": 0.04,
+                },
+                {
+                    "hsn_code": "85087000",
+                    "chapter_code": "85",
+                    "statutory_description": "Parts of vacuum cleaners",
+                    "source_record_id": "m2",
+                    "retrieval_source": "bm25",
+                    "bm25_score": 0.7,
+                    "vector_score": 0.7,
+                    "rrf_score": 0.02,
+                },
+                {
+                    "hsn_code": "39269099",
+                    "chapter_code": "39",
+                    "statutory_description": "Other articles of plastics",
+                    "source_record_id": "m3",
+                    "retrieval_source": "dense",
+                    "bm25_score": 0.1,
+                    "vector_score": 0.2,
+                    "rrf_score": 0.005,
+                },
+            ]
+
+    class _MixedClassifier:
+        calibration_bundle = None
+        reranker = MagicMock()
+
+        def classify(self, product_intent: str, tariff_rows):
+            out = []
+            for r in tariff_rows:
+                h = r["hsn_code"]
+                if h == "85086000":
+                    rel, conf, logit = RelationLabel.SAME_PRODUCT, 0.92, 2.8
+                elif h == "85087000":
+                    rel, conf, logit = RelationLabel.RELATED_PRODUCT, 0.65, 0.5
+                else:
+                    rel, conf, logit = RelationLabel.UNRELATED, 0.10, -2.5
+                cand = RerankedTariffCandidate(
+                    hsn_code=h,
+                    chapter_code=r["chapter_code"],
+                    description=r["statutory_description"],
+                    relevance_score=conf,
+                    raw_logit=logit,
+                    tariff_level="LEAF_8DIGIT",
+                )
+                out.append(ClassifiedTariffCandidate(candidate=cand, relation=rel, confidence=conf, relevance_confidence=conf))
+            return out
+
+    stat = MagicMock()
+    stat.compare_active_vs_statutory.return_value = StatutoryComparisonResult(
+        query="cordless vacuum cleaner",
+        is_out_of_schedule=False,
+        best_active_score=0.92,
+        best_inactive_score=0.10,
+        reason="Active",
+    )
+    eng = MultiCandidateEngine(
+        hybrid_engine=_MixedHybrid(),
+        relevance_classifier=_MixedClassifier(),
+        statutory_index=stat,
+        feedback_collector=FeedbackCollector(feedback_dir=tmp_path),
+    )
+    res = eng.classify_adaptive("cordless vacuum cleaner", page=1, page_size=20)
+    assert res["prediction_mode"] == "EXACT_HSN"
+    assert res["final_hsn"] == "85086000"
+    assert res["best_supported_candidate"]["hsn_code"] == "85086000"
+    # RELATED_PRODUCT must NOT be silently discarded even when EXACT_HSN is predicted
+    assert [c["hsn_code"] for c in res["categorized_candidates"]["same_product"]] == ["85086000"]
+    assert [c["hsn_code"] for c in res["categorized_candidates"]["related_product"]] == ["85087000"]
+    # UNRELATED must be excluded from recommendation list
+    all_hsns = [c["hsn_code"] for c in res["candidates"]]
+    assert "85086000" in all_hsns
+    assert "85087000" in all_hsns
+    assert "39269099" not in all_hsns
 
 

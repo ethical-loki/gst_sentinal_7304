@@ -5313,9 +5313,44 @@
             const clar = res.clarification || {};
             const groups = Array.isArray(res.candidate_groups) ? res.candidate_groups : [];
             const cands = Array.isArray(res.candidates) ? res.candidates : [];
+            const cat = res.categorized_candidates || {};
+            const bestCand = res.best_supported_candidate || cands[0] || null;
+            const sameAll = Array.isArray(cat.same_product) ? cat.same_product : cands.filter(c => c.relevance_category === 'SAME_PRODUCT');
+            const otherSame = sameAll.filter(c => !bestCand || c.hsn_code !== bestCand.hsn_code);
+            const relatedAll = Array.isArray(cat.related_product) ? cat.related_product : cands.filter(c => c.relevance_category === 'RELATED_PRODUCT');
             const completeBadge = disc.discovery_complete
                 ? '<span style="color:#34d399; font-weight:700;">✓ Discovery Complete</span>'
                 : '<span style="color:#fbbf24; font-weight:700;">⚠ Discovery Incomplete (Budget Reached)</span>';
+
+            const renderCandCard = (c, badgeColor = '#93c5fd') => `
+                <div style="margin-top:6px; padding:6px 8px; background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.2); border-radius:6px; font-size:0.72rem;">
+                    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px; color:#e2e8f0; font-family:'JetBrains Mono', monospace;">
+                        <span><strong>#${c.rank} HSN ${escapeHtml(c.hsn_code)}</strong> (Ch ${escapeHtml(c.chapter_code)}${c.tariff_level ? ` · ${escapeHtml(c.tariff_level)}` : ''})</span>
+                        <span style="color:${badgeColor};">${escapeHtml(c.relevance_category)} · Rel ${(Number(c.relevance_confidence || 0) * 100).toFixed(1)}%</span>
+                    </div>
+                    <div style="color:#cbd5e1; margin-top:2px;">${escapeHtml(c.hsn_description || '')}</div>
+                    ${Array.isArray(c.differences) && c.differences.length ? `<div style="color:#fde68a; font-size:0.68rem; margin-top:2px;"><strong>Differences:</strong> ${escapeHtml(c.differences.slice(0, 4).join(' | '))}</div>` : ''}
+                    <div style="color:#94a3b8; font-size:0.68rem; margin-top:2px;">${escapeHtml((c.match_reasons || []).join(' | '))}</div>
+                </div>
+            `;
+
+            const bestHtml = bestCand ? `
+                <div style="margin-top:8px;">
+                    <div style="font-size:0.72rem; font-weight:700; color:#86efac;">Best-Supported Candidate</div>
+                    ${renderCandCard(bestCand, '#86efac')}
+                </div>` : '';
+
+            const otherSameHtml = otherSame.length ? `
+                <div style="margin-top:8px;">
+                    <div style="font-size:0.72rem; font-weight:700; color:#93c5fd;">Other SAME_PRODUCT Candidates (${otherSame.length})</div>
+                    ${otherSame.slice(0, 10).map(c => renderCandCard(c, '#93c5fd')).join('')}
+                </div>` : '';
+
+            const relatedHtml = relatedAll.length ? `
+                <div style="margin-top:8px;">
+                    <div style="font-size:0.72rem; font-weight:700; color:#c4b5fd;">RELATED_PRODUCT Alternatives (${relatedAll.length})</div>
+                    ${relatedAll.slice(0, 10).map(c => renderCandCard(c, '#c4b5fd')).join('')}
+                </div>` : '';
 
             const groupsHtml = groups.length ? `
                 <div style="margin-top:8px;">
@@ -5358,16 +5393,7 @@
                     </div>
                 </div>` : '';
 
-            const candsHtml = cands.map(c => `
-                <div style="margin-top:6px; padding:6px 8px; background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.2); border-radius:6px; font-size:0.72rem;">
-                    <div style="display:flex; justify-content:space-between; color:#e2e8f0; font-family:'JetBrains Mono', monospace;">
-                        <span><strong>#${c.rank} HSN ${escapeHtml(c.hsn_code)}</strong> (Ch ${escapeHtml(c.chapter_code)})</span>
-                        <span>${escapeHtml(c.relevance_category)} · Rel ${(Number(c.relevance_confidence || 0) * 100).toFixed(1)}%</span>
-                    </div>
-                    <div style="color:#cbd5e1; margin-top:2px;">${escapeHtml(c.hsn_description || '')}</div>
-                    <div style="color:#94a3b8; font-size:0.68rem; margin-top:2px;">${escapeHtml((c.match_reasons || []).join(' | '))}</div>
-                </div>
-            `).join('');
+            const candsHtml = cands.map(c => renderCandCard(c)).join('');
 
             const pagHtml = `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; font-size:0.72rem; color:#cbd5e1;">
@@ -5386,8 +5412,11 @@
                     <span>${completeBadge} (${disc.qualifying_candidates || 0} qualifying / ${disc.total_retrieved || 0} examined)</span>
                 </div>
                 ${clarHtml}
+                ${bestHtml}
+                ${otherSameHtml}
+                ${relatedHtml}
                 ${groupsHtml}
-                <div style="margin-top:8px; font-size:0.72rem; font-weight:700; color:#93c5fd;">Discovered Candidates (Page ${pag.page || 1})</div>
+                <div style="margin-top:8px; font-size:0.72rem; font-weight:700; color:#93c5fd;">All Qualifying Candidates (Page ${pag.page || 1})</div>
                 ${candsHtml}
                 ${pagHtml}
             `;
