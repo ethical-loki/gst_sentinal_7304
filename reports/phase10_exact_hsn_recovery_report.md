@@ -119,3 +119,4 @@ Result: **30 passed, 3 warnings in 269.67s (0:04:29)**.
 
 1. **CPU Inference Latency**: Raising `max_length` from `144` to `384` increased CPU Cross-Encoder sequence cost (`28.70s` mean, `50.34s` P95 on the 51-case suite). `onnxruntime` / `optimum` are not installed in this environment; installing and exporting to quantized ONNX or running on GPU is recommended for production latency targets.
 2. **Strict `EXACT_HSN` Emission Gate**: While Top-1 leaf ranking recovered to **69.6%** (23 detailed cases) and **66.7%** (12 zero-leakage cases), `MultiCandidateEngine` still defaults to `MULTIPLE_CANDIDATES` or `CHAPTER_ONLY_CLARIFY` whenever sibling tariff items remain viable in the candidate pool, keeping auto-emitted `EXACT_HSN` coverage at `0%` on ambiguous/unseen single-turn queries.
+

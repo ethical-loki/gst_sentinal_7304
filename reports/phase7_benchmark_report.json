@@ -2,48 +2,49 @@
   "total_cases": 51,
   "fair_comparison_51_cases": {
     "phase6_v2": {
-      "strict_passed": 35,
-      "strict_pass_rate": 0.6863,
-      "clarification_aware_passed": 35,
-      "clarification_aware_pass_rate": 0.6863,
+      "strict_passed": 40,
+      "strict_pass_rate": 0.7843,
+      "clarification_aware_passed": 40,
+      "clarification_aware_pass_rate": 0.7843,
       "prediction_modes": {
-        "CHAPTER_ONLY_CLARIFY": 14,
-        "INSUFFICIENT_INFORMATION": 8,
+        "CHAPTER_ONLY_CLARIFY": 16,
+        "EXACT_HSN": 1,
+        "INSUFFICIENT_INFORMATION": 7,
         "CLARIFY_AMBIGUOUS": 18,
+        "OUT_OF_SCHEDULE": 9
+      },
+      "latency_mean_ms": 5865.22,
+      "latency_p95_ms": 9703.86
+    },
+    "phase7_8_adaptive": {
+      "strict_passed": 46,
+      "strict_pass_rate": 0.902,
+      "clarification_aware_passed": 46,
+      "clarification_aware_pass_rate": 0.902,
+      "prediction_modes": {
+        "CHAPTER_ONLY_CLARIFY": 16,
+        "MULTIPLE_CANDIDATES": 21,
+        "INSUFFICIENT_INFORMATION": 3,
         "EXACT_HSN": 2,
         "OUT_OF_SCHEDULE": 9
       },
-      "latency_mean_ms": 3192.09,
-      "latency_p95_ms": 5058.17
-    },
-    "phase7_8_adaptive": {
-      "strict_passed": 44,
-      "strict_pass_rate": 0.8627,
-      "clarification_aware_passed": 44,
-      "clarification_aware_pass_rate": 0.8627,
-      "prediction_modes": {
-        "CHAPTER_ONLY_CLARIFY": 15,
-        "MULTIPLE_CANDIDATES": 21,
-        "INSUFFICIENT_INFORMATION": 6,
-        "OUT_OF_SCHEDULE": 9
-      },
-      "latency_mean_ms": 16553.35,
-      "latency_p95_ms": 34375.14
+      "latency_mean_ms": 28703.31,
+      "latency_p95_ms": 50336.79
     }
   },
   "metrics": {
-    "candidate_recall_at_pool_active": 0.8837,
+    "candidate_recall_at_pool_active": 0.907,
     "exhaustive_reference_recall_5q": "4/4",
-    "candidate_precision_mean": 0.8211,
-    "alternative_coverage_mean_candidates": 65.0,
-    "duplicate_rate_mean": 0.1694,
-    "discovery_completeness_rate": 0.8627,
-    "chapter_prediction_accuracy": "15/15",
-    "multiple_candidate_coverage": "21/21",
-    "clarification_necessity_accuracy": "36/36",
+    "candidate_precision_mean": 0.797,
+    "alternative_coverage_mean_candidates": 54.24,
+    "duplicate_rate_mean": 0.1813,
+    "discovery_completeness_rate": 0.902,
+    "chapter_prediction_accuracy": "18/18",
+    "multiple_candidate_coverage": "20/21",
+    "clarification_necessity_accuracy": "36/37",
     "out_of_schedule_accuracy": "8/8",
-    "latency_mean_ms": 16553.35,
-    "latency_p95_ms": 34375.14
+    "latency_mean_ms": 28703.31,
+    "latency_p95_ms": 50336.79
   },
   "exact_hsn_unseen_evaluation": {
     "total_unseen_cases": 35,
@@ -63,10 +64,10 @@
   "by_category": {
     "abbreviated": {
       "total": 7,
-      "strict_passed": 4,
-      "aware_passed": 4,
-      "strict_pass_rate": 0.5714,
-      "aware_pass_rate": 0.5714
+      "strict_passed": 5,
+      "aware_passed": 5,
+      "strict_pass_rate": 0.7143,
+      "aware_pass_rate": 0.7143
     },
     "complete_vs_component": {
       "total": 6,
@@ -98,10 +99,10 @@
     },
     "short": {
       "total": 8,
-      "strict_passed": 5,
-      "aware_passed": 5,
-      "strict_pass_rate": 0.625,
-      "aware_pass_rate": 0.625
+      "strict_passed": 6,
+      "aware_passed": 6,
+      "strict_pass_rate": 0.75,
+      "aware_pass_rate": 0.75
     },
     "similar_different_construction": {
       "total": 8,
