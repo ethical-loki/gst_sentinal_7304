@@ -168,3 +168,56 @@ def test_identify_separating_attributes_complete_vs_parts():
     assert "product_completeness" in attrs
     assert "product_completeness" in evidence
 
+
+def test_numeric_constraints_and_sibling_distinction():
+    from src.ml.ambiguity_resolver import (
+        analyze_sibling_distinctions,
+        evaluate_numeric_match,
+        extract_numeric_constraints,
+        extract_query_numeric_values,
+    )
+    from src.ml.relevance_classifier import ClassifiedTariffCandidate
+
+    # Compound interval + unit normalization (1000 w == 1 kw)
+    cs_le = extract_numeric_constraints("OF AN OUTPUT NOT EXCEEDING 75 KVA")
+    cs_mid = extract_numeric_constraints("OF AN OUTPUT EXCEEDING 75 KVA BUT NOT EXCEEDING 375 KVA")
+    assert len(cs_le) == 1 and cs_le[0].op == "<="
+    assert len(cs_mid) == 2 and cs_mid[0].op == ">" and cs_mid[1].op == "<="
+
+    q_50kva = extract_query_numeric_values("AC alternator 50 kva")
+    assert evaluate_numeric_match(cs_le, q_50kva) == "MATCH"
+    assert evaluate_numeric_match(cs_mid, q_50kva) == "CONFLICT"
+
+    # Missing numerical info must NEVER be treated as a match
+    q_missing = extract_query_numeric_values("AC alternator copper winding")
+    assert evaluate_numeric_match(cs_le, q_missing) == "MISSING"
+
+    # Sibling distinction picks matching 85016100 over 85016200 when 50 KVA given,
+    # and flags missing_numeric_constraints=True when rating is omitted.
+    c1 = ClassifiedTariffCandidate(
+        candidate=RerankedTariffCandidate(
+            hsn_code="85016200", chapter_code="85",
+            description="AC GENERATORS EXCEEDING 75 KVA BUT NOT EXCEEDING 375 KVA",
+            tariff_item_desc="EXCEEDING 75 KVA BUT NOT EXCEEDING 375 KVA",
+            relevance_score=0.95, raw_logit=4.0,
+        ),
+        relation=RelationLabel.SAME_PRODUCT, confidence=0.95,
+    )
+    c2 = ClassifiedTariffCandidate(
+        candidate=RerankedTariffCandidate(
+            hsn_code="85016100", chapter_code="85",
+            description="AC GENERATORS NOT EXCEEDING 75 KVA",
+            tariff_item_desc="NOT EXCEEDING 75 KVA",
+            relevance_score=0.93, raw_logit=3.6,
+        ),
+        relation=RelationLabel.SAME_PRODUCT, confidence=0.93,
+    )
+    res_50 = analyze_sibling_distinctions([c1, c2], "AC generator 50 kva")
+    assert res_50["ranked_indices"][0] == 1  # 85016100 promoted to #1
+    assert res_50["winner_has_clear_evidence"] is True
+    assert res_50["missing_numeric_constraints"] is False
+
+    res_miss = analyze_sibling_distinctions([c1, c2], "AC generator")
+    assert res_miss["winner_has_clear_evidence"] is False
+    assert res_miss["missing_numeric_constraints"] is True
+

@@ -33,9 +33,28 @@ class RerankedTariffCandidate:
     raw_logit: float
     chapter_title: str = ""
     heading_4digit_desc: str = ""
+    subheading_6digit_desc: str = ""
+    tariff_item_desc: str = ""
     article_keywords: str = ""
     material_keywords: str = ""
+    tariff_level: str = "LEAF_8DIGIT"
     original_index: int = -1
+
+
+def classify_tariff_level(hsn_code: str, code_length: Optional[Any] = None) -> str:
+    """Distinguishes 8-digit leaf tariff items from 6-digit subheadings and 4-digit headings."""
+    code = str(hsn_code or "").strip()
+    n = len(code)
+    if n == 0 and code_length is not None:
+        try:
+            n = int(code_length)
+        except (TypeError, ValueError):
+            n = 0
+    if n >= 8:
+        return "LEAF_8DIGIT"
+    if n >= 6:
+        return "SUBHEADING_6DIGIT"
+    return "HEADING_4DIGIT"
 
 
 def _sigmoid(x: float) -> float:
@@ -61,17 +80,41 @@ def _get_field(row: Any, *keys: str, default: str = "") -> str:
 def format_tariff_context(row: Any) -> str:
     """
     Formats a statutory tariff row (dict or SearchCandidate) into a unified
-    structured passage for Cross-Encoder evaluation.
+    structured passage for Cross-Encoder evaluation, prioritizing the most
+    distinguishing leaf-level statutory details near the beginning so sequence
+    truncation never hides 8-digit tariff differences.
     """
-    chapter_title = _get_field(row, "chapter_title")
-    heading_desc = _get_field(row, "heading_4digit_desc")
+    hsn_code = _get_field(row, "hsn_code", "HSN Code", "code_str")
+    tariff_desc = _get_field(row, "tariff_item_desc")
     hsn_desc = _get_field(
         row, "statutory_description", "HSN Description", "tariff_item_desc", "description"
     )
+    subheading_desc = _get_field(row, "subheading_6digit_desc")
     article_kw = _get_field(row, "article_keywords", "Article Keywords")
     material_kw = _get_field(row, "material_keywords", "Material Keywords")
+    heading_desc = _get_field(row, "heading_4digit_desc")
+    chapter_title = _get_field(row, "chapter_title")
 
-    parts = [p for p in [chapter_title, heading_desc, hsn_desc, article_kw, material_kw] if p]
+    ordered_raw = [
+        f"HSN {hsn_code}" if hsn_code else "",
+        tariff_desc,
+        hsn_desc,
+        subheading_desc,
+        article_kw,
+        material_kw,
+        heading_desc,
+        chapter_title,
+    ]
+    parts: List[str] = []
+    seen_lower = set()
+    for p in ordered_raw:
+        if not p:
+            continue
+        p_low = p.lower()
+        if p_low in seen_lower:
+            continue
+        seen_lower.add(p_low)
+        parts.append(p)
     return " | ".join(parts)
 
 
@@ -121,12 +164,30 @@ class ProductTariffReranker:
         """Scores a list of (query, tariff_context) pairs, returning raw logits."""
         if not pairs:
             return []
-        scores = self.model.predict(
-            list(pairs),
+        n = len(pairs)
+        if n <= self.batch_size:
+            scores = self.model.predict(
+                list(pairs),
+                batch_size=self.batch_size,
+                show_progress_bar=False,
+            )
+            return [float(s) for s in scores]
+
+        # Length-bucket pairs so short sequences aren't padded to the longest batch item on CPU
+        indexed = sorted(
+            enumerate(pairs),
+            key=lambda item: len(str(item[1][0])) + len(str(item[1][1])),
+        )
+        sorted_pairs = [item[1] for item in indexed]
+        sorted_scores = self.model.predict(
+            sorted_pairs,
             batch_size=self.batch_size,
             show_progress_bar=False,
         )
-        return [float(s) for s in scores]
+        out = [0.0] * n
+        for (orig_idx, _), sc in zip(indexed, sorted_scores):
+            out[orig_idx] = float(sc)
+        return out
 
     def rerank(
         self,
@@ -166,9 +227,11 @@ class ProductTariffReranker:
         results: List[RerankedTariffCandidate] = []
         for idx, (row, raw_score) in enumerate(zip(tariff_rows, raw_scores)):
             rel_score = _sigmoid(raw_score) if normalize_sigmoid else raw_score
+            hsn_code = _get_field(row, "hsn_code", "HSN Code", "code_str")
+            code_len = row.get("code_length") if isinstance(row, dict) else getattr(row, "code_length", None)
             results.append(
                 RerankedTariffCandidate(
-                    hsn_code=_get_field(row, "hsn_code", "HSN Code", "code_str"),
+                    hsn_code=hsn_code,
                     chapter_code=_get_field(row, "chapter_code", "chapter_str", "chapter"),
                     description=_get_field(
                         row,
@@ -181,8 +244,11 @@ class ProductTariffReranker:
                     raw_logit=float(raw_score),
                     chapter_title=_get_field(row, "chapter_title"),
                     heading_4digit_desc=_get_field(row, "heading_4digit_desc"),
+                    subheading_6digit_desc=_get_field(row, "subheading_6digit_desc"),
+                    tariff_item_desc=_get_field(row, "tariff_item_desc"),
                     article_keywords=_get_field(row, "article_keywords", "Article Keywords"),
                     material_keywords=_get_field(row, "material_keywords", "Material Keywords"),
+                    tariff_level=classify_tariff_level(hsn_code, code_len),
                     original_index=idx,
                 )
             )

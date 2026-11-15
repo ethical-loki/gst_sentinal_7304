@@ -15,6 +15,7 @@ os.environ.setdefault("OMP_NUM_THREADS", "4")
 os.environ.setdefault("NUMEXPR_NUM_THREADS", "4")
 os.environ.setdefault("VECLIB_MAXIMUM_THREADS", "1")
 
+import asyncio
 import json
 import logging
 import os
@@ -1033,7 +1034,7 @@ async def classify_hsn_v2(payload: dict):
     v2_pipe = get_hsn_v2_pipeline()
     if v2_pipe is None:
         raise HTTPException(status_code=503, detail="HSNIntelligenceV2 pipeline unavailable.")
-    res = v2_pipe.classify(product)
+    res = await asyncio.to_thread(v2_pipe.classify, product)
     return {
         "status": res.status,
         "prediction_mode": res.prediction_mode,
@@ -1100,7 +1101,8 @@ async def classify_hsn_v2_adaptive(payload: dict):
     if not product:
         raise HTTPException(status_code=400, detail="Product description is required.")
     engine = get_multi_candidate_engine()
-    return engine.classify_adaptive(
+    return await asyncio.to_thread(
+        engine.classify_adaptive,
         description=product,
         confirmed_attributes=payload.get("confirmed_attributes"),
         page=int(payload.get("page") or 1),
@@ -1121,7 +1123,8 @@ async def clarify_hsn_v2_adaptive(payload: dict):
     if not orig:
         raise HTTPException(status_code=400, detail="original_description is required.")
     engine = get_multi_candidate_engine()
-    return engine.clarify_and_refine(
+    return await asyncio.to_thread(
+        engine.clarify_and_refine,
         original_description=orig,
         previous_confirmed=payload.get("previous_confirmed") or payload.get("confirmed_attributes"),
         new_answers=payload.get("new_answers") or {},

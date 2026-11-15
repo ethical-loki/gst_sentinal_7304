@@ -57,6 +57,301 @@ def _extract_material_tokens(raw: str) -> Set[str]:
     return {t.strip().lower() for t in re.split(r"[,;|]+", raw) if len(t.strip()) >= 2}
 
 
+_UNIT_NORMALIZATION: Dict[str, Tuple[str, float]] = {
+    "w": ("power_w", 1.0),
+    "watt": ("power_w", 1.0),
+    "watts": ("power_w", 1.0),
+    "kw": ("power_w", 1000.0),
+    "mw": ("power_w", 1_000_000.0),
+    "va": ("apparent_va", 1.0),
+    "kva": ("apparent_va", 1000.0),
+    "mva": ("apparent_va", 1_000_000.0),
+    "mm": ("length_mm", 1.0),
+    "cm": ("length_mm", 10.0),
+    "m": ("length_mm", 1000.0),
+    "cm2": ("area_cm2", 1.0),
+    "sq.cm": ("area_cm2", 1.0),
+    "sqcm": ("area_cm2", 1.0),
+    "g": ("mass_g", 1.0),
+    "gm": ("mass_g", 1.0),
+    "gram": ("mass_g", 1.0),
+    "grams": ("mass_g", 1.0),
+    "kg": ("mass_g", 1000.0),
+    "t": ("mass_g", 1_000_000.0),
+    "tonne": ("mass_g", 1_000_000.0),
+    "cc": ("vol_cc", 1.0),
+    "cm3": ("vol_cc", 1.0),
+    "ml": ("vol_cc", 1.0),
+    "l": ("vol_cc", 1000.0),
+    "litre": ("vol_cc", 1000.0),
+    "litres": ("vol_cc", 1000.0),
+    "%": ("percent", 1.0),
+    "percent": ("percent", 1.0),
+    "v": ("volt", 1.0),
+    "kv": ("volt", 1000.0),
+    "hz": ("freq_hz", 1.0),
+    "khz": ("freq_hz", 1000.0),
+    "rpm": ("rpm", 1.0),
+}
+
+_UNIT_REGEX = "|".join(sorted((re.escape(u) for u in _UNIT_NORMALIZATION), key=len, reverse=True))
+
+
+@dataclass(frozen=True)
+class NumericConstraint:
+    op: str  # "<" | "<=" | ">" | ">="
+    value: float
+    unit_family: str
+    raw_text: str
+
+
+def _parse_num(num_str: str) -> float:
+    return float(num_str.replace(",", "").strip())
+
+
+def extract_numeric_constraints(text: str) -> List[NumericConstraint]:
+    """
+    Extracts domain-general numerical range/threshold constraints preserving
+    comparison operators (<, <=, >, >=) and normalized units.
+    """
+    if not text:
+        return []
+    t = text.lower()
+    constraints: List[NumericConstraint] = []
+    consumed_spans: List[Tuple[int, int]] = []
+
+    def _overlaps(s: int, e: int) -> bool:
+        return any(not (e <= cs or s >= ce) for cs, ce in consumed_spans)
+
+    # 1. Compound interval: "exceeding X [unit] but not exceeding Y unit"
+    pat_between = re.compile(
+        rf"(?:exceeding|more than|above)\s+(\d[\d,]*(?:\.\d+)?)\s*({_UNIT_REGEX})?\s+"
+        rf"(?:but\s+)?(?:not\s+exceeding|up\s+to)\s+(\d[\d,]*(?:\.\d+)?)\s*({_UNIT_REGEX})\b"
+    )
+    for m in pat_between.finditer(t):
+        u2_raw = m.group(4)
+        u1_raw = m.group(2) or u2_raw
+        fam1, mult1 = _UNIT_NORMALIZATION[u1_raw]
+        fam2, mult2 = _UNIT_NORMALIZATION[u2_raw]
+        constraints.append(NumericConstraint(">", _parse_num(m.group(1)) * mult1, fam1, m.group(0)))
+        constraints.append(NumericConstraint("<=", _parse_num(m.group(3)) * mult2, fam2, m.group(0)))
+        consumed_spans.append((m.start(), m.end()))
+
+    # 2. Single-bound phrases
+    single_patterns = [
+        ("<=", rf"(?:not\s+exceeding|up\s+to|at\s+most|<=)\s*(\d[\d,]*(?:\.\d+)?)\s*({_UNIT_REGEX})\b"),
+        (">=", rf"(?:not\s+less\s+than|at\s+least|>=)\s*(\d[\d,]*(?:\.\d+)?)\s*({_UNIT_REGEX})\b"),
+        (">=", rf"(\d[\d,]*(?:\.\d+)?)\s*({_UNIT_REGEX})\s+or\s+more\b"),
+        ("<=", rf"(\d[\d,]*(?:\.\d+)?)\s*({_UNIT_REGEX})\s+or\s+less\b"),
+        (">", rf"(?:exceeding|more\s+than|above|greater\s+than|>)\s*(\d[\d,]*(?:\.\d+)?)\s*({_UNIT_REGEX})\b"),
+        ("<", rf"(?:less\s+than|below|under|<)\s*(\d[\d,]*(?:\.\d+)?)\s*({_UNIT_REGEX})\b"),
+    ]
+    for op, raw_pat in single_patterns:
+        for m in re.finditer(raw_pat, t):
+            if _overlaps(m.start(), m.end()):
+                continue
+            fam, mult = _UNIT_NORMALIZATION[m.group(2)]
+            constraints.append(NumericConstraint(op, _parse_num(m.group(1)) * mult, fam, m.group(0)))
+            consumed_spans.append((m.start(), m.end()))
+
+    return constraints
+
+
+def extract_query_numeric_values(query: str) -> List[Tuple[float, str, str]]:
+    """Extracts explicit (canonical_value, unit_family, raw_text) from the user query."""
+    if not query:
+        return []
+    t = query.lower()
+    out: List[Tuple[float, str, str]] = []
+    pat = re.compile(rf"(\d[\d,]*(?:\.\d+)?)\s*({_UNIT_REGEX})\b")
+    for m in pat.finditer(t):
+        fam, mult = _UNIT_NORMALIZATION[m.group(2)]
+        out.append((_parse_num(m.group(1)) * mult, fam, m.group(0)))
+    return out
+
+
+def _check_op(val: float, op: str, bound: float) -> bool:
+    if op == "<":
+        return val < bound
+    if op == "<=":
+        return val <= bound
+    if op == ">":
+        return val > bound
+    if op == ">=":
+        return val >= bound
+    return False
+
+
+def evaluate_numeric_match(
+    constraints: Sequence[NumericConstraint],
+    query_values: Sequence[Tuple[float, str, str]],
+) -> str:
+    """
+    Compares candidate numerical constraints against explicit query values.
+    Never treats missing numerical information as a confirmed match.
+    Returns: 'NO_CONSTRAINT' | 'MISSING' | 'MATCH' | 'CONFLICT'
+    """
+    if not constraints:
+        return "NO_CONSTRAINT"
+    by_family: Dict[str, List[NumericConstraint]] = {}
+    for c in constraints:
+        by_family.setdefault(c.unit_family, []).append(c)
+
+    q_by_family: Dict[str, List[float]] = {}
+    for val, fam, _ in query_values:
+        q_by_family.setdefault(fam, []).append(val)
+
+    saw_match = False
+    for fam, fam_constraints in by_family.items():
+        q_vals = q_by_family.get(fam, [])
+        if not q_vals:
+            continue
+        # At least one explicit query value in this unit family exists
+        if any(all(_check_op(qv, c.op, c.value) for c in fam_constraints) for qv in q_vals):
+            saw_match = True
+        else:
+            return "CONFLICT"
+
+    return "MATCH" if saw_match else "MISSING"
+
+
+_STAT_STOPWORDS = {
+    "other", "others", "and", "or", "of", "the", "for", "in", "with", "without",
+    "than", "not", "thereof", "similar", "articles", "parts", "accessories",
+    "whether", "exceeding", "included", "elsewhere", "specified", "nes",
+}
+
+
+def _stat_tokens(text: str) -> Set[str]:
+    return {
+        tok for tok in re.findall(r"[a-z0-9]+", (text or "").lower())
+        if len(tok) >= 3 and tok not in _STAT_STOPWORDS and not tok.isdigit()
+    }
+
+
+def analyze_sibling_distinctions(
+    competing: Sequence[ClassifiedTariffCandidate],
+    query: str,
+) -> Dict[str, Any]:
+    """
+    Dynamically compares sibling tariff candidates using their statutory descriptions,
+    subheading/tariff item fields, keywords, and numerical constraints against
+    available query evidence (zero hardcoded product/chapter rules).
+    """
+    if not competing:
+        return {
+            "per_candidate": [],
+            "winner_idx": None,
+            "winner_has_clear_evidence": False,
+            "evidence_margin": 0.0,
+            "missing_numeric_constraints": False,
+            "distinguishing_phrases": {},
+        }
+
+    q_low = (query or "").lower()
+    q_tokens = _stat_tokens(q_low)
+    q_nums = extract_query_numeric_values(q_low)
+
+    # Identify common prefix tokens across competing candidates to focus on diffs
+    cand_token_sets: List[Set[str]] = []
+    cand_leaf_texts: List[str] = []
+    for c in competing:
+        leaf_txt = " ".join(
+            p for p in (
+                getattr(c.candidate, "tariff_item_desc", ""),
+                getattr(c.candidate, "subheading_6digit_desc", ""),
+                c.candidate.description,
+                c.candidate.article_keywords,
+                c.candidate.material_keywords,
+            ) if p
+        )
+        cand_leaf_texts.append(leaf_txt)
+        cand_token_sets.append(_stat_tokens(leaf_txt))
+
+    common_tokens = set.intersection(*cand_token_sets) if len(cand_token_sets) >= 2 else set()
+
+    per_cand: List[Dict[str, Any]] = []
+    any_specific_support = False
+    for idx, c in enumerate(competing):
+        t8 = str(getattr(c.candidate, "tariff_item_desc", "") or "").strip()
+        s6 = str(getattr(c.candidate, "subheading_6digit_desc", "") or "").strip()
+        is_residual = t8.lower() in ("other", "others")
+        # Numerical constraints from leaf/subheading description
+        constraints = extract_numeric_constraints(f"{t8} {s6} {c.candidate.description}")
+        num_status = evaluate_numeric_match(constraints, q_nums)
+
+        diff_tokens = cand_token_sets[idx] - common_tokens
+        # Check statutory phrase overlap against query
+        matched_diff = sorted(diff_tokens & q_tokens)
+        lex_ratio = len(matched_diff) / max(len(diff_tokens), 1) if diff_tokens else 0.0
+
+        # Direct tariff_item_desc phrase boost (e.g. "POLYCARBONATES", "PISTON RINGS")
+        t8_tokens = _stat_tokens(t8)
+        t8_hit_ratio = len(t8_tokens & q_tokens) / max(len(t8_tokens), 1) if (t8_tokens and not is_residual) else 0.0
+
+        if not is_residual and (num_status == "MATCH" or lex_ratio >= 0.25 or t8_hit_ratio >= 0.5):
+            any_specific_support = True
+
+        per_cand.append({
+            "index": idx,
+            "hsn_code": c.candidate.hsn_code,
+            "is_residual_other": is_residual,
+            "numeric_status": num_status,
+            "has_numeric_constraints": bool(constraints),
+            "matched_diff_tokens": matched_diff,
+            "lex_ratio": round(lex_ratio, 4),
+            "t8_hit_ratio": round(t8_hit_ratio, 4),
+            "diff_phrase": t8 or s6 or c.candidate.description[:80],
+        })
+
+    # Compute combined evidence score per candidate
+    for item, c in zip(per_cand, competing):
+        score = float(c.confidence) * 0.5
+        if item["numeric_status"] == "MATCH":
+            score += 1.0
+        elif item["numeric_status"] == "CONFLICT":
+            score -= 2.0
+        score += item["lex_ratio"] * 0.6 + item["t8_hit_ratio"] * 0.6
+        if item["is_residual_other"] and any_specific_support:
+            score -= 0.35
+        item["evidence_score"] = round(score, 4)
+
+    ranked = sorted(per_cand, key=lambda x: x["evidence_score"], reverse=True)
+    best = ranked[0]
+    second_score = ranked[1]["evidence_score"] if len(ranked) >= 2 else 0.0
+    margin = round(best["evidence_score"] - second_score, 4)
+
+    # Check if top competing candidates differ by missing numerical constraints
+    missing_num = any(
+        x["numeric_status"] == "MISSING" and x["has_numeric_constraints"]
+        for x in ranked[:4]
+    ) and best["numeric_status"] != "MATCH"
+
+    # Winner has clear evidence only if not contradicted, not missing required numeric spec,
+    # and either numeric MATCH or clear lexical + evidence margin
+    clear_ev = (
+        best["numeric_status"] != "CONFLICT"
+        and not missing_num
+        and (
+            best["numeric_status"] == "MATCH"
+            or (best["t8_hit_ratio"] >= 0.5 and margin >= 0.15)
+            or (best["lex_ratio"] >= 0.35 and margin >= 0.20)
+        )
+    )
+
+    return {
+        "per_candidate": per_cand,
+        "ranked_indices": [x["index"] for x in ranked],
+        "winner_idx": best["index"],
+        "winner_has_clear_evidence": clear_ev,
+        "evidence_margin": margin,
+        "missing_numeric_constraints": missing_num,
+        "distinguishing_phrases": {
+            x["hsn_code"]: x["diff_phrase"] for x in ranked[:4]
+        },
+    }
+
+
 def _candidate_text(cand: Any) -> str:
     return " ".join(
         [
@@ -122,6 +417,28 @@ def identify_separating_attributes(
         if diff_cues:
             separating.append(attr_name)
             evidence[attr_name] = diff_cues[:6]
+
+    # 3. Dynamic numerical rating/capacity/dimension distinction
+    if len(competing) >= 2:
+        q_nums = extract_query_numeric_values(query_lower)
+        num_phrases: List[str] = []
+        has_missing_num = False
+        for c in competing:
+            cs = extract_numeric_constraints(
+                f"{getattr(c.candidate, 'tariff_item_desc', '')} "
+                f"{getattr(c.candidate, 'subheading_6digit_desc', '')} "
+                f"{c.candidate.description}"
+            )
+            if cs:
+                st = evaluate_numeric_match(cs, q_nums)
+                if st == "MISSING":
+                    has_missing_num = True
+                for nc in cs:
+                    if nc.raw_text not in num_phrases:
+                        num_phrases.append(nc.raw_text)
+        if has_missing_num and len(num_phrases) >= 1:
+            separating.append("numeric_rating")
+            evidence["numeric_rating"] = num_phrases[:6]
 
     # Fallback: if headings/chapters still differ and no specific cue matched,
     # check whether chapters differ (typically material or function)

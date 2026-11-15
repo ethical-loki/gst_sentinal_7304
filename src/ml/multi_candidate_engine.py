@@ -27,9 +27,11 @@ from src.ml.ambiguity_resolver import (
     ATTRIBUTE_CUE_VOCAB,
     ModelDrivenAmbiguityResolver,
     _extract_material_tokens,
+    analyze_sibling_distinctions,
     identify_separating_attributes,
 )
 from src.ml.confidence_calibrator import extract_query_confidence_features
+from src.ml.product_tariff_reranker import classify_tariff_level, format_tariff_context
 from src.ml.relevance_classifier import ClassifiedTariffCandidate, RelationLabel, RelevanceClassifier
 from src.search.hybrid_retrieval import HybridHSNEngine
 from src.search.statutory_master_index import StatutoryMasterIndex
@@ -40,6 +42,13 @@ logger = logging.getLogger(__name__)
 
 def _norm_desc(text: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s]", " ", (text or "").lower())).strip()
+
+
+def _is_leaf_8digit(c: ClassifiedTariffCandidate) -> bool:
+    level = getattr(c.candidate, "tariff_level", None)
+    if level:
+        return level == "LEAF_8DIGIT"
+    return len(str(getattr(c.candidate, "hsn_code", "") or "").strip()) >= 8
 
 
 def _paginate(items: Sequence[Any], page: int = 1, page_size: Optional[int] = 20) -> Tuple[List[Any], Dict[str, Any]]:
@@ -93,8 +102,8 @@ class AdaptiveCandidateDiscoverer:
         self,
         hybrid_engine: HybridHSNEngine,
         classifier: RelevanceClassifier,
-        initial_branch_k: int = 30,
-        expansion_factor: float = 2.5,
+        initial_branch_k: int = 45,
+        expansion_factor: float = 3.0,
         max_eval_budget: Optional[int] = 250,
     ):
         self.hybrid_engine = hybrid_engine
@@ -119,6 +128,7 @@ class AdaptiveCandidateDiscoverer:
 
         evaluated_map: Dict[str, ClassifiedTariffCandidate] = {}
         raw_by_id: Dict[str, Dict[str, Any]] = {}
+        ctx_score_cache: Dict[str, Tuple[float, float, Any, float]] = {}
         sources_seen: Set[str] = set()
         discarded_count = 0
         discard_reasons: List[str] = []
@@ -165,12 +175,47 @@ class AdaptiveCandidateDiscoverer:
                 break
 
             t1 = time.perf_counter()
-            newly_classified = self.classifier.classify(eval_query, new_rows)
+            to_score: List[Dict[str, Any]] = []
+            cached_results: List[Tuple[Dict[str, Any], ClassifiedTariffCandidate]] = []
+            for rec in new_rows:
+                ctx = format_tariff_context(rec)
+                if ctx in ctx_score_cache:
+                    r_score, r_logit, r_rel, r_conf = ctx_score_cache[ctx]
+                    from src.ml.product_tariff_reranker import RerankedTariffCandidate, _get_field
+                    hsn_c = _get_field(rec, "hsn_code", "HSN Code", "code_str")
+                    code_len = rec.get("code_length") if isinstance(rec, dict) else getattr(rec, "code_length", None)
+                    cloned_cand = RerankedTariffCandidate(
+                        hsn_code=hsn_c,
+                        chapter_code=_get_field(rec, "chapter_code", "chapter_str", "chapter"),
+                        description=_get_field(rec, "statutory_description", "HSN Description", "tariff_item_desc", "description"),
+                        relevance_score=r_score,
+                        raw_logit=r_logit,
+                        chapter_title=_get_field(rec, "chapter_title"),
+                        heading_4digit_desc=_get_field(rec, "heading_4digit_desc"),
+                        subheading_6digit_desc=_get_field(rec, "subheading_6digit_desc"),
+                        tariff_item_desc=_get_field(rec, "tariff_item_desc"),
+                        article_keywords=_get_field(rec, "article_keywords", "Article Keywords"),
+                        material_keywords=_get_field(rec, "material_keywords", "Material Keywords"),
+                        tariff_level=classify_tariff_level(hsn_c, code_len),
+                    )
+                    cached_results.append((rec, ClassifiedTariffCandidate(
+                        candidate=cloned_cand, relation=r_rel, confidence=r_conf, relevance_confidence=r_conf
+                    )))
+                else:
+                    to_score.append(rec)
+
+            scored_pairs: List[Tuple[Dict[str, Any], ClassifiedTariffCandidate]] = list(cached_results)
+            if to_score:
+                newly_scored = self.classifier.classify(eval_query, to_score)
+                for rec, c in zip(to_score, newly_scored):
+                    ctx = format_tariff_context(rec)
+                    ctx_score_cache[ctx] = (c.candidate.relevance_score, c.candidate.raw_logit, c.relation, c.confidence)
+                    scored_pairs.append((rec, c))
             t_rerank_ms += (time.perf_counter() - t1) * 1000.0
 
             new_qualifying = 0
             new_active = 0
-            for rec, c in zip(new_rows, newly_classified):
+            for rec, c in scored_pairs:
                 rec_id = str(rec.get("source_record_id") or f"hsn_{c.candidate.hsn_code}")
                 c_id = rec_id
                 evaluated_map[c_id] = c
@@ -394,7 +439,7 @@ class MultiCandidateEngine:
         relevance_classifier: Optional[RelevanceClassifier] = None,
         statutory_index: Optional[StatutoryMasterIndex] = None,
         feedback_collector: Optional[FeedbackCollector] = None,
-        initial_branch_k: int = 30,
+        initial_branch_k: int = 45,
         max_eval_budget: Optional[int] = 250,
     ):
         self.hybrid_engine = hybrid_engine or HybridHSNEngine.get_instance()
@@ -444,17 +489,41 @@ class MultiCandidateEngine:
             reranker=self.classifier.reranker,
         )
 
-        # 3. Group qualifying candidates reversibly without losing any record
-        groups, hsn_to_group = group_candidates(qualifying)
+        # 3. Separate 8-digit leaf tariff items from 4/6-digit parent headings (preserve both)
+        leaf_qualifying = [c for c in qualifying if _is_leaf_8digit(c)]
+        parent_qualifying = [c for c in qualifying if not _is_leaf_8digit(c)]
+        qualifying_ordered = leaf_qualifying + parent_qualifying
+
+        # Group qualifying candidates reversibly without losing any record
+        groups, hsn_to_group = group_candidates(qualifying_ordered)
 
         # 4. Compute calibrated query-level confidences
         bundle = getattr(self.classifier, "calibration_bundle", None)
-        same = [c for c in qualifying if c.relation == RelationLabel.SAME_PRODUCT]
-        insuff = [c for c in qualifying if c.relation == RelationLabel.INSUFFICIENT_INFORMATION]
-        related = [c for c in qualifying if c.relation == RelationLabel.RELATED_PRODUCT]
+        same = [c for c in qualifying_ordered if c.relation == RelationLabel.SAME_PRODUCT]
+        same_leaves = [c for c in same if _is_leaf_8digit(c)]
+        same_parents = [c for c in same if not _is_leaf_8digit(c)]
+        insuff = [c for c in qualifying_ordered if c.relation == RelationLabel.INSUFFICIENT_INFORMATION]
+        related = [c for c in qualifying_ordered if c.relation == RelationLabel.RELATED_PRODUCT]
+
+        # Dynamic statutory & numerical distinction analysis over top competing 8-digit leaves
+        dist_analysis = analyze_sibling_distinctions(same_leaves[:20], effective_query) if same_leaves else {
+            "per_candidate": [],
+            "ranked_indices": [],
+            "winner_idx": None,
+            "winner_has_clear_evidence": False,
+            "evidence_margin": 0.0,
+            "missing_numeric_constraints": False,
+            "distinguishing_phrases": {},
+        }
+        if same_leaves and dist_analysis.get("ranked_indices"):
+            head_reordered = [same_leaves[i] for i in dist_analysis["ranked_indices"]]
+            same_leaves = head_reordered + same_leaves[20:]
+            seen_ids = {id(c) for c in same_leaves}
+            qualifying_ordered = same_leaves + [c for c in qualifying_ordered if id(c) not in seen_ids]
+            groups, hsn_to_group = group_candidates(qualifying_ordered)
 
         t_diff0 = time.perf_counter()
-        focus_pool = same if len(same) >= 2 else (same + insuff)[:12]
+        focus_pool = same_leaves if len(same_leaves) >= 2 else (same if len(same) >= 2 else (same + insuff)[:12])
         sep_attrs: List[str] = []
         attr_ev: Dict[str, List[str]] = {}
         if len(focus_pool) >= 2:
@@ -474,20 +543,21 @@ class MultiCandidateEngine:
             questions = []
         diff_ms = round((time.perf_counter() - t_diff0) * 1000.0, 2)
 
-        # Compute independent confidences
+        # Compute independent confidences over ordered 8-digit leaves (fallback to full pool if no leaves)
+        conf_pool = [c for c in qualifying_ordered if _is_leaf_8digit(c)] or qualifying_ordered
         best_rel_conf = (
-            qualifying[0].relevance_confidence
-            if qualifying and qualifying[0].relevance_confidence > 0
+            qualifying_ordered[0].relevance_confidence
+            if qualifying_ordered and qualifying_ordered[0].relevance_confidence > 0
             else best_active_score
         )
-        if qualifying and bundle is not None:
+        if conf_pool and bundle is not None:
             feats = extract_query_confidence_features(
-                raw_logits=[c.candidate.raw_logit for c in qualifying],
-                hsn_codes=[c.candidate.hsn_code for c in qualifying],
-                chapter_codes=[c.candidate.chapter_code for c in qualifying],
+                raw_logits=[c.candidate.raw_logit for c in conf_pool],
+                hsn_codes=[c.candidate.hsn_code for c in conf_pool],
+                chapter_codes=[c.candidate.chapter_code for c in conf_pool],
                 query=effective_query,
                 rel_threshold_logit=0.97,
-                is_ambiguous=len({c.candidate.hsn_code[:4] for c in same}) > 1,
+                is_ambiguous=len({c.candidate.hsn_code[:4] for c in same_leaves}) > 1,
             )
             chap_conf = round(float(bundle.chapter_calibrator.predict_proba_one(feats)), 4)
             hsn_conf = round(float(bundle.hsn_calibrator.predict_proba_one(feats)), 4)
@@ -496,12 +566,12 @@ class MultiCandidateEngine:
             hsn_conf = round(float(best_rel_conf), 4)
 
         distinction_conf = 0.0
-        if len(qualifying) >= 2:
-            distinction_conf = round(max(0.0, qualifying[0].confidence - qualifying[1].confidence), 4)
-        elif len(qualifying) == 1:
+        if len(leaf_qualifying) >= 2:
+            distinction_conf = round(max(0.0, leaf_qualifying[0].confidence - leaf_qualifying[1].confidence), 4)
+        elif len(leaf_qualifying) == 1:
             distinction_conf = 1.0
 
-        # 5. Decision Controller
+        # 5. Decision Controller (only 8-digit leaf HSNs may become EXACT_HSN)
         tau_abstain = bundle.tau_abstain if bundle is not None else 0.25
         tau_exact = bundle.tau_exact_hsn if bundle is not None else 0.55
 
@@ -517,49 +587,76 @@ class MultiCandidateEngine:
             final_chapter = comp.best_inactive_match.get("chapter")
             requires_clarification = False
             clarification_reason = comp.reason
-        elif not qualifying or best_rel_conf < tau_abstain:
+        elif not qualifying_ordered or best_rel_conf < tau_abstain:
             prediction_mode = "INSUFFICIENT_INFORMATION"
             requires_clarification = True
             clarification_reason = (
                 f"Insufficient product evidence (relevance_confidence={best_rel_conf:.2f} < {tau_abstain:.2f})."
             )
-        elif not same:
-            if len(insuff) >= 2 or len(related) >= 2:
-                prediction_mode = "MULTIPLE_CANDIDATES" if len(qualifying) >= 2 else "INSUFFICIENT_INFORMATION"
+        elif not same_leaves:
+            if same_parents:
+                parent_chaps = {c.candidate.chapter_code for c in same_parents if c.candidate.chapter_code}
+                if len(parent_chaps) == 1:
+                    prediction_mode = "CHAPTER_ONLY_CLARIFY"
+                    final_chapter = next(iter(parent_chaps))
+                else:
+                    prediction_mode = "MULTIPLE_CANDIDATES"
+                requires_clarification = True
+                clarification_reason = (
+                    "Evidence supports parent tariff heading/subheading only; clarification needed to select an 8-digit leaf HSN."
+                )
+            elif len(insuff) >= 2 or len(related) >= 2:
+                prediction_mode = "MULTIPLE_CANDIDATES" if len(qualifying_ordered) >= 2 else "INSUFFICIENT_INFORMATION"
                 clarification_reason = "Multiple related or uncertain candidates found; clarification needed."
             else:
                 prediction_mode = "INSUFFICIENT_INFORMATION"
-                clarification_reason = "No candidate met the calibrated SAME_PRODUCT threshold."
+                clarification_reason = "No 8-digit leaf candidate met the calibrated SAME_PRODUCT threshold."
         else:
-            unique_headings = {c.candidate.hsn_code[:4] for c in same if c.candidate.hsn_code}
-            if len(unique_headings) > 1:
+            unique_headings = {c.candidate.hsn_code[:4] for c in same_leaves if c.candidate.hsn_code}
+            if dist_analysis.get("missing_numeric_constraints"):
+                if len(unique_headings) > 1:
+                    prediction_mode = "MULTIPLE_CANDIDATES"
+                    final_chapter = None
+                else:
+                    prediction_mode = "CHAPTER_ONLY_CLARIFY"
+                    final_chapter = same_leaves[0].candidate.chapter_code
+                requires_clarification = True
+                clarification_reason = (
+                    "Competing tariff items are separated by numerical thresholds not specified in the description."
+                )
+            elif dist_analysis.get("winner_has_clear_evidence") and hsn_conf >= tau_exact:
+                prediction_mode = "EXACT_HSN"
+                final_hsn = same_leaves[0].candidate.hsn_code
+                final_chapter = same_leaves[0].candidate.chapter_code
+                requires_clarification = False
+            elif len(unique_headings) > 1:
                 prediction_mode = "MULTIPLE_CANDIDATES"
                 final_chapter = None
                 requires_clarification = True
                 clarification_reason = (
-                    f"{len(same)} SAME_PRODUCT candidates span {len(unique_headings)} distinct headings."
+                    f"{len(same_leaves)} SAME_PRODUCT leaf candidates span {len(unique_headings)} distinct headings."
                 )
-            elif len(same) > 1 and hsn_conf < tau_exact:
+            elif len(same_leaves) > 1 and hsn_conf < tau_exact:
                 prediction_mode = "CHAPTER_ONLY_CLARIFY"
-                final_chapter = same[0].candidate.chapter_code
+                final_chapter = same_leaves[0].candidate.chapter_code
                 requires_clarification = True
                 clarification_reason = (
-                    f"Heading {same[0].candidate.hsn_code[:4]} supported, but {len(same)} tariff items compete."
+                    f"Heading {same_leaves[0].candidate.hsn_code[:4]} supported, but {len(same_leaves)} leaf tariff items compete."
                 )
-            elif hsn_conf >= tau_exact and (len(same) == 1 or distinction_conf >= 0.05):
+            elif hsn_conf >= tau_exact and (len(same_leaves) == 1 or distinction_conf >= 0.05):
                 prediction_mode = "EXACT_HSN"
-                final_hsn = same[0].candidate.hsn_code
-                final_chapter = same[0].candidate.chapter_code
+                final_hsn = same_leaves[0].candidate.hsn_code
+                final_chapter = same_leaves[0].candidate.chapter_code
                 requires_clarification = False
             else:
                 prediction_mode = "CHAPTER_ONLY_CLARIFY"
-                final_chapter = same[0].candidate.chapter_code
+                final_chapter = same_leaves[0].candidate.chapter_code
                 requires_clarification = True
 
         # 6. Build full non-truncated candidate records with lineage & explanations
         all_formatted: List[Dict[str, Any]] = []
-        top_score = qualifying[0].confidence if qualifying else 0.0
-        for rank, c in enumerate(qualifying, start=1):
+        top_score = qualifying_ordered[0].confidence if qualifying_ordered else 0.0
+        for rank, c in enumerate(qualifying_ordered, start=1):
             raw = disc.raw_records_by_id.get(c.candidate.hsn_code, {})
             mats = sorted(_extract_material_tokens(c.candidate.material_keywords))
             reasons = [
@@ -575,6 +672,7 @@ class MultiCandidateEngine:
             all_formatted.append({
                 "rank": rank,
                 "hsn_code": c.candidate.hsn_code,
+                "tariff_level": getattr(c.candidate, "tariff_level", classify_tariff_level(c.candidate.hsn_code)),
                 "chapter_code": c.candidate.chapter_code,
                 "hsn_description": c.candidate.description,
                 "source_record_id": raw.get("source_record_id", f"hsn_{c.candidate.hsn_code}"),
@@ -626,6 +724,19 @@ class MultiCandidateEngine:
                 "discovery_complete": disc.discovery_complete,
                 "stopping_reason": disc.stopping_reason,
                 "expansion_rounds": disc.expansion_rounds,
+                "leaf_candidates_count": len(leaf_qualifying),
+                "parent_candidates_count": len(parent_qualifying),
+            },
+            "hierarchy_context": {
+                "leaf_candidates": len(leaf_qualifying),
+                "parent_candidates": len(parent_qualifying),
+                "parent_codes": [c.candidate.hsn_code for c in parent_qualifying[:20]],
+            },
+            "statutory_distinction": {
+                "winner_has_clear_evidence": bool(dist_analysis.get("winner_has_clear_evidence")),
+                "evidence_margin": float(dist_analysis.get("evidence_margin", 0.0)),
+                "missing_numeric_constraints": bool(dist_analysis.get("missing_numeric_constraints")),
+                "distinguishing_phrases": dist_analysis.get("distinguishing_phrases", {}),
             },
             "candidates": paged_candidates,
             "all_candidates_count": len(all_formatted),

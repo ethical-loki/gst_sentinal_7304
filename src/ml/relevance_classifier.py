@@ -63,6 +63,7 @@ class RelevanceClassifier:
         related_threshold: float = 0.40,
         unrelated_threshold: float = 0.20,
         dominant_margin: float = 0.25,
+        max_length: int = 384,
     ):
         registry = ModelRegistry()
         active_entry = registry.get_active_entry()
@@ -71,7 +72,7 @@ class RelevanceClassifier:
             model_path = active_entry["model_path"] if active_entry else BASELINE_RERANKER_MODEL
             self.reranker = ProductTariffReranker(
                 model_name_or_path=model_path,
-                max_length=144,
+                max_length=max_length,
                 local_files_only=True,
             )
         else:

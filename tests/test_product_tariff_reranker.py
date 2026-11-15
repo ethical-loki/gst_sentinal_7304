@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 from src.ml.product_tariff_reranker import (
     ProductTariffReranker,
     _sigmoid,
+    classify_tariff_level,
     format_tariff_context,
 )
 
@@ -64,4 +65,26 @@ def test_rerank_ordering_with_mock_cross_encoder():
     assert results[0].relevance_score > 0.9
     assert results[1].hsn_code == "84223000"
     assert results[1].relevance_score < 0.1
+
+
+def test_format_tariff_context_prioritizes_leaf_details():
+    row = {
+        "hsn_code": "85016100",
+        "chapter_title": "Electrical machinery and equipment",
+        "heading_4digit_desc": "Electric motors and generators",
+        "subheading_6digit_desc": "AC generators (alternators)",
+        "tariff_item_desc": "OF AN OUTPUT NOT EXCEEDING 75 KVA",
+        "article_keywords": "alternator 50 kva",
+        "material_keywords": "copper",
+    }
+    ctx = format_tariff_context(row)
+    assert ctx.startswith("HSN 85016100 | OF AN OUTPUT NOT EXCEEDING 75 KVA")
+    assert ctx.index("OF AN OUTPUT NOT EXCEEDING 75 KVA") < ctx.index("Electric motors and generators")
+    assert ctx.index("Electric motors and generators") < ctx.index("Electrical machinery and equipment")
+
+
+def test_classify_tariff_level():
+    assert classify_tariff_level("85016100") == "LEAF_8DIGIT"
+    assert classify_tariff_level("850161") == "SUBHEADING_6DIGIT"
+    assert classify_tariff_level("8501") == "HEADING_4DIGIT"
 

@@ -270,3 +270,76 @@ def test_fastapi_adaptive_endpoints_and_ui_wiring(tmp_path, monkeypatch):
             assert token in html, f"Missing {token} in {ui_rel}"
 
 
+def test_parent_vs_leaf_never_predicts_parent_as_exact_hsn(tmp_path):
+    from src.training.feedback_collector import FeedbackCollector
+
+    class _ParentOnlyHybrid:
+        total_records = 2
+
+        def _expand_abbreviated_query(self, q: str):
+            return q.lower(), q.lower().split()
+
+        def retrieve_with_lineage(self, raw_query: str, branch_k: int = 30):
+            return [
+                {
+                    "hsn_code": "8410",
+                    "chapter_code": "84",
+                    "statutory_description": "Hydraulic turbines, water wheels",
+                    "source_record_id": "p1",
+                    "retrieval_source": "bm25",
+                    "bm25_score": 1.0,
+                    "vector_score": 0.9,
+                    "rrf_score": 0.03,
+                },
+                {
+                    "hsn_code": "841010",
+                    "chapter_code": "84",
+                    "statutory_description": "Hydraulic turbines of power <= 1000 kW",
+                    "source_record_id": "p2",
+                    "retrieval_source": "bm25",
+                    "bm25_score": 0.9,
+                    "vector_score": 0.8,
+                    "rrf_score": 0.02,
+                },
+            ]
+
+    class _ParentClassifier:
+        calibration_bundle = None
+        reranker = MagicMock()
+
+        def classify(self, product_intent: str, tariff_rows):
+            out = []
+            for r in tariff_rows:
+                cand = RerankedTariffCandidate(
+                    hsn_code=r["hsn_code"],
+                    chapter_code=r["chapter_code"],
+                    description=r["statutory_description"],
+                    relevance_score=0.92,
+                    raw_logit=2.5,
+                    tariff_level="HEADING_4DIGIT" if len(r["hsn_code"]) == 4 else "SUBHEADING_6DIGIT",
+                )
+                out.append(ClassifiedTariffCandidate(candidate=cand, relation=RelationLabel.SAME_PRODUCT, confidence=0.92, relevance_confidence=0.92))
+            return out
+
+    stat = MagicMock()
+    stat.compare_active_vs_statutory.return_value = StatutoryComparisonResult(
+        query="hydraulic turbine",
+        is_out_of_schedule=False,
+        best_active_score=0.92,
+        best_inactive_score=0.10,
+        reason="Active",
+    )
+    eng = MultiCandidateEngine(
+        hybrid_engine=_ParentOnlyHybrid(),
+        relevance_classifier=_ParentClassifier(),
+        statutory_index=stat,
+        feedback_collector=FeedbackCollector(feedback_dir=tmp_path),
+    )
+    res = eng.classify_adaptive("hydraulic turbine")
+    assert res["prediction_mode"] in ("CHAPTER_ONLY_CLARIFY", "MULTIPLE_CANDIDATES")
+    assert res["final_hsn"] is None
+    assert res["clarification"]["required"] is True
+    assert res["hierarchy_context"]["parent_candidates"] == 2
+    assert res["hierarchy_context"]["leaf_candidates"] == 0
+
+
