@@ -619,3 +619,111 @@ def test_phase19_task2_and_task3_rescue_and_multiheading_safety(tmp_path):
     assert res["prediction_mode"] != "EXACT_HSN"
 
 
+def test_phase20_task1_task2_task3_selective_rescue_case73_and_spare_parts(tmp_path):
+    from src.search.hybrid_retrieval import HybridHSNEngine
+    from src.training.feedback_collector import FeedbackCollector
+
+    # 1. Spare-parts head preservation (Task 2)
+    pi_spare = analyze_product_intent("spare parts for marine outboard engine")
+    assert "marine outboard engine" in pi_spare.finished_article.lower()
+
+    # 2. Case #73: 85091000 (SAME_PRODUCT) vs rescued 85086000 (UNRELATED, strong statutory match)
+    # must NOT emit EXACT_HSN 85091000
+    class _Case73Hybrid:
+        total_records = 2
+
+        def _expand_abbreviated_query(self, q: str):
+            return q.lower(), q.lower().split()
+
+        def retrieve_with_lineage(self, raw_query: str, branch_k: int = 30):
+            return [
+                {
+                    "hsn_code": "85091000",
+                    "code_length": 8,
+                    "chapter_code": "85",
+                    "chapter_title": "Electrical machinery",
+                    "heading_4digit_desc": "ELECTRO-MECHANICAL DOMESTIC APPLIANCES",
+                    "statutory_description": "CONTAINED ELECTRIC MOTOR VACUUM CLEANERS",
+                    "tariff_item_desc": "CONTAINED ELECTRIC MOTOR VACUUM CLEANERS",
+                    "article_keywords": "vacuum cleaner",
+                    "material_keywords": "",
+                    "source_record_id": "r1",
+                    "retrieval_source": "bm25+dense",
+                    "bm25_score": 1.0,
+                    "vector_score": 0.9,
+                    "rrf_score": 0.03,
+                },
+                {
+                    "hsn_code": "85086000",
+                    "code_length": 8,
+                    "chapter_code": "85",
+                    "chapter_title": "Electrical machinery",
+                    "heading_4digit_desc": "VACCUM CLEANERS",
+                    "statutory_description": "VACCUM CLEANERS - OTHER VACCUM CLEANERS",
+                    "tariff_item_desc": "OTHER VACCUM CLEANERS",
+                    "article_keywords": "vaccum cleaner",
+                    "material_keywords": "",
+                    "source_record_id": "r2",
+                    "retrieval_source": "bm25",
+                    "bm25_score": 0.8,
+                    "vector_score": 0.7,
+                    "rrf_score": 0.02,
+                },
+            ]
+
+    class _Case73Classifier:
+        calibration_bundle = None
+        reranker = MagicMock()
+
+        def classify(self, product_intent: str, tariff_rows):
+            out = []
+            for r in tariff_rows:
+                is_8509 = r["hsn_code"] == "85091000"
+                cand = RerankedTariffCandidate(
+                    hsn_code=r["hsn_code"],
+                    chapter_code="85",
+                    description=r["statutory_description"],
+                    relevance_score=0.90 if is_8509 else 0.11,
+                    raw_logit=2.2 if is_8509 else -2.1,
+                    heading_4digit_desc=r["heading_4digit_desc"],
+                    tariff_item_desc=r["tariff_item_desc"],
+                    article_keywords=r["article_keywords"],
+                    chapter_title=r["chapter_title"],
+                    tariff_level="LEAF_8DIGIT",
+                )
+                out.append(ClassifiedTariffCandidate(
+                    candidate=cand,
+                    relation=RelationLabel.SAME_PRODUCT if is_8509 else RelationLabel.UNRELATED,
+                    confidence=0.90 if is_8509 else 0.11,
+                    relevance_confidence=0.90 if is_8509 else 0.11,
+                ))
+            return out
+
+    stat = MagicMock()
+    stat.compare_active_vs_statutory.return_value = StatutoryComparisonResult(
+        query="electric canister vacuum cleaner for home",
+        is_out_of_schedule=False,
+        best_active_score=0.90,
+        best_inactive_score=0.05,
+        reason="Active",
+    )
+    eng = MultiCandidateEngine(
+        hybrid_engine=_Case73Hybrid(),
+        relevance_classifier=_Case73Classifier(),
+        statutory_index=stat,
+        feedback_collector=FeedbackCollector(feedback_dir=tmp_path),
+    )
+    res = eng.classify_adaptive("electric canister vacuum cleaner for home", page=1, page_size=10)
+    assert res["prediction_mode"] == "MULTIPLE_CANDIDATES"
+    assert res["final_hsn"] is None
+    assert "8508" in res["clarification"]["reason"]
+
+    # 3. Task 3: Controlled commercial-to-statutory terminology expansion
+    hyb_dummy = HybridHSNEngine.__new__(HybridHSNEngine)
+    hyb_dummy._vocab_freq = {}
+    exp_q, exp_toks = hyb_dummy._expand_abbreviated_query("commercial espresso coffee brewing machine")
+    assert "hot" in exp_toks and "drinks" in exp_toks
+    _, vac_toks = hyb_dummy._expand_abbreviated_query("vaccum cleaner")
+    assert "vacuum" in vac_toks
+
+

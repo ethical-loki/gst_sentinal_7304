@@ -389,6 +389,14 @@ def analyze_product_intent(description: str, clarification: str = "") -> Product
                 clean_head = specific
 
     finished_article = clean_head or head.strip() or combined
+    # If head is purely a generic parts phrase (e.g. "spare parts", "replacement parts")
+    # and a "for <machine>" use clause exists, keep the serviced machine in finished_article
+    # so downstream evidence matching sees both the parts role and the target machine.
+    if (
+        re.match(r"^(?:spare|replacement|service)?\s*parts?(?:\s+and\s+accessories)?$", finished_article, re.IGNORECASE)
+        and use_parts
+    ):
+        finished_article = f"{finished_article} for {use_parts[0]}"
     relationships.insert(
         0,
         AttributeRelationship(

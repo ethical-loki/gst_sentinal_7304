@@ -171,6 +171,7 @@ class CandidateProfile:
 class CandidateEvidenceResult:
     status: str  # SUPPORTED | POSSIBLY_SUPPORTED | CONTRADICTED | INSUFFICIENT_EVIDENCE
     article_matches: List[str] = field(default_factory=list)
+    statutory_article_matches: List[str] = field(default_factory=list)
     material_matches: List[str] = field(default_factory=list)
     chapter_compatible: bool = False
     heading_compatible: bool = False
@@ -184,6 +185,7 @@ class CandidateEvidenceResult:
         return {
             "status": self.status,
             "article_matches": list(self.article_matches),
+            "statutory_article_matches": list(self.statutory_article_matches),
             "material_matches": list(self.material_matches),
             "chapter_compatible": self.chapter_compatible,
             "heading_compatible": self.heading_compatible,
@@ -281,6 +283,11 @@ def evaluate_candidate_evidence(
         if tok not in seen_art_stems and not any(tok in _tokenize_content(m) for m in article_matches):
             seen_art_stems.add(tok)
             article_matches.append(tok)
+
+    statutory_only_tokens = _tokenize_content(
+        f"{profile.tariff_item_desc} {profile.statutory_description} {profile.subheading_6digit_desc} {profile.heading_4digit_desc}"
+    )
+    statutory_article_matches = sorted((article_core_tokens - _BROAD_SUPERORDINATES) & statutory_only_tokens)
 
     # 2. Material & composition matching (evaluated separately from article identity)
     query_mat_text = " ".join(product_intent.constituent_materials)
@@ -449,6 +456,7 @@ def evaluate_candidate_evidence(
     return CandidateEvidenceResult(
         status=status,
         article_matches=article_matches[:6],
+        statutory_article_matches=statutory_article_matches[:6],
         material_matches=material_matches[:6],
         chapter_compatible=chapter_compatible,
         heading_compatible=heading_compatible,

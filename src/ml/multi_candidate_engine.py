@@ -546,12 +546,13 @@ class MultiCandidateEngine:
                 continue
             qualifying.append(c)
 
-        # Safe Cross-Encoder candidate rescue:
-        # Preserve UNRELATED candidates ONLY when independent statutory article evidence + heading compatibility
-        # hold without contradictions, generic-only matches, or parts-vs-complete mismatch.
+        # Selective Cross-Encoder candidate rescue:
+        # Preserve UNRELATED candidates ONLY when independent statutory (non-synthetic) article evidence
+        # + heading compatibility hold without contradictions, generic-only matches, or parts-vs-complete mismatch.
         # Never promotes c.relation to SAME_PRODUCT or evidence_status to SUPPORTED.
         rescued_hsns: List[str] = []
         seen_qual_hsn = {c.candidate.hsn_code for c in qualifying}
+        qualifying_h4s = {c.candidate.hsn_code[:4] for c in qualifying if c.candidate.hsn_code}
         unrelated_consolidated = consolidate_duplicate_records(getattr(disc, "unrelated_classified", []))
         for c in unrelated_consolidated:
             hsn = c.candidate.hsn_code
@@ -566,22 +567,27 @@ class MultiCandidateEngine:
                 cross_encoder_confidence=c.confidence,
             )
             has_generic_only = "penalty=generic_superordinate_only" in ev_res.trace_summary
+            has_strong_statutory_match = (
+                not qualifying
+                or (hsn[:4] in qualifying_h4s)
+                or len(ev_res.statutory_article_matches) >= 2
+            )
             if (
                 ev_res.status != CONTRADICTED
-                and ev_res.article_matches
+                and ev_res.statutory_article_matches
                 and ev_res.heading_compatible
                 and not has_generic_only
                 and ev_res.role_mismatch != "complete_article_vs_parts"
-                and (ev_res.chapter_compatible or not qualifying)
+                and has_strong_statutory_match
             ):
                 ev_dict = ev_res.to_dict()
                 ev_dict["status"] = POSSIBLY_SUPPORTED
                 ev_dict["ce_relation"] = c.relation.value
                 ev_dict["rescued_by_statutory_evidence"] = True
                 ev_dict["rescue_reason"] = (
-                    f"Rescued from CE={c.relation.value} ({c.confidence:.3f}) via statutory article_match={ev_res.article_matches[:2]} and heading_compat=True"
+                    f"Rescued from CE={c.relation.value} ({c.confidence:.3f}) via statutory_article={ev_res.statutory_article_matches[:3]} and heading_compat=True"
                 )
-                ev_dict["trace_summary"] = f"{ev_dict['trace_summary']}; rescued=statutory_article_and_heading"
+                ev_dict["trace_summary"] = f"{ev_dict['trace_summary']}; rescued=selective_statutory_article"
                 evidence_by_hsn[hsn] = ev_dict
                 qualifying.append(c)
                 seen_qual_hsn.add(hsn)
@@ -620,14 +626,20 @@ class MultiCandidateEngine:
         leaf_qualifying = [c for c in qualifying if _is_leaf_8digit(c)]
         parent_qualifying = [c for c in qualifying if not _is_leaf_8digit(c)]
 
-        ev_backed_leaves = [
+        non_rescued_ev_backed = [
             c for c in leaf_qualifying
-            if evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status") in (SUPPORTED, POSSIBLY_SUPPORTED)
+            if not evidence_by_hsn.get(c.candidate.hsn_code, {}).get("rescued_by_statutory_evidence")
+            and evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status") in (SUPPORTED, POSSIBLY_SUPPORTED)
+        ]
+        rescued_leaves = [
+            c for c in leaf_qualifying
+            if evidence_by_hsn.get(c.candidate.hsn_code, {}).get("rescued_by_statutory_evidence")
         ]
         insuff_filtered_count = 0
-        if ev_backed_leaves:
-            insuff_filtered_count = len(leaf_qualifying) - len(ev_backed_leaves)
-            qualifying_ordered = ev_backed_leaves
+        if non_rescued_ev_backed:
+            kept_leaves = non_rescued_ev_backed + rescued_leaves
+            insuff_filtered_count = len(leaf_qualifying) - len(kept_leaves)
+            qualifying_ordered = kept_leaves
         elif leaf_qualifying:
             qualifying_ordered = leaf_qualifying
         else:
@@ -782,6 +794,14 @@ class MultiCandidateEngine:
                 clarification_reason = "No 8-digit leaf candidate met the calibrated SAME_PRODUCT threshold."
         else:
             unique_headings = {c.candidate.hsn_code[:4] for c in same_leaves if c.candidate.hsn_code}
+            competing_rescued = [
+                c for c in qualifying_ordered
+                if evidence_by_hsn.get(c.candidate.hsn_code, {}).get("rescued_by_statutory_evidence")
+                and c.candidate.hsn_code[:4] != same_leaves[0].candidate.hsn_code[:4]
+                and len(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("statutory_article_matches") or []) >= 2
+                and evidence_by_hsn.get(c.candidate.hsn_code, {}).get("heading_compatible")
+                and not evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch")
+            ]
             top_role_mismatch = evidence_by_hsn.get(same_leaves[0].candidate.hsn_code, {}).get("role_mismatch", "")
             if top_role_mismatch == "complete_article_vs_parts":
                 prediction_mode = "MULTIPLE_CANDIDATES" if len(unique_headings) > 1 else "CHAPTER_ONLY_CLARIFY"
@@ -790,6 +810,14 @@ class MultiCandidateEngine:
                 clarification_reason = (
                     "Top-ranked candidate is a parts/accessories tariff item while the description specifies a complete article; "
                     "clarification needed to confirm complete machine vs. spare part."
+                )
+            elif competing_rescued:
+                prediction_mode = "MULTIPLE_CANDIDATES"
+                final_chapter = None
+                requires_clarification = True
+                clarification_reason = (
+                    f"Competing statutory heading(s) {[c.candidate.hsn_code[:4] for c in competing_rescued[:3]]} "
+                    "have strong independent statutory article evidence; clarification needed."
                 )
             elif len(unique_headings) > 1 and distinction_conf < 0.05:
                 prediction_mode = "MULTIPLE_CANDIDATES"

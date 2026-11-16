@@ -174,31 +174,58 @@ class HybridHSNEngine:
 
         logger.info(f"[HybridHSNEngine] Ready with {self.total_records} master records (hash: {self.file_hash[:16]}).")
 
+    # Controlled commercial-to-statutory terminology expansions (general WCO vocabulary, zero HSN mappings)
+    _COMMERCIAL_TO_STATUTORY_TERMS = {
+        "espresso": ["hot", "drinks", "beverage", "heating"],
+        "coffee": ["hot", "drinks", "beverage"],
+        "brewing": ["making", "hot", "drinks", "heating"],
+        "tray dryer": ["drying", "treatment", "materials", "temperature"],
+        "dryer": ["drying", "treatment", "materials"],
+        "autoclave": ["sterilizing", "sterilizer", "laboratory", "pressure"],
+        "sterilizer": ["sterilizing", "laboratory", "medical"],
+        "router": ["transmission", "reception", "network", "switching"],
+        "ethernet": ["transmission", "reception", "network", "data"],
+        "multiplexer": ["transmission", "carrier", "line", "telephony"],
+        "walkie talkie": ["radiotelephony", "transceiver", "transmission", "portable"],
+        "inverter": ["static", "converter", "power", "rectifier"],
+        "ups": ["static", "converter", "uninterruptible", "power"],
+        "trench coat": ["overcoat", "raincoat", "cloak"],
+        "comforter": ["bedding", "quilt", "cushion"],
+        "chandelier": ["chandeliers", "lighting", "fittings", "ceiling"],
+        "vaccum": ["vacuum"],
+        "stailess": ["stainless"],
+    }
+
     def _expand_abbreviated_query(self, raw_query: str) -> tuple[str, List[str]]:
         """
-        General corpus-driven morphological prefix expansion for abbreviated tokens
-        ending with a period (e.g. 'auxi.' -> 'auxiliary', 'mach.' -> 'machinery').
-        Uses only the indexed tariff vocabulary; no product-specific dictionaries.
+        General corpus-driven morphological prefix expansion + controlled commercial-to-statutory
+        WCO terminology enrichment. Zero product-specific HSN mappings.
         """
         q_lower = (raw_query or "").strip().lower()
         base_tokens = tokenize(q_lower)
-        prefixes = re.findall(r"\b([a-z]{3,7})\.", q_lower)
-        if not prefixes or not self._vocab_freq:
-            return q_lower, base_tokens
-
         expanded_words: List[str] = []
         extra_tokens: List[str] = []
-        for pref in prefixes:
-            matches = [
-                w for w in self._vocab_freq
-                if w.startswith(pref) and len(w) > len(pref)
-            ]
-            # Prefer shorter/more common statutory root forms first
-            matches.sort(key=lambda w: (len(w), w))
-            for m in matches[:2]:
-                if m not in base_tokens:
-                    extra_tokens.append(m)
-                    expanded_words.append(m)
+
+        for term, stat_words in self._COMMERCIAL_TO_STATUTORY_TERMS.items():
+            if re.search(rf"\b{re.escape(term)}\b", q_lower):
+                for sw in stat_words:
+                    if sw not in base_tokens and sw not in extra_tokens:
+                        extra_tokens.append(sw)
+                        expanded_words.append(sw)
+
+        prefixes = re.findall(r"\b([a-z]{3,7})\.", q_lower)
+        if prefixes and self._vocab_freq:
+            for pref in prefixes:
+                matches = [
+                    w for w in self._vocab_freq
+                    if w.startswith(pref) and len(w) > len(pref)
+                ]
+                # Prefer shorter/more common statutory root forms first
+                matches.sort(key=lambda w: (len(w), w))
+                for m in matches[:2]:
+                    if m not in base_tokens and m not in extra_tokens:
+                        extra_tokens.append(m)
+                        expanded_words.append(m)
 
         expanded_q = f"{q_lower} {' '.join(expanded_words)}".strip() if expanded_words else q_lower
         return expanded_q, base_tokens + extra_tokens
