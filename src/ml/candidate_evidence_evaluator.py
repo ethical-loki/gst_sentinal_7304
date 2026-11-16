@@ -121,7 +121,8 @@ def _stem(tok: str) -> str:
 def _tokenize_content(text: str) -> Set[str]:
     if not text:
         return set()
-    raw = re.findall(r"\b[a-z0-9]{2,}\b", text.lower())
+    norm = re.sub(r"\bvaccum\b", "vacuum", re.sub(r"\bstailess\b", "stainless", text.lower()))
+    raw = re.findall(r"\b[a-z0-9]{2,}\b", norm)
     return {_stem(w) for w in raw if w not in _STOPWORDS}
 
 
@@ -163,6 +164,7 @@ class CandidateProfile:
     material_tokens: Set[str] = field(default_factory=set)
     chapter_tokens: Set[str] = field(default_factory=set)
     material_families: Set[str] = field(default_factory=set)
+    statutory_material_families: Set[str] = field(default_factory=set)
 
 
 @dataclass
@@ -220,6 +222,8 @@ def build_candidate_profile(raw_rec: Optional[Dict[str, Any]], candidate: Any) -
     })
     chap_tokens = _tokenize_content(chap_title)
     mat_fams = _detect_material_families(_tokenize_content(mat_text), mat_text)
+    stat_mat_text = " ".join([item_desc, stat_desc, sub6_desc, hd4_desc])
+    stat_mat_fams = _detect_material_families(_tokenize_content(stat_mat_text), stat_mat_text)
 
     return CandidateProfile(
         hsn_code=hsn,
@@ -237,6 +241,7 @@ def build_candidate_profile(raw_rec: Optional[Dict[str, Any]], candidate: Any) -
         material_tokens=mat_tokens,
         chapter_tokens=chap_tokens,
         material_families=mat_fams,
+        statutory_material_families=stat_mat_fams,
     )
 
 
@@ -345,13 +350,13 @@ def evaluate_candidate_evidence(
     contradictions: List[str] = []
     missing_attributes: List[str] = []
 
-    if query_mat_fams and profile.material_families:
+    if query_mat_fams and profile.statutory_material_families:
         has_compatible = False
         for qf in query_mat_fams:
-            if qf in profile.material_families:
+            if qf in profile.statutory_material_families:
                 has_compatible = True
                 break
-            for cf in profile.material_families:
+            for cf in profile.statutory_material_families:
                 if frozenset({qf, cf}) in _COMPATIBLE_FAMILIES:
                     has_compatible = True
                     break
@@ -359,10 +364,10 @@ def evaluate_candidate_evidence(
                 break
         if not has_compatible:
             contradictions.append(
-                f"Material contradiction: query states {sorted(query_mat_fams)}, candidate specifies {sorted(profile.material_families)}"
+                f"Material contradiction: query states {sorted(query_mat_fams)}, statutory description specifies {sorted(profile.statutory_material_families)}"
             )
-    elif not query_mat_fams and profile.material_families:
-        missing_attributes.append(f"material ({'/'.join(sorted(profile.material_families))})")
+    elif not query_mat_fams and profile.statutory_material_families:
+        missing_attributes.append(f"material ({'/'.join(sorted(profile.statutory_material_families))})")
 
     # Processing / construction contradiction checks (e.g. knitted vs not knitted or crocheted)
     proc_low = f"{product_intent.processing_form or ''} {product_intent.finished_article}".lower()

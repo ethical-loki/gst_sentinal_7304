@@ -10,9 +10,10 @@ scoring is purely driven by the model over the candidate tariff context.
 
 import logging
 import math
+import re
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 CrossEncoder = None  # Lazy-loaded on first instantiation to keep module imports fast
 
@@ -110,11 +111,12 @@ def format_tariff_context(row: Any) -> str:
     for p in ordered_raw:
         if not p:
             continue
-        p_low = p.lower()
+        p_norm = re.sub(r"\bvaccum\b", "vacuum", re.sub(r"\bstailess\b", "stainless", p, flags=re.IGNORECASE), flags=re.IGNORECASE)
+        p_low = p_norm.lower()
         if p_low in seen_lower:
             continue
         seen_lower.add(p_low)
-        parts.append(p)
+        parts.append(p_norm)
     return " | ".join(parts)
 
 
@@ -131,7 +133,7 @@ class ProductTariffReranker:
         device: Optional[str] = None,
         max_length: int = 512,
         local_files_only: bool = True,
-        batch_size: int = 32,
+        batch_size: int = 64,
     ):
         self.model_name_or_path = model_name_or_path
         if device is None:

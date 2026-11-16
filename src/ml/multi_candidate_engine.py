@@ -99,6 +99,7 @@ class DiscoveryOutcome:
     retrieval_time_ms: float
     reranking_time_ms: float
     expansion_rounds: int
+    unrelated_classified: List[ClassifiedTariffCandidate] = field(default_factory=list)
 
 
 class AdaptiveCandidateDiscoverer:
@@ -317,8 +318,12 @@ class AdaptiveCandidateDiscoverer:
             if hsn and hsn not in by_hsn_raw:
                 by_hsn_raw[hsn] = rec
 
+        unrelated_cands = [c for c in evaluated_map.values() if c.relation == RelationLabel.UNRELATED]
+        unrelated_cands.sort(key=lambda c: -c.confidence)
+
         return DiscoveryOutcome(
             qualifying_classified=qualifying,
+            unrelated_classified=unrelated_cands,
             raw_records_by_id=by_hsn_raw,
             total_retrieved=len(raw_by_id),
             records_examined=len(raw_by_id),
@@ -528,6 +533,9 @@ class MultiCandidateEngine:
                 cross_encoder_confidence=c.confidence,
             )
             ev_dict = ev_res.to_dict()
+            ev_dict["ce_relation"] = c.relation.value
+            ev_dict["rescued_by_statutory_evidence"] = False
+            ev_dict["rescue_reason"] = ""
             evidence_by_hsn[c.candidate.hsn_code] = ev_dict
             if ev_res.status == CONTRADICTED:
                 contradicted_count += 1
@@ -538,12 +546,54 @@ class MultiCandidateEngine:
                 continue
             qualifying.append(c)
 
-        # Order qualifying by evidence verdict -> relation priority -> confidence
+        # Safe Cross-Encoder candidate rescue:
+        # Preserve UNRELATED candidates ONLY when independent statutory article evidence + heading compatibility
+        # hold without contradictions, generic-only matches, or parts-vs-complete mismatch.
+        # Never promotes c.relation to SAME_PRODUCT or evidence_status to SUPPORTED.
+        rescued_hsns: List[str] = []
+        seen_qual_hsn = {c.candidate.hsn_code for c in qualifying}
+        unrelated_consolidated = consolidate_duplicate_records(getattr(disc, "unrelated_classified", []))
+        for c in unrelated_consolidated:
+            hsn = c.candidate.hsn_code
+            if hsn in seen_qual_hsn or not _is_leaf_8digit(c):
+                continue
+            raw = disc.raw_records_by_id.get(hsn, {})
+            prof = build_candidate_profile(raw, c.candidate)
+            ev_res = evaluate_candidate_evidence(
+                product_intent=product_intent,
+                profile=prof,
+                relation_value=c.relation.value,
+                cross_encoder_confidence=c.confidence,
+            )
+            has_generic_only = "penalty=generic_superordinate_only" in ev_res.trace_summary
+            if (
+                ev_res.status != CONTRADICTED
+                and ev_res.article_matches
+                and ev_res.heading_compatible
+                and not has_generic_only
+                and ev_res.role_mismatch != "complete_article_vs_parts"
+                and (ev_res.chapter_compatible or not qualifying)
+            ):
+                ev_dict = ev_res.to_dict()
+                ev_dict["status"] = POSSIBLY_SUPPORTED
+                ev_dict["ce_relation"] = c.relation.value
+                ev_dict["rescued_by_statutory_evidence"] = True
+                ev_dict["rescue_reason"] = (
+                    f"Rescued from CE={c.relation.value} ({c.confidence:.3f}) via statutory article_match={ev_res.article_matches[:2]} and heading_compat=True"
+                )
+                ev_dict["trace_summary"] = f"{ev_dict['trace_summary']}; rescued=statutory_article_and_heading"
+                evidence_by_hsn[hsn] = ev_dict
+                qualifying.append(c)
+                seen_qual_hsn.add(hsn)
+                rescued_hsns.append(hsn)
+
+        # Order qualifying by evidence verdict -> relation priority -> evidence_score -> confidence
         _ev_rank = {SUPPORTED: 0, POSSIBLY_SUPPORTED: 1, INSUFFICIENT_EVIDENCE: 2}
         _rel_rank = {
             RelationLabel.SAME_PRODUCT: 0,
             RelationLabel.INSUFFICIENT_INFORMATION: 1,
             RelationLabel.RELATED_PRODUCT: 2,
+            RelationLabel.UNRELATED: 3,
         }
         qualifying.sort(
             key=lambda c: (
@@ -741,6 +791,14 @@ class MultiCandidateEngine:
                     "Top-ranked candidate is a parts/accessories tariff item while the description specifies a complete article; "
                     "clarification needed to confirm complete machine vs. spare part."
                 )
+            elif len(unique_headings) > 1 and distinction_conf < 0.05:
+                prediction_mode = "MULTIPLE_CANDIDATES"
+                final_chapter = None
+                requires_clarification = True
+                clarification_reason = (
+                    f"{len(same_leaves)} SAME_PRODUCT leaf candidates span {len(unique_headings)} distinct headings "
+                    f"with low distinction confidence ({distinction_conf:.4f}); clarification needed."
+                )
             elif dist_analysis.get("missing_numeric_constraints"):
                 if len(unique_headings) > 1:
                     prediction_mode = "MULTIPLE_CANDIDATES"
@@ -752,7 +810,7 @@ class MultiCandidateEngine:
                 clarification_reason = (
                     "Competing tariff items are separated by numerical thresholds not specified in the description."
                 )
-            elif dist_analysis.get("winner_has_clear_evidence") and hsn_conf >= tau_exact:
+            elif dist_analysis.get("winner_has_clear_evidence") and hsn_conf >= tau_exact and (len(unique_headings) == 1 or distinction_conf >= 0.05):
                 prediction_mode = "EXACT_HSN"
                 final_hsn = same_leaves[0].candidate.hsn_code
                 final_chapter = same_leaves[0].candidate.chapter_code
@@ -877,6 +935,8 @@ class MultiCandidateEngine:
                 "insufficient_evidence_count": sum(1 for c in all_formatted if c.get("evidence_status") == INSUFFICIENT_EVIDENCE),
                 "insufficient_evidence_filtered_count": insuff_filtered_count,
                 "contradicted_filtered_count": contradicted_count,
+                "rescued_candidates_count": len(rescued_hsns),
+                "rescued_hsn_codes": rescued_hsns[:20],
                 "parent_records_excluded_count": len(parent_qualifying) if leaf_qualifying else 0,
             },
             "best_supported_candidate": all_formatted[0] if all_formatted else None,

@@ -448,3 +448,174 @@ def test_phase17_task1_complete_article_vs_parts_protection():
     assert ev_spare.role_mismatch == ""
 
 
+def test_phase19_task1_synthetic_material_keywords_do_not_contradict():
+    # Cases #82, #98, #99: synthetic material_keywords must NOT trigger CONTRADICTED when statutory text is material-neutral
+    cases = [
+        (
+            "dual-driver wooden enclosure loudspeaker system",
+            {
+                "hsn_code": "85182290",
+                "code_length": 8,
+                "chapter_code": "85",
+                "chapter_title": "Electrical machinery and equipment",
+                "heading_4digit_desc": "Microphones and stands therefor; loudspeakers",
+                "subheading_6digit_desc": "Multiple loudspeakers, mounted in the same enclosure",
+                "tariff_item_desc": "OTHER",
+                "statutory_description": "Multiple loudspeakers, mounted in the same enclosure - Other",
+                "article_keywords": "loudspeaker, speaker system",
+                "material_keywords": "copper, brass, plastics",
+            },
+        ),
+        (
+            "quilted cotton filled bed comforter and pillow",
+            {
+                "hsn_code": "94049099",
+                "code_length": 8,
+                "chapter_code": "94",
+                "chapter_title": "Furniture; bedding, mattresses, cushions",
+                "heading_4digit_desc": "Mattress supports; articles of bedding and similar furnishing",
+                "subheading_6digit_desc": "OTHER",
+                "tariff_item_desc": "OTHER",
+                "statutory_description": "Articles of bedding and similar furnishing - Other",
+                "article_keywords": "comforter, pillow, bedding",
+                "material_keywords": "plastics, rubber, polyester",
+            },
+        ),
+        (
+            "decorative brass ceiling chandelier light fitting",
+            {
+                "hsn_code": "94051020",
+                "code_length": 8,
+                "chapter_code": "94",
+                "chapter_title": "Furniture; lamps and lighting fittings",
+                "heading_4digit_desc": "Lamps and lighting fittings including searchlights and spotlights",
+                "subheading_6digit_desc": "Chandeliers and other electric ceiling or wall lighting fittings",
+                "tariff_item_desc": "Chandeliers",
+                "statutory_description": "Chandeliers and other electric ceiling lighting fittings",
+                "article_keywords": "chandelier, ceiling light fitting",
+                "material_keywords": "plastics",
+            },
+        ),
+    ]
+    for q, rec in cases:
+        ev = evaluate_candidate_evidence(analyze_product_intent(q), build_candidate_profile(rec, None), "INSUFFICIENT_INFORMATION", 0.65)
+        assert ev.status != CONTRADICTED, f"False CONTRADICTED on {q}: {ev.contradictions}"
+        assert not ev.contradictions
+
+
+def test_phase19_task4_statutory_spelling_normalization():
+    # Case #73: "VACCUM CLEANERS" in statutory master must match "vacuum cleaner" at search/eval time
+    intent_vac = analyze_product_intent("electric canister vacuum cleaner for home")
+    rec_vac = {
+        "hsn_code": "85086000",
+        "code_length": 8,
+        "chapter_code": "85",
+        "chapter_title": "Electrical machinery",
+        "heading_4digit_desc": "VACCUM CLEANERS",
+        "subheading_6digit_desc": "",
+        "tariff_item_desc": "OTHER VACCUM CLEANERS",
+        "statutory_description": "VACCUM CLEANERS - OTHER VACCUM CLEANERS",
+        "article_keywords": "vaccum cleaner",
+        "material_keywords": "",
+    }
+    ev = evaluate_candidate_evidence(intent_vac, build_candidate_profile(rec_vac, None), "UNRELATED", 0.11)
+    assert ev.heading_compatible is True
+    assert ev.article_matches
+
+
+def test_phase19_task2_and_task3_rescue_and_multiheading_safety(tmp_path):
+    from src.ml.confidence_calibrator import CalibrationBundle, evaluate_decision_thresholds
+    from src.training.feedback_collector import FeedbackCollector
+
+    # Task 3: multi-heading tie with low distinction_confidence must NEVER emit EXACT_HSN (#4)
+    bundle = CalibrationBundle(tau_abstain=0.45, tau_chapter=0.70, tau_exact_hsn=0.65)
+    dec = evaluate_decision_thresholds(
+        bundle=bundle,
+        best_rel_conf=0.98,
+        chap_conf=0.97,
+        hsn_conf=0.69,
+        has_same_product=True,
+        n_same_leaves=2,
+        n_unique_headings=2,
+        winner_has_clear_evidence=True,
+        distinction_confidence=0.0015,
+    )
+    assert dec.prediction_mode == "MULTIPLE_CANDIDATES"
+    assert dec.requires_clarification is True
+
+    # Task 2: Safe rescue of UNRELATED candidate with strong statutory article+heading match
+    # without promoting c.relation to SAME_PRODUCT or status to SUPPORTED
+    class _RescueHybrid:
+        total_records = 1
+
+        def _expand_abbreviated_query(self, q: str):
+            return q.lower(), q.lower().split()
+
+        def retrieve_with_lineage(self, raw_query: str, branch_k: int = 30):
+            return [
+                {
+                    "hsn_code": "85086000",
+                    "code_length": 8,
+                    "chapter_code": "85",
+                    "chapter_title": "Electrical machinery and equipment",
+                    "heading_4digit_desc": "VACCUM CLEANERS",
+                    "statutory_description": "VACCUM CLEANERS - OTHER VACCUM CLEANERS",
+                    "tariff_item_desc": "OTHER VACCUM CLEANERS",
+                    "article_keywords": "vacuum cleaner",
+                    "material_keywords": "",
+                    "source_record_id": "r_vac",
+                    "retrieval_source": "bm25+dense",
+                    "bm25_score": 1.0,
+                    "vector_score": 0.9,
+                    "rrf_score": 0.03,
+                }
+            ]
+
+    class _UnrelatedClassifier:
+        calibration_bundle = None
+        reranker = MagicMock()
+
+        def classify(self, product_intent: str, tariff_rows):
+            return [
+                ClassifiedTariffCandidate(
+                    candidate=RerankedTariffCandidate(
+                        hsn_code=tariff_rows[0]["hsn_code"],
+                        chapter_code="85",
+                        description=tariff_rows[0]["statutory_description"],
+                        relevance_score=0.10,
+                        raw_logit=-2.1,
+                        heading_4digit_desc=tariff_rows[0]["heading_4digit_desc"],
+                        tariff_item_desc=tariff_rows[0]["tariff_item_desc"],
+                        article_keywords=tariff_rows[0]["article_keywords"],
+                        chapter_title=tariff_rows[0]["chapter_title"],
+                        tariff_level="LEAF_8DIGIT",
+                    ),
+                    relation=RelationLabel.UNRELATED,
+                    confidence=0.10,
+                    relevance_confidence=0.10,
+                )
+            ]
+
+    stat = MagicMock()
+    stat.compare_active_vs_statutory.return_value = StatutoryComparisonResult(
+        query="electric canister vacuum cleaner",
+        is_out_of_schedule=False,
+        best_active_score=0.10,
+        best_inactive_score=0.05,
+        reason="Active",
+    )
+    eng = MultiCandidateEngine(
+        hybrid_engine=_RescueHybrid(),
+        relevance_classifier=_UnrelatedClassifier(),
+        statutory_index=stat,
+        feedback_collector=FeedbackCollector(feedback_dir=tmp_path),
+    )
+    res = eng.classify_adaptive("electric canister vacuum cleaner", page=1, page_size=10)
+    assert res["evidence_summary"]["rescued_candidates_count"] == 1
+    assert res["candidates"][0]["hsn_code"] == "85086000"
+    assert res["candidates"][0]["relevance_category"] == "UNRELATED"
+    assert res["candidates"][0]["evidence_status"] == POSSIBLY_SUPPORTED
+    assert res["candidates"][0]["evidence_trace"]["rescued_by_statutory_evidence"] is True
+    assert res["prediction_mode"] != "EXACT_HSN"
+
+

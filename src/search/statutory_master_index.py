@@ -34,10 +34,30 @@ STOPWORDS = {
 }
 
 
+_SPELLING_NORMALIZATIONS = {
+    "vaccum": "vacuum",
+    "stailess": "stainless",
+    "inflater": "inflator",
+    "accessorie": "accessories",
+    "apparatuse": "apparatus",
+}
+
+
+def normalize_statutory_spelling(text: str) -> str:
+    """Safe search-time normalization for common statutory OCR/spelling variations."""
+    if not text:
+        return ""
+    out = text
+    for bad, good in _SPELLING_NORMALIZATIONS.items():
+        out = re.sub(rf"\b{bad}\b", good, out, flags=re.IGNORECASE)
+    return out
+
+
 def _tokenize(text: str) -> List[str]:
     if not text:
         return []
-    words = re.findall(r"\b[a-zA-Z0-9]{2,}\b", text.lower())
+    norm = normalize_statutory_spelling(text)
+    words = re.findall(r"\b[a-zA-Z0-9]{2,}\b", norm.lower())
     return [w for w in words if w not in STOPWORDS]
 
 

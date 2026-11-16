@@ -230,7 +230,7 @@ def main() -> None:
         "rerank_pair_cache_misses": eng.classifier.reranker.pair_cache_misses,
         "cases": per_case,
     }
-    out = ROOT / "reports" / "phase17_independent_100.json"
+    out = Path(sys.argv[1]) if len(sys.argv) > 1 else (ROOT / "reports" / "phase17_independent_100.json")
     out.write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print("Saved", out)
     print({k: v for k, v in summary.items() if k != "cases"})

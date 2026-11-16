@@ -306,6 +306,7 @@ def evaluate_decision_thresholds(
     has_competing_sub6_leaves: bool = False,
     winner_has_clear_evidence: bool = False,
     missing_numeric_constraints: bool = False,
+    distinction_confidence: float = 1.0,
     status_hint: str = "",
     top_heading: str = "",
 ) -> DecisionThresholdEvaluation:
@@ -356,6 +357,19 @@ def evaluate_decision_thresholds(
             prediction_mode=mode,
             requires_clarification=True,
             reason="Competing tariff items are separated by numerical thresholds not specified in the description.",
+            tau_abstain=tau_abstain,
+            tau_chapter=tau_chapter,
+            tau_exact_hsn=tau_exact,
+        )
+
+    if n_unique_headings > 1 and distinction_confidence < 0.05:
+        return DecisionThresholdEvaluation(
+            prediction_mode="MULTIPLE_CANDIDATES",
+            requires_clarification=True,
+            reason=(
+                f"{n_same_leaves} SAME_PRODUCT leaf candidates span {n_unique_headings} distinct headings "
+                f"with low distinction confidence ({distinction_confidence:.4f})."
+            ),
             tau_abstain=tau_abstain,
             tau_chapter=tau_chapter,
             tau_exact_hsn=tau_exact,
