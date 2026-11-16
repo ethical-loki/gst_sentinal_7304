@@ -409,3 +409,42 @@ def test_phase16_task3_household_vs_conveyance_and_generic_penalty():
     assert "role_mismatch=household_storage_vs_conveyance_packing" in ev_conv.trace_summary
 
 
+def test_phase17_task1_complete_article_vs_parts_protection():
+    intent_pump = analyze_product_intent("centrifugal water pump")
+    rec_part = {
+        "hsn_code": "84139120",
+        "code_length": 8,
+        "chapter_code": "84",
+        "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof",
+        "heading_4digit_desc": "Pumps for liquids, whether or not fitted with a measuring device; liquid elevators",
+        "subheading_6digit_desc": "PARTS",
+        "tariff_item_desc": "OF CENTRIFUGAL PUMPS",
+        "statutory_description": "PUMPS FOR LIQUIDS... - PARTS - OF CENTRIFUGAL PUMPS",
+        "article_keywords": "centrifugal pump parts, impeller, pump casing",
+        "material_keywords": "cast iron, steel",
+    }
+    rec_complete = {
+        "hsn_code": "84137010",
+        "code_length": 8,
+        "chapter_code": "84",
+        "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof",
+        "heading_4digit_desc": "Pumps for liquids, whether or not fitted with a measuring device; liquid elevators",
+        "subheading_6digit_desc": "OTHER CENTRIFUGAL PUMPS",
+        "tariff_item_desc": "PRIMARILY DESIGNED TO HANDLE WATER",
+        "statutory_description": "PUMPS FOR LIQUIDS... - OTHER CENTRIFUGAL PUMPS - PRIMARILY DESIGNED TO HANDLE WATER",
+        "article_keywords": "centrifugal water pump, water pump",
+        "material_keywords": "cast iron, steel",
+    }
+    ev_part = evaluate_candidate_evidence(intent_pump, build_candidate_profile(rec_part, None), "SAME_PRODUCT", 0.90)
+    ev_comp = evaluate_candidate_evidence(intent_pump, build_candidate_profile(rec_complete, None), "SAME_PRODUCT", 0.88)
+    assert ev_part.role_mismatch == "complete_article_vs_parts"
+    assert ev_part.status == POSSIBLY_SUPPORTED
+    assert ev_comp.role_mismatch == ""
+    assert ev_comp.evidence_score > ev_part.evidence_score
+
+    # When the user explicitly asks for spare parts, parts-only tariff item is NOT penalized
+    intent_spare = analyze_product_intent("spare impeller parts for centrifugal pump")
+    ev_spare = evaluate_candidate_evidence(intent_spare, build_candidate_profile(rec_part, None), "SAME_PRODUCT", 0.90)
+    assert ev_spare.role_mismatch == ""
+
+

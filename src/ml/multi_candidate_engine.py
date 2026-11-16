@@ -732,7 +732,16 @@ class MultiCandidateEngine:
                 clarification_reason = "No 8-digit leaf candidate met the calibrated SAME_PRODUCT threshold."
         else:
             unique_headings = {c.candidate.hsn_code[:4] for c in same_leaves if c.candidate.hsn_code}
-            if dist_analysis.get("missing_numeric_constraints"):
+            top_role_mismatch = evidence_by_hsn.get(same_leaves[0].candidate.hsn_code, {}).get("role_mismatch", "")
+            if top_role_mismatch == "complete_article_vs_parts":
+                prediction_mode = "MULTIPLE_CANDIDATES" if len(unique_headings) > 1 else "CHAPTER_ONLY_CLARIFY"
+                final_chapter = None if len(unique_headings) > 1 else same_leaves[0].candidate.chapter_code
+                requires_clarification = True
+                clarification_reason = (
+                    "Top-ranked candidate is a parts/accessories tariff item while the description specifies a complete article; "
+                    "clarification needed to confirm complete machine vs. spare part."
+                )
+            elif dist_analysis.get("missing_numeric_constraints"):
                 if len(unique_headings) > 1:
                     prediction_mode = "MULTIPLE_CANDIDATES"
                     final_chapter = None

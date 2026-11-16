@@ -900,12 +900,23 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
         q_norm = raw_query.lower().strip()
         article_head = (finished_article or intent.finished_article or intent.physical_product or raw_query).lower().strip()
 
-        # Check 1: UNRECOGNIZED
+        # Check 1: UNRECOGNIZED (vague tokens, unclear reading, or multi-token unrecognizable gibberish)
         vague_tokens = {"gadget", "item", "thing", "stuff", "aunty", "something", "anything", "xyz"}
+        q_toks = [t for t in tokenize(q_norm) if len(t) >= 3]
+        q_has_vocab_hit = any((t in self.word_to_rows) or (t.rstrip("s") in self.word_to_rows) for t in q_toks)
+        g_toks = {t.rstrip("s") for term in grounded_terms for t in tokenize(term.lower()) if len(t) >= 3}
+        q_stem_set = {t.rstrip("s") for t in q_toks}
+        has_oos_kw = any(re.search(rf"\b{re.escape(k)}\b", q_norm) for k in (
+            "apple", "apples", "banana", "orange", "mango", "coffee", "tea", "spices",
+            "rice", "wheat", "flour", "petroleum", "medicine", "fertilizer",
+            "glass", "glassware", "leather", "shoes", "gold", "diamond", "silver",
+            "timber", "sheep", "meat", "fish", "milk", "doodh", "honey",
+        ))
         if (
             intent.reading_confidence == "unclear"
             or any(v in q_norm.split() for v in vague_tokens)
             or len(q_norm) < 3
+            or (len(q_toks) >= 2 and not q_has_vocab_hit and not (q_stem_set & g_toks) and not has_oos_kw)
         ):
             return "UNRECOGNIZED", f"Unable to identify a physical commodity from query '{raw_query}'. Clarification required."
 
@@ -955,21 +966,23 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
             "honey": ("04", "Dairy produce; birds eggs; natural honey")
         }
 
+        _oos_primary_materials = {"glass", "glassware", "leather", "gold", "gold coin", "silver", "timber"}
         for keyword, (ch_code, ch_title) in out_of_schedule_indicators.items():
-            # Only trigger if the keyword is the finished article itself (not an ingredient/material/component modifier
+            # Only trigger if the keyword is the finished article itself (not an ingredient/component/packaging modifier
             # on an active-schedule finished article).
             if re.search(rf"\b{re.escape(keyword)}\b", article_head):
                 # Disambiguate Apple Inc brand from edible fruit
                 if keyword in ("apple", "apples") and any(tech in q_norm for tech in ["macbook", "iphone", "ipad", "laptop", "computer", "phone", "watch", "airpods"]):
                     continue
-                # If the finished article head has other grounded active-schedule article nouns (e.g. "leather chair", "glass bottle"),
-                # do not mark OUT_OF_SCHEDULE based on a modifier word.
+                # If the finished article head has other grounded active-schedule article nouns (e.g. "leather chair"),
+                # do not mark OUT_OF_SCHEDULE unless the keyword is the primary constituent material of a non-active item
+                # (e.g. "glass water bottle" -> Ch 70, "genuine leather wallet" -> Ch 42).
                 other_head_tokens = [t for t in head_tokens if t not in tokenize(keyword)]
                 other_active = any(
                     (t in self.word_to_rows) or (t.rstrip("s") in self.word_to_rows)
                     for t in other_head_tokens
                 )
-                if other_active and grounded_terms:
+                if other_active and grounded_terms and keyword not in _oos_primary_materials:
                     continue
                 if ch_code not in VALID_SCHEDULE_CHAPTERS:
                     return "OUT_OF_SCHEDULE", (
@@ -977,7 +990,7 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
                         f"({ch_title}), which is outside the active Master file schedule (active chapters: "
                         f"{', '.join(sorted(VALID_SCHEDULE_CHAPTERS))})."
                     )
-            elif not head_has_active_match and not grounded_terms and re.search(rf"\b{re.escape(keyword)}\b", q_norm):
+            elif (keyword in _oos_primary_materials or (not head_has_active_match and not grounded_terms)) and re.search(rf"\b{re.escape(keyword)}\b", q_norm.split(" with ")[0].split(" in ")[0]):
                 if keyword in ("apple", "apples") and any(tech in q_norm for tech in ["macbook", "iphone", "ipad", "laptop", "computer", "phone", "watch", "airpods"]):
                     continue
                 if ch_code not in VALID_SCHEDULE_CHAPTERS:
@@ -1216,6 +1229,8 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
         )
 
         is_valid = (outcome_type != "UNRECOGNIZED")
+        if outcome_type == "UNRECOGNIZED":
+            grounded_terms = []
 
         # Build synthesized search string (finished article anchored first)
         synth_parts = []

@@ -158,36 +158,65 @@ class ProductTariffReranker:
             local_files_only=local_files_only,
         )
         self.load_time_s = time.perf_counter() - t0
+        self._pair_cache: Dict[Tuple[str, str], float] = {}
+        self._pair_cache_max = 20000
+        self.pair_cache_hits = 0
+        self.pair_cache_misses = 0
         logger.info(f"Loaded '{model_name_or_path}' in {self.load_time_s:.2f}s")
 
     def score_pairs(self, pairs: Sequence[Sequence[str]]) -> List[float]:
-        """Scores a list of (query, tariff_context) pairs, returning raw logits."""
+        """Scores a list of (query, tariff_context) pairs, returning raw logits (with in-memory pair cache)."""
         if not pairs:
             return []
         n = len(pairs)
-        if n <= self.batch_size:
-            scores = self.model.predict(
-                list(pairs),
-                batch_size=self.batch_size,
-                show_progress_bar=False,
-            )
-            return [float(s) for s in scores]
+        out: List[Optional[float]] = [None] * n
+        miss_indices: List[int] = []
+        miss_pairs: List[Sequence[str]] = []
 
-        # Length-bucket pairs so short sequences aren't padded to the longest batch item on CPU
-        indexed = sorted(
-            enumerate(pairs),
-            key=lambda item: len(str(item[1][0])) + len(str(item[1][1])),
-        )
-        sorted_pairs = [item[1] for item in indexed]
-        sorted_scores = self.model.predict(
-            sorted_pairs,
-            batch_size=self.batch_size,
-            show_progress_bar=False,
-        )
-        out = [0.0] * n
-        for (orig_idx, _), sc in zip(indexed, sorted_scores):
-            out[orig_idx] = float(sc)
-        return out
+        for idx, p in enumerate(pairs):
+            key = (str(p[0]), str(p[1]))
+            cached = self._pair_cache.get(key)
+            if cached is not None:
+                out[idx] = cached
+                self.pair_cache_hits += 1
+            else:
+                miss_indices.append(idx)
+                miss_pairs.append(p)
+                self.pair_cache_misses += 1
+
+        if miss_pairs:
+            if len(miss_pairs) <= self.batch_size:
+                miss_scores = self.model.predict(
+                    list(miss_pairs),
+                    batch_size=self.batch_size,
+                    show_progress_bar=False,
+                )
+                for m_idx, sc in zip(miss_indices, miss_scores):
+                    val = float(sc)
+                    out[m_idx] = val
+                    if len(self._pair_cache) >= self._pair_cache_max:
+                        self._pair_cache.clear()
+                    self._pair_cache[(str(pairs[m_idx][0]), str(pairs[m_idx][1]))] = val
+            else:
+                # Length-bucket pairs so short sequences aren't padded to the longest batch item on CPU
+                indexed = sorted(
+                    zip(miss_indices, miss_pairs),
+                    key=lambda item: len(str(item[1][0])) + len(str(item[1][1])),
+                )
+                sorted_pairs = [item[1] for item in indexed]
+                sorted_scores = self.model.predict(
+                    sorted_pairs,
+                    batch_size=self.batch_size,
+                    show_progress_bar=False,
+                )
+                for (m_idx, p), sc in zip(indexed, sorted_scores):
+                    val = float(sc)
+                    out[m_idx] = val
+                    if len(self._pair_cache) >= self._pair_cache_max:
+                        self._pair_cache.clear()
+                    self._pair_cache[(str(p[0]), str(p[1]))] = val
+
+        return [float(x) if x is not None else 0.0 for x in out]
 
     def rerank(
         self,

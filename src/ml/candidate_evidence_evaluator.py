@@ -72,6 +72,16 @@ _CONVEYANCE_ROLE_RE = re.compile(
     r"\b(?:conveyance\s+or\s+packing\s+of\s+goods|packing\s+of\s+goods|shipping|cargo|freight|industrial\s+packaging)\b",
     re.IGNORECASE,
 )
+_QUERY_PARTS_CUES_RE = re.compile(
+    r"\b(?:part|parts|spare|spares|component|components|accessory|accessories|"
+    r"subassembly|impeller|casing|rotor|stator|seal|gasket|valve|blade|nozzle|"
+    r"pad|pads|lining|inflator|radiator|clutch|piston|ring|rings|bearing|shaft|gear|housing|bracket|filter)\b",
+    re.IGNORECASE,
+)
+_CAND_PARTS_SUB6_RE = re.compile(r"^\s*parts(?:\s+and\s+accessories|\s+of\b|\s+suitable\b|$)", re.IGNORECASE)
+_CAND_PARTS_DESC_RE = re.compile(r"^\s*(?:parts\s+(?:of|for|and\s+accessories|suitable\s+for)|parts\s*$)", re.IGNORECASE)
+_CAND_PARTS_STAT_RE = re.compile(r"(?:^|-\s*)parts\b(?:\s*:|\s*-|\s+of\b|\s+for\b|\s+and\s+accessories)", re.IGNORECASE)
+_CAND_OF_MACHINE_RE = re.compile(r"^\s*of\s+[a-z]", re.IGNORECASE)
 
 # Broad mutually-exclusive material families derived from WCO tariff structure
 _MATERIAL_FAMILIES: Dict[str, Set[str]] = {
@@ -162,6 +172,7 @@ class CandidateEvidenceResult:
     material_matches: List[str] = field(default_factory=list)
     chapter_compatible: bool = False
     heading_compatible: bool = False
+    role_mismatch: str = ""
     contradictions: List[str] = field(default_factory=list)
     missing_attributes: List[str] = field(default_factory=list)
     evidence_score: float = 0.0
@@ -174,6 +185,7 @@ class CandidateEvidenceResult:
             "material_matches": list(self.material_matches),
             "chapter_compatible": self.chapter_compatible,
             "heading_compatible": self.heading_compatible,
+            "role_mismatch": self.role_mismatch,
             "contradictions": list(self.contradictions),
             "missing_attributes": list(self.missing_attributes),
             "evidence_score": round(float(self.evidence_score), 4),
@@ -304,6 +316,26 @@ def evaluate_candidate_evidence(
     elif q_conveyance and not q_household and c_household and not c_conveyance:
         role_mismatch = "conveyance_packing_vs_household_storage"
 
+    # Complete-article vs spare-part role protection (universal across machinery/apparatus)
+    q_asks_parts = bool(_QUERY_PARTS_CUES_RE.search(query_role_text))
+    c_is_parts_only = bool(
+        _CAND_PARTS_SUB6_RE.match(profile.subheading_6digit_desc or "")
+        or _CAND_PARTS_DESC_RE.match(profile.tariff_item_desc or "")
+        or (
+            _CAND_PARTS_STAT_RE.search(profile.statutory_description or "")
+            and (
+                _CAND_OF_MACHINE_RE.match(profile.subheading_6digit_desc or "")
+                or _CAND_OF_MACHINE_RE.match(profile.tariff_item_desc or "")
+            )
+        )
+        or (
+            _CAND_PARTS_DESC_RE.match(profile.heading_4digit_desc or "")
+            and not q_asks_parts
+        )
+    )
+    if c_is_parts_only and not q_asks_parts:
+        role_mismatch = "complete_article_vs_parts"
+
     # Detect generic-superordinate-only article match when query has more specific nouns
     matched_stems = {_stem(t) for m in article_matches for t in _tokenize_content(m)}
     specific_query_tokens = article_core_tokens - _BROAD_SUPERORDINATES
@@ -384,7 +416,9 @@ def evaluate_candidate_evidence(
         ev_score = min(0.95, 0.60 * cross_encoder_confidence + (0.20 if article_matches else 0.05) + (0.10 if material_matches else 0.0))
         if generic_only_match:
             ev_score = max(0.0, ev_score - 0.15)
-        if role_mismatch:
+        if role_mismatch == "complete_article_vs_parts":
+            ev_score = max(0.0, ev_score - 0.25)
+        elif role_mismatch:
             ev_score = max(0.0, ev_score - 0.15)
     else:
         status = INSUFFICIENT_EVIDENCE
@@ -413,6 +447,7 @@ def evaluate_candidate_evidence(
         material_matches=material_matches[:6],
         chapter_compatible=chapter_compatible,
         heading_compatible=heading_compatible,
+        role_mismatch=role_mismatch,
         contradictions=contradictions,
         missing_attributes=missing_attributes,
         evidence_score=ev_score,
