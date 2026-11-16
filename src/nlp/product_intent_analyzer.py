@@ -96,12 +96,31 @@ _GENERAL_PROCESS_CUES = (
 )
 
 
+_GENERAL_PRODUCT_FORMS = (
+    "granules", "powder", "flakes", "pellets", "blocks", "sheets", "plates",
+    "film", "foil", "strip", "tubes", "pipes", "hoses", "rods", "bars",
+    "wire", "liquid", "paste", "extract", "resin", "scrap",
+)
+
+_GARMENT_CONSTRUCTION_CUES = re.compile(
+    r"\b(?:t-?shirt|shirt|trouser|pants|suit|jacket|blazer|dress|skirt|sweater|pullover|overcoat|coat|garment|apparel|fabric|cloth)\b",
+    re.IGNORECASE,
+)
+_MACHINERY_RATING_CUES = re.compile(
+    r"\b(?:motor|generator|generating\s+set|pump|boiler|transformer|compressor|turbine|engine)\b",
+    re.IGNORECASE,
+)
+_NUMERIC_SPEC_RE = re.compile(r"\b\d+(?:\.\d+)?\s*(?:kva|kw|w|hp|v|kv|a|amp|hz|tonnes?|kg|g|ml|l|litre|mm|cm|m)\b", re.IGNORECASE)
+
+
 @dataclass
 class AttributeRelationship:
     attribute_type: str
     value: str
     role: str  # FINISHED_ARTICLE | CONSTITUENT_MATERIAL | INGREDIENT_OR_ADDITIVE | COMPONENT_OR_PART | PACKAGING_OR_PRESENTATION | PROCESSING_FORM | INTENDED_USE
     clause_source: str = "head"
+    confidence: float = 0.85
+    evidence_trace: str = ""
 
 
 @dataclass
@@ -116,17 +135,25 @@ class ProductIntentStructure:
     function_use: Optional[str] = None
     attribute_relationships: List[AttributeRelationship] = field(default_factory=list)
     article_search_query: str = ""
+    secondary_articles: List[str] = field(default_factory=list)
+    product_form: Optional[str] = None
+    missing_critical_attributes: List[str] = field(default_factory=list)
+    intent_confidence: float = 0.85
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "raw_description": self.raw_description,
             "finished_article": self.finished_article,
+            "secondary_articles": list(self.secondary_articles),
             "constituent_materials": list(self.constituent_materials),
             "ingredients_or_additives": list(self.ingredients_or_additives),
             "components_or_parts": list(self.components_or_parts),
             "packaging_or_presentation": self.packaging_or_presentation,
             "processing_form": self.processing_form,
+            "product_form": self.product_form,
             "function_use": self.function_use,
+            "missing_critical_attributes": list(self.missing_critical_attributes),
+            "intent_confidence": round(float(self.intent_confidence), 4),
             "attribute_relationships": [asdict(r) for r in self.attribute_relationships],
             "article_search_query": self.article_search_query,
         }
@@ -207,7 +234,25 @@ def analyze_product_intent(description: str, clarification: str = "") -> Product
     if not combined:
         return ProductIntentStructure(raw_description="", finished_article="")
 
-    head, clauses = _split_top_level_clauses(combined)
+    # Detect semicolon-separated multi-article descriptions outside parentheses
+    top_articles: List[str] = []
+    if ";" in combined:
+        mask = _paren_depth_mask(combined)
+        split_pts = [i for i, ch in enumerate(combined) if ch == ";" and not mask[i]]
+        if split_pts:
+            prev = 0
+            for sp in split_pts:
+                part = combined[prev:sp].strip()
+                if part:
+                    top_articles.append(part)
+                prev = sp + 1
+            tail = combined[prev:].strip()
+            if tail:
+                top_articles.append(tail)
+    primary_input = top_articles[0] if len(top_articles) > 1 else combined
+    extra_articles = top_articles[1:] if len(top_articles) > 1 else []
+
+    head, clauses = _split_top_level_clauses(primary_input)
 
     constituent_materials: List[str] = []
     ingredients_or_additives: List[str] = []
@@ -344,7 +389,55 @@ def analyze_product_intent(description: str, clarification: str = "") -> Product
                 clean_head = specific
 
     finished_article = clean_head or head.strip() or combined
-    relationships.insert(0, AttributeRelationship("finished_article", finished_article, "FINISHED_ARTICLE", "head"))
+    relationships.insert(
+        0,
+        AttributeRelationship(
+            "finished_article",
+            finished_article,
+            "FINISHED_ARTICLE",
+            "head",
+            confidence=0.92 if clean_head else 0.70,
+            evidence_trace=f"leading head phrase before top-level markers: '{finished_article[:80]}'",
+        ),
+    )
+
+    # Product physical form extraction (e.g. granules, powder, sheets, pipes, liquid)
+    forms_found: List[str] = []
+    combined_low = combined.lower()
+    for pf in _GENERAL_PRODUCT_FORMS:
+        if re.search(rf"\b{re.escape(pf)}\b", combined_low):
+            forms_found.append(pf)
+    product_form = ", ".join(forms_found) if forms_found else None
+    if product_form:
+        relationships.append(
+            AttributeRelationship(
+                "product_form",
+                product_form,
+                "PRODUCT_FORM",
+                "lexical",
+                confidence=0.88,
+                evidence_trace=f"matched physical form cue(s): {product_form}",
+            )
+        )
+
+    # Multi-article detection (distinct articles joined by top-level ';' outside parentheses)
+    secondary_articles: List[str] = list(extra_articles)
+
+    # Detect missing classification-critical attributes
+    missing_critical: List[str] = []
+    if not constituent_materials:
+        missing_critical.append("material")
+    if _GARMENT_CONSTRUCTION_CUES.search(finished_article) and not processing_form:
+        missing_critical.append("construction (knitted vs woven)")
+    if _MACHINERY_RATING_CUES.search(finished_article) and not _NUMERIC_SPEC_RE.search(combined):
+        missing_critical.append("capacity_or_rating")
+
+    # Populate evidence_trace for relationships that lack one
+    for rel in relationships:
+        if not rel.evidence_trace:
+            rel.evidence_trace = f"extracted via {rel.clause_source} ({rel.attribute_type})"
+
+    intent_conf = 0.92 if (finished_article and not missing_critical) else (0.78 if finished_article else 0.45)
 
     packaging_str = "; ".join(packaging_parts) if packaging_parts else None
     use_str = "; ".join(use_parts) if use_parts else None
@@ -363,12 +456,16 @@ def analyze_product_intent(description: str, clarification: str = "") -> Product
     return ProductIntentStructure(
         raw_description=raw,
         finished_article=finished_article,
+        secondary_articles=secondary_articles,
         constituent_materials=constituent_materials,
         ingredients_or_additives=ingredients_or_additives,
         components_or_parts=components_or_parts,
         packaging_or_presentation=packaging_str,
         processing_form=processing_form,
+        product_form=product_form,
         function_use=use_str,
+        missing_critical_attributes=missing_critical,
+        intent_confidence=intent_conf,
         attribute_relationships=relationships,
         article_search_query=" | ".join(search_parts),
     )

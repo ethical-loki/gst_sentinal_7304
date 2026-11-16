@@ -147,8 +147,26 @@ class HSNIntelligenceV2:
                 rationale=comp.reason,
             )
 
-        tau_abstain = bundle.tau_abstain if bundle is not None else 0.20
-        if res.status == "NO_RELEVANT_MATCH" or (classified and best_rel_conf < tau_abstain):
+        from src.ml.confidence_calibrator import evaluate_decision_thresholds
+
+        same_head_count = len([
+            c for c in res.same_product_candidates
+            if res.selected_hsn and c.candidate.hsn_code[:4] == res.selected_hsn[:4]
+        ])
+        dec = evaluate_decision_thresholds(
+            bundle=bundle,
+            best_rel_conf=best_rel_conf,
+            chap_conf=chap_conf,
+            hsn_conf=hsn_conf,
+            has_same_product=bool(res.same_product_candidates),
+            n_same_leaves=len(res.same_product_candidates),
+            n_unique_headings=len({c.candidate.hsn_code[:4] for c in res.same_product_candidates}) or 1,
+            has_competing_sub6_leaves=same_head_count >= 2,
+            status_hint=res.status,
+            top_heading=res.selected_hsn[:4] if res.selected_hsn else "",
+        )
+
+        if res.status == "NO_RELEVANT_MATCH" or (classified and best_rel_conf < dec.tau_abstain):
             return HSNV2ClassificationResult(
                 query=q,
                 status="INSUFFICIENT_INFORMATION",
@@ -159,9 +177,7 @@ class HSNIntelligenceV2:
                 chapter_confidence=chap_conf,
                 hsn_confidence=0.0,
                 prediction_mode="INSUFFICIENT_INFORMATION",
-                abstention_reason=(
-                    f"Calibrated relevance ({best_rel_conf:.2f}) below safe abstention threshold ({tau_abstain:.2f})."
-                ),
+                abstention_reason=dec.reason,
                 clarification_question=res.clarification_question
                 or f"Insufficient product evidence for '{q}'. Please provide product identity, material, and intended use.",
                 statutory_matches=comp.top_statutory_matches[:5],

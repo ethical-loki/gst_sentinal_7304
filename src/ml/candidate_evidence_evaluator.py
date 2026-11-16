@@ -58,6 +58,21 @@ _GENERIC_MODIFIERS = {
     "dried", "dehydrated", "frozen", "chilled", "laminated", "coated", "plated",
 }
 
+# Broad superordinate nouns that alone are weaker than specific commercial article nouns
+_BROAD_SUPERORDINATES = {
+    "container", "equipment", "device", "machine", "machinery", "system",
+    "unit", "ware", "product", "accessory", "appliance", "apparatus", "tool",
+}
+
+_HOUSEHOLD_ROLE_RE = re.compile(
+    r"\b(?:household|kitchenware|tableware|kitchen|domestic|toilet\s+articles|food\s+storage|lunch\s+box|storage\s+container)\b",
+    re.IGNORECASE,
+)
+_CONVEYANCE_ROLE_RE = re.compile(
+    r"\b(?:conveyance\s+or\s+packing\s+of\s+goods|packing\s+of\s+goods|shipping|cargo|freight|industrial\s+packaging)\b",
+    re.IGNORECASE,
+)
+
 # Broad mutually-exclusive material families derived from WCO tariff structure
 _MATERIAL_FAMILIES: Dict[str, Set[str]] = {
     "plastics": {"plastic", "plastics", "polymer", "polymers", "pvc", "hdpe", "ldpe", "polyethylene", "polypropylene", "polystyrene", "polycarbonate", "abs", "acrylic", "vinyl", "nylon", "resin"},
@@ -146,6 +161,7 @@ class CandidateEvidenceResult:
     article_matches: List[str] = field(default_factory=list)
     material_matches: List[str] = field(default_factory=list)
     chapter_compatible: bool = False
+    heading_compatible: bool = False
     contradictions: List[str] = field(default_factory=list)
     missing_attributes: List[str] = field(default_factory=list)
     evidence_score: float = 0.0
@@ -157,6 +173,7 @@ class CandidateEvidenceResult:
             "article_matches": list(self.article_matches),
             "material_matches": list(self.material_matches),
             "chapter_compatible": self.chapter_compatible,
+            "heading_compatible": self.heading_compatible,
             "contradictions": list(self.contradictions),
             "missing_attributes": list(self.missing_attributes),
             "evidence_score": round(float(self.evidence_score), 4),
@@ -266,11 +283,31 @@ def evaluate_candidate_evidence(
                 seen_mat_stems.add(kw_stem)
                 material_matches.append(kw)
 
-    # 3. Chapter compatibility (supporting evidence only, never standalone proof)
+    # 3. Chapter & heading compatibility (supporting evidence only, never standalone proof)
     intent_all_tokens = _tokenize_content(
         f"{product_intent.finished_article} {query_mat_text} {product_intent.processing_form or ''} {product_intent.function_use or ''}"
     )
     chapter_compatible = bool(intent_all_tokens & profile.chapter_tokens) or bool(article_matches)
+    heading_tokens = _tokenize_content(f"{profile.heading_4digit_desc} {profile.subheading_6digit_desc}")
+    heading_compatible = bool(article_core_tokens & heading_tokens) or bool(article_matches)
+
+    # Functional role alignment: distinguish household/storage articles vs conveyance/packing containers
+    query_role_text = f"{product_intent.raw_description} {product_intent.finished_article} {product_intent.function_use or ''}"
+    cand_role_text = f"{profile.heading_4digit_desc} {profile.subheading_6digit_desc} {profile.statutory_description}"
+    q_household = bool(_HOUSEHOLD_ROLE_RE.search(query_role_text))
+    q_conveyance = bool(_CONVEYANCE_ROLE_RE.search(query_role_text))
+    c_household = bool(_HOUSEHOLD_ROLE_RE.search(cand_role_text))
+    c_conveyance = bool(_CONVEYANCE_ROLE_RE.search(cand_role_text))
+    role_mismatch = ""
+    if q_household and not q_conveyance and c_conveyance and not c_household:
+        role_mismatch = "household_storage_vs_conveyance_packing"
+    elif q_conveyance and not q_household and c_household and not c_conveyance:
+        role_mismatch = "conveyance_packing_vs_household_storage"
+
+    # Detect generic-superordinate-only article match when query has more specific nouns
+    matched_stems = {_stem(t) for m in article_matches for t in _tokenize_content(m)}
+    specific_query_tokens = article_core_tokens - _BROAD_SUPERORDINATES
+    generic_only_match = bool(article_matches) and bool(specific_query_tokens) and not bool(matched_stems & specific_query_tokens)
 
     # 4. Contradiction vs Missing Attribute detection
     contradictions: List[str] = []
@@ -332,12 +369,23 @@ def evaluate_candidate_evidence(
     if contradictions:
         status = CONTRADICTED
         ev_score = 0.0
-    elif article_matches and (material_matches or not query_mat_fams) and not missing_attributes and relation_value == "SAME_PRODUCT":
+    elif (
+        article_matches
+        and not generic_only_match
+        and not role_mismatch
+        and (material_matches or not query_mat_fams)
+        and not missing_attributes
+        and relation_value == "SAME_PRODUCT"
+    ):
         status = SUPPORTED
         ev_score = min(1.0, 0.65 * cross_encoder_confidence + 0.25 + (0.10 if material_matches else 0.0))
     elif article_matches or (material_matches and not material_only_no_article):
         status = POSSIBLY_SUPPORTED
         ev_score = min(0.95, 0.60 * cross_encoder_confidence + (0.20 if article_matches else 0.05) + (0.10 if material_matches else 0.0))
+        if generic_only_match:
+            ev_score = max(0.0, ev_score - 0.15)
+        if role_mismatch:
+            ev_score = max(0.0, ev_score - 0.15)
     else:
         status = INSUFFICIENT_EVIDENCE
         ev_score = max(0.0, 0.50 * cross_encoder_confidence)
@@ -346,9 +394,14 @@ def evaluate_candidate_evidence(
         f"article_match={article_matches[:3] or 'none'}",
         f"material_match={material_matches[:3] or 'none'}",
         f"chapter_compat={chapter_compatible}",
+        f"heading_compat={heading_compatible}",
     ]
     if material_only_no_article:
         trace_parts.append("guard=material_only_no_article")
+    if generic_only_match:
+        trace_parts.append("penalty=generic_superordinate_only")
+    if role_mismatch:
+        trace_parts.append(f"role_mismatch={role_mismatch}")
     if missing_attributes:
         trace_parts.append(f"missing={missing_attributes}")
     if contradictions:
@@ -359,6 +412,7 @@ def evaluate_candidate_evidence(
         article_matches=article_matches[:6],
         material_matches=material_matches[:6],
         chapter_compatible=chapter_compatible,
+        heading_compatible=heading_compatible,
         contradictions=contradictions,
         missing_attributes=missing_attributes,
         evidence_score=ev_score,

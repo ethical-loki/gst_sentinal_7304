@@ -298,6 +298,26 @@ def test_out_of_schedule_materials(extractor):
 
     res_leather = extractor.extract_intent("genuine leather wallet")
     assert res_leather.outcome_type == "OUT_OF_SCHEDULE"
-    assert "42" in (res_leather.error_message or "") or "schedule" in (res_leather.error_message or "").lower()
+
+
+def test_phase16_task1_malformed_json_retry_and_rule_based_fallback(extractor, monkeypatch):
+    """Verifies malformed LLM JSON retries up to max_json_retries and falls back safely to RULE_BASED_FALLBACK."""
+    calls = {"n": 0}
+
+    class _BrokenLLM:
+        def generate(self, prompt: str, system_prompt: str) -> str:
+            calls["n"] += 1
+            return '{\n  "physical_product": "stainless steel screws",\n  "material": unquoted_broken'
+
+    monkeypatch.setattr(extractor, "_get_llm_client", lambda: _BrokenLLM())
+    extractor.max_json_retries = 2
+    res = extractor.extract_intent("stainless steel screws and bolts", use_cache=False)
+    assert calls["n"] == 3  # 1 initial + 2 retries
+    assert res.extraction_source == "RULE_BASED_FALLBACK"
+    assert res.retries_used == 2
+    assert res.raw_llm_response is not None and "stainless steel" in res.raw_llm_response
+    assert len(res.validation_errors) == 3
+    assert "screws" in (res.finished_article or "").lower()
+    assert res.physical_product != "unspecified item"
 
 

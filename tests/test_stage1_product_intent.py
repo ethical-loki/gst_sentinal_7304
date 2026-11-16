@@ -182,3 +182,31 @@ def test_phase15_priority2_parenthesis_and_multi_noun_extraction():
     assert not c3.finished_article.endswith("(")
 
 
+def test_phase16_task2_complex_intent_examples_and_traces():
+    ex1 = analyze_product_intent("Plastic storage container with fitted lid")
+    assert "plastic storage container" in ex1.finished_article.lower()
+    assert any("fitted lid" in i.lower() for i in ex1.ingredients_or_additives)
+
+    ex2 = analyze_product_intent("Stainless steel industrial pump with electric motor")
+    assert "pump" in ex2.finished_article.lower()
+    assert any("stainless steel" in m.lower() for m in ex2.constituent_materials)
+    assert "capacity_or_rating" in ex2.missing_critical_attributes
+
+    ex3 = analyze_product_intent("Wheat noodles containing seasoning and vegetable additives")
+    assert "wheat noodles" in ex3.finished_article.lower()
+    assert any("seasoning" in i.lower() for i in ex3.ingredients_or_additives)
+
+    ex4 = analyze_product_intent("Cotton knitted T-shirt with polyester collar")
+    assert "t-shirt" in ex4.finished_article.lower()
+    assert ex4.processing_form and "knitted" in ex4.processing_form.lower()
+    assert any("polyester collar" in i.lower() for i in ex4.ingredients_or_additives)
+
+    ex5 = analyze_product_intent("Industrial machinery supplied with detachable components")
+    assert "machinery" in ex5.finished_article.lower()
+    assert all(r.confidence > 0 and r.evidence_trace for r in ex5.attribute_relationships)
+
+    ex6 = analyze_product_intent("polypropylene granules in bulk; stainless steel bolts")
+    assert ex6.product_form and "granules" in ex6.product_form.lower()
+    assert ex6.secondary_articles == ["stainless steel bolts"]
+
+

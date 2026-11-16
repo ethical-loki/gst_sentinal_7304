@@ -378,3 +378,34 @@ def test_phase15_priority1_article_identity_protection():
     assert ev_mat_only.status == POSSIBLY_SUPPORTED
 
 
+def test_phase16_task3_household_vs_conveyance_and_generic_penalty():
+    intent_storage = analyze_product_intent("plastic household food storage container with lid")
+    rec_household = {
+        "hsn_code": "39241090",
+        "code_length": 8,
+        "chapter_code": "39",
+        "chapter_title": "Plastics and articles thereof",
+        "heading_4digit_desc": "Tableware, kitchenware, other household articles and hygienic or toilet articles, of plastics",
+        "statutory_description": "Tableware, kitchenware, other household articles of plastics - food storage container",
+        "tariff_item_desc": "Other",
+        "article_keywords": "food storage container, household container",
+        "material_keywords": "plastics",
+    }
+    rec_conveyance = {
+        "hsn_code": "39239090",
+        "code_length": 8,
+        "chapter_code": "39",
+        "chapter_title": "Plastics and articles thereof",
+        "heading_4digit_desc": "Articles for the conveyance or packing of goods, of plastics",
+        "statutory_description": "Articles for the conveyance or packing of goods, of plastics - container",
+        "tariff_item_desc": "Other",
+        "article_keywords": "container",
+        "material_keywords": "plastics",
+    }
+    ev_house = evaluate_candidate_evidence(intent_storage, build_candidate_profile(rec_household, None), "SAME_PRODUCT", 0.85)
+    ev_conv = evaluate_candidate_evidence(intent_storage, build_candidate_profile(rec_conveyance, None), "SAME_PRODUCT", 0.85)
+    assert ev_house.heading_compatible is True
+    assert ev_house.evidence_score > ev_conv.evidence_score
+    assert "role_mismatch=household_storage_vs_conveyance_packing" in ev_conv.trace_summary
+
+

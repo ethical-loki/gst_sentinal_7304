@@ -113,3 +113,36 @@ def test_calibration_bundle_roundtrip_and_selective_curve(tmp_path):
     assert curve[0]["accuracy"] == 1.0
     assert curve[1]["coverage"] == 0.25
 
+
+def test_phase16_task4_decision_threshold_consistency():
+    from src.ml.confidence_calibrator import evaluate_decision_thresholds
+
+    bundle = CalibrationBundle(tau_abstain=0.40, tau_chapter=0.70, tau_exact_hsn=0.65)
+    # Regression: relevance=0.73 >= 0.40 with NO_RELEVANT_MATCH must NEVER say "0.73 below 0.40"
+    dec = evaluate_decision_thresholds(
+        bundle=bundle,
+        best_rel_conf=0.73,
+        chap_conf=0.60,
+        hsn_conf=0.30,
+        has_same_product=False,
+        n_same_leaves=0,
+        n_unique_headings=1,
+        status_hint="NO_RELEVANT_MATCH",
+    )
+    assert dec.prediction_mode == "INSUFFICIENT_INFORMATION"
+    assert "below safe abstention threshold" not in dec.reason.lower()
+    assert "meets threshold" in dec.reason.lower()
+
+    # True low relevance < tau_abstain -> must say below threshold
+    dec_low = evaluate_decision_thresholds(
+        bundle=bundle,
+        best_rel_conf=0.25,
+        chap_conf=0.20,
+        hsn_conf=0.10,
+        has_same_product=False,
+        n_same_leaves=0,
+        n_unique_headings=0,
+        status_hint="NO_RELEVANT_MATCH",
+    )
+    assert "below safe abstention threshold" in dec_low.reason.lower()
+

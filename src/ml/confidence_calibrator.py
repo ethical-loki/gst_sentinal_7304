@@ -277,6 +277,144 @@ class LogisticFeatureCalibrator:
         return np.array([self.predict_proba_one(d) for d in feature_dicts], dtype=np.float64)
 
 
+DEFAULT_TAU_ABSTAIN = 0.45
+DEFAULT_TAU_CHAPTER = 0.70
+DEFAULT_TAU_EXACT_HSN = 0.65
+
+
+@dataclass
+class DecisionThresholdEvaluation:
+    """Centralized threshold & explanation result ensuring UI/API reasons always match logic."""
+
+    prediction_mode: str  # EXACT_HSN | MULTIPLE_CANDIDATES | CHAPTER_ONLY_CLARIFY | CLARIFY_AMBIGUOUS | INSUFFICIENT_INFORMATION
+    requires_clarification: bool
+    reason: str
+    tau_abstain: float
+    tau_chapter: float
+    tau_exact_hsn: float
+
+
+def evaluate_decision_thresholds(
+    *,
+    bundle: Optional["CalibrationBundle"],
+    best_rel_conf: float,
+    chap_conf: float,
+    hsn_conf: float,
+    has_same_product: bool,
+    n_same_leaves: int,
+    n_unique_headings: int,
+    has_competing_sub6_leaves: bool = False,
+    winner_has_clear_evidence: bool = False,
+    missing_numeric_constraints: bool = False,
+    status_hint: str = "",
+    top_heading: str = "",
+) -> DecisionThresholdEvaluation:
+    """
+    Single centralized decision-threshold evaluator shared by HSNV2Pipeline and MultiCandidateEngine.
+    Guarantees that displayed confidence values and abstention reasons always agree.
+    """
+    tau_abstain = bundle.tau_abstain if bundle is not None else DEFAULT_TAU_ABSTAIN
+    tau_chapter = bundle.tau_chapter if bundle is not None else DEFAULT_TAU_CHAPTER
+    tau_exact = bundle.tau_exact_hsn if bundle is not None else DEFAULT_TAU_EXACT_HSN
+
+    if best_rel_conf < tau_abstain:
+        return DecisionThresholdEvaluation(
+            prediction_mode="INSUFFICIENT_INFORMATION",
+            requires_clarification=True,
+            reason=f"Calibrated relevance ({best_rel_conf:.2f}) below safe abstention threshold ({tau_abstain:.2f}).",
+            tau_abstain=tau_abstain,
+            tau_chapter=tau_chapter,
+            tau_exact_hsn=tau_exact,
+        )
+
+    if status_hint == "NO_RELEVANT_MATCH" or not has_same_product:
+        return DecisionThresholdEvaluation(
+            prediction_mode="MULTIPLE_CANDIDATES" if n_unique_headings >= 2 else "INSUFFICIENT_INFORMATION",
+            requires_clarification=True,
+            reason=(
+                f"Calibrated relevance ({best_rel_conf:.2f}) meets threshold ({tau_abstain:.2f}), "
+                "but no candidate met the SAME_PRODUCT statutory match criteria."
+            ),
+            tau_abstain=tau_abstain,
+            tau_chapter=tau_chapter,
+            tau_exact_hsn=tau_exact,
+        )
+
+    if status_hint in ("AMBIGUOUS_MATERIAL", "AMBIGUOUS_SPECIFICATION"):
+        return DecisionThresholdEvaluation(
+            prediction_mode="CLARIFY_AMBIGUOUS",
+            requires_clarification=True,
+            reason=f"Ambiguous statutory specification (chapter_confidence={chap_conf:.2f}, hsn_confidence={hsn_conf:.2f}).",
+            tau_abstain=tau_abstain,
+            tau_chapter=tau_chapter,
+            tau_exact_hsn=tau_exact,
+        )
+
+    if missing_numeric_constraints:
+        mode = "MULTIPLE_CANDIDATES" if n_unique_headings > 1 else "CHAPTER_ONLY_CLARIFY"
+        return DecisionThresholdEvaluation(
+            prediction_mode=mode,
+            requires_clarification=True,
+            reason="Competing tariff items are separated by numerical thresholds not specified in the description.",
+            tau_abstain=tau_abstain,
+            tau_chapter=tau_chapter,
+            tau_exact_hsn=tau_exact,
+        )
+
+    if winner_has_clear_evidence and hsn_conf >= tau_exact:
+        return DecisionThresholdEvaluation(
+            prediction_mode="EXACT_HSN",
+            requires_clarification=False,
+            reason=f"Clear statutory distinction and calibrated exact-HSN confidence ({hsn_conf:.2f} >= {tau_exact:.2f}).",
+            tau_abstain=tau_abstain,
+            tau_chapter=tau_chapter,
+            tau_exact_hsn=tau_exact,
+        )
+
+    if n_unique_headings > 1:
+        return DecisionThresholdEvaluation(
+            prediction_mode="MULTIPLE_CANDIDATES",
+            requires_clarification=True,
+            reason=f"{n_same_leaves} SAME_PRODUCT leaf candidates span {n_unique_headings} distinct headings.",
+            tau_abstain=tau_abstain,
+            tau_chapter=tau_chapter,
+            tau_exact_hsn=tau_exact,
+        )
+
+    if n_same_leaves > 1 or has_competing_sub6_leaves:
+        return DecisionThresholdEvaluation(
+            prediction_mode="CHAPTER_ONLY_CLARIFY",
+            requires_clarification=True,
+            reason=(
+                f"Heading {top_heading or 'target'} is supported (chapter_confidence={chap_conf:.2f}), "
+                f"but sibling 8-digit tariff items compete without decisive statutory distinction "
+                f"(hsn_confidence={hsn_conf:.2f}, threshold={tau_exact:.2f})."
+            ),
+            tau_abstain=tau_abstain,
+            tau_chapter=tau_chapter,
+            tau_exact_hsn=tau_exact,
+        )
+
+    if hsn_conf >= tau_exact:
+        return DecisionThresholdEvaluation(
+            prediction_mode="EXACT_HSN",
+            requires_clarification=False,
+            reason=f"Single qualifying 8-digit leaf with calibrated confidence ({hsn_conf:.2f} >= {tau_exact:.2f}).",
+            tau_abstain=tau_abstain,
+            tau_chapter=tau_chapter,
+            tau_exact_hsn=tau_exact,
+        )
+
+    return DecisionThresholdEvaluation(
+        prediction_mode="CHAPTER_ONLY_CLARIFY",
+        requires_clarification=True,
+        reason=f"Exact-HSN confidence ({hsn_conf:.2f}) below threshold ({tau_exact:.2f}); clarification requested.",
+        tau_abstain=tau_abstain,
+        tau_chapter=tau_chapter,
+        tau_exact_hsn=tau_exact,
+    )
+
+
 @dataclass
 class CalibrationBundle:
     """Stores the three independent calibrated models + selective thresholds."""

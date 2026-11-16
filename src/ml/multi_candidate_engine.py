@@ -450,6 +450,14 @@ class MultiCandidateEngine:
     StatutoryMasterIndex, and FeedbackCollector.
     """
 
+    _instance: Optional["MultiCandidateEngine"] = None
+
+    @classmethod
+    def get_instance(cls) -> "MultiCandidateEngine":
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
     def __init__(
         self,
         hybrid_engine: Optional[HybridHSNEngine] = None,
@@ -458,11 +466,13 @@ class MultiCandidateEngine:
         feedback_collector: Optional[FeedbackCollector] = None,
         initial_branch_k: int = 45,
         max_eval_budget: Optional[int] = 250,
+        inference_timeout_s: Optional[float] = None,
     ):
         self.hybrid_engine = hybrid_engine or HybridHSNEngine.get_instance()
         self.classifier = relevance_classifier or RelevanceClassifier()
         self.statutory_index = statutory_index or StatutoryMasterIndex()
         self.feedback = feedback_collector or FeedbackCollector()
+        self.inference_timeout_s = inference_timeout_s
         self.discoverer = AdaptiveCandidateDiscoverer(
             hybrid_engine=self.hybrid_engine,
             classifier=self.classifier,
@@ -494,13 +504,16 @@ class MultiCandidateEngine:
         if not effective_query:
             return self._empty_response(orig, confirmed, page, page_size, t_total0)
 
+        t_s1 = time.perf_counter()
         product_intent = analyze_product_intent(effective_query)
+        stage1_intent_ms = round((time.perf_counter() - t_s1) * 1000.0, 2)
 
         # 1. Adaptive Discovery (dynamic expansion, no fixed top-K cap)
         disc = self.discoverer.discover(effective_query, exhaustive=exhaustive)
         consolidated = consolidate_duplicate_records(disc.qualifying_classified)
 
         # Dataset-driven evidence evaluation (uses enriched_master_hsn.parquet fields)
+        t_ev0 = time.perf_counter()
         evidence_by_hsn: Dict[str, Dict[str, Any]] = {}
         qualifying: List[ClassifiedTariffCandidate] = []
         contradicted_reasons: List[str] = []
@@ -536,17 +549,21 @@ class MultiCandidateEngine:
             key=lambda c: (
                 _ev_rank.get(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status", POSSIBLY_SUPPORTED), 2),
                 _rel_rank.get(c.relation, 3),
+                -round(float(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("evidence_score", 0.0)), 3),
                 -c.confidence,
             )
         )
 
         # 2. Independent 98-chapter statutory comparison
+        stage3_evidence_ms = round((time.perf_counter() - t_ev0) * 1000.0, 2)
+        t_stat0 = time.perf_counter()
         best_active_score = qualifying[0].confidence if qualifying else 0.0
         comp = self.statutory_index.compare_active_vs_statutory(
             query=effective_query,
             best_active_score=best_active_score,
             reranker=self.classifier.reranker,
         )
+        stage3_statutory_ms = round((time.perf_counter() - t_stat0) * 1000.0, 2)
 
         # 3. Separate 8-digit leaf tariff items from 4/6-digit parent headings.
         # Keep parents in hierarchy_context for explanation/clarification, never as customer-facing options when leaves exist.
@@ -672,8 +689,10 @@ class MultiCandidateEngine:
             distinction_conf = 1.0
 
         # 5. Decision Controller (only 8-digit leaf HSNs may become EXACT_HSN)
-        tau_abstain = bundle.tau_abstain if bundle is not None else 0.25
-        tau_exact = bundle.tau_exact_hsn if bundle is not None else 0.55
+        from src.ml.confidence_calibrator import DEFAULT_TAU_ABSTAIN, DEFAULT_TAU_EXACT_HSN
+
+        tau_abstain = bundle.tau_abstain if bundle is not None else DEFAULT_TAU_ABSTAIN
+        tau_exact = bundle.tau_exact_hsn if bundle is not None else DEFAULT_TAU_EXACT_HSN
 
         final_hsn: Optional[str] = None
         final_chapter: Optional[str] = None
@@ -879,10 +898,14 @@ class MultiCandidateEngine:
                 "candidates_discarded": disc.candidates_discarded + contradicted_count,
                 "discard_reasons": (disc.discard_reasons + contradicted_reasons)[:20],
                 "execution_metrics": {
+                    "stage1_intent_ms": stage1_intent_ms,
                     "retrieval_time_ms": disc.retrieval_time_ms,
                     "reranking_time_ms": disc.reranking_time_ms,
+                    "stage3_evidence_ms": stage3_evidence_ms,
+                    "stage3_statutory_ms": stage3_statutory_ms,
                     "difference_analysis_time_ms": diff_ms,
                     "total_time_ms": total_ms,
+                    "inference_timeout_s": self.inference_timeout_s,
                     "records_examined": disc.records_examined,
                     "candidates_preserved": len(all_formatted),
                 },

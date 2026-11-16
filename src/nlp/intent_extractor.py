@@ -160,6 +160,9 @@ class IntentExtractionResult(BaseModel):
     is_valid: bool = True
     error_message: Optional[str] = None
     retries_used: int = 0
+    extraction_source: str = "LLM"  # LLM | RULE_BASED_FALLBACK | HYBRID
+    raw_llm_response: Optional[str] = None
+    validation_errors: List[str] = Field(default_factory=list)
     synthesized_search_string: str = ""
     is_cache_hit: bool = False
     clarification_merged: bool = False
@@ -395,6 +398,7 @@ class IntentExtractor:
 
         self.vocabulary_top_k = int(self.config.get("vocabulary_top_k", 25))
         self.max_search_terms = int(self.config.get("max_search_terms", 20))
+        self.max_json_retries = max(0, int(self.config.get("max_json_retries", 2)))
         self.embedding_model_name = self.config.get("embedding_model_name", "sentence-transformers/all-MiniLM-L6-v2")
 
         # Core State
@@ -759,24 +763,28 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
         try:
             data = json.loads(text)
         except json.JSONDecodeError as je:
-            # Attempt safe repair for truncated generation
-            repaired = text.strip()
+            # Attempt safe repair for truncated strings, trailing commas, or unclosed brackets
+            repaired = re.sub(r",\s*([}\]])", r"\1", text.strip())
+            # Escape raw newlines inside string literals if an unterminated string spans lines
             if repaired.count('"') % 2 == 1:
                 repaired += '"'
-            if not repaired.endswith("}"):
-                if repaired.rstrip().endswith(","):
-                    repaired = repaired.rstrip()[:-1]
-                if repaired.count("[") > repaired.count("]"):
-                    repaired += "]"
-                if not repaired.endswith("}"):
-                    repaired += "}"
+            repaired = re.sub(r",\s*$", "", repaired.rstrip())
+            if repaired.count("[") > repaired.count("]"):
+                repaired += "]" * (repaired.count("[") - repaired.count("]"))
+            if repaired.count("{") > repaired.count("}"):
+                repaired += "}" * (repaired.count("{") - repaired.count("}"))
             try:
                 data = json.loads(repaired)
             except Exception:
                 return None, f"JSON parse error: {je}"
 
+        if not isinstance(data, dict):
+            return None, "Schema validation error: JSON root must be an object"
+
         try:
             parsed = LLMIntentOutput.model_validate(data)
+            if not (parsed.physical_product or "").strip():
+                return None, "Mandatory field missing: physical_product"
             return parsed, None
         except ValidationError as ve:
             return None, f"Schema validation error: {ve}"
@@ -1074,38 +1082,79 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
         system_prompt = self._build_system_prompt(self.chapter_titles)
         user_prompt = self._build_user_prompt(raw_query, top_headings)
 
+        from src.nlp.product_intent_analyzer import analyze_product_intent
+        struct_intent = analyze_product_intent(raw_query, clarification=clarification)
+
         raw_response = ""
+        last_raw_response = ""
         intent_output: Optional[LLMIntentOutput] = None
         validation_error: Optional[str] = None
+        validation_errors: List[str] = []
         retries_used = 0
+        extraction_source = "LLM"
 
         try:
             raw_response = llm.generate(user_prompt, system_prompt)
+            last_raw_response = raw_response
             intent_output, validation_error = self._validate_raw_response(raw_response)
+            if validation_error:
+                validation_errors.append(f"attempt_0: {validation_error}")
         except Exception as ex:
             validation_error = f"LLM generation exception: {ex}"
+            validation_errors.append(f"attempt_0: {validation_error}")
 
-        # Single retry on failure
-        if intent_output is None and retries_used == 0:
+        # Configurable bounded retry loop on JSON / schema failure
+        while intent_output is None and retries_used < self.max_json_retries:
             retries_used += 1
             try:
-                retry_prompt = f"{user_prompt}\n\nREMINDER: Output ONLY valid JSON. Absolutely NO digit codes or numbers."
+                retry_prompt = (
+                    f"{user_prompt}\n\nREMINDER (retry {retries_used}): Output ONLY valid, complete single-line JSON. "
+                    "Escape any quotes inside strings and include NO digit codes or numbers."
+                )
                 raw_response = llm.generate(retry_prompt, system_prompt)
+                if raw_response:
+                    last_raw_response = raw_response
                 intent_output, validation_error = self._validate_raw_response(raw_response)
+                if validation_error:
+                    validation_errors.append(f"retry_{retries_used}: {validation_error}")
             except Exception as ex:
                 validation_error = f"Retry generation exception: {ex}"
+                validation_errors.append(f"retry_{retries_used}: {validation_error}")
 
-        # If LLM output fails validation after retry, do NOT fall back to deterministic hardcoded rules
+        # Safe deterministic rule-based fallback when LLM extraction fails after all retries
         if intent_output is None:
-            logger.warning(f"[IntentExtractor] Real LLM interpretation failed validation: {validation_error}. No rule-based fallback permitted.")
+            logger.warning(
+                f"[IntentExtractor] LLM interpretation failed after {retries_used} retries "
+                f"({validation_error}); activating RULE_BASED_FALLBACK."
+            )
+            extraction_source = "RULE_BASED_FALLBACK"
+            fallback_article = (struct_intent.finished_article or raw_query).strip() or "unspecified item"
+            fallback_mat = ", ".join(struct_intent.constituent_materials) if struct_intent.constituent_materials else None
+            fallback_terms: List[str] = []
+            cand_tokens = [w for w in tokenize(fallback_article.lower()) if w not in STOPWORDS]
+            for n in (3, 2, 1):
+                for i in range(max(0, len(cand_tokens) - n + 1)):
+                    phrase = " ".join(cand_tokens[i:i + n])
+                    is_g, _ = self._is_term_grounded(phrase)
+                    if is_g and phrase not in fallback_terms:
+                        fallback_terms.append(phrase)
+                        if len(fallback_terms) >= 6:
+                            break
+                if len(fallback_terms) >= 6:
+                    break
+            unstated = [] if fallback_mat else ["material"]
             intent_output = LLMIntentOutput(
-                physical_product="unspecified item",
-                material=None,
-                construction=None,
-                intended_use=None,
-                search_terms=[],
-                unstated_attributes=["product description"],
-                reading_confidence="unclear"
+                physical_product=fallback_article,
+                finished_article=fallback_article,
+                material=fallback_mat,
+                construction=struct_intent.processing_form,
+                intended_use=struct_intent.function_use,
+                ingredients_or_additives=list(struct_intent.ingredients_or_additives),
+                components_or_parts=list(struct_intent.components_or_parts),
+                packaging_or_presentation=struct_intent.packaging_or_presentation,
+                search_terms=fallback_terms,
+                unstated_attributes=unstated,
+                reading_confidence="partial" if (fallback_terms or fallback_mat) else "unclear",
             )
 
         # 4. Strict Row-Level Grounding
@@ -1131,9 +1180,7 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
                 if grounded_terms:
                     break
 
-        # 4b. Structural finished-article vs supporting-attribute decomposition (100% general)
-        from src.nlp.product_intent_analyzer import analyze_product_intent
-        struct_intent = analyze_product_intent(raw_query, clarification=clarification)
+        # 4b. Structural finished-article vs supporting-attribute merge (100% general)
         resolved_finished = (
             intent_output.finished_article
             or struct_intent.finished_article
@@ -1215,6 +1262,14 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
 
         synthesized_search = " | ".join(synth_parts) if synth_parts else raw_query
 
+        if extraction_source == "LLM" and (
+            (struct_intent.finished_article and resolved_finished == struct_intent.finished_article and resolved_finished != intent_output.physical_product)
+            or struct_intent.ingredients_or_additives
+            or struct_intent.components_or_parts
+            or struct_intent.packaging_or_presentation
+        ):
+            extraction_source = "HYBRID"
+
         result = IntentExtractionResult(
             raw_query=raw_query,
             physical_product=grounded_fields["physical_product"] or resolved_finished or intent_output.physical_product,
@@ -1233,8 +1288,11 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
             dropped_terms=dropped_terms,
             top_headings_shown=top_headings[:5],
             is_valid=is_valid,
-            error_message=outcome_reason,
+            error_message=outcome_reason or validation_error,
             retries_used=retries_used,
+            extraction_source=extraction_source,
+            raw_llm_response=(last_raw_response[:2000] if last_raw_response else None),
+            validation_errors=validation_errors,
             synthesized_search_string=synthesized_search,
             is_cache_hit=False
         )
