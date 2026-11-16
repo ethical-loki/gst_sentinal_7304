@@ -1545,86 +1545,37 @@ class HSNRAGApplicationLayer:
             base_ext = self._extract_attributes_deterministic(f"{base_clean} {clarif_clean}".strip())
             existing_attributes = base_ext.attributes.model_dump()
 
-        # Dynamically extract material, form, use, and mounted state from combined tokens
+        # Dynamically extract material, form, use, and mounted state from Stage 1 analyzer + statutory JSON indexes
+        from src.nlp.product_intent_analyzer import analyze_product_intent
+        struct_intent = analyze_product_intent(base_clean, clarification=clarif_clean)
+
         mat_normalized = existing_attributes.get("material") or ""
         raw_proc = existing_attributes.get("processing_state") or ""
         form_normalized = raw_proc if raw_proc.lower() not in ("", "finished", "finished article", "unknown") else ""
-        use_normalized = existing_attributes.get("function_use") or "Commercial Commodity"
+        use_normalized = existing_attributes.get("function_use") or ""
+        if use_normalized.lower() in ("", "commercial commodity", "general commercial goods"):
+            use_normalized = struct_intent.function_use or "Not specified"
         mount_normalized = existing_attributes.get("mounted_state") or "not_applicable"
-
-        # Dynamic constituent material & processing state extraction under WCO Taxonomy
-        if not mat_normalized:
-            material_patterns = [
-                (r"\b(combed cotton|cotton)\b", "Cotton"),
-                (r"\b(polyester|nylon|acrylic|synthetic|man-made|polyurethane|spandex|rayon|viscose)\b", "Synthetic / Man-Made Fibres"),
-                (r"\b(wool|cashmere|kashmir|merino|fine animal hair)\b", "Wool / Fine Animal Hair"),
-                (r"\b(silk|mulberry silk)\b", "Silk"),
-                (r"\b(leather|hide|skin)\b", "Genuine Leather"),
-                (r"\b(stainless steel|inox|ss\s*304|ss\s*316)\b", "Stainless Steel"),
-                (r"\b(carbon steel|mild steel|alloy steel|cast iron|wrought iron|iron|steel)\b", "Iron or Steel"),
-                (r"\b(aluminium|aluminum)\b", "Aluminium"),
-                (r"\b(copper|brass|bronze)\b", "Copper / Brass"),
-                (r"\b(titanium|nickel|zinc|tin|lead)\b", "Non-Ferrous Base Metal"),
-                (r"\b(unvulcanis\w* rubber|unvulcaniz\w* rubber)\b", "Unvulcanised Rubber"),
-                (r"\b(vulcanis\w* rubber|vulcaniz\w* rubber|latex|elastomer|rubber)\b", "Rubber"),
-                (r"\b(pvc|hdpe|polyethylene|polypropylene|polymer|plastic|plastics|abs|polycarbonate)\b", "Plastics / Polymers"),
-                (r"\b(wood|timber|plywood|bamboo)\b", "Wood"),
-                (r"\b(glass|ceramic|porcelain)\b", "Glass / Ceramics"),
-                (r"\b(paper|paperboard|cardboard)\b", "Paper / Paperboard"),
-                (r"\b(coffee|coffea)\b", "Coffee"),
-                (r"\b(tea|camellia)\b", "Tea"),
-                (r"\b(honey)\b", "Honey"),
-            ]
-            for pat, mat_label in material_patterns:
-                if re.search(pat, combined_raw):
-                    mat_normalized = mat_label
-                    break
-
-        if not form_normalized:
-            form_patterns = [
-                (r"\b(loop-knitted|knitted|crocheted|knit)\b", "Knitted or Crocheted"),
-                (r"\b(woven|weave)\b", "Woven"),
-                (r"\b(seamless)\b", "Seamless"),
-                (r"\b(welded|erw)\b", "Welded"),
-                (r"\b(unvulcanis\w*|unvulcaniz\w*)\b", "Unvulcanised"),
-                (r"\b(vulcanis\w*|vulcaniz\w*)\b", "Vulcanised"),
-                (r"\b(roasted)\b", "Roasted"),
-                (r"\b(raw|unroasted|unprocessed|crude)\b", "Raw / Unprocessed"),
-                (r"\b(scale model|articulated|action figure|figurine)\b", "Scale Model / Articulated"),
-                (r"\b(rigid)\b", "Rigid"),
-                (r"\b(flexible)\b", "Flexible"),
-                (r"\b(cellular|expanded)\b", "Cellular"),
-            ]
-            for pat, form_label in form_patterns:
-                if re.search(pat, combined_raw):
-                    form_normalized = form_label
-                    break
-
-        if not mat_normalized and clarif_clean:
-            mat_normalized = clarif_clean[:60]
-
-        if "mounted" in combined_raw and "unmounted" not in combined_raw:
-            mount_normalized = "mounted"
-
-        from src.nlp.product_intent_analyzer import analyze_product_intent
-        struct_intent = analyze_product_intent(base_clean, clarification=clarif_clean)
 
         if not mat_normalized and struct_intent.constituent_materials:
             mat_normalized = ", ".join(struct_intent.constituent_materials[:2])
         if not form_normalized and struct_intent.processing_form:
             form_normalized = struct_intent.processing_form
-        if use_normalized == "Commercial Commodity" and struct_intent.function_use:
-            use_normalized = struct_intent.function_use
+        if "mounted" in combined_raw and "unmounted" not in combined_raw:
+            mount_normalized = "mounted"
 
         article_anchor = struct_intent.finished_article or base_clean
         parts = [article_anchor]
+        if struct_intent.alternative_names_and_aliases:
+            parts.append(f"Aliases: {', '.join(struct_intent.alternative_names_and_aliases[:3])}")
         if clarif_clean and clarif_clean.lower() not in article_anchor.lower() and len(clarif_clean) > 15:
             parts.append(clarif_clean)
-        # Avoid repeating material text in synthesized search string if already present in article anchor
         if mat_normalized and mat_normalized.lower() not in article_anchor.lower():
             parts.append(f"Material: {mat_normalized}")
         if form_normalized and form_normalized.lower() not in article_anchor.lower() and form_normalized.lower() not in ("not_applicable", "none", "finished article"):
             parts.append(f"Form: {form_normalized}")
+        if struct_intent.components_or_parts:
+            parts.append(f"Components: {', '.join(struct_intent.components_or_parts[:3])}")
         if struct_intent.function_use and struct_intent.function_use.lower() not in article_anchor.lower():
             parts.append(f"Use: {struct_intent.function_use}")
         master_search_string = ", ".join(parts) + "."

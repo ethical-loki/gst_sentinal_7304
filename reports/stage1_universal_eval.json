@@ -1,0 +1,495 @@
+{
+  "n_cases": 20,
+  "product_identity_accuracy_pct": 100.0,
+  "alias_extraction_accuracy_pct": 80.0,
+  "material_vs_component_separation_pct": 85.0,
+  "function_extraction_accuracy_pct": 100.0,
+  "relationship_extraction_accuracy_pct": 100.0,
+  "unsupported_inference_rate_pct": 0.0,
+  "missing_info_handling_pct": 100.0,
+  "mean_stage1_latency_ms": 89.59,
+  "p95_stage1_latency_ms": 62.37,
+  "cases": [
+    {
+      "id": 1,
+      "category": "electrical_abbrev",
+      "query": "Variable Frequency Drive (VFD) for controlling AC motor speed",
+      "finished_article": "Variable Frequency Drive",
+      "aliases": [
+        "VFD"
+      ],
+      "materials": [],
+      "components": [],
+      "function_use": "controlling AC motor speed",
+      "function_details": {
+        "action": "controlling",
+        "mechanism": "variable frequency",
+        "target_object": "AC motor speed",
+        "application": "controlling AC motor speed",
+        "evidence_type": "EXPLICIT"
+      },
+      "missing_critical": [
+        "material"
+      ],
+      "rel_graph_edges": 4,
+      "latency_ms": 1512.905,
+      "art_ok": true
+    },
+    {
+      "id": 2,
+      "category": "electrical_power",
+      "query": "3-phase 100 kVA diesel generating set with control panel",
+      "finished_article": "3-phase 100 kVA diesel generating set",
+      "aliases": [],
+      "materials": [],
+      "components": [],
+      "function_use": null,
+      "function_details": {
+        "action": null,
+        "mechanism": null,
+        "target_object": null,
+        "application": null,
+        "evidence_type": null
+      },
+      "missing_critical": [
+        "material"
+      ],
+      "rel_graph_edges": 1,
+      "latency_ms": 32.256,
+      "art_ok": true
+    },
+    {
+      "id": 3,
+      "category": "electrical_unseen",
+      "query": "Uninterruptible Power Supply (UPS) 5 kVA for server backup",
+      "finished_article": "Uninterruptible Power Supply 5 kVA",
+      "aliases": [
+        "UPS"
+      ],
+      "materials": [],
+      "components": [],
+      "function_use": "server backup",
+      "function_details": {
+        "action": "server backup",
+        "mechanism": null,
+        "target_object": null,
+        "application": "server backup",
+        "evidence_type": "EXPLICIT"
+      },
+      "missing_critical": [
+        "material"
+      ],
+      "rel_graph_edges": 3,
+      "latency_ms": 62.368,
+      "art_ok": true
+    },
+    {
+      "id": 4,
+      "category": "mechanical_multi",
+      "query": "Stainless steel centrifugal pump fitted with 5 HP electric motor for water supply",
+      "finished_article": "Stainless steel centrifugal pump",
+      "aliases": [],
+      "materials": [
+        "Stainless steel"
+      ],
+      "components": [
+        "5 HP electric motor"
+      ],
+      "function_use": "water supply",
+      "function_details": {
+        "action": "water supply",
+        "mechanism": "centrifugal",
+        "target_object": null,
+        "application": "water supply",
+        "evidence_type": "EXPLICIT"
+      },
+      "missing_critical": [],
+      "rel_graph_edges": 4,
+      "latency_ms": 8.554,
+      "art_ok": true
+    },
+    {
+      "id": 5,
+      "category": "mechanical_cnc",
+      "query": "Programmable Logic Controller (PLC) module for industrial automation",
+      "finished_article": "Programmable Logic Controller module",
+      "aliases": [
+        "PLC"
+      ],
+      "materials": [],
+      "components": [],
+      "function_use": "industrial automation",
+      "function_details": {
+        "action": "industrial automation",
+        "mechanism": null,
+        "target_object": null,
+        "application": "industrial automation",
+        "evidence_type": "EXPLICIT"
+      },
+      "missing_critical": [
+        "material"
+      ],
+      "rel_graph_edges": 3,
+      "latency_ms": 12.151,
+      "art_ok": true
+    },
+    {
+      "id": 6,
+      "category": "spare_parts",
+      "query": "spare parts for marine outboard engine",
+      "finished_article": "spare parts for marine outboard engine",
+      "aliases": [],
+      "materials": [],
+      "components": [],
+      "function_use": "marine outboard engine",
+      "function_details": {
+        "action": "marine outboard engine",
+        "mechanism": null,
+        "target_object": null,
+        "application": "marine outboard engine",
+        "evidence_type": "EXPLICIT"
+      },
+      "missing_critical": [
+        "material",
+        "capacity_or_rating"
+      ],
+      "rel_graph_edges": 2,
+      "latency_ms": 8.609,
+      "art_ok": true
+    },
+    {
+      "id": 7,
+      "category": "spare_parts",
+      "query": "replacement impeller made of cast iron for centrifugal pump",
+      "finished_article": "replacement impeller",
+      "aliases": [],
+      "materials": [
+        "cast iron"
+      ],
+      "components": [],
+      "function_use": "centrifugal pump",
+      "function_details": {
+        "action": "centrifugal pump",
+        "mechanism": "centrifugal",
+        "target_object": null,
+        "application": "centrifugal pump",
+        "evidence_type": "EXPLICIT"
+      },
+      "missing_critical": [],
+      "rel_graph_edges": 3,
+      "latency_ms": 24.169,
+      "art_ok": true
+    },
+    {
+      "id": 8,
+      "category": "textiles",
+      "query": "knitted cotton t-shirt with polyester collar in retail pouch",
+      "finished_article": "knitted cotton t-shirt",
+      "aliases": [],
+      "materials": [
+        "Cotton"
+      ],
+      "components": [],
+      "function_use": null,
+      "function_details": {
+        "action": null,
+        "mechanism": null,
+        "target_object": null,
+        "application": null,
+        "evidence_type": null
+      },
+      "missing_critical": [],
+      "rel_graph_edges": 2,
+      "latency_ms": 12.341,
+      "art_ok": true
+    },
+    {
+      "id": 9,
+      "category": "textiles_missing",
+      "query": "women tailored winter overcoat",
+      "finished_article": "women tailored winter overcoat",
+      "aliases": [],
+      "materials": [],
+      "components": [],
+      "function_use": null,
+      "function_details": {
+        "action": null,
+        "mechanism": null,
+        "target_object": null,
+        "application": null,
+        "evidence_type": null
+      },
+      "missing_critical": [
+        "material",
+        "construction (knitted vs woven)"
+      ],
+      "rel_graph_edges": 0,
+      "latency_ms": 8.981,
+      "art_ok": true
+    },
+    {
+      "id": 10,
+      "category": "food",
+      "query": "instant noodles made from wheat flour with spice sachet in retail packet",
+      "finished_article": "instant noodles",
+      "aliases": [],
+      "materials": [
+        "wheat flour"
+      ],
+      "components": [],
+      "function_use": null,
+      "function_details": {
+        "action": null,
+        "mechanism": null,
+        "target_object": null,
+        "application": null,
+        "evidence_type": null
+      },
+      "missing_critical": [],
+      "rel_graph_edges": 1,
+      "latency_ms": 11.094,
+      "art_ok": true
+    },
+    {
+      "id": 11,
+      "category": "food",
+      "query": "sweet biscuits containing cocoa",
+      "finished_article": "sweet biscuits",
+      "aliases": [],
+      "materials": [],
+      "components": [],
+      "function_use": null,
+      "function_details": {
+        "action": null,
+        "mechanism": null,
+        "target_object": null,
+        "application": null,
+        "evidence_type": null
+      },
+      "missing_critical": [
+        "material"
+      ],
+      "rel_graph_edges": 1,
+      "latency_ms": 6.731,
+      "art_ok": true
+    },
+    {
+      "id": 12,
+      "category": "plastics",
+      "query": "high-density polyethylene (HDPE) jerrycan for chemical transport",
+      "finished_article": "high-density polyethylene jerrycan",
+      "aliases": [
+        "HDPE"
+      ],
+      "materials": [
+        "Plastic",
+        "HDPE"
+      ],
+      "components": [],
+      "function_use": "chemical transport",
+      "function_details": {
+        "action": "chemical transport",
+        "mechanism": null,
+        "target_object": null,
+        "application": "chemical transport",
+        "evidence_type": "EXPLICIT"
+      },
+      "missing_critical": [],
+      "rel_graph_edges": 5,
+      "latency_ms": 12.675,
+      "art_ok": true
+    },
+    {
+      "id": 13,
+      "category": "plastics_form",
+      "query": "polypropylene granules in primary forms",
+      "finished_article": "polypropylene granules",
+      "aliases": [],
+      "materials": [
+        "Plastic",
+        "primary forms"
+      ],
+      "components": [],
+      "function_use": null,
+      "function_details": {
+        "action": null,
+        "mechanism": null,
+        "target_object": null,
+        "application": null,
+        "evidence_type": null
+      },
+      "missing_critical": [],
+      "rel_graph_edges": 2,
+      "latency_ms": 9.133,
+      "art_ok": true
+    },
+    {
+      "id": 14,
+      "category": "steel",
+      "query": "304 grade seamless stainless steel boiler tubes, 25mm OD, for heat exchanger",
+      "finished_article": "304 grade seamless stainless steel boiler tubes, 25mm OD",
+      "aliases": [],
+      "materials": [
+        "Stainless steel"
+      ],
+      "components": [],
+      "function_use": "heat exchanger",
+      "function_details": {
+        "action": "heat exchanger",
+        "mechanism": null,
+        "target_object": null,
+        "application": "heat exchanger",
+        "evidence_type": "EXPLICIT"
+      },
+      "missing_critical": [],
+      "rel_graph_edges": 3,
+      "latency_ms": 7.999,
+      "art_ok": true
+    },
+    {
+      "id": 15,
+      "category": "vehicles",
+      "query": "automotive safety airbag module fitted with pyrotechnic inflator for passenger car",
+      "finished_article": "automotive safety airbag module",
+      "aliases": [],
+      "materials": [],
+      "components": [
+        "pyrotechnic inflator"
+      ],
+      "function_use": "passenger car",
+      "function_details": {
+        "action": "passenger car",
+        "mechanism": null,
+        "target_object": null,
+        "application": "passenger car",
+        "evidence_type": "EXPLICIT"
+      },
+      "missing_critical": [
+        "material"
+      ],
+      "rel_graph_edges": 3,
+      "latency_ms": 9.275,
+      "art_ok": true
+    },
+    {
+      "id": 16,
+      "category": "furniture",
+      "query": "wooden swivel office chair with pneumatic height adjustment",
+      "finished_article": "wooden swivel office chair",
+      "aliases": [],
+      "materials": [],
+      "components": [],
+      "function_use": null,
+      "function_details": {
+        "action": null,
+        "mechanism": "pneumatic",
+        "target_object": null,
+        "application": null,
+        "evidence_type": "INFERRED"
+      },
+      "missing_critical": [
+        "material"
+      ],
+      "rel_graph_edges": 1,
+      "latency_ms": 8.413,
+      "art_ok": true
+    },
+    {
+      "id": 17,
+      "category": "ambiguous",
+      "query": "plastic storage container with fitted lid",
+      "finished_article": "plastic storage container",
+      "aliases": [],
+      "materials": [
+        "Plastic"
+      ],
+      "components": [],
+      "function_use": null,
+      "function_details": {
+        "action": null,
+        "mechanism": null,
+        "target_object": null,
+        "application": null,
+        "evidence_type": null
+      },
+      "missing_critical": [],
+      "rel_graph_edges": 2,
+      "latency_ms": 9.924,
+      "art_ok": true
+    },
+    {
+      "id": 18,
+      "category": "missing_attr",
+      "query": "centrifugal pump",
+      "finished_article": "centrifugal pump",
+      "aliases": [],
+      "materials": [],
+      "components": [],
+      "function_use": null,
+      "function_details": {
+        "action": null,
+        "mechanism": "centrifugal",
+        "target_object": null,
+        "application": null,
+        "evidence_type": "INFERRED"
+      },
+      "missing_critical": [
+        "material",
+        "capacity_or_rating"
+      ],
+      "rel_graph_edges": 0,
+      "latency_ms": 9.465,
+      "art_ok": true
+    },
+    {
+      "id": 19,
+      "category": "parenthetical",
+      "query": "rotary screw air compressor (15 kW) for pneumatic tools",
+      "finished_article": "rotary screw air compressor",
+      "aliases": [],
+      "materials": [],
+      "components": [],
+      "function_use": "pneumatic tools",
+      "function_details": {
+        "action": "pneumatic tools",
+        "mechanism": "rotary",
+        "target_object": null,
+        "application": "pneumatic tools",
+        "evidence_type": "EXPLICIT"
+      },
+      "missing_critical": [
+        "material"
+      ],
+      "rel_graph_edges": 2,
+      "latency_ms": 16.237,
+      "art_ok": true
+    },
+    {
+      "id": 20,
+      "category": "unseen_multi",
+      "query": "Automated Optical Inspection (AOI) machine equipped with high-resolution camera for PCB defect detection",
+      "finished_article": "Automated Optical Inspection machine",
+      "aliases": [
+        "AOI"
+      ],
+      "materials": [],
+      "components": [
+        "high-resolution camera"
+      ],
+      "function_use": "PCB defect detection",
+      "function_details": {
+        "action": "PCB defect detection",
+        "mechanism": null,
+        "target_object": null,
+        "application": "PCB defect detection",
+        "evidence_type": "EXPLICIT"
+      },
+      "missing_critical": [
+        "material"
+      ],
+      "rel_graph_edges": 4,
+      "latency_ms": 8.595,
+      "art_ok": true
+    }
+  ]
+}

@@ -210,3 +210,40 @@ def test_phase16_task2_complex_intent_examples_and_traces():
     assert ex6.secondary_articles == ["stainless steel bolts"]
 
 
+def test_stage1_universal_vfd_and_entity_relationship_graph():
+    from src.chapter_predictor.normalize import extract_query_facts
+    from src.nlp.hsn_rag_layer import HSNRAGApplicationLayer
+
+    q = "Variable Frequency Drive (VFD) for controlling AC motor speed"
+    pi = analyze_product_intent(q)
+    assert pi.finished_article == "Variable Frequency Drive"
+    assert "VFD" in pi.alternative_names_and_aliases
+    assert "VFD" not in pi.constituent_materials
+    assert pi.function_details["action"] == "controlling"
+    assert pi.function_details["target_object"] == "AC motor speed"
+    assert pi.function_details["evidence_type"] == "EXPLICIT"
+    rel_types = {(r["source"], r["relation"], r["target"]) for r in pi.relationship_graph}
+    assert ("Variable Frequency Drive", "ALIAS_OF", "VFD") in rel_types
+    assert ("Variable Frequency Drive", "CONTROLS", "AC motor speed") in rel_types
+    assert "Material: VFD" not in pi.article_search_query
+    assert "Use: controlling AC motor speed" in pi.article_search_query
+
+    # extract_query_facts must not mistake 'motor' in 'for controlling AC motor speed' for the product
+    qf = extract_query_facts(q)
+    assert qf["article"] != "motor"
+
+    # Stage 1 Context Aggregator must also preserve VFD alias & motor-control function
+    rag = HSNRAGApplicationLayer()
+    s1 = rag.stage1_context_aggregator(q, "")
+    assert "Material: VFD" not in s1["master_search_string"]
+    assert "controlling AC motor speed" in s1["master_search_string"]
+    assert s1["aggregated_attributes"]["material"] is None
+
+    # Unseen abbreviations & multi-component machinery
+    cnc = analyze_product_intent("3-phase 15 kW CNC milling machine fitted with servo drive for precision metal cutting")
+    assert "milling machine" in cnc.finished_article.lower()
+    assert any(a["name"] == "capacity_performance" and "15 kW" in a["value"] for a in cnc.attributes)
+    assert any("servo drive" in c.lower() for c in cnc.components_or_parts)
+    assert cnc.function_details["application"] == "precision metal cutting"
+
+

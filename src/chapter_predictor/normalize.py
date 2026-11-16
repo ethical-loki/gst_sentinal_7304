@@ -232,6 +232,15 @@ def extract_query_facts(raw_text: str) -> Dict[str, Any]:
     """
     norm, tokens = normalize_product_name(raw_text)
     lower = norm.lower()
+    # Focus head-noun extraction on the primary product clause before purpose/component/material markers
+    # so "VFD for controlling AC motor speed" does not treat "motor" as the primary article.
+    head_split = re.split(
+        r"\b(?:for\s+use\s+in|intended\s+for|used\s+for|designed\s+for|suitable\s+for|for|fitted\s+with|equipped\s+with|containing|made\s+from|made\s+of|made\s+with|with)\b",
+        lower,
+        maxsplit=1,
+    )
+    head_lower = head_split[0].strip() if head_split and head_split[0].strip() else lower
+    head_tokens = [t for t in head_lower.split() if t]
 
     materials_list = load_statutory_materials()
     forms_list = load_statutory_forms()
@@ -260,65 +269,71 @@ def extract_query_facts(raw_text: str) -> Dict[str, Any]:
                 detected_material = mat.get("canonical", term.capitalize())
                 vocab_candidate_chapters.update(mat.get("candidate_chapters", []))
 
-    # 2. Check multi-word head noun phrases dynamically from data/tariff_head_noun_index.json
+    # 2. Check multi-word head noun phrases dynamically from data/tariff_head_noun_index.json (head clause first)
     multi_word_cands = [k for k in head_noun_index.keys() if " " in k]
     multi_word_cands.sort(key=lambda x: len(x), reverse=True)
-    for phrase in multi_word_cands:
-        data = head_noun_index[phrase]
-        sing = data.get("singular", phrase)
-        plur = data.get("plural", phrase + "s")
-        if re.search(rf"\b{re.escape(sing)}\b", lower) or re.search(rf"\b{re.escape(plur)}\b", lower):
-            detected_article = sing
-            detected_form_stage = data.get("state", "finished_article")
-            vocab_candidate_chapters.update(data.get("candidate_chapters", []))
+    for scope_text in (head_lower, lower):
+        if detected_article:
             break
+        for phrase in multi_word_cands:
+            data = head_noun_index[phrase]
+            sing = data.get("singular", phrase)
+            plur = data.get("plural", phrase + "s")
+            if re.search(rf"\b{re.escape(sing)}\b", scope_text) or re.search(rf"\b{re.escape(plur)}\b", scope_text):
+                detected_article = sing
+                detected_form_stage = data.get("state", "finished_article")
+                vocab_candidate_chapters.update(data.get("candidate_chapters", []))
+                break
 
-    # 3. Check curated commodity articles in data/article_form_vocabulary.json (Rightmost match rule)
+    # 3. Check curated commodity articles in data/article_form_vocabulary.json (Rightmost match rule in head clause first)
     if not detected_article:
-        matched_articles = []
-        for item in vocab:
-            term = item["term"]
-            if item.get("type") == "article" and term.lower() not in material_terms_set:
-                m = re.search(rf"\b{re.escape(term)}\b", lower)
-                if m:
-                    matched_articles.append((m.start(), len(term), item))
-        if matched_articles:
-            matched_articles.sort(key=lambda x: (x[0], x[1]), reverse=True)
-            best_item = matched_articles[0][2]
-            detected_article = best_item["term"]
-            detected_family = best_item.get("family")
-            detected_form_stage = best_item.get("form_stage", "finished_article")
-            vocab_candidate_chapters.update(best_item.get("candidate_chapters", []))
+        for scope_text in (head_lower, lower):
+            matched_articles = []
+            for item in vocab:
+                term = item["term"]
+                if item.get("type") == "article" and term.lower() not in material_terms_set:
+                    m = re.search(rf"\b{re.escape(term)}\b", scope_text)
+                    if m:
+                        matched_articles.append((m.start(), len(term), item))
+            if matched_articles:
+                matched_articles.sort(key=lambda x: (x[0], x[1]), reverse=True)
+                best_item = matched_articles[0][2]
+                detected_article = best_item["term"]
+                detected_family = best_item.get("family")
+                detected_form_stage = best_item.get("form_stage", "finished_article")
+                vocab_candidate_chapters.update(best_item.get("candidate_chapters", []))
+                break
 
-    # 4. Scan single words against head_noun_index (Rightmost content noun rule)
-    matched_nouns = []
-    for tok_idx, token in enumerate(tokens):
-        t_clean = token.strip()
-        # Normalize plural
-        if t_clean.endswith("ies") and len(t_clean) > 4:
-            sing = t_clean[:-3] + "y"
-        elif t_clean.endswith("es") and len(t_clean) > 3 and t_clean[-3] in "shxz":
-            sing = t_clean[:-2]
-        elif t_clean.endswith("s") and not t_clean.endswith("ss") and len(t_clean) > 3:
-            sing = t_clean[:-1]
-        else:
-            sing = t_clean
+    # 4. Scan single words against head_noun_index (Rightmost content noun rule in head clause first)
+    def _scan_single_nouns(toks: List[str]) -> List[Tuple[int, str, Dict[str, Any]]]:
+        found = []
+        for tok_idx, token in enumerate(toks):
+            t_clean = token.strip()
+            if t_clean.endswith("ies") and len(t_clean) > 4:
+                sing = t_clean[:-3] + "y"
+            elif t_clean.endswith("es") and len(t_clean) > 3 and t_clean[-3] in "shxz":
+                sing = t_clean[:-2]
+            elif t_clean.endswith("s") and not t_clean.endswith("ss") and len(t_clean) > 3:
+                sing = t_clean[:-1]
+            else:
+                sing = t_clean
+            entry = head_noun_index.get(sing) or head_noun_index.get(t_clean)
+            if entry and sing.lower() not in material_terms_set and t_clean.lower() not in material_terms_set:
+                found.append((tok_idx, sing, entry))
+        return found
 
-        entry = head_noun_index.get(sing) or head_noun_index.get(t_clean)
-        # Ensure constituent materials are excluded from acting as the head noun
-        if entry and sing.lower() not in material_terms_set and t_clean.lower() not in material_terms_set:
-            matched_nouns.append((tok_idx, sing, entry))
-
+    matched_nouns = _scan_single_nouns(head_tokens) or _scan_single_nouns(tokens)
     if matched_nouns:
         best_tok_idx, best_sing, best_entry = matched_nouns[-1]
+        scope_for_pos = head_lower if matched_nouns and head_lower in lower else lower
         if not detected_article:
             detected_article = best_sing
             detected_form_stage = best_entry.get("state", "finished_article")
             vocab_candidate_chapters.update(best_entry.get("candidate_chapters", []))
         else:
-            art_pos = lower.rfind(detected_article.lower())
-            noun_pos = lower.rfind(best_sing.lower())
-            if noun_pos > art_pos:
+            art_pos = scope_for_pos.rfind(detected_article.lower())
+            noun_pos = scope_for_pos.rfind(best_sing.lower())
+            if noun_pos > art_pos and art_pos >= 0:
                 detected_article = best_sing
                 detected_form_stage = best_entry.get("state", "finished_article")
                 vocab_candidate_chapters = set(best_entry.get("candidate_chapters", []))

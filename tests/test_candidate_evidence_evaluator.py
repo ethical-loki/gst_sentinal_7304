@@ -718,12 +718,11 @@ def test_phase20_task1_task2_task3_selective_rescue_case73_and_spare_parts(tmp_p
     assert res["final_hsn"] is None
     assert "8508" in res["clarification"]["reason"]
 
-    # 3. Task 3: Controlled commercial-to-statutory terminology expansion
+    # 3. Task 3 / Stage 1 Task 8: Dynamic corpus-driven morphological prefix expansion
+    # (without manually maintained commercial-to-statutory dictionaries)
     hyb_dummy = HybridHSNEngine.__new__(HybridHSNEngine)
-    hyb_dummy._vocab_freq = {}
-    exp_q, exp_toks = hyb_dummy._expand_abbreviated_query("commercial espresso coffee brewing machine")
-    assert "hot" in exp_toks and "drinks" in exp_toks
-    _, vac_toks = hyb_dummy._expand_abbreviated_query("vaccum cleaner")
-    assert "vacuum" in vac_toks
+    hyb_dummy._vocab_freq = {"auxiliary": 10, "machinery": 20}
+    exp_q, exp_toks = hyb_dummy._expand_abbreviated_query("auxi. mach. parts")
+    assert "auxiliary" in exp_toks and "machinery" in exp_toks
 
 

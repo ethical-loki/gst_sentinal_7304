@@ -21,6 +21,7 @@ os.environ.setdefault("HF_HUB_OFFLINE", "1")
 os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 import re
 import json
+import time
 import hashlib
 import logging
 from abc import ABC, abstractmethod
@@ -150,6 +151,12 @@ class IntentExtractionResult(BaseModel):
     ingredients_or_additives: List[str] = Field(default_factory=list)
     components_or_parts: List[str] = Field(default_factory=list)
     packaging_or_presentation: Optional[str] = None
+    alternative_names_and_aliases: List[str] = Field(default_factory=list)
+    function_details: Dict[str, Any] = Field(default_factory=dict)
+    entity_relationship_graph: List[Dict[str, Any]] = Field(default_factory=list)
+    field_confidences: Dict[str, float] = Field(default_factory=dict)
+    stage2_search_representation: Dict[str, Any] = Field(default_factory=dict)
+    stage1_latency_ms: float = 0.0
     attribute_relationships: List[Dict[str, Any]] = Field(default_factory=list)
     reading_confidence: str
     outcome_type: str = "SUCCESS"  # SUCCESS | AMBIGUOUS_MATERIAL | OUT_OF_SCHEDULE | UNRECOGNIZED
@@ -183,10 +190,11 @@ class BaseLLMClient(ABC):
 class TransformersLLMClient(BaseLLMClient):
     """Local offline HuggingFace Transformers client (Qwen2.5-0.5B-Instruct)."""
 
-    def __init__(self, model_path: str, max_new_tokens: int = 180, temperature: float = 0.0):
+    def __init__(self, model_path: str, max_new_tokens: int = 180, temperature: float = 0.0, timeout_s: float = 30.0):
         self.model_path = model_path
         self.max_new_tokens = max_new_tokens
         self.temperature = temperature
+        self.timeout_s = timeout_s
         self._model = None
         self._tokenizer = None
 
@@ -219,6 +227,7 @@ class TransformersLLMClient(BaseLLMClient):
         with torch.inference_mode():
             gen_kwargs = {
                 "max_new_tokens": self.max_new_tokens,
+                "max_time": self.timeout_s,
                 "pad_token_id": self._tokenizer.eos_token_id
             }
             if self.temperature > 0:
@@ -1079,6 +1088,7 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
                 error_message="Empty query"
             )
 
+        t_s1_start = time.perf_counter()
         # 1. Deterministic Cache Check
         cache_key = self._get_cache_key(raw_query)
         if use_cache and cache_key in self.interpretation_cache:
@@ -1116,8 +1126,12 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
             validation_error = f"LLM generation exception: {ex}"
             validation_errors.append(f"attempt_0: {validation_error}")
 
-        # Configurable bounded retry loop on JSON / schema failure
+        # Configurable bounded retry loop on JSON / schema failure (respecting CPU time budget)
+        llm_budget_s = float(self.config.get("llm_timeout_budget_s", 25.0))
         while intent_output is None and retries_used < self.max_json_retries:
+            if (time.perf_counter() - t_s1_start) >= llm_budget_s:
+                validation_errors.append("retry_skipped: llm_timeout_budget_exceeded")
+                break
             retries_used += 1
             try:
                 retry_prompt = (
@@ -1265,8 +1279,15 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
                     if stated_material:
                         break
 
+        if struct_intent.alternative_names_and_aliases:
+            synth_parts.append(f"Aliases: {', '.join(struct_intent.alternative_names_and_aliases[:3])}")
         if grounded_fields.get("construction"):
             synth_parts.append(f"Construction: {grounded_fields['construction']}")
+        if merged_components:
+            synth_parts.append(f"Components: {', '.join(merged_components[:3])}")
+        resolved_use = grounded_fields.get("intended_use") or struct_intent.function_use
+        if resolved_use:
+            synth_parts.append(f"Function: {resolved_use}")
         if grounded_terms:
             # Filter out terms that conflict with unstated hallucinated material
             clean_grounded = [t for t in grounded_terms if not (grounded_fields.get("material") and not stated_material and t == grounded_fields.get("material"))]
@@ -1282,8 +1303,16 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
             or struct_intent.ingredients_or_additives
             or struct_intent.components_or_parts
             or struct_intent.packaging_or_presentation
+            or struct_intent.alternative_names_and_aliases
         ):
             extraction_source = "HYBRID"
+
+        stage2_repr = dict(struct_intent.stage2_search_representation or {})
+        stage2_repr["primary_commercial_product"] = resolved_finished
+        stage2_repr["dynamic_statutory_terms"] = list(grounded_terms[:6])
+        if resolved_use and not stage2_repr.get("function_and_application"):
+            stage2_repr["function_and_application"] = resolved_use
+        stage1_ms = round((time.perf_counter() - t_s1_start) * 1000.0, 2) if "t_s1_start" in locals() else 0.0
 
         result = IntentExtractionResult(
             raw_query=raw_query,
@@ -1291,10 +1320,16 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
             finished_article=resolved_finished,
             material=stated_material,
             construction=grounded_fields.get("construction") or struct_intent.processing_form,
-            intended_use=grounded_fields.get("intended_use") or struct_intent.function_use,
+            intended_use=resolved_use,
             ingredients_or_additives=merged_ingredients,
             components_or_parts=merged_components,
             packaging_or_presentation=merged_packaging,
+            alternative_names_and_aliases=list(struct_intent.alternative_names_and_aliases),
+            function_details=dict(struct_intent.function_details),
+            entity_relationship_graph=list(struct_intent.relationship_graph),
+            field_confidences=dict(struct_intent.field_confidences),
+            stage2_search_representation=stage2_repr,
+            stage1_latency_ms=stage1_ms,
             attribute_relationships=struct_intent.to_dict().get("attribute_relationships", []),
             reading_confidence=intent_output.reading_confidence,
             outcome_type=outcome_type,
