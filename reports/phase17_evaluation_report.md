@@ -46,3 +46,4 @@
 
 - `tests/test_candidate_evidence_evaluator.py`, `tests/test_stage1_product_intent.py`, `tests/test_relevance_and_ambiguity.py`, `tests/test_confidence_calibrator.py`, `tests/test_multi_candidate_engine.py`: **36 passed** (`182.29s`)
 - `tests/test_intent_extractor.py -k "test_all_terms_dropped_abstain or test_out_of_schedule_materials or test_phase16_task1"`: **3 passed** (`33.88s`)
+

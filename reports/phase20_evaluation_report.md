@@ -54,3 +54,4 @@ Expected HSN labels remain evaluation-only (`zero_hsn_leakage_verified: true`, `
 1. **Case #59 (`"commercial espresso coffee brewing machine"` -> `84198120`)**: Still `recall=False` (`ret=0`) because `84198120`'s dense embedding/Cross-Encoder context prioritizes `"MACHINERY, PLANT OR LABORATORY EQUIPMENT..."` while `"FOR MAKING HOT DRINKS"` is only in `subheading_6digit_desc`.
 2. **Remaining 10 Misses (`90%` -> `100%`)**: Mostly generic `"OTHER"` leaves in telecom/power electronics (`85044090`, `85176250`, `85252011`, `85252091`) and `"OTHER"` textile/bedding (`61143020`, `94049099`) where Cross-Encoder logits are strongly negative.
 3. **CPU Inference Latency (`33.1 s` mean)**: Varied with CPU load across the 18,600 uncached Cross-Encoder pairs (`0` pair-cache hits on 100 distinct queries).
+

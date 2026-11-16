@@ -58,3 +58,4 @@ Expected HSN labels remain evaluation-only and never enter prediction inputs (`z
    - Even with `vaccum -> vacuum` normalization, `85086000` (`OTHER VACCUM CLEANERS`) still received `UNRELATED` from the Cross-Encoder (`85091000` remained the sole `SAME_PRODUCT` leaf, so `len(same_leaves) == 1` emitted `EXACT_HSN`). Rescued `UNRELATED` leaves under a competing heading (`8508`) are not currently included in `has_competing` ambiguity checks.
 3. **Zero-Hit Retrieval (`#59`: `84198120`)**:
    - `"commercial espresso coffee brewing machine"` still misses hybrid top-250 because `84198120`'s statutory text lacks `"espresso"`/`"coffee"`.
+
