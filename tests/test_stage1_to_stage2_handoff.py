@@ -170,5 +170,99 @@ def test_ui_has_one_click_stage1_to_stage2_handoff_and_explainability(rel_path):
         "heading_4digit_desc",
         "matching_attributes",
         "missing_attributes",
+        "Path A: Chapter-Guided Retrieval",
+        "Path B: Global Safeguard Retrieval",
+        "retrieval_path",
     ):
         assert token in html, f"Expected UI token '{token}' in {rel_path}"
+
+
+def test_stage1_representations_prevent_dilution_and_preserve_components():
+    s1 = build_canonical_stage1_result(
+        "Centrifugal water pump with stainless steel impeller and electric motor"
+    )
+    reps = HybridHSNEngine._extract_stage1_representations(
+        "Centrifugal water pump with stainless steel impeller and electric motor", s1
+    )
+    assert "pump" in reps["primary_anchor"].lower()
+    assert reps["chapter_weights"]
+    # Components/relationships extracted separately, not concatenated into primary_anchor
+    assert isinstance(reps["component_text"], str)
+    assert isinstance(reps["material_text"], str)
+
+
+def test_chapter_allocated_and_global_safeguard_merge_with_provenance():
+    engine = HybridHSNEngine()
+    desc = "Centrifugal water pump 2HP stainless steel"
+    s1 = build_canonical_stage1_result(desc)
+
+    results = engine.retrieve_with_lineage(desc, branch_k=20, stage1_result=s1)
+    assert len(results) > 0
+
+    # Deduplicated by source_record_id
+    rec_ids = [r["source_record_id"] for r in results]
+    assert len(rec_ids) == len(set(rec_ids))
+
+    paths = {r.get("retrieval_path") for r in results}
+    assert paths <= {"chapter_guided", "global_safeguard", "chapter_guided+global"}
+    assert any("chapter_guided" in (r.get("retrieval_path") or "") for r in results)
+
+    # Incorrect Stage 1 chapter guidance must NOT suppress true Ch 84 pump via global safeguard
+    wrong_s1 = dict(s1)
+    wrong_s1["chapter_candidates"] = [{"chapter_code": "19", "chapter_title": "Preparations of cereals", "confidence": 0.95}]
+    wrong_results = engine.retrieve_with_lineage(desc, branch_k=30, stage1_result=wrong_s1)
+    assert any(
+        str(r.get("chapter_code")).zfill(2) == "84" and r.get("cross_chapter_discovery") is True
+        for r in wrong_results
+    )
+
+
+def test_case72_regression_and_stage2_retrieval_summary_with_stage3():
+    engine = MultiCandidateEngine()
+    q72 = "industrial dc power supply inverter unit"
+    s1 = build_canonical_stage1_result(q72)
+    res = engine.classify_adaptive(q72, stage1_result=s1, page=1, page_size=10)
+
+    assert "stage2_retrieval_summary" in res
+    s2_sum = res["stage2_retrieval_summary"]
+    assert isinstance(s2_sum["chapter_guided_candidates"], list)
+    assert isinstance(s2_sum["global_safeguard_candidates"], list)
+    assert s2_sum["combined_deduplicated_count"] >= len(res["candidates"])
+
+    # Case #72 must retain Chapter 85 (not regress to empty chapter) and keep Stage 3 verification intact
+    assert any(str(c.get("chapter_code")).zfill(2) == "85" for c in res.get("candidates", []))
+    assert res["prediction_mode"] != "EXACT_HSN"  # Ambiguous query must still abstain/clarify in Stage 3
+
+
+def test_no_hardcoded_hsn_mappings_in_stage1_or_stage2():
+    import re
+    for rel in ("src/nlp/stage1_chapter_analyzer.py", "src/search/hybrid_retrieval.py"):
+        src = (ROOT / rel).read_text(encoding="utf-8")
+        # No hardcoded 8-digit HSN literals in Stage 1 / Stage 2 retrieval logic
+        assert not re.search(r"['\"]\d{8}['\"]", src), f"Hardcoded 8-digit HSN found in {rel}"
+
+
+@pytest.mark.parametrize(
+    "case_id,query,expected_ch",
+    [
+        (16, "multi-layer laminated plastic sheet for industrial use", "39"),
+        (23, "knitted viscose artificial fibre women top", "61"),
+        (57, "solar thermal water heater storage tank", "84"),
+        (58, "industrial tray dryer for chemical processing", "84"),
+        (59, "commercial espresso coffee brewing machine", "84"),
+        (72, "industrial dc power supply inverter unit", "85"),
+        (79, "optical fibre line multiplexer telecom unit", "85"),
+        (80, "network ethernet router and packet switch", "85"),
+        (88, "vhf two-way walkie talkie radio transceiver", "85"),
+        (89, "satellite earth station uplink transceiver", "85"),
+        (98, "quilted cotton filled bed comforter and pillow", "94"),
+    ],
+)
+def test_previously_missing_cases_chapter_allocated_retrieval_coverage(case_id, query, expected_ch):
+    engine = HybridHSNEngine()
+    s1 = build_canonical_stage1_result(query)
+    results = engine.retrieve_with_lineage(query, branch_k=30, stage1_result=s1)
+    assert len(results) > 0
+    assert any(str(r.get("chapter_code")).zfill(2) == expected_ch for r in results), (
+        f"Case #{case_id} failed to surface Chapter {expected_ch} in Stage 2 retrieval"
+    )

@@ -5555,6 +5555,20 @@
                     Guided Chapters: ${escapeHtml((handoff.guided_chapters || []).join(', ') || 'None')} |
                     Cross-Chapter Candidates: ${handoff.cross_chapter_candidates_count || 0}
                 </div>` : '';
+            const s2Sum = res.stage2_retrieval_summary || {};
+            const chPathCands = Array.isArray(s2Sum.chapter_guided_candidates) ? s2Sum.chapter_guided_candidates : [];
+            const glPathCands = Array.isArray(s2Sum.global_safeguard_candidates) ? s2Sum.global_safeguard_candidates : [];
+            const s2PathsHtml = (chPathCands.length || glPathCands.length) ? `
+                <div style="margin-top:6px; display:flex; flex-direction:column; gap:4px;">
+                    <details style="background:rgba(15,23,42,0.45); border:1px solid rgba(56,189,248,0.25); border-radius:6px; padding:5px 8px; font-size:0.7rem; color:#cbd5e1;">
+                        <summary style="cursor:pointer; font-weight:700; color:#7dd3fc;">Path A: Chapter-Guided Retrieval (${chPathCands.length})</summary>
+                        <div style="margin-top:4px;">${chPathCands.map(x => `<div><strong>${escapeHtml(x.hsn_code)}</strong> (Ch ${escapeHtml(x.chapter_code)}, ${escapeHtml(x.retrieval_path || '')}, rrf=${Number(x.rrf_score || 0).toFixed(4)}) — ${escapeHtml((x.hsn_description || '').slice(0, 90))}</div>`).join('')}</div>
+                    </details>
+                    <details style="background:rgba(15,23,42,0.45); border:1px solid rgba(168,85,247,0.25); border-radius:6px; padding:5px 8px; font-size:0.7rem; color:#cbd5e1;">
+                        <summary style="cursor:pointer; font-weight:700; color:#c4b5fd;">Path B: Global Safeguard Retrieval (${glPathCands.length})</summary>
+                        <div style="margin-top:4px;">${glPathCands.map(x => `<div><strong>${escapeHtml(x.hsn_code)}</strong> (Ch ${escapeHtml(x.chapter_code)}, ${escapeHtml(x.retrieval_path || '')}, rrf=${Number(x.rrf_score || 0).toFixed(4)}) — ${escapeHtml((x.hsn_description || '').slice(0, 90))}</div>`).join('')}</div>
+                    </details>
+                </div>` : '';
 
             panel.innerHTML = `
                 ${handoffHtml}
@@ -5564,6 +5578,7 @@
                 </div>
                 ${evSumHtml}
                 ${hierHtml}
+                ${s2PathsHtml}
                 ${clarHtml}
                 ${bestHtml}
                 ${otherSameHtml}

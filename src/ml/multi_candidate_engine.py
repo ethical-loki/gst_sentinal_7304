@@ -968,6 +968,8 @@ class MultiCandidateEngine:
                 "tariff_item_desc": raw.get("tariff_item_desc") or getattr(c.candidate, "tariff_item_desc", ""),
                 "source_record_id": raw.get("source_record_id", f"hsn_{c.candidate.hsn_code}"),
                 "retrieval_source": raw.get("retrieval_source", "hybrid"),
+                "retrieval_path": raw.get("retrieval_path", "global_safeguard"),
+                "chapter_allocated_slots": int(raw.get("chapter_allocated_slots") or 0),
                 "bm25_score": raw.get("bm25_score"),
                 "vector_score": raw.get("vector_score"),
                 "rrf_score": raw.get("rrf_score"),
@@ -999,12 +1001,49 @@ class MultiCandidateEngine:
 
         paged_candidates, pagination_meta = _paginate(all_formatted, page=page, page_size=page_size)
         total_ms = round((time.perf_counter() - t_total0) * 1000.0, 2)
-        guided_chaps = (
-            [str(c.get("chapter_code", "")).zfill(2) for c in (stage1_result.get("chapter_candidates") or []) if isinstance(c, dict) and c.get("chapter_code")]
-            if isinstance(stage1_result, dict)
-            else []
-        )
+        guided_chaps = [
+            str(c.get("chapter_code", "")).zfill(2)
+            for c in (effective_stage1.get("chapter_candidates") or [])
+            if isinstance(c, dict) and c.get("chapter_code")
+        ]
         cross_chap_cnt = sum(1 for item in all_formatted if item.get("cross_chapter_discovery"))
+
+        chapter_guided_list = [
+            {
+                "hsn_code": item["hsn_code"],
+                "chapter_code": item["chapter_code"],
+                "retrieval_path": item["retrieval_path"],
+                "rrf_score": item["rrf_score"],
+                "bm25_score": item["bm25_score"],
+                "vector_score": item["vector_score"],
+                "hsn_description": item["hsn_description"],
+            }
+            for item in all_formatted
+            if "chapter_guided" in str(item.get("retrieval_path", "")) or item.get("chapter_guided")
+        ][:15]
+
+        global_safeguard_list = [
+            {
+                "hsn_code": item["hsn_code"],
+                "chapter_code": item["chapter_code"],
+                "retrieval_path": item["retrieval_path"],
+                "rrf_score": item["rrf_score"],
+                "bm25_score": item["bm25_score"],
+                "vector_score": item["vector_score"],
+                "cross_chapter_discovery": item["cross_chapter_discovery"],
+                "cross_chapter_reason": item["cross_chapter_reason"],
+                "hsn_description": item["hsn_description"],
+            }
+            for item in all_formatted
+            if "global" in str(item.get("retrieval_path", "")) or item.get("cross_chapter_discovery")
+        ][:15]
+
+        chapter_allocations = {}
+        for item in all_formatted:
+            ch = str(item.get("chapter_code") or "").zfill(2)
+            slots = int(item.get("chapter_allocated_slots") or 0)
+            if ch and slots > 0 and ch not in chapter_allocations:
+                chapter_allocations[ch] = slots
 
         return {
             "input_description": orig,
@@ -1013,10 +1052,16 @@ class MultiCandidateEngine:
             "product_intent": product_intent.to_dict(),
             "stage1_handoff": {
                 "received_stage1": isinstance(stage1_result, dict),
-                "stage1_status": stage1_result.get("stage1_status") if isinstance(stage1_result, dict) else None,
+                "stage1_status": effective_stage1.get("stage1_status"),
                 "primary_commercial_article": product_intent.finished_article,
                 "guided_chapters": guided_chaps,
                 "cross_chapter_candidates_count": cross_chap_cnt,
+            },
+            "stage2_retrieval_summary": {
+                "chapter_guided_candidates": chapter_guided_list,
+                "global_safeguard_candidates": global_safeguard_list,
+                "combined_deduplicated_count": len(all_formatted),
+                "chapter_allocations": chapter_allocations,
             },
             "prediction_mode": prediction_mode,
             "final_hsn": final_hsn,

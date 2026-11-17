@@ -290,49 +290,119 @@ class HybridHSNEngine:
         indices, _, _, _, _ = self._fuse_with_scores(raw_query, pool_size=pool_size, branch_k=branch_k)
         return [dict(self.records[idx]) for idx in indices]
 
+    @staticmethod
+    def _extract_stage1_representations(
+        raw_query: str, stage1_result: Optional[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """Extracts separate, non-diluted Stage 1 representations and chapter weights."""
+        if not isinstance(stage1_result, dict):
+            return {
+                "primary_anchor": raw_query,
+                "alias_text": "",
+                "material_text": "",
+                "function_text": "",
+                "component_text": "",
+                "chapter_weights": {},
+            }
+
+        s2_repr = stage1_result.get("stage2_search_representation") or {}
+        mat_comp = stage1_result.get("materials_and_composition") or {}
+        comp_rel = stage1_result.get("components_and_relationships") or {}
+        chars = stage1_result.get("characteristics") or {}
+
+        anchor = str(
+            s2_repr.get("primary_commercial_product")
+            or stage1_result.get("primary_commercial_article")
+            or ""
+        ).strip()
+
+        # Primary anchor keeps raw_query + primary commercial article (deduplicated), never diluted with secondary fields
+        anchor_terms: List[str] = []
+        seen_tok: Set[str] = set()
+        for part in (raw_query, anchor):
+            for tok in str(part or "").split():
+                tl = tok.lower()
+                if tl not in seen_tok:
+                    seen_tok.add(tl)
+                    anchor_terms.append(tok)
+        primary_anchor = " ".join(anchor_terms) if anchor_terms else raw_query
+
+        aliases = [
+            str(a).strip()
+            for a in (
+                stage1_result.get("alternative_names_and_aliases")
+                or s2_repr.get("product_identity_and_aliases")
+                or []
+            )
+            if str(a).strip() and str(a).strip().lower() != anchor.lower()
+        ]
+        materials = [
+            str(m).strip()
+            for m in (
+                mat_comp.get("constituent_materials")
+                or s2_repr.get("constituent_materials")
+                or []
+            )
+            if str(m).strip()
+        ]
+        form_parts = [
+            str(chars.get("physical_form") or "").strip(),
+            str(chars.get("processing_state") or "").strip(),
+        ]
+        material_text = " ".join(materials + [p for p in form_parts if p])
+        function_text = str(
+            chars.get("function_use")
+            or s2_repr.get("function_and_application")
+            or ""
+        ).strip()
+
+        components = [
+            str(c).strip()
+            for c in (
+                comp_rel.get("components_or_parts")
+                or s2_repr.get("integrated_components")
+                or []
+            )
+            if str(c).strip()
+        ]
+        rel_targets = [
+            str(r.get("target") or "").strip()
+            for r in (comp_rel.get("relationship_graph") or [])
+            if isinstance(r, dict) and r.get("target")
+        ]
+        component_text = " ".join(components + rel_targets)
+
+        chapter_weights: Dict[str, float] = {}
+        for ch_item in stage1_result.get("chapter_candidates") or []:
+            if isinstance(ch_item, dict) and ch_item.get("chapter_code"):
+                ch_code = str(ch_item["chapter_code"]).zfill(2)
+                conf = float(ch_item.get("confidence") or ch_item.get("relevance_score") or 0.5)
+                chapter_weights[ch_code] = max(chapter_weights.get(ch_code, 0.0), min(1.0, conf))
+
+        return {
+            "primary_anchor": primary_anchor,
+            "alias_text": " ".join(aliases[:4]),
+            "material_text": material_text,
+            "function_text": function_text,
+            "component_text": component_text,
+            "chapter_weights": chapter_weights,
+        }
+
     def retrieve_with_lineage(
         self, raw_query: str, branch_k: int = 30, stage1_result: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         """
-        Phase 7 Adaptive Retrieval Helper (Stage 2):
-        Executes Weighted BM25 + Dense Cosine + RRF up to `branch_k` per branch
-        (or full corpus if branch_k >= total_records) without a fixed final cap,
-        optionally guided by canonical Stage 1 `stage1_result` chapter candidates
-        while allowing controlled cross-chapter discovery.
+        Phase 7 + Structured Stage 1->2 Adaptive Retrieval:
+        Uses separate weighted representations (primary anchor, aliases, materials/form,
+        function, components) and two complementary retrieval paths:
+          Path A: Chapter-allocated retrieval inside Stage 1 chapter_candidates
+          Path B: Global safeguard retrieval across the entire statutory master
+        Merges and deduplicates both pools with full provenance.
         """
-        effective_input = raw_query
-        guided_chapters: Set[str] = set()
-        if isinstance(stage1_result, dict):
-            s2_repr = stage1_result.get("stage2_search_representation") or {}
-            guided_chapters = {
-                str(c.get("chapter_code", "")).zfill(2)
-                for c in (stage1_result.get("chapter_candidates") or [])
-                if isinstance(c, dict) and c.get("chapter_code")
-            }
-            anchor = str(s2_repr.get("primary_commercial_product") or stage1_result.get("primary_commercial_article") or "").strip()
-            aliases = [str(a).strip() for a in (s2_repr.get("product_identity_and_aliases") or []) if str(a).strip() and str(a).strip() != anchor]
-            mats = [str(m).strip() for m in (s2_repr.get("constituent_materials") or []) if str(m).strip()]
-            fn_app = str(s2_repr.get("function_and_application") or "").strip()
-            parts = [p for p in ([raw_query, anchor] + aliases[:2] + mats[:2] + ([fn_app] if fn_app else [])) if p]
-            if parts:
-                seen_terms = []
-                seen_set = set()
-                for part in parts:
-                    for tok in part.split():
-                        tl = tok.lower()
-                        if tl not in seen_set:
-                            seen_set.add(tl)
-                            seen_terms.append(tok)
-                effective_input = " ".join(seen_terms)
-
-        q, q_tokens = self._expand_abbreviated_query(effective_input)
+        reps = self._extract_stage1_representations(raw_query, stage1_result)
+        q, q_tokens = self._expand_abbreviated_query(reps["primary_anchor"])
         if not q or not q_tokens:
             return []
-
-        s_head = np.array(self.bm25_heading.get_scores(q_tokens))
-        s_syn = np.array(self.bm25_synonyms.get_scores(q_tokens))
-        s_chap = np.array(self.bm25_chapter.get_scores(q_tokens))
-        s_sub = np.array(self.bm25_subclause.get_scores(q_tokens))
 
         def min_max(arr: np.ndarray) -> np.ndarray:
             denom = arr.max() - arr.min()
@@ -340,61 +410,139 @@ class HybridHSNEngine:
                 return np.zeros_like(arr)
             return (arr - arr.min()) / denom
 
-        bm25_composite = (
+        s_head = np.array(self.bm25_heading.get_scores(q_tokens))
+        s_syn = np.array(self.bm25_synonyms.get_scores(q_tokens))
+        s_chap = np.array(self.bm25_chapter.get_scores(q_tokens))
+        s_sub = np.array(self.bm25_subclause.get_scores(q_tokens))
+
+        bm25_primary = (
             3.0 * min_max(s_head) +
             2.5 * min_max(s_syn) +
             1.5 * min_max(s_chap) +
             1.0 * min_max(s_sub)
         )
-        k_eff = min(max(1, int(branch_k)), self.total_records)
-        top_bm25_indices = np.argsort(bm25_composite)[::-1][:k_eff]
 
+        # Secondary representations weighted strictly below the primary commercial article anchor
+        secondary_bm25 = np.zeros_like(bm25_primary)
+        for rep_text, weight in (
+            (reps["alias_text"], 0.20),
+            (reps["material_text"], 0.12),
+            (reps["function_text"], 0.10),
+            (reps["component_text"], 0.04),
+        ):
+            if rep_text:
+                _, rep_toks = self._expand_abbreviated_query(rep_text)
+                if rep_toks:
+                    sec_h = min_max(np.array(self.bm25_heading.get_scores(rep_toks)))
+                    sec_s = min_max(np.array(self.bm25_subclause.get_scores(rep_toks)))
+                    secondary_bm25 += weight * (0.6 * sec_h + 0.4 * sec_s)
+
+        bm25_composite = bm25_primary + secondary_bm25
+
+        # Dense retrieval anchored on primary commercial product (plus optional alias blend)
         q_emb = self.embedding_model.encode([q], convert_to_numpy=True, normalize_embeddings=True)[0]
         cos_sims = np.dot(self.dense_embeddings, q_emb)
-        top_vector_indices = np.argsort(cos_sims)[::-1][:k_eff]
+        if reps["alias_text"]:
+            alias_q, _ = self._expand_abbreviated_query(reps["alias_text"])
+            if alias_q:
+                a_emb = self.embedding_model.encode([alias_q], convert_to_numpy=True, normalize_embeddings=True)[0]
+                cos_sims = 0.85 * cos_sims + 0.15 * np.dot(self.dense_embeddings, a_emb)
 
+        k_eff = min(max(1, int(branch_k)), self.total_records)
         k_rrf = 60.0
+
+        # Path B: Global Safeguard Retrieval (full statutory master)
+        top_bm25_global = np.argsort(bm25_composite)[::-1][:k_eff]
+        top_vec_global = np.argsort(cos_sims)[::-1][:k_eff]
+        global_bm25_set = set(int(i) for i in top_bm25_global)
+        global_vec_set = set(int(i) for i in top_vec_global)
+
         rrf_map: Dict[int, float] = {}
-        bm25_set = set(int(i) for i in top_bm25_indices)
-        dense_set = set(int(i) for i in top_vector_indices)
-        for rank, idx in enumerate(top_bm25_indices):
+        global_set: Set[int] = set()
+        for rank, idx in enumerate(top_bm25_global):
             i = int(idx)
+            global_set.add(i)
             rrf_map[i] = rrf_map.get(i, 0.0) + (1.0 / (k_rrf + rank + 1))
-        for rank, idx in enumerate(top_vector_indices):
+        for rank, idx in enumerate(top_vec_global):
             i = int(idx)
+            global_set.add(i)
             rrf_map[i] = rrf_map.get(i, 0.0) + (1.0 / (k_rrf + rank + 1))
 
-        if guided_chapters:
-            for i in list(rrf_map.keys()):
-                ch = str(self.records[i].get("chapter_code") or "").zfill(2)
-                if ch in guided_chapters:
-                    rrf_map[i] += 0.008
+        # Path A: Chapter-Allocated Retrieval across Stage 1 chapter candidates
+        chapter_weights: Dict[str, float] = reps["chapter_weights"]
+        guided_chapters: Set[str] = set(chapter_weights.keys())
+        chapter_set: Set[int] = set()
+        chapter_allocations: Dict[str, int] = {}
+
+        if chapter_weights:
+            total_w = sum(chapter_weights.values()) or 1.0
+            total_ch_budget = max(k_eff, len(chapter_weights) * 5)
+            # Pre-index row indices per guided chapter once
+            rows_by_ch: Dict[str, List[int]] = {ch: [] for ch in chapter_weights}
+            for idx_r, rec_r in enumerate(self.records):
+                ch_r = str(rec_r.get("chapter_code") or "").zfill(2)
+                if ch_r in rows_by_ch:
+                    rows_by_ch[ch_r].append(idx_r)
+
+            for ch_code, ch_conf in sorted(chapter_weights.items(), key=lambda kv: -kv[1]):
+                ch_indices = rows_by_ch.get(ch_code, [])
+                if not ch_indices:
+                    continue
+                alloc = max(5 if k_eff >= 15 else 2, int(round(total_ch_budget * (ch_conf / total_w))))
+                alloc = min(alloc, len(ch_indices))
+                chapter_allocations[ch_code] = alloc
+
+                ch_arr = np.array(ch_indices, dtype=int)
+                ch_bm25_order = ch_arr[np.argsort(bm25_composite[ch_arr])[::-1][:alloc]]
+                ch_vec_order = ch_arr[np.argsort(cos_sims[ch_arr])[::-1][:alloc]]
+
+                for rank, idx in enumerate(ch_bm25_order):
+                    i = int(idx)
+                    chapter_set.add(i)
+                    rrf_map[i] = rrf_map.get(i, 0.0) + (0.65 / (k_rrf + rank + 1)) + (0.004 * ch_conf)
+                for rank, idx in enumerate(ch_vec_order):
+                    i = int(idx)
+                    chapter_set.add(i)
+                    rrf_map[i] = rrf_map.get(i, 0.0) + (0.65 / (k_rrf + rank + 1)) + (0.004 * ch_conf)
 
         ordered = sorted(rrf_map.keys(), key=lambda i: rrf_map[i], reverse=True)
         out: List[Dict[str, Any]] = []
         for idx in ordered:
             rec = dict(self.records[idx])
             ch = str(rec.get("chapter_code") or "").zfill(2)
-            in_b = idx in bm25_set and float(bm25_composite[idx]) > 0.0
-            in_d = idx in dense_set
-            src = "bm25+dense" if (in_b and in_d) else ("bm25" if in_b else "dense")
+            in_b = idx in global_bm25_set and float(bm25_composite[idx]) > 0.0
+            in_d = idx in global_vec_set
+            in_ch_path = idx in chapter_set
+            in_gl_path = idx in global_set
+
+            if in_ch_path and in_gl_path:
+                retrieval_path = "chapter_guided+global"
+            elif in_ch_path:
+                retrieval_path = "chapter_guided"
+            else:
+                retrieval_path = "global_safeguard"
+
+            src = "bm25+dense" if (in_b and in_d) else ("bm25" if in_b else ("dense" if in_d else "chapter_allocated"))
             is_guided = bool(guided_chapters) and (ch in guided_chapters)
             is_cross = bool(guided_chapters) and (ch not in guided_chapters)
             rec["source_record_id"] = f"row_{idx}"
             rec["retrieval_source"] = src
+            rec["retrieval_path"] = retrieval_path
+            rec["chapter_allocated_slots"] = chapter_allocations.get(ch, 0)
             rec["bm25_score"] = round(float(bm25_composite[idx]), 4)
             rec["vector_score"] = round(float(cos_sims[idx]), 4)
             rec["rrf_score"] = round(float(rrf_map[idx]), 6)
             rec["chapter_guided"] = is_guided
             rec["cross_chapter_discovery"] = is_cross
             rec["cross_chapter_reason"] = (
-                f"Cross-chapter candidate (Ch {ch}) surfaced via {src} similarity outside Stage 1 guided chapters {sorted(guided_chapters)}; requires Stage 3 verification."
+                f"Cross-chapter candidate (Ch {ch}) surfaced via global safeguard ({src}) outside Stage 1 guided chapters {sorted(guided_chapters)}; requires Stage 3 verification."
                 if is_cross
                 else ""
             )
             rec["retrieval_explanation"] = (
-                f"Retrieved via {src} (bm25={rec['bm25_score']}, dense={rec['vector_score']}, rrf={rec['rrf_score']})"
-                + (" [Stage 1 Chapter Guided]" if is_guided else (" [Cross-Chapter Discovery]" if is_cross else ""))
+                f"Path={retrieval_path}, src={src} (bm25={rec['bm25_score']}, dense={rec['vector_score']}, rrf={rec['rrf_score']})"
+                + (f" [Chapter Allocated ({chapter_allocations.get(ch, 0)} slots)]" if in_ch_path else "")
+                + (" [Cross-Chapter Safeguard]" if is_cross else "")
             )
             out.append(rec)
         return out
