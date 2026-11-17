@@ -132,6 +132,7 @@ class AdaptiveCandidateDiscoverer:
             RelationLabel.INSUFFICIENT_INFORMATION,
             RelationLabel.RELATED_PRODUCT,
         ),
+        stage1_result: Optional[Dict[str, Any]] = None,
     ) -> DiscoveryOutcome:
         total_master = getattr(self.hybrid_engine, "total_records", 0)
         expanded_q, _ = self.hybrid_engine._expand_abbreviated_query(query)
@@ -155,7 +156,12 @@ class AdaptiveCandidateDiscoverer:
         while True:
             rounds += 1
             t0 = time.perf_counter()
-            pool = self.hybrid_engine.retrieve_with_lineage(query, branch_k=branch_k)
+            try:
+                pool = self.hybrid_engine.retrieve_with_lineage(
+                    query, branch_k=branch_k, stage1_result=stage1_result
+                )
+            except TypeError:
+                pool = self.hybrid_engine.retrieve_with_lineage(query, branch_k=branch_k)
             t_ret_ms += (time.perf_counter() - t0) * 1000.0
 
             if not pool:
@@ -492,13 +498,18 @@ class MultiCandidateEngine:
         page: int = 1,
         page_size: Optional[int] = 20,
         exhaustive: bool = False,
+        stage1_result: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
         Executes adaptive multi-candidate discovery, grouping, difference analysis,
         calibrated confidence estimation, and decision control.
+        When `stage1_result` is provided, Stage 2 consumes the structured Stage 1
+        intent, aliases, materials, function, and guided chapters directly.
         """
         t_total0 = time.perf_counter()
         orig = (description or "").strip()
+        if not orig and isinstance(stage1_result, dict):
+            orig = str(stage1_result.get("original_description") or stage1_result.get("primary_commercial_article") or "").strip()
         confirmed = dict(confirmed_attributes or {})
         effective_query = (
             f"{orig} {' '.join(str(v).strip() for v in confirmed.values() if str(v).strip())}".strip()
@@ -510,11 +521,39 @@ class MultiCandidateEngine:
             return self._empty_response(orig, confirmed, page, page_size, t_total0)
 
         t_s1 = time.perf_counter()
-        product_intent = analyze_product_intent(effective_query)
+        if isinstance(stage1_result, dict) and isinstance(stage1_result.get("product_intent"), dict) and not confirmed:
+            pi_dict = stage1_result["product_intent"]
+            from src.nlp.product_intent_analyzer import ProductIntentStructure
+            product_intent = ProductIntentStructure(
+                raw_description=str(pi_dict.get("raw_description") or orig),
+                finished_article=str(pi_dict.get("finished_article") or stage1_result.get("primary_commercial_article") or orig),
+                constituent_materials=list(pi_dict.get("constituent_materials") or []),
+                ingredients_or_additives=list(pi_dict.get("ingredients_or_additives") or []),
+                components_or_parts=list(pi_dict.get("components_or_parts") or []),
+                packaging_or_presentation=pi_dict.get("packaging_or_presentation"),
+                processing_form=pi_dict.get("processing_form"),
+                function_use=pi_dict.get("function_use"),
+                article_search_query=str(pi_dict.get("article_search_query") or effective_query),
+                secondary_articles=list(pi_dict.get("secondary_articles") or []),
+                product_form=pi_dict.get("product_form"),
+                missing_critical_attributes=list(pi_dict.get("missing_critical_attributes") or []),
+                intent_confidence=float(pi_dict.get("intent_confidence") or 0.85),
+                product_head_noun=str(pi_dict.get("product_head_noun") or ""),
+                descriptive_modifiers=list(pi_dict.get("descriptive_modifiers") or []),
+                alternative_names_and_aliases=list(pi_dict.get("alternative_names_and_aliases") or []),
+                article_category=str(pi_dict.get("article_category") or "finished_article"),
+                attributes=list(pi_dict.get("attributes") or []),
+                function_details=dict(pi_dict.get("function_details") or {}),
+                relationship_graph=list(pi_dict.get("relationship_graph") or []),
+                field_confidences=dict(pi_dict.get("field_confidences") or {}),
+                stage2_search_representation=dict(stage1_result.get("stage2_search_representation") or pi_dict.get("stage2_search_representation") or {}),
+            )
+        else:
+            product_intent = analyze_product_intent(effective_query)
         stage1_intent_ms = round((time.perf_counter() - t_s1) * 1000.0, 2)
 
-        # 1. Adaptive Discovery (dynamic expansion, no fixed top-K cap)
-        disc = self.discoverer.discover(effective_query, exhaustive=exhaustive)
+        # 1. Adaptive Discovery (dynamic expansion, guided by Stage 1 when provided)
+        disc = self.discoverer.discover(effective_query, exhaustive=exhaustive, stage1_result=stage1_result)
         consolidated = consolidate_duplicate_records(disc.qualifying_classified)
 
         # Dataset-driven evidence evaluation (uses enriched_master_hsn.parquet fields)
@@ -890,8 +929,20 @@ class MultiCandidateEngine:
                 "tariff_level": getattr(c.candidate, "tariff_level", classify_tariff_level(c.candidate.hsn_code)),
                 "chapter_code": c.candidate.chapter_code,
                 "hsn_description": c.candidate.description,
+                "heading_4digit_desc": raw.get("heading_4digit_desc") or getattr(c.candidate, "heading_4digit_desc", ""),
+                "subheading_6digit_desc": raw.get("subheading_6digit_desc") or getattr(c.candidate, "subheading_6digit_desc", ""),
+                "tariff_item_desc": raw.get("tariff_item_desc") or getattr(c.candidate, "tariff_item_desc", ""),
                 "source_record_id": raw.get("source_record_id", f"hsn_{c.candidate.hsn_code}"),
                 "retrieval_source": raw.get("retrieval_source", "hybrid"),
+                "bm25_score": raw.get("bm25_score"),
+                "vector_score": raw.get("vector_score"),
+                "rrf_score": raw.get("rrf_score"),
+                "chapter_guided": bool(raw.get("chapter_guided", False)),
+                "cross_chapter_discovery": bool(raw.get("cross_chapter_discovery", False)),
+                "cross_chapter_reason": raw.get("cross_chapter_reason", ""),
+                "retrieval_explanation": raw.get("retrieval_explanation") or reasons[0],
+                "matching_attributes": list(ev_info.get("article_matches") or []) + list(ev_info.get("material_matches") or []),
+                "missing_attributes": list(ev_info.get("missing_attributes") or []),
                 "relevance_category": c.relation.value,
                 "evidence_status": ev_info.get("status", POSSIBLY_SUPPORTED),
                 "evidence_trace": ev_info,
@@ -914,11 +965,25 @@ class MultiCandidateEngine:
 
         paged_candidates, pagination_meta = _paginate(all_formatted, page=page, page_size=page_size)
         total_ms = round((time.perf_counter() - t_total0) * 1000.0, 2)
+        guided_chaps = (
+            [str(c.get("chapter_code", "")).zfill(2) for c in (stage1_result.get("chapter_candidates") or []) if isinstance(c, dict) and c.get("chapter_code")]
+            if isinstance(stage1_result, dict)
+            else []
+        )
+        cross_chap_cnt = sum(1 for item in all_formatted if item.get("cross_chapter_discovery"))
 
         return {
             "input_description": orig,
             "effective_query": effective_query,
             "confirmed_attributes": confirmed,
+            "product_intent": product_intent.to_dict(),
+            "stage1_handoff": {
+                "received_stage1": isinstance(stage1_result, dict),
+                "stage1_status": stage1_result.get("stage1_status") if isinstance(stage1_result, dict) else None,
+                "primary_commercial_article": product_intent.finished_article,
+                "guided_chapters": guided_chaps,
+                "cross_chapter_candidates_count": cross_chap_cnt,
+            },
             "prediction_mode": prediction_mode,
             "final_hsn": final_hsn,
             "final_chapter": final_chapter,

@@ -288,16 +288,33 @@ class HybridHSNEngine:
         return [dict(self.records[idx]) for idx in indices]
 
     def retrieve_with_lineage(
-        self, raw_query: str, branch_k: int = 30
+        self, raw_query: str, branch_k: int = 30, stage1_result: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         """
-        Phase 7 Adaptive Retrieval Helper:
+        Phase 7 Adaptive Retrieval Helper (Stage 2):
         Executes Weighted BM25 + Dense Cosine + RRF up to `branch_k` per branch
         (or full corpus if branch_k >= total_records) without a fixed final cap,
-        attaching `source_record_id`, `retrieval_source`, `bm25_score`, `vector_score`,
-        and `rrf_score` to every record for candidate lineage & completeness tracking.
+        optionally guided by canonical Stage 1 `stage1_result` chapter candidates
+        while allowing controlled cross-chapter discovery.
         """
-        q, q_tokens = self._expand_abbreviated_query(raw_query)
+        effective_input = raw_query
+        guided_chapters: Set[str] = set()
+        if isinstance(stage1_result, dict):
+            s2_repr = stage1_result.get("stage2_search_representation") or {}
+            guided_chapters = {
+                str(c.get("chapter_code", "")).zfill(2)
+                for c in (stage1_result.get("chapter_candidates") or [])
+                if isinstance(c, dict) and c.get("chapter_code")
+            }
+            anchor = str(s2_repr.get("primary_commercial_product") or stage1_result.get("primary_commercial_article") or "").strip()
+            aliases = [str(a).strip() for a in (s2_repr.get("product_identity_and_aliases") or []) if str(a).strip() and str(a).strip() != anchor]
+            mats = [str(m).strip() for m in (s2_repr.get("constituent_materials") or []) if str(m).strip()]
+            fn_app = str(s2_repr.get("function_and_application") or "").strip()
+            parts = [p for p in ([anchor] + aliases[:2] + mats[:2] + ([fn_app] if fn_app else [])) if p]
+            if parts:
+                effective_input = " ".join(parts)
+
+        q, q_tokens = self._expand_abbreviated_query(effective_input)
         if not q or not q_tokens:
             return []
 
@@ -336,18 +353,38 @@ class HybridHSNEngine:
             i = int(idx)
             rrf_map[i] = rrf_map.get(i, 0.0) + (1.0 / (k_rrf + rank + 1))
 
+        if guided_chapters:
+            for i in list(rrf_map.keys()):
+                ch = str(self.records[i].get("chapter_code") or "").zfill(2)
+                if ch in guided_chapters:
+                    rrf_map[i] += 0.008
+
         ordered = sorted(rrf_map.keys(), key=lambda i: rrf_map[i], reverse=True)
         out: List[Dict[str, Any]] = []
         for idx in ordered:
             rec = dict(self.records[idx])
+            ch = str(rec.get("chapter_code") or "").zfill(2)
             in_b = idx in bm25_set and float(bm25_composite[idx]) > 0.0
             in_d = idx in dense_set
             src = "bm25+dense" if (in_b and in_d) else ("bm25" if in_b else "dense")
+            is_guided = bool(guided_chapters) and (ch in guided_chapters)
+            is_cross = bool(guided_chapters) and (ch not in guided_chapters)
             rec["source_record_id"] = f"row_{idx}"
             rec["retrieval_source"] = src
             rec["bm25_score"] = round(float(bm25_composite[idx]), 4)
             rec["vector_score"] = round(float(cos_sims[idx]), 4)
             rec["rrf_score"] = round(float(rrf_map[idx]), 6)
+            rec["chapter_guided"] = is_guided
+            rec["cross_chapter_discovery"] = is_cross
+            rec["cross_chapter_reason"] = (
+                f"Cross-chapter candidate (Ch {ch}) surfaced via {src} similarity outside Stage 1 guided chapters {sorted(guided_chapters)}; requires Stage 3 verification."
+                if is_cross
+                else ""
+            )
+            rec["retrieval_explanation"] = (
+                f"Retrieved via {src} (bm25={rec['bm25_score']}, dense={rec['vector_score']}, rrf={rec['rrf_score']})"
+                + (" [Stage 1 Chapter Guided]" if is_guided else (" [Cross-Chapter Discovery]" if is_cross else ""))
+            )
             out.append(rec)
         return out
 

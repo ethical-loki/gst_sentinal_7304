@@ -4871,6 +4871,7 @@
                 const data = await resp.json();
                 const latency = (performance.now() - t0).toFixed(1);
                 window.currentStepState.s1 = data;
+                window._stage1StructuredResult = data.stage1_result || null;
 
                 // Check if Step 1 produced an OK or ABSTAIN decision
                 const chap = data.chapter_prediction || {};
@@ -5244,6 +5245,85 @@
                     </div>
                 </div>
 
+                ${(() => {
+                    const s1 = data.stage1_result;
+                    if (!s1) return '';
+                    const matComp = s1.materials_and_composition || {};
+                    const compRel = s1.components_and_relationships || {};
+                    const chars = s1.characteristics || {};
+                    const explicitAttrs = Array.isArray(s1.explicit_attributes) ? s1.explicit_attributes : [];
+                    const inferredAttrs = Array.isArray(s1.inferred_attributes) ? s1.inferred_attributes : [];
+                    const missing = Array.isArray(s1.missing_attributes) ? s1.missing_attributes : [];
+                    const confUnc = s1.confidence_and_uncertainty || {};
+                    const chCands = Array.isArray(s1.chapter_candidates) ? s1.chapter_candidates : [];
+                    const listOrDash = (arr) => (Array.isArray(arr) && arr.length) ? arr.map(x => escapeHtml(typeof x === 'object' ? `${x.name || x.attribute || ''}: ${x.value || ''}` : String(x))).join(', ') : '<span style="color:#64748b;">None</span>';
+                    return `
+                    <div id="stage1StructuredDetails" style="margin-top:10px; display:flex; flex-direction:column; gap:6px;">
+                        <details open style="background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.22); border-radius:8px; padding:8px 12px;">
+                            <summary style="cursor:pointer; font-size:0.76rem; font-weight:700; color:#bae6fd;">Product Identity &amp; Classification Role (${escapeHtml(s1.stage1_status || '')})</summary>
+                            <div style="margin-top:6px; font-size:0.74rem; color:#cbd5e1; display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:6px;">
+                                <div><strong>Primary Product:</strong> ${escapeHtml(s1.primary_commercial_article || '')}</div>
+                                <div><strong>Head Noun:</strong> ${escapeHtml(s1.product_head_noun || '')}</div>
+                                <div><strong>Article Category:</strong> ${escapeHtml(s1.article_category || '')}</div>
+                                <div><strong>Physical Form:</strong> ${escapeHtml(chars.physical_form || '')}</div>
+                                <div><strong>Aliases:</strong> ${listOrDash(s1.alternative_names_and_aliases)}</div>
+                            </div>
+                        </details>
+                        <details style="background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.22); border-radius:8px; padding:8px 12px;">
+                            <summary style="cursor:pointer; font-size:0.76rem; font-weight:700; color:#c4b5fd;">Materials &amp; Components</summary>
+                            <div style="margin-top:6px; font-size:0.74rem; color:#cbd5e1;">
+                                <div><strong>Constituent Materials:</strong> ${listOrDash(matComp.constituent_materials)}</div>
+                                <div><strong>Ingredients / Additives:</strong> ${listOrDash(matComp.ingredients_or_additives)}</div>
+                                <div><strong>Components / Parts:</strong> ${listOrDash(compRel.components_or_parts)}</div>
+                                ${Array.isArray(compRel.relationship_graph) && compRel.relationship_graph.length ? `<div style="margin-top:4px;"><strong>Relationships:</strong> ${compRel.relationship_graph.map(r => `${escapeHtml(r.source || '')} → ${escapeHtml(r.relation || '')} → ${escapeHtml(r.target || '')}`).join(' | ')}</div>` : ''}
+                            </div>
+                        </details>
+                        <details style="background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.22); border-radius:8px; padding:8px 12px;">
+                            <summary style="cursor:pointer; font-size:0.76rem; font-weight:700; color:#a7f3d0;">Characteristics &amp; Function</summary>
+                            <div style="margin-top:6px; font-size:0.74rem; color:#cbd5e1;">
+                                <div><strong>Function / Use:</strong> ${escapeHtml(chars.function_use || 'N/A')}</div>
+                                <div><strong>Processing State:</strong> ${escapeHtml(chars.processing_state || 'N/A')}</div>
+                                <div><strong>Packaging:</strong> ${escapeHtml(compRel.packaging_or_presentation || 'N/A')}</div>
+                            </div>
+                        </details>
+                        <details style="background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.22); border-radius:8px; padding:8px 12px;">
+                            <summary style="cursor:pointer; font-size:0.76rem; font-weight:700; color:#fde68a;">Extracted Evidence &amp; Missing Information (${missing.length} gaps)</summary>
+                            <div style="margin-top:6px; font-size:0.74rem; color:#cbd5e1;">
+                                <div><strong>Explicit Attributes:</strong> ${listOrDash(explicitAttrs)}</div>
+                                <div><strong>Inferred Attributes:</strong> ${listOrDash(inferredAttrs)}</div>
+                                <div><strong>Missing Information:</strong> ${listOrDash(missing)}</div>
+                                ${Array.isArray(confUnc.uncertainty_reasons) && confUnc.uncertainty_reasons.length ? `<div style="margin-top:4px; color:#fca5a5;"><strong>Uncertainty:</strong> ${escapeHtml(confUnc.uncertainty_reasons.join('; '))}</div>` : ''}
+                            </div>
+                        </details>
+                        <details open style="background:rgba(15,23,42,0.55); border:1px solid rgba(56,189,248,0.3); border-radius:8px; padding:8px 12px;">
+                            <summary style="cursor:pointer; font-size:0.76rem; font-weight:700; color:#7dd3fc;">Dynamic Chapter Candidates (${chCands.length})</summary>
+                            <div style="margin-top:6px; display:flex; flex-direction:column; gap:6px;">
+                                ${chCands.map(ch => `
+                                    <div style="padding:6px 8px; background:rgba(2,6,23,0.55); border:1px solid rgba(148,163,184,0.2); border-radius:6px; font-size:0.73rem;">
+                                        <div style="display:flex; justify-content:space-between; color:#e2e8f0; font-weight:700;">
+                                            <span>Chapter ${escapeHtml(ch.chapter_code || '')} — ${escapeHtml(ch.chapter_title || '')}</span>
+                                            <span style="color:#38bdf8;">${(Number(ch.confidence || 0) * 100).toFixed(0)}%</span>
+                                        </div>
+                                        <div style="color:#cbd5e1; margin-top:2px;">${escapeHtml(ch.why_relevant || '')}</div>
+                                        ${Array.isArray(ch.supporting_attributes) && ch.supporting_attributes.length ? `<div style="color:#86efac; font-size:0.69rem; margin-top:2px;"><strong>Supporting:</strong> ${escapeHtml(ch.supporting_attributes.join('; '))}</div>` : ''}
+                                        ${Array.isArray(ch.limiting_or_contradictory_evidence) && ch.limiting_or_contradictory_evidence.length ? `<div style="color:#fde68a; font-size:0.69rem; margin-top:2px;"><strong>Limiting:</strong> ${escapeHtml(ch.limiting_or_contradictory_evidence.join('; '))}</div>` : ''}
+                                        ${ch.uncertainty_note ? `<div style="color:#94a3b8; font-size:0.68rem; margin-top:2px;">${escapeHtml(ch.uncertainty_note)}</div>` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </details>
+                    </div>`;
+                })()}
+
+                <div style="margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <button id="proceedToStage2Btn" type="button" onclick="window.proceedToStage2()"
+                        style="padding:9px 16px; border-radius:8px; border:1px solid rgba(56,189,248,0.65); background:linear-gradient(135deg,#0284c7,#2563eb); color:#fff; font-weight:700; font-size:0.82rem; cursor:pointer;">
+                        Proceed to Stage 2 – Discover HSN Candidates
+                    </button>
+                    <span id="stage2HandoffStatus" style="font-size:0.74rem; color:#94a3b8;"></span>
+                </div>
+                <div id="adaptiveDiscoveryPanel" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid rgba(148,163,184,0.25);"></div>
+
                 ${chapHtml}
                 ${reportHtml}
                 ${(() => {
@@ -5318,7 +5398,6 @@
                                     🔍 Adaptive Multi-Candidate Discovery
                                 </button>
                             </div>`}
-                            <div id="adaptiveDiscoveryPanel" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid rgba(148,163,184,0.25);"></div>
                         </div>
                     `;
                 })()}
@@ -5326,6 +5405,7 @@
 
             window._adaptiveQueryBase = data.base_product || data.master_search_string || '';
             window._adaptiveConfirmed = {};
+            window._stage1StructuredResult = data.stage1_result || window._stage1StructuredResult || null;
             box.style.display = 'block';
             box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
@@ -5334,6 +5414,7 @@
             const panel = document.getElementById('adaptiveDiscoveryPanel');
             if (!panel || !res) return;
             const disc = res.discovery || {};
+            const handoff = res.stage1_handoff || {};
             const pag = res.pagination || {};
             const clar = res.clarification || {};
             const groups = Array.isArray(res.candidate_groups) ? res.candidate_groups : [];
@@ -5351,10 +5432,12 @@
                 const evStatus = c.evidence_status || '';
                 const evTrace = c.evidence_trace && c.evidence_trace.trace_summary ? c.evidence_trace.trace_summary : '';
                 const evColor = evStatus === 'SUPPORTED' ? '#34d399' : (evStatus === 'POSSIBLY_SUPPORTED' ? '#fbbf24' : '#94a3b8');
+                const matchAttrs = Array.isArray(c.matching_attributes) && c.matching_attributes.length ? c.matching_attributes.join(', ') : 'None';
+                const missAttrs = Array.isArray(c.missing_attributes) && c.missing_attributes.length ? c.missing_attributes.join(', ') : 'None';
                 return `
                 <div style="margin-top:6px; padding:6px 8px; background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.2); border-radius:6px; font-size:0.72rem;">
                     <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px; color:#e2e8f0; font-family:'JetBrains Mono', monospace;">
-                        <span><strong>#${c.rank} HSN ${escapeHtml(c.hsn_code)}</strong> (Ch ${escapeHtml(c.chapter_code)}${c.tariff_level ? ` · ${escapeHtml(c.tariff_level)}` : ''})</span>
+                        <span><strong>#${c.rank} HSN ${escapeHtml(c.hsn_code)}</strong> (Ch ${escapeHtml(c.chapter_code)}${c.tariff_level ? ` · ${escapeHtml(c.tariff_level)}` : ''})${c.cross_chapter_discovery ? ' <span style="color:#fbbf24;">[Cross-Chapter]</span>' : ''}</span>
                         <span>
                             ${evStatus ? `<span style="color:${evColor}; font-weight:700;">[${escapeHtml(evStatus)}]</span> · ` : ''}
                             <span style="color:${badgeColor};">${escapeHtml(c.relevance_category)} · Rel ${(Number(c.relevance_confidence || 0) * 100).toFixed(1)}%</span>
@@ -5364,6 +5447,17 @@
                     ${evTrace ? `<div style="color:#7dd3fc; font-size:0.68rem; margin-top:2px;"><strong>Evidence:</strong> ${escapeHtml(evTrace)}</div>` : ''}
                     ${Array.isArray(c.differences) && c.differences.length ? `<div style="color:#fde68a; font-size:0.68rem; margin-top:2px;"><strong>Differences:</strong> ${escapeHtml(c.differences.slice(0, 4).join(' | '))}</div>` : ''}
                     <div style="color:#94a3b8; font-size:0.68rem; margin-top:2px;">${escapeHtml((c.match_reasons || []).join(' | '))}</div>
+                    <details style="margin-top:4px; color:#94a3b8; font-size:0.68rem;">
+                        <summary style="cursor:pointer; color:#93c5fd;">Stage 2 Retrieval &amp; Hierarchy Details</summary>
+                        <div style="margin-top:4px; padding-left:6px; border-left:2px solid rgba(56,189,248,0.35);">
+                            <div><strong>Scores:</strong> BM25 ${Number(c.bm25_score || 0).toFixed(4)} | Vector ${Number(c.vector_score || 0).toFixed(4)} | RRF ${Number(c.rrf_score || 0).toFixed(4)}</div>
+                            <div><strong>Hierarchy:</strong> ${escapeHtml(c.heading_4digit_desc || '')}${c.subheading_6digit_desc ? ' › ' + escapeHtml(c.subheading_6digit_desc) : ''}${c.tariff_item_desc ? ' › ' + escapeHtml(c.tariff_item_desc) : ''}</div>
+                            <div><strong>Matching Attributes:</strong> ${escapeHtml(matchAttrs)}</div>
+                            <div><strong>Missing Attributes:</strong> ${escapeHtml(missAttrs)}</div>
+                            ${c.retrieval_explanation ? `<div><strong>Retrieval Explanation:</strong> ${escapeHtml(c.retrieval_explanation)}</div>` : ''}
+                            ${c.cross_chapter_reason ? `<div style="color:#fde68a;"><strong>Cross-Chapter Reason:</strong> ${escapeHtml(c.cross_chapter_reason)}</div>` : ''}
+                        </div>
+                    </details>
                 </div>
             `;
             };
@@ -5454,8 +5548,16 @@
                 <div style="margin-top:4px; font-size:0.69rem; color:#94a3b8;">
                     <strong>Hierarchy Context (4/6-digit headings):</strong> ${escapeHtml(hier.parent_codes.slice(0, 8).join(', '))}
                 </div>` : '';
+            const handoffHtml = handoff.received_stage1 ? `
+                <div style="margin-bottom:6px; padding:5px 8px; background:rgba(14,165,233,0.12); border:1px solid rgba(56,189,248,0.35); border-radius:6px; font-size:0.71rem; color:#bae6fd;">
+                    <strong>Stage 1 → Stage 2 Handoff Active:</strong>
+                    Product: ${escapeHtml(handoff.primary_commercial_article || '')} |
+                    Guided Chapters: ${escapeHtml((handoff.guided_chapters || []).join(', ') || 'None')} |
+                    Cross-Chapter Candidates: ${handoff.cross_chapter_candidates_count || 0}
+                </div>` : '';
 
             panel.innerHTML = `
+                ${handoffHtml}
                 <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; font-size:0.74rem; color:#e2e8f0;">
                     <span><strong>Mode:</strong> ${escapeHtml(res.prediction_mode)} ${res.final_hsn ? `· Final HSN ${escapeHtml(res.final_hsn)}` : '· No forced HSN (clarification/discovery)'}</span>
                     <span>${completeBadge} (${disc.qualifying_candidates || 0} qualifying / ${disc.total_retrieved || 0} examined)</span>
@@ -5474,6 +5576,73 @@
             panel.style.display = 'block';
         };
 
+        window.proceedToStage2 = async function() {
+            if (window._stage2InFlight) return;
+            const s1 = window._stage1StructuredResult;
+            const statusEl = document.getElementById('stage2HandoffStatus');
+            const btn = document.getElementById('proceedToStage2Btn');
+            const panel = document.getElementById('adaptiveDiscoveryPanel');
+            const desc = window._adaptiveQueryBase || (s1 && s1.original_description) || '';
+            if (!s1 || typeof s1 !== 'object' || !s1.stage2_search_representation) {
+                if (statusEl) {
+                    statusEl.style.color = '#fda4af';
+                    statusEl.textContent = 'Stage 1 structured output is missing or incomplete. Run Stage 1 first.';
+                }
+                return;
+            }
+            if (!desc) {
+                if (statusEl) {
+                    statusEl.style.color = '#fda4af';
+                    statusEl.textContent = 'Product description is required before Stage 2 discovery.';
+                }
+                return;
+            }
+            window._stage2InFlight = true;
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Running Stage 2 – Discovering HSN Candidates...';
+            }
+            if (statusEl) {
+                statusEl.style.color = '#93c5fd';
+                statusEl.textContent = 'Passing structured Stage 1 output to Stage 2...';
+            }
+            if (panel) {
+                panel.style.display = 'block';
+                panel.innerHTML = '<div style="font-size:0.75rem; color:#93c5fd;">Discovering Stage 2 HSN candidates from structured Stage 1 context...</div>';
+            }
+            try {
+                const resp = await fetch('/api/v1/hsn-v2/classify-adaptive', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        description: desc,
+                        stage1_result: s1,
+                        page: 1,
+                        page_size: 10,
+                    }),
+                });
+                const res = await resp.json();
+                if (!resp.ok) throw new Error(res.detail || `HTTP ${resp.status}`);
+                window.renderAdaptiveDiscovery(res);
+                if (statusEl) {
+                    statusEl.style.color = '#34d399';
+                    statusEl.textContent = `Stage 2 complete (${(res.candidates || []).length} candidates shown).`;
+                }
+            } catch (e) {
+                if (statusEl) {
+                    statusEl.style.color = '#fda4af';
+                    statusEl.textContent = `Stage 2 handoff failed: ${e.message}`;
+                }
+                if (panel) panel.innerHTML = `<div style="font-size:0.74rem; color:#fda4af;">Stage 2 discovery failed: ${escapeHtml(e.message)}</div>`;
+            } finally {
+                window._stage2InFlight = false;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Proceed to Stage 2 – Discover HSN Candidates';
+                }
+            }
+        };
+
         window.runAdaptiveDiscovery = async function(page = 1) {
             const panel = document.getElementById('adaptiveDiscoveryPanel');
             if (panel) {
@@ -5485,7 +5654,7 @@
                 const endpoint = hasConf ? '/api/v1/hsn-v2/clarify-adaptive' : '/api/v1/hsn-v2/classify-adaptive';
                 const body = hasConf
                     ? { description: window._adaptiveQueryBase || '', confirmed_attributes: window._adaptiveConfirmed, page, page_size: 10 }
-                    : { description: window._adaptiveQueryBase || '', page, page_size: 10 };
+                    : { description: window._adaptiveQueryBase || '', stage1_result: window._stage1StructuredResult || undefined, page, page_size: 10 };
                 const resp = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

@@ -1003,6 +1003,12 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
     except Exception as e:
         logger.warning(f"HSNIntelligenceV2 sync skipped: {e}")
 
+    from src.nlp.stage1_chapter_analyzer import build_canonical_stage1_result
+    canonical_stage1 = build_canonical_stage1_result(
+        description=base_product,
+        clarification=user_clarification,
+    )
+
     return {
         "status": "success",
         "step": 1,
@@ -1010,6 +1016,7 @@ def step1_context_aggregator_endpoint(body: Dict[str, Any] = Body(default={})):
         "user_clarification": s1.get("user_clarification"),
         "aggregated_attributes": agg_attrs,
         "product_intent": product_intent,
+        "stage1_result": canonical_stage1,
         "query_facts": {
             "product_name": base_product,
             "article_noun": query_facts_data.get("article"),
@@ -1099,7 +1106,24 @@ def get_multi_candidate_engine():
 
 @app.post("/api/v1/hsn-v2/classify-adaptive")
 async def classify_hsn_v2_adaptive(payload: dict):
-    product = (payload.get("product") or payload.get("query") or payload.get("description") or "").strip()
+    stage1_result = payload.get("stage1_result")
+    if stage1_result is not None:
+        if not isinstance(stage1_result, dict) or not (
+            stage1_result.get("primary_commercial_article")
+            or stage1_result.get("product_intent")
+            or stage1_result.get("original_description")
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid stage1_result payload: must include primary_commercial_article, product_intent, or original_description.",
+            )
+    product = (
+        payload.get("product")
+        or payload.get("query")
+        or payload.get("description")
+        or (stage1_result.get("original_description") if isinstance(stage1_result, dict) else "")
+        or ""
+    ).strip()
     if not product:
         raise HTTPException(status_code=400, detail="Product description is required.")
     engine = get_multi_candidate_engine()
@@ -1110,6 +1134,7 @@ async def classify_hsn_v2_adaptive(payload: dict):
         page=int(payload.get("page") or 1),
         page_size=int(payload["page_size"]) if payload.get("page_size") is not None else 20,
         exhaustive=bool(payload.get("exhaustive", False)),
+        stage1_result=stage1_result,
     )
 
 
