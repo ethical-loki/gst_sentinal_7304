@@ -109,7 +109,10 @@ class HybridHSNEngine:
         self.corpus_synonyms = [tokenize(r.get("consumer_synonyms", "")) for r in self.records]
         self.corpus_chapter = [tokenize(r.get("chapter_title", "")) for r in self.records]
         self.corpus_subclause = [
-            tokenize(f"{r.get('tariff_item_desc', '')} {r.get('article_keywords', '')} {r.get('material_keywords', '')}")
+            tokenize(
+                f"{r.get('tariff_item_desc', '')} {r.get('statutory_description', '')} "
+                f"{r.get('article_keywords', '')} {r.get('material_keywords', '')}"
+            )
             for r in self.records
         ]
 
@@ -310,9 +313,17 @@ class HybridHSNEngine:
             aliases = [str(a).strip() for a in (s2_repr.get("product_identity_and_aliases") or []) if str(a).strip() and str(a).strip() != anchor]
             mats = [str(m).strip() for m in (s2_repr.get("constituent_materials") or []) if str(m).strip()]
             fn_app = str(s2_repr.get("function_and_application") or "").strip()
-            parts = [p for p in ([anchor] + aliases[:2] + mats[:2] + ([fn_app] if fn_app else [])) if p]
+            parts = [p for p in ([raw_query, anchor] + aliases[:2] + mats[:2] + ([fn_app] if fn_app else [])) if p]
             if parts:
-                effective_input = " ".join(parts)
+                seen_terms = []
+                seen_set = set()
+                for part in parts:
+                    for tok in part.split():
+                        tl = tok.lower()
+                        if tl not in seen_set:
+                            seen_set.add(tl)
+                            seen_terms.append(tok)
+                effective_input = " ".join(seen_terms)
 
         q, q_tokens = self._expand_abbreviated_query(effective_input)
         if not q or not q_tokens:

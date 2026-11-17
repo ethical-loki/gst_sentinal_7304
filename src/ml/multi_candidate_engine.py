@@ -266,8 +266,9 @@ class AdaptiveCandidateDiscoverer:
                 discovery_complete = True
                 break
 
-            # On round 1, if all new records were UNRELATED, we still stabilized unless exhaustive
-            if rounds == 1 and new_qualifying == 0 and not exhaustive:
+            # On round 1, allow one expansion round if 0 qualifying candidates were found at initial branch_k;
+            # stop once round >= 2 still yields 0 qualifying candidates (unless exhaustive).
+            if rounds >= 2 and new_qualifying == 0 and not has_active_pool and not exhaustive:
                 stopping_reason = "initial_pool_no_qualifying_candidates"
                 discovery_complete = True
                 break
@@ -552,8 +553,16 @@ class MultiCandidateEngine:
             product_intent = analyze_product_intent(effective_query)
         stage1_intent_ms = round((time.perf_counter() - t_s1) * 1000.0, 2)
 
-        # 1. Adaptive Discovery (dynamic expansion, guided by Stage 1 when provided)
-        disc = self.discoverer.discover(effective_query, exhaustive=exhaustive, stage1_result=stage1_result)
+        effective_stage1 = stage1_result
+        if effective_stage1 is None:
+            from src.nlp.stage1_chapter_analyzer import build_canonical_stage1_result
+            effective_stage1 = build_canonical_stage1_result(
+                effective_query,
+                product_intent=product_intent,
+            )
+
+        # 1. Adaptive Discovery (dynamic expansion, guided by Stage 1)
+        disc = self.discoverer.discover(effective_query, exhaustive=exhaustive, stage1_result=effective_stage1)
         consolidated = consolidate_duplicate_records(disc.qualifying_classified)
 
         # Dataset-driven evidence evaluation (uses enriched_master_hsn.parquet fields)
@@ -632,7 +641,7 @@ class MultiCandidateEngine:
                 seen_qual_hsn.add(hsn)
                 rescued_hsns.append(hsn)
 
-        # Order qualifying by evidence verdict -> relation priority -> evidence_score -> confidence
+        # Order qualifying by evidence verdict -> relation priority -> unified Stage 2+3 composite score
         _ev_rank = {SUPPORTED: 0, POSSIBLY_SUPPORTED: 1, INSUFFICIENT_EVIDENCE: 2}
         _rel_rank = {
             RelationLabel.SAME_PRODUCT: 0,
@@ -640,11 +649,36 @@ class MultiCandidateEngine:
             RelationLabel.RELATED_PRODUCT: 2,
             RelationLabel.UNRELATED: 3,
         }
+        _q_toks = {
+            t for t in re.findall(r"\b[a-z0-9]{3,}\b", effective_query.lower())
+            if t not in {"and", "the", "for", "with", "other", "from", "type", "made"}
+        }
+
+        def _composite_rank_score(c: ClassifiedTariffCandidate) -> float:
+            hsn = c.candidate.hsn_code
+            ev_info = evidence_by_hsn.get(hsn, {})
+            raw = disc.raw_records_by_id.get(hsn, {})
+            ce_conf = float(c.confidence)
+            ev_score = float(ev_info.get("evidence_score", 0.0))
+            rrf_norm = min(1.0, float(raw.get("rrf_score", 0.0) or 0.0) / 0.04)
+
+            tariff_desc = str(raw.get("tariff_item_desc") or c.candidate.tariff_item_desc or "").strip().lower()
+            sub6_desc = str(raw.get("subheading_6digit_desc") or "").strip().lower()
+            leaf_specificity_bonus = 0.0
+            if tariff_desc in {"other", "others", "- other", "-- other", "--- other", "---- other"}:
+                leaf_specificity_bonus = -0.015
+            elif _q_toks:
+                leaf_toks = set(re.findall(r"\b[a-z0-9]{3,}\b", f"{tariff_desc} {sub6_desc}"))
+                if _q_toks & leaf_toks:
+                    leaf_specificity_bonus = 0.04
+
+            return (0.58 * ce_conf) + (0.27 * ev_score) + (0.15 * rrf_norm) + leaf_specificity_bonus
+
         qualifying.sort(
             key=lambda c: (
                 _ev_rank.get(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status", POSSIBLY_SUPPORTED), 2),
                 _rel_rank.get(c.relation, 3),
-                -round(float(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("evidence_score", 0.0)), 3),
+                -_composite_rank_score(c),
                 -c.confidence,
             )
         )
