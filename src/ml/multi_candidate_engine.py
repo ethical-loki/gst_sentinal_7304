@@ -1045,6 +1045,23 @@ class MultiCandidateEngine:
             if ch and slots > 0 and ch not in chapter_allocations:
                 chapter_allocations[ch] = slots
 
+        from src.ml.stage3_statutory_verifier import build_stage3_final_decision
+        stage3_decision = build_stage3_final_decision(
+            original_description=orig,
+            prediction_mode=prediction_mode,
+            final_hsn=final_hsn,
+            final_chapter=final_chapter,
+            hsn_confidence=hsn_conf,
+            clarification_reason=clarification_reason,
+            product_intent=product_intent,
+            qualifying_leaves=same_leaves or leaf_qualifying,
+            evidence_by_hsn=evidence_by_hsn,
+            raw_records_by_id=disc.raw_records_by_id,
+            dist_analysis=dist_analysis,
+            questions=questions,
+            contradicted_reasons=contradicted_reasons,
+        )
+
         return {
             "input_description": orig,
             "effective_query": effective_query,
@@ -1063,6 +1080,7 @@ class MultiCandidateEngine:
                 "combined_deduplicated_count": len(all_formatted),
                 "chapter_allocations": chapter_allocations,
             },
+            "stage3_decision": stage3_decision,
             "prediction_mode": prediction_mode,
             "final_hsn": final_hsn,
             "final_chapter": final_chapter,

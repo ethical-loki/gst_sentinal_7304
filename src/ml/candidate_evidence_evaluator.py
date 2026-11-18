@@ -224,7 +224,11 @@ def build_candidate_profile(raw_rec: Optional[Dict[str, Any]], candidate: Any) -
     })
     chap_tokens = _tokenize_content(chap_title)
     mat_fams = _detect_material_families(_tokenize_content(mat_text), mat_text)
-    stat_mat_text = " ".join([item_desc, stat_desc, sub6_desc, hd4_desc])
+    # Strip illustrative parenthetical examples ("for example, ...") and permissive "whether or not ..." clauses
+    # before computing hard statutory material contradictions so broad parent-heading examples never reject valid leaves.
+    stat_mat_raw = " ".join([item_desc, stat_desc, sub6_desc, hd4_desc])
+    stat_mat_text = re.sub(r"\(\s*for\s+example[^)]*\)", " ", stat_mat_raw, flags=re.IGNORECASE)
+    stat_mat_text = re.sub(r"\bwhether\s+or\s+not\b[^,;)]*", " ", stat_mat_text, flags=re.IGNORECASE)
     stat_mat_fams = _detect_material_families(_tokenize_content(stat_mat_text), stat_mat_text)
 
     return CandidateProfile(

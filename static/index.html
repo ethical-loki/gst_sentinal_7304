@@ -5557,6 +5557,26 @@
 
             panel.innerHTML = `
                 ${handoffHtml}
+                ${(() => {
+                    const s3 = res.stage3_decision;
+                    if (!s3) return '';
+                    const outColor = s3.decision_outcome === 'EXACT_CLASSIFICATION' ? '#34d399' : (s3.decision_outcome === 'ABSTAIN' ? '#fda4af' : '#fbbf24');
+                    const h = s3.hierarchy_verification || {};
+                    const gst = s3.verified_gst_rate;
+                    const girList = Array.isArray(s3.gir_reasoning) ? s3.gir_reasoning : [];
+                    const notes = Array.isArray(s3.supporting_notes) ? s3.supporting_notes : [];
+                    return `
+                    <div id="stage3DecisionCard" style="margin-bottom:8px; padding:8px 10px; background:rgba(15,23,42,0.7); border:1px solid rgba(52,211,153,0.35); border-radius:8px; font-size:0.72rem; color:#e2e8f0;">
+                        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+                            <span><strong>Stage 3 Decision:</strong> <span style="color:${outColor}; font-weight:700;">${escapeHtml(s3.decision_outcome || '')}</span>${s3.final_hsn ? ` · HSN <strong>${escapeHtml(s3.final_hsn)}</strong>` : ''}</span>
+                            <span>Calibrated Confidence: <strong>${(Number(s3.calibrated_confidence || 0) * 100).toFixed(1)}%</strong></span>
+                        </div>
+                        <div style="color:#cbd5e1; margin-top:3px;">${escapeHtml(s3.decision_reason || '')}</div>
+                        ${h.section ? `<div style="color:#94a3b8; margin-top:3px;"><strong>Hierarchy:</strong> ${escapeHtml(h.section)} › Ch ${escapeHtml(h.chapter_code || '')} › ${escapeHtml(h.heading_4digit || '')} › ${escapeHtml(h.subheading_6digit || '')}${h.tariff_item_desc ? ` › ${escapeHtml(h.tariff_item_desc)}` : ''}</div>` : ''}
+                        ${gst && gst.verified ? `<div style="color:#86efac; margin-top:3px;"><strong>Verified GST Rate:</strong> IGST ${gst.igst_rate}% (CGST ${gst.cgst_rate}% + SGST ${gst.sgst_rate}%) · Effective ${escapeHtml(gst.effective_date || '')} (${escapeHtml(gst.notification_ref || '')})</div>` : ''}
+                        ${girList.length ? `<details style="margin-top:4px;"><summary style="cursor:pointer; color:#7dd3fc;">Applicable GIR &amp; Legal Notes (${girList.length})</summary><div style="margin-top:3px; padding-left:6px; border-left:2px solid rgba(56,189,248,0.35);">${girList.map(g => `<div><strong>${escapeHtml(g.rule)} [${escapeHtml(g.status)}]:</strong> ${escapeHtml(g.explanation)}</div>`).join('')}${notes.length ? `<div style="margin-top:3px; color:#c4b5fd;"><strong>Notes:</strong> ${escapeHtml(notes.join(' | '))}</div>` : ''}</div></details>` : ''}
+                    </div>`;
+                })()}
                 <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; font-size:0.74rem; color:#e2e8f0;">
                     <span><strong>Mode:</strong> ${escapeHtml(res.prediction_mode)} ${res.final_hsn ? `· Final HSN ${escapeHtml(res.final_hsn)}` : '· No forced HSN (clarification/discovery)'}</span>
                     <span>${completeBadge} (${disc.qualifying_candidates || 0} qualifying / ${disc.total_retrieved || 0} examined)</span>
