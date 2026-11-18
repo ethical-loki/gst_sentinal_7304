@@ -2837,13 +2837,13 @@
                             
                             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:stretch;">
                                 <div style="flex:1; min-width:320px; position:relative;">
-                                    <input type="text" id="stepProductInput" value="Harry Potter Gryffindor Crest Heat-Changing Ceramic Mug" placeholder="e.g. Whole Roasted Coffee Beans, Microprocessor, Men's cotton shirt..." style="width:100%; box-sizing:border-box; background:#060a12; color:#f8fafc; border:1px solid rgba(56,189,248,0.5); border-radius:8px; padding:12px 16px; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.95rem; font-weight:600; outline:none; transition:border 0.2s; box-shadow:0 0 16px rgba(56,189,248,0.15);">
+                                    <input type="text" id="stepProductInput" oninput="window.onStage1InputChanged && window.onStage1InputChanged()" value="Harry Potter Gryffindor Crest Heat-Changing Ceramic Mug" placeholder="e.g. Whole Roasted Coffee Beans, Microprocessor, Men's cotton shirt..." style="width:100%; box-sizing:border-box; background:#060a12; color:#f8fafc; border:1px solid rgba(56,189,248,0.5); border-radius:8px; padding:12px 16px; font-family:'Plus Jakarta Sans', sans-serif; font-size:0.95rem; font-weight:600; outline:none; transition:border 0.2s; box-shadow:0 0 16px rgba(56,189,248,0.15);">
                                 </div>
                                 <button type="button" id="btnRunStep1" onclick="runStep1(false)" style="background:linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color:#ffffff; border:none; border-radius:8px; padding:12px 22px; font-size:0.92rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 16px rgba(79,70,229,0.4); white-space:nowrap; transition:all 0.2s;">
                                     ▶ Run Step 1: Context Aggregator
                                 </button>
-                                <button type="button" id="btnAutoStep" onclick="runAutoStepSequence()" style="background:linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); color:#ffffff; border:none; border-radius:8px; padding:12px 20px; font-size:0.88rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 16px rgba(16,185,129,0.35); white-space:nowrap; transition:all 0.2s;">
-                                    ⚡ Auto-Play (Step 1 ➔ 2 ➔ 3)
+                                <button type="button" id="resetPipelineBtn" onclick="window.resetHsnWorkflow && window.resetHsnWorkflow()" style="background:rgba(30,41,59,0.9); color:#cbd5e1; border:1px solid rgba(148,163,184,0.35); border-radius:8px; padding:12px 16px; font-size:0.86rem; font-weight:700; cursor:pointer; white-space:nowrap;">
+                                    ↺ Reset
                                 </button>
                             </div>
 
@@ -2860,85 +2860,94 @@
                             </div>
                         </div>
 
-                        <!-- 3-Stage Workflow Tracker Banner -->
-                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px; margin-bottom:20px;">
-                            <!-- Stage 1 Tracker Card -->
-                            <div id="stepCard1Tracker" style="background:rgba(9,14,26,0.85); border:1px solid rgba(99,102,241,0.5); border-radius:10px; padding:12px 14px; position:relative; transition:all 0.3s ease;">
+                        <!-- 3-Screen Sequential Navigation Tabs -->
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px; margin-bottom:20px;">
+                            <!-- Screen 1 Tab -->
+                            <div id="stepCard1Tracker" onclick="window.navigateToStageScreen && window.navigateToStageScreen(1)" style="background:rgba(9,14,26,0.9); border:2px solid rgba(99,102,241,0.75); border-radius:10px; padding:12px 14px; position:relative; cursor:pointer; transition:all 0.25s ease;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                    <span style="font-size:0.72rem; font-weight:800; color:#a5b4fc; text-transform:uppercase; letter-spacing:0.04em;">STEP 1</span>
+                                    <span style="font-size:0.72rem; font-weight:800; color:#a5b4fc; text-transform:uppercase; letter-spacing:0.04em;">SCREEN 1 · STAGE 1</span>
                                     <span id="step1Badge" style="font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:12px; background:rgba(99,102,241,0.2); color:#a5b4fc; border:1px solid rgba(99,102,241,0.4);">READY ▶</span>
                                 </div>
-                                <h4 style="margin:0 0 4px 0; font-size:0.88rem; color:#f8fafc; font-weight:700;">Context Aggregator</h4>
-                                <p style="margin:0; font-size:0.74rem; color:#94a3b8; line-height:1.4;">Extracts product, material composition, form, and Chapter 01–99 classifier.</p>
+                                <h4 style="margin:0 0 4px 0; font-size:0.9rem; color:#f8fafc; font-weight:700;">1. Product Understanding</h4>
+                                <p style="margin:0; font-size:0.74rem; color:#94a3b8; line-height:1.4;">Extracts product identity, materials, attributes, and dynamic chapter candidates.</p>
                             </div>
 
-                            <!-- Stage 2 Tracker Card -->
-                            <div id="stepCard2Tracker" style="background:rgba(9,14,26,0.5); border:1px solid rgba(148,163,184,0.2); border-radius:10px; padding:12px 14px; position:relative; opacity:0.65; transition:all 0.3s ease;">
+                            <!-- Screen 2 Tab -->
+                            <div id="stepCard2Tracker" onclick="window.navigateToStageScreen && window.navigateToStageScreen(2)" style="background:rgba(9,14,26,0.5); border:1px solid rgba(148,163,184,0.2); border-radius:10px; padding:12px 14px; position:relative; opacity:0.65; cursor:not-allowed; transition:all 0.25s ease;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                    <span style="font-size:0.72rem; font-weight:800; color:#7dd3fc; text-transform:uppercase; letter-spacing:0.04em;">STEP 2</span>
+                                    <span style="font-size:0.72rem; font-weight:800; color:#7dd3fc; text-transform:uppercase; letter-spacing:0.04em;">SCREEN 2 · STAGE 2</span>
                                     <span id="step2Badge" style="font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:12px; background:rgba(100,116,139,0.2); color:#94a3b8; border:1px solid rgba(100,116,139,0.3);">🔒 LOCKED</span>
                                 </div>
-                                <h4 style="margin:0 0 4px 0; font-size:0.88rem; color:#cbd5e1; font-weight:700;">Vector Search Index</h4>
-                                <p style="margin:0; font-size:0.74rem; color:#64748b; line-height:1.4;">Queries 19k+ tariff master lines via BGE-M3 &amp; semantics to find Top 3 candidates.</p>
+                                <h4 style="margin:0 0 4px 0; font-size:0.9rem; color:#cbd5e1; font-weight:700;">2. HSN Discovery</h4>
+                                <p style="margin:0; font-size:0.74rem; color:#64748b; line-height:1.4;">Chapter-allocated + global safeguard retrieval &amp; candidate ranking.</p>
                             </div>
 
-                            <!-- Stage 3 Tracker Card -->
-                            <div id="stepCard3Tracker" style="background:rgba(9,14,26,0.5); border:1px solid rgba(148,163,184,0.2); border-radius:10px; padding:12px 14px; position:relative; opacity:0.65; transition:all 0.3s ease;">
+                            <!-- Screen 3 Tab -->
+                            <div id="stepCard3Tracker" onclick="window.navigateToStageScreen && window.navigateToStageScreen(3)" style="background:rgba(9,14,26,0.5); border:1px solid rgba(148,163,184,0.2); border-radius:10px; padding:12px 14px; position:relative; opacity:0.65; cursor:not-allowed; transition:all 0.25s ease;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                    <span style="font-size:0.72rem; font-weight:800; color:#d8b4fe; text-transform:uppercase; letter-spacing:0.04em;">STEP 3</span>
+                                    <span style="font-size:0.72rem; font-weight:800; color:#d8b4fe; text-transform:uppercase; letter-spacing:0.04em;">SCREEN 3 · STAGE 3</span>
                                     <span id="step3Badge" style="font-size:0.68rem; font-weight:800; padding:2px 8px; border-radius:12px; background:rgba(100,116,139,0.2); color:#94a3b8; border:1px solid rgba(100,116,139,0.3);">🔒 LOCKED</span>
                                 </div>
-                                <h4 style="margin:0 0 4px 0; font-size:0.88rem; color:#cbd5e1; font-weight:700;">Statutory Customs Auditor</h4>
-                                <p style="margin:0; font-size:0.74rem; color:#64748b; line-height:1.4;">Enforces GIR 1 &amp; GIR 6 legal rules, material specificity, and yields FORMAT A / B.</p>
+                                <h4 style="margin:0 0 4px 0; font-size:0.9rem; color:#cbd5e1; font-weight:700;">3. Statutory Verification</h4>
+                                <p style="margin:0; font-size:0.74rem; color:#64748b; line-height:1.4;">Hierarchy check, GIR 1–6, legal notes, evidence &amp; final HSN decision.</p>
                             </div>
                         </div>
 
-                        <!-- Stepper Dynamic Containers -->
+                        <!-- Strict Single-Screen Sequential Containers -->
                         <div id="stepResultsPipeline">
-                            <!-- STEP 1 CONTAINER -->
-                            <div id="step1Box" style="background:rgba(15,23,42,0.85); border:1px solid rgba(99,102,241,0.4); border-radius:12px; padding:20px; margin-bottom:20px; display:none; animation:fadeIn 0.3s ease;">
+                            <!-- SCREEN 1: STAGE 1 -->
+                            <div id="step1Box" style="background:rgba(15,23,42,0.85); border:1px solid rgba(99,102,241,0.4); border-radius:12px; padding:20px; margin-bottom:20px; display:none; animation:fadeIn 0.25s ease;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid rgba(99,102,241,0.25);">
                                     <div style="display:flex; align-items:center; gap:10px;">
                                         <span style="background:#4f46e5; color:#ffffff; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:0.82rem; font-weight:800;">1</span>
-                                        <h4 style="margin:0; font-size:1.05rem; color:#f8fafc; font-weight:700;">Stage 1 Output: Context Aggregation &amp; Chapter Classifier</h4>
+                                        <h4 style="margin:0; font-size:1.05rem; color:#f8fafc; font-weight:700;">Screen 1 — Stage 1: Product Understanding &amp; Chapter Analysis</h4>
                                     </div>
                                     <span id="step1TimeBadge" style="font-size:0.74rem; color:#a5b4fc; font-family:'JetBrains Mono', monospace;"></span>
                                 </div>
                                 <div id="step1Body"></div>
-                                <div id="step1ActionFooter" style="margin-top:16px; padding-top:14px; border-top:1px solid rgba(148,163,184,0.15); display:flex; justify-content:flex-end;">
-                                    <button type="button" id="btnStep1Next" onclick="runStep2(false)" style="background:linear-gradient(135deg, #0ea5e9, #0284c7); color:#ffffff; border:none; border-radius:8px; padding:10px 22px; font-size:0.9rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 16px rgba(14,165,233,0.35);">
-                                        ▶ Proceed to Step 2: Vector Search Tariff Master ➔
-                                    </button>
-                                </div>
+                                <div id="step1ActionFooter" style="margin-top:16px; padding-top:14px; border-top:1px solid rgba(148,163,184,0.15); display:none; justify-content:flex-end;"></div>
                             </div>
 
-                            <!-- STEP 2 CONTAINER -->
-                            <div id="step2Box" style="background:rgba(15,23,42,0.85); border:1px solid rgba(14,165,233,0.4); border-radius:12px; padding:20px; margin-bottom:20px; display:none; animation:fadeIn 0.3s ease;">
+                            <!-- SCREEN 2: STAGE 2 -->
+                            <div id="step2Box" style="background:rgba(15,23,42,0.85); border:1px solid rgba(14,165,233,0.4); border-radius:12px; padding:20px; margin-bottom:20px; display:none; animation:fadeIn 0.25s ease;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid rgba(14,165,233,0.25);">
                                     <div style="display:flex; align-items:center; gap:10px;">
                                         <span style="background:#0284c7; color:#ffffff; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:0.82rem; font-weight:800;">2</span>
-                                        <h4 style="margin:0; font-size:1.05rem; color:#f8fafc; font-weight:700;">Stage 2 Output: Vector Search Top 3 Law Book Matches</h4>
+                                        <h4 style="margin:0; font-size:1.05rem; color:#f8fafc; font-weight:700;">Screen 2 — Stage 2: Hybrid HSN Discovery</h4>
                                     </div>
                                     <span id="step2TimeBadge" style="font-size:0.74rem; color:#7dd3fc; font-family:'JetBrains Mono', monospace;"></span>
                                 </div>
-                                <div id="step2Body"></div>
-                                <div id="step2ActionFooter" style="margin-top:16px; padding-top:14px; border-top:1px solid rgba(148,163,184,0.15); display:flex; justify-content:flex-end;">
-                                    <button type="button" id="btnStep2Next" onclick="runStep3(false)" style="background:linear-gradient(135deg, #7c3aed, #9333ea); color:#ffffff; border:none; border-radius:8px; padding:10px 22px; font-size:0.9rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 16px rgba(124,58,237,0.35);">
-                                        ▶ Proceed to Step 3: Statutory Customs Auditor Lock ➔
+                                <div id="step2Body">
+                                    <div id="adaptiveDiscoveryPanel" style="display:none;"></div>
+                                </div>
+                                <div id="step2ActionFooter" style="margin-top:16px; padding-top:14px; border-top:1px solid rgba(148,163,184,0.15); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                                    <button type="button" onclick="window.navigateToStageScreen(1)" style="background:rgba(30,41,59,0.9); color:#cbd5e1; border:1px solid rgba(148,163,184,0.35); border-radius:8px; padding:9px 16px; font-size:0.84rem; font-weight:700; cursor:pointer;">
+                                        ← Back to Stage 1
+                                    </button>
+                                    <button type="button" id="proceedToStage3Btn" disabled onclick="window.proceedToStage3()" style="background:linear-gradient(135deg, #7c3aed, #9333ea); color:#ffffff; border:none; border-radius:8px; padding:10px 22px; font-size:0.9rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 16px rgba(124,58,237,0.35);">
+                                        Proceed to Stage 3 – Statutory Verification
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- STEP 3 CONTAINER -->
-                            <div id="step3Box" style="background:rgba(15,23,42,0.85); border:1px solid rgba(168,85,247,0.4); border-radius:12px; padding:20px; margin-bottom:20px; display:none; animation:fadeIn 0.3s ease;">
+                            <!-- SCREEN 3: STAGE 3 -->
+                            <div id="step3Box" style="background:rgba(15,23,42,0.85); border:1px solid rgba(168,85,247,0.4); border-radius:12px; padding:20px; margin-bottom:20px; display:none; animation:fadeIn 0.25s ease;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid rgba(168,85,247,0.25);">
                                     <div style="display:flex; align-items:center; gap:10px;">
                                         <span style="background:#7c3aed; color:#ffffff; width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:0.82rem; font-weight:800;">3</span>
-                                        <h4 style="margin:0; font-size:1.05rem; color:#f8fafc; font-weight:700;">Stage 3 Output: Statutory Customs Auditor (GIR 1 &amp; GIR 6 Legal Lock)</h4>
+                                        <h4 style="margin:0; font-size:1.05rem; color:#f8fafc; font-weight:700;">Screen 3 — Stage 3: Statutory Verification &amp; Final Decision</h4>
                                     </div>
                                     <span id="step3TimeBadge" style="font-size:0.74rem; color:#d8b4fe; font-family:'JetBrains Mono', monospace;"></span>
                                 </div>
                                 <div id="step3Body"></div>
+                                <div id="step3ActionFooter" style="margin-top:16px; padding-top:14px; border-top:1px solid rgba(148,163,184,0.15); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                                    <button type="button" onclick="window.navigateToStageScreen(2)" style="background:rgba(30,41,59,0.9); color:#cbd5e1; border:1px solid rgba(148,163,184,0.35); border-radius:8px; padding:9px 16px; font-size:0.84rem; font-weight:700; cursor:pointer;">
+                                        ← Back to Stage 2
+                                    </button>
+                                    <button type="button" onclick="window.resetHsnWorkflow()" style="background:rgba(30,41,59,0.9); color:#fca5a5; border:1px solid rgba(248,113,113,0.35); border-radius:8px; padding:9px 16px; font-size:0.84rem; font-weight:700; cursor:pointer;">
+                                        ↺ Reset Pipeline
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -4814,6 +4823,144 @@
             }
         }
 
+        window.hsnWorkflow = {
+            state: 'STAGE1_NOT_STARTED',
+            activeScreen: 1,
+            errorStage: null,
+            errorMessage: '',
+            productDescription: '',
+            stage1Result: null,
+            stage2Result: null,
+            stage3Result: null,
+        };
+
+        window.syncWorkflowUI = function() {
+            const wf = window.hsnWorkflow;
+            const s1Box = document.getElementById('step1Box');
+            const s2Box = document.getElementById('step2Box');
+            const s3Box = document.getElementById('step3Box');
+            const c1 = document.getElementById('stepCard1Tracker');
+            const c2 = document.getElementById('stepCard2Tracker');
+            const c3 = document.getElementById('stepCard3Tracker');
+            const b1 = document.getElementById('step1Badge');
+            const b2 = document.getElementById('step2Badge');
+            const b3 = document.getElementById('step3Badge');
+            const btnS2 = document.getElementById('proceedToStage2Btn');
+            const btnS3 = document.getElementById('proceedToStage3Btn');
+
+            const s1Done = Boolean(wf.stage1Result) && !['STAGE1_NOT_STARTED', 'STAGE1_RUNNING'].includes(wf.state) && wf.errorStage !== 1;
+            const s2Done = Boolean(wf.stage2Result) && ['STAGE2_COMPLETED', 'STAGE3_RUNNING', 'STAGE3_COMPLETED'].includes(wf.state);
+            const s3Done = Boolean(wf.stage3Result) && wf.state === 'STAGE3_COMPLETED';
+
+            if (s1Box) s1Box.style.display = (wf.activeScreen === 1 && (wf.stage1Result || wf.state === 'STAGE1_RUNNING' || wf.errorStage === 1)) ? 'block' : 'none';
+            if (s2Box) s2Box.style.display = (wf.activeScreen === 2 && (s1Done || wf.state === 'STAGE2_RUNNING' || wf.errorStage === 2)) ? 'block' : 'none';
+            if (s3Box) s3Box.style.display = (wf.activeScreen === 3 && (s2Done || wf.state === 'STAGE3_RUNNING' || wf.errorStage === 3)) ? 'block' : 'none';
+
+            if (btnS2) btnS2.disabled = !s1Done || wf.state === 'STAGE2_RUNNING';
+            if (btnS3) btnS3.disabled = !s2Done || wf.state === 'STAGE3_RUNNING';
+
+            const setTab = (card, badge, statusText, unlocked, active, color, bg, border) => {
+                if (card) {
+                    card.style.opacity = unlocked ? '1' : '0.55';
+                    card.style.cursor = unlocked ? 'pointer' : 'not-allowed';
+                    card.style.border = active ? `2px solid ${border}` : '1px solid rgba(148,163,184,0.25)';
+                }
+                if (badge) {
+                    badge.innerText = statusText;
+                    badge.style.color = color;
+                    badge.style.background = bg;
+                    badge.style.borderColor = border;
+                }
+            };
+
+            if (wf.state === 'STAGE1_RUNNING') {
+                setTab(c1, b1, '⏳ IN PROGRESS', true, wf.activeScreen === 1, '#fde047', 'rgba(234,179,8,0.2)', 'rgba(234,179,8,0.5)');
+            } else if (wf.errorStage === 1) {
+                setTab(c1, b1, '❌ FAILED', true, wf.activeScreen === 1, '#fda4af', 'rgba(244,63,94,0.2)', 'rgba(244,63,94,0.5)');
+            } else if (s1Done) {
+                setTab(c1, b1, '✓ COMPLETED', true, wf.activeScreen === 1, '#34d399', 'rgba(16,185,129,0.2)', 'rgba(16,185,129,0.5)');
+            } else {
+                setTab(c1, b1, 'READY ▶', true, wf.activeScreen === 1, '#a5b4fc', 'rgba(99,102,241,0.2)', 'rgba(99,102,241,0.5)');
+            }
+
+            if (wf.state === 'STAGE2_RUNNING') {
+                setTab(c2, b2, '⏳ IN PROGRESS', true, wf.activeScreen === 2, '#fde047', 'rgba(234,179,8,0.2)', 'rgba(234,179,8,0.5)');
+            } else if (wf.errorStage === 2) {
+                setTab(c2, b2, '❌ FAILED', s1Done, wf.activeScreen === 2, '#fda4af', 'rgba(244,63,94,0.2)', 'rgba(244,63,94,0.5)');
+            } else if (s2Done) {
+                setTab(c2, b2, '✓ COMPLETED', true, wf.activeScreen === 2, '#34d399', 'rgba(16,185,129,0.2)', 'rgba(16,185,129,0.5)');
+            } else if (s1Done) {
+                setTab(c2, b2, 'READY ▶', true, wf.activeScreen === 2, '#7dd3fc', 'rgba(14,165,233,0.2)', 'rgba(14,165,233,0.5)');
+            } else {
+                setTab(c2, b2, '🔒 LOCKED', false, false, '#94a3b8', 'rgba(100,116,139,0.2)', 'rgba(100,116,139,0.3)');
+            }
+
+            if (wf.state === 'STAGE3_RUNNING') {
+                setTab(c3, b3, '⏳ IN PROGRESS', true, wf.activeScreen === 3, '#fde047', 'rgba(234,179,8,0.2)', 'rgba(234,179,8,0.5)');
+            } else if (wf.errorStage === 3) {
+                setTab(c3, b3, '❌ FAILED', s2Done, wf.activeScreen === 3, '#fda4af', 'rgba(244,63,94,0.2)', 'rgba(244,63,94,0.5)');
+            } else if (s3Done) {
+                setTab(c3, b3, '✓ COMPLETED', true, wf.activeScreen === 3, '#34d399', 'rgba(16,185,129,0.2)', 'rgba(16,185,129,0.5)');
+            } else if (s2Done) {
+                setTab(c3, b3, 'READY ▶', true, wf.activeScreen === 3, '#d8b4fe', 'rgba(168,85,247,0.2)', 'rgba(168,85,247,0.5)');
+            } else {
+                setTab(c3, b3, '🔒 LOCKED', false, false, '#94a3b8', 'rgba(100,116,139,0.2)', 'rgba(100,116,139,0.3)');
+            }
+        };
+
+        window.navigateToStageScreen = function(screenNum) {
+            const wf = window.hsnWorkflow;
+            if (screenNum === 2 && !wf.stage1Result) return;
+            if (screenNum === 3 && !wf.stage2Result) return;
+            wf.activeScreen = screenNum;
+            window.syncWorkflowUI();
+        };
+
+        window.onStage1InputChanged = function() {
+            const inp = document.getElementById('stepProductInput');
+            const cur = inp ? inp.value.trim() : '';
+            const wf = window.hsnWorkflow;
+            if (wf.productDescription && cur !== wf.productDescription) {
+                wf.state = 'STAGE1_NOT_STARTED';
+                wf.activeScreen = 1;
+                wf.errorStage = null;
+                wf.errorMessage = '';
+                wf.stage1Result = null;
+                wf.stage2Result = null;
+                wf.stage3Result = null;
+                window._stage1StructuredResult = null;
+                window._adaptiveConfirmed = {};
+                const s1Body = document.getElementById('step1Body');
+                const panel = document.getElementById('adaptiveDiscoveryPanel');
+                const s3Body = document.getElementById('step3Body');
+                if (s1Body) s1Body.innerHTML = '';
+                if (panel) panel.innerHTML = '';
+                if (s3Body) s3Body.innerHTML = '';
+                window.syncWorkflowUI();
+            }
+        };
+
+        window.resetHsnWorkflow = function() {
+            const wf = window.hsnWorkflow;
+            wf.state = 'STAGE1_NOT_STARTED';
+            wf.activeScreen = 1;
+            wf.errorStage = null;
+            wf.errorMessage = '';
+            wf.productDescription = '';
+            wf.stage1Result = null;
+            wf.stage2Result = null;
+            wf.stage3Result = null;
+            window._stage1StructuredResult = null;
+            window._adaptiveConfirmed = {};
+            const s1Body = document.getElementById('step1Body');
+            const panel = document.getElementById('adaptiveDiscoveryPanel');
+            const s3Body = document.getElementById('step3Body');
+            if (s1Body) s1Body.innerHTML = '';
+            if (panel) panel.innerHTML = '';
+            if (s3Body) s3Body.innerHTML = '';
+            window.syncWorkflowUI();
+        };
+
         async function runStep1(autoContinue = false) {
             const inp = document.getElementById('stepProductInput');
             const product = inp ? inp.value.trim() : '';
@@ -4822,28 +4969,26 @@
                 if (inp) inp.focus();
                 return;
             }
+            if (window.hsnWorkflow.state === 'STAGE1_RUNNING') return;
 
             window.currentStepState.product = product;
             window.currentStepState.isRunning = true;
+            window.hsnWorkflow.state = 'STAGE1_RUNNING';
+            window.hsnWorkflow.activeScreen = 1;
+            window.hsnWorkflow.errorStage = null;
+            window.hsnWorkflow.errorMessage = '';
+            window.hsnWorkflow.productDescription = product;
+            window.hsnWorkflow.stage1Result = null;
+            window.hsnWorkflow.stage2Result = null;
+            window.hsnWorkflow.stage3Result = null;
+            window._stage1StructuredResult = null;
+            window.syncWorkflowUI();
 
-            const b1 = document.getElementById('step1Badge');
             const btnRun = document.getElementById('btnRunStep1');
-            if (b1) {
-                b1.innerText = '⏳ RUNNING...';
-                b1.style.background = 'rgba(234,179,8,0.2)';
-                b1.style.color = '#fde047';
-                b1.style.borderColor = 'rgba(234,179,8,0.4)';
-            }
             if (btnRun) {
                 btnRun.disabled = true;
                 btnRun.innerHTML = '⏳ Extracting Context & Chapter...';
             }
-
-            // Hide downstream boxes if re-running
-            const s2Box = document.getElementById('step2Box');
-            const s3Box = document.getElementById('step3Box');
-            if (s2Box) s2Box.style.display = 'none';
-            if (s3Box) s3Box.style.display = 'none';
 
             const t0 = performance.now();
             try {
@@ -4857,72 +5002,30 @@
                 const latency = (performance.now() - t0).toFixed(1);
                 window.currentStepState.s1 = data;
                 window._stage1StructuredResult = data.stage1_result || null;
+                window.hsnWorkflow.stage1Result = data;
 
-                // Check if Step 1 produced an OK or ABSTAIN decision
                 const chap = data.chapter_prediction || {};
-                const isOK = (chap.status === 'OK' || chap.status === 'PREDICTED') && chap.chapter && chap.chapter !== 'NONE';
+                const isOK = chap.status === 'OK' || chap.status === 'PREDICTED' || Boolean(data.stage1_result);
+                window.hsnWorkflow.state = isOK ? 'STAGE1_COMPLETED' : 'WORKFLOW_ERROR';
+                if (!isOK) window.hsnWorkflow.errorStage = 1;
 
-                // Render Step 1 UI
                 renderStep1Result(data, latency, isOK);
-
-                const b2 = document.getElementById('step2Badge');
-                const c2 = document.getElementById('stepCard2Tracker');
-                const step1Footer = document.getElementById('step1ActionFooter');
+                window.syncWorkflowUI();
 
                 if (isOK) {
-                    // Update Step 1 Badge to OK
-                    if (b1) {
-                        b1.innerText = `✓ OK: CH ${chap.chapter}`;
-                        b1.style.background = 'rgba(16,185,129,0.2)';
-                        b1.style.color = '#34d399';
-                        b1.style.borderColor = 'rgba(16,185,129,0.4)';
-                    }
-
-                    // Unlock Step 2 Tracker Card & Badge
-                    if (b2) {
-                        b2.innerText = 'READY ▶';
-                        b2.style.background = 'rgba(14,165,233,0.2)';
-                        b2.style.color = '#7dd3fc';
-                        b2.style.borderColor = 'rgba(14,165,233,0.5)';
-                    }
-                    if (c2) {
-                        c2.style.opacity = '1';
-                        c2.style.borderColor = 'rgba(14,165,233,0.55)';
-                    }
-                    if (step1Footer) step1Footer.style.display = 'flex';
-
-                    showToast(`✓ Step 1 Confirmed in ${latency}ms: Chapter ${chap.chapter} (${chap.chapter_title || ''})`);
-
-                    if (autoContinue) {
-                        setTimeout(() => runStep2(true), 450);
-                    }
+                    showToast(`✓ Stage 1 Completed in ${latency}ms. Click Proceed to Stage 2.`);
                 } else {
-                    // ABSTAIN: Step 2 remains locked!
-                    if (b1) {
-                        b1.innerText = '⚠️ ABSTAIN (REVIEW)';
-                        b1.style.background = 'rgba(234,179,8,0.2)';
-                        b1.style.color = '#fde047';
-                        b1.style.borderColor = 'rgba(234,179,8,0.5)';
-                    }
-                    if (b2) {
-                        b2.innerText = '🔒 LOCKED (Review Req)';
-                        b2.style.background = 'rgba(100,116,139,0.2)';
-                        b2.style.color = '#94a3b8';
-                        b2.style.borderColor = 'rgba(100,116,139,0.3)';
-                    }
-                    if (c2) {
-                        c2.style.opacity = '0.5';
-                        c2.style.borderColor = 'rgba(148,163,184,0.2)';
-                    }
-                    if (step1Footer) step1Footer.style.display = 'none';
-
-                    showToast(`⚠️ Step 1 Abstained: Confidence threshold not met. Step 2 remains locked.`);
+                    showToast(`⚠️ Stage 1 could not extract product context.`);
                 }
             } catch (err) {
                 console.error('Step 1 error:', err);
+                window.hsnWorkflow.state = 'WORKFLOW_ERROR';
+                window.hsnWorkflow.errorStage = 1;
+                window.hsnWorkflow.errorMessage = err.message;
+                window.syncWorkflowUI();
                 showToast(`❌ Step 1 Error: ${err.message}`);
-                if (b1) b1.innerText = '⚠️ ERROR';
             } finally {
+                window.currentStepState.isRunning = false;
                 if (btnRun) {
                     btnRun.disabled = false;
                     btnRun.innerHTML = '▶ Run Step 1: Context Aggregator';
@@ -5304,7 +5407,6 @@
                     </button>
                     <span id="stage2HandoffStatus" style="font-size:0.74rem; color:#94a3b8;"></span>
                 </div>
-                <div id="adaptiveDiscoveryPanel" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid rgba(148,163,184,0.25);"></div>
 
                 ${chapHtml}
                 ${(() => {
@@ -5553,34 +5655,13 @@
 
             panel.innerHTML = `
                 ${handoffHtml}
-                ${(() => {
-                    const s3 = res.stage3_decision;
-                    if (!s3) return '';
-                    const outColor = s3.decision_outcome === 'EXACT_CLASSIFICATION' ? '#34d399' : (s3.decision_outcome === 'ABSTAIN' ? '#fda4af' : '#fbbf24');
-                    const h = s3.hierarchy_verification || {};
-                    const gst = s3.verified_gst_rate;
-                    const girList = Array.isArray(s3.gir_reasoning) ? s3.gir_reasoning : [];
-                    const notes = Array.isArray(s3.supporting_notes) ? s3.supporting_notes : [];
-                    return `
-                    <div id="stage3DecisionCard" style="margin-bottom:8px; padding:8px 10px; background:rgba(15,23,42,0.7); border:1px solid rgba(52,211,153,0.35); border-radius:8px; font-size:0.72rem; color:#e2e8f0;">
-                        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;">
-                            <span><strong>Stage 3 Decision:</strong> <span style="color:${outColor}; font-weight:700;">${escapeHtml(s3.decision_outcome || '')}</span>${s3.final_hsn ? ` · HSN <strong>${escapeHtml(s3.final_hsn)}</strong>` : ''}</span>
-                            <span>Calibrated Confidence: <strong>${(Number(s3.calibrated_confidence || 0) * 100).toFixed(1)}%</strong></span>
-                        </div>
-                        <div style="color:#cbd5e1; margin-top:3px;">${escapeHtml(s3.decision_reason || '')}</div>
-                        ${h.section ? `<div style="color:#94a3b8; margin-top:3px;"><strong>Hierarchy:</strong> ${escapeHtml(h.section)} › Ch ${escapeHtml(h.chapter_code || '')} › ${escapeHtml(h.heading_4digit || '')} › ${escapeHtml(h.subheading_6digit || '')}${h.tariff_item_desc ? ` › ${escapeHtml(h.tariff_item_desc)}` : ''}</div>` : ''}
-                        ${gst && gst.verified ? `<div style="color:#86efac; margin-top:3px;"><strong>Verified GST Rate:</strong> IGST ${gst.igst_rate}% (CGST ${gst.cgst_rate}% + SGST ${gst.sgst_rate}%) · Effective ${escapeHtml(gst.effective_date || '')} (${escapeHtml(gst.notification_ref || '')})</div>` : ''}
-                        ${girList.length ? `<details style="margin-top:4px;"><summary style="cursor:pointer; color:#7dd3fc;">Applicable GIR &amp; Legal Notes (${girList.length})</summary><div style="margin-top:3px; padding-left:6px; border-left:2px solid rgba(56,189,248,0.35);">${girList.map(g => `<div><strong>${escapeHtml(g.rule)} [${escapeHtml(g.status)}]:</strong> ${escapeHtml(g.explanation)}</div>`).join('')}${notes.length ? `<div style="margin-top:3px; color:#c4b5fd;"><strong>Notes:</strong> ${escapeHtml(notes.join(' | '))}</div>` : ''}</div></details>` : ''}
-                    </div>`;
-                })()}
                 <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; font-size:0.74rem; color:#e2e8f0;">
-                    <span><strong>Mode:</strong> ${escapeHtml(res.prediction_mode)} ${res.final_hsn ? `· Final HSN ${escapeHtml(res.final_hsn)}` : '· No forced HSN (clarification/discovery)'}</span>
-                    <span>${completeBadge} (${disc.qualifying_candidates || 0} qualifying / ${disc.total_retrieved || 0} examined)</span>
+                    <span><strong>Stage 2 Pool Status:</strong> ${completeBadge} (${disc.qualifying_candidates || 0} qualifying / ${disc.total_retrieved || 0} examined)</span>
+                    <span>Deduplicated Candidates: <strong>${res.all_candidates_count || cands.length}</strong></span>
                 </div>
                 ${evSumHtml}
                 ${hierHtml}
                 ${s2PathsHtml}
-                ${clarHtml}
                 ${bestHtml}
                 ${otherSameHtml}
                 ${relatedHtml}
@@ -5592,13 +5673,101 @@
             panel.style.display = 'block';
         };
 
+        window.renderStage3Screen = function(res) {
+            const body = document.getElementById('step3Body');
+            if (!body || !res) return;
+            const s3 = res.stage3_decision || {};
+            const outColor = s3.decision_outcome === 'EXACT_CLASSIFICATION' ? '#34d399' : (s3.decision_outcome === 'ABSTAIN' ? '#fda4af' : '#fbbf24');
+            const h = s3.hierarchy_verification || {};
+            const gst = s3.verified_gst_rate;
+            const girList = Array.isArray(s3.gir_reasoning) ? s3.gir_reasoning : [];
+            const notes = Array.isArray(s3.supporting_notes) ? s3.supporting_notes : [];
+            const noteEval = s3.note_evaluation || {};
+            const compList = Array.isArray(s3.candidate_comparison) ? s3.candidate_comparison : [];
+            const clarList = Array.isArray(s3.clarification_questions) ? s3.clarification_questions : [];
+            const supEv = s3.supporting_evidence || {};
+            const contraList = Array.isArray(s3.contradictory_evidence) ? s3.contradictory_evidence : [];
+
+            body.innerHTML = `
+                <div id="stage3DecisionCard" style="padding:12px 14px; background:rgba(15,23,42,0.75); border:1px solid rgba(52,211,153,0.4); border-radius:10px; font-size:0.78rem; color:#e2e8f0;">
+                    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                        <span><strong>Final Outcome:</strong> <span style="color:${outColor}; font-weight:800;">${escapeHtml(s3.decision_outcome || '')}</span>${s3.final_hsn ? ` · Final HSN <strong>${escapeHtml(s3.final_hsn)}</strong>` : ''}</span>
+                        <span>Calibrated Confidence: <strong>${(Number(s3.calibrated_confidence || 0) * 100).toFixed(1)}%</strong></span>
+                    </div>
+                    <div style="color:#cbd5e1; margin-top:6px;">${escapeHtml(s3.decision_reason || '')}</div>
+                    ${gst && gst.verified ? `<div style="color:#86efac; margin-top:6px;"><strong>Verified GST Rate:</strong> IGST ${gst.igst_rate}% (CGST ${gst.cgst_rate}% + SGST ${gst.sgst_rate}%) · Effective ${escapeHtml(gst.effective_date || '')} (${escapeHtml(gst.notification_ref || '')})</div>` : ''}
+                </div>
+
+                <details open style="margin-top:10px; background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.25); border-radius:8px; padding:8px 12px; font-size:0.75rem; color:#cbd5e1;">
+                    <summary style="cursor:pointer; font-weight:700; color:#bae6fd;">Statutory Hierarchy Verification</summary>
+                    <div style="margin-top:6px;">
+                        <div><strong>Section:</strong> ${escapeHtml(h.section || 'N/A')}</div>
+                        <div><strong>Chapter:</strong> ${escapeHtml(h.chapter_code || '')} | <strong>Heading (4d):</strong> ${escapeHtml(h.heading_4digit || '')} — ${escapeHtml(h.heading_4digit_desc || '')}</div>
+                        <div><strong>Subheading (6d):</strong> ${escapeHtml(h.subheading_6digit || '')} — ${escapeHtml(h.subheading_6digit_desc || '')}</div>
+                        <div><strong>Tariff Item (8d):</strong> ${escapeHtml(h.tariff_item_8digit || 'N/A')} — ${escapeHtml(h.tariff_item_desc || '')}</div>
+                        <div><strong>Hierarchy Valid:</strong> ${h.hierarchy_valid ? '✓ Yes' : '✗ No'} | <strong>Provenance:</strong> ${escapeHtml(h.source_provenance || '')}</div>
+                    </div>
+                </details>
+
+                <details open style="margin-top:8px; background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.25); border-radius:8px; padding:8px 12px; font-size:0.75rem; color:#cbd5e1;">
+                    <summary style="cursor:pointer; font-weight:700; color:#7dd3fc;">Applicable GIR 1–6 &amp; Section/Chapter Notes (${girList.length})</summary>
+                    <div style="margin-top:6px; display:flex; flex-direction:column; gap:4px;">
+                        ${girList.map(g => `<div><strong>${escapeHtml(g.rule)} [${escapeHtml(g.status)}]:</strong> ${escapeHtml(g.conclusion || g.explanation || '')}${g.not_applied_reason ? ` <span style="color:#94a3b8;">(${escapeHtml(g.not_applied_reason)})</span>` : ''}</div>`).join('')}
+                        <div style="margin-top:4px; color:#c4b5fd;"><strong>Note Coverage:</strong> ${escapeHtml(noteEval.note_coverage_status || 'N/A')}${notes.length ? ' — ' + escapeHtml(notes.join(' | ')) : ''}</div>
+                    </div>
+                </details>
+
+                <details style="margin-top:8px; background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.25); border-radius:8px; padding:8px 12px; font-size:0.75rem; color:#cbd5e1;">
+                    <summary style="cursor:pointer; font-weight:700; color:#a7f3d0;">Evidence Evaluation &amp; Contradictions</summary>
+                    <div style="margin-top:6px;">
+                        <div><strong>Supporting:</strong> ${escapeHtml(supEv.trace_summary || 'None')}</div>
+                        <div><strong>Contradictions:</strong> ${contraList.length ? escapeHtml(contraList.join(' | ')) : 'None'}</div>
+                    </div>
+                </details>
+
+                ${compList.length ? `
+                <details style="margin-top:8px; background:rgba(15,23,42,0.55); border:1px solid rgba(148,163,184,0.25); border-radius:8px; padding:8px 12px; font-size:0.75rem; color:#cbd5e1;">
+                    <summary style="cursor:pointer; font-weight:700; color:#fde68a;">Candidate Comparison (${compList.length})</summary>
+                    <div style="margin-top:6px;">${compList.map(c => `<div><strong>${escapeHtml(c.hsn_code)}</strong> [${escapeHtml(c.evidence_status || '')}] — ${escapeHtml(c.tariff_item_desc || '')}</div>`).join('')}</div>
+                </details>` : ''}
+
+                ${clarList.length ? `
+                <div style="margin-top:10px; padding:10px 12px; background:rgba(234,179,8,0.1); border:1px solid rgba(250,204,21,0.35); border-radius:8px; font-size:0.75rem; color:#e2e8f0;">
+                    <div style="font-weight:700; color:#fde68a; margin-bottom:6px;">Dynamic Customer Clarification</div>
+                    ${clarList.map((q, qi) => `
+                        <div style="margin-bottom:6px;">
+                            <div>${escapeHtml(q.question || '')}</div>
+                            ${q.why_needed ? `<div style="color:#94a3b8; font-size:0.7rem;">${escapeHtml(q.why_needed)}</div>` : ''}
+                            <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:4px;">
+                                ${(q.options || []).slice(0, 5).map(opt => `<button type="button" onclick="window.submitAdaptiveClarification('${escapeHtml(q.attribute || ('attr_' + qi))}', '${escapeHtml(opt)}')" style="background:rgba(30,41,59,0.85); border:1px solid rgba(148,163,184,0.35); color:#e2e8f0; padding:3px 9px; border-radius:5px; font-size:0.72rem; cursor:pointer;">${escapeHtml(opt)}</button>`).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>` : ''}
+            `;
+        };
+
+        window.proceedToStage3 = function() {
+            const wf = window.hsnWorkflow;
+            if (!wf.stage2Result || wf.state === 'STAGE3_RUNNING') return;
+            wf.state = 'STAGE3_RUNNING';
+            wf.activeScreen = 3;
+            wf.errorStage = null;
+            window.syncWorkflowUI();
+            window.renderStage3Screen(wf.stage2Result);
+            wf.stage3Result = wf.stage2Result.stage3_decision || wf.stage2Result;
+            wf.state = 'STAGE3_COMPLETED';
+            window.syncWorkflowUI();
+        };
+
         window.proceedToStage2 = async function() {
             if (window._stage2InFlight) return;
-            const s1 = window._stage1StructuredResult;
+            const wf = window.hsnWorkflow;
+            const s1 = window._stage1StructuredResult || (wf.stage1Result && wf.stage1Result.stage1_result);
             const statusEl = document.getElementById('stage2HandoffStatus');
             const btn = document.getElementById('proceedToStage2Btn');
             const panel = document.getElementById('adaptiveDiscoveryPanel');
-            const desc = window._adaptiveQueryBase || (s1 && s1.original_description) || '';
+            const desc = wf.productDescription || window._adaptiveQueryBase || (s1 && s1.original_description) || '';
             if (!s1 || typeof s1 !== 'object' || !s1.stage2_search_representation) {
                 if (statusEl) {
                     statusEl.style.color = '#fda4af';
@@ -5606,25 +5775,21 @@
                 }
                 return;
             }
-            if (!desc) {
-                if (statusEl) {
-                    statusEl.style.color = '#fda4af';
-                    statusEl.textContent = 'Product description is required before Stage 2 discovery.';
-                }
-                return;
-            }
             window._stage2InFlight = true;
+            wf.state = 'STAGE2_RUNNING';
+            wf.activeScreen = 2;
+            wf.errorStage = null;
+            wf.stage2Result = null;
+            wf.stage3Result = null;
+            window.syncWorkflowUI();
+
             if (btn) {
                 btn.disabled = true;
                 btn.textContent = 'Running Stage 2 – Discovering HSN Candidates...';
             }
-            if (statusEl) {
-                statusEl.style.color = '#93c5fd';
-                statusEl.textContent = 'Passing structured Stage 1 output to Stage 2...';
-            }
             if (panel) {
                 panel.style.display = 'block';
-                panel.innerHTML = '<div style="font-size:0.75rem; color:#93c5fd;">Discovering Stage 2 HSN candidates from structured Stage 1 context...</div>';
+                panel.innerHTML = '<div style="font-size:0.78rem; color:#93c5fd;">Running Stage 2 chapter-allocated &amp; global safeguard discovery...</div>';
             }
             try {
                 const resp = await fetch('/api/v1/hsn-v2/classify-adaptive', {
@@ -5639,17 +5804,16 @@
                 });
                 const res = await resp.json();
                 if (!resp.ok) throw new Error(res.detail || `HTTP ${resp.status}`);
+                wf.stage2Result = res;
+                wf.state = 'STAGE2_COMPLETED';
                 window.renderAdaptiveDiscovery(res);
-                if (statusEl) {
-                    statusEl.style.color = '#34d399';
-                    statusEl.textContent = `Stage 2 complete (${(res.candidates || []).length} candidates shown).`;
-                }
+                window.syncWorkflowUI();
             } catch (e) {
-                if (statusEl) {
-                    statusEl.style.color = '#fda4af';
-                    statusEl.textContent = `Stage 2 handoff failed: ${e.message}`;
-                }
-                if (panel) panel.innerHTML = `<div style="font-size:0.74rem; color:#fda4af;">Stage 2 discovery failed: ${escapeHtml(e.message)}</div>`;
+                wf.state = 'WORKFLOW_ERROR';
+                wf.errorStage = 2;
+                wf.errorMessage = e.message;
+                window.syncWorkflowUI();
+                if (panel) panel.innerHTML = `<div style="font-size:0.76rem; color:#fda4af;">Stage 2 discovery failed: ${escapeHtml(e.message)}</div>`;
             } finally {
                 window._stage2InFlight = false;
                 if (btn) {
@@ -5677,7 +5841,13 @@
                     body: JSON.stringify(body),
                 });
                 const res = await resp.json();
+                window.hsnWorkflow.stage2Result = res;
                 window.renderAdaptiveDiscovery(res);
+                if (window.hsnWorkflow.activeScreen === 3) {
+                    window.hsnWorkflow.stage3Result = res.stage3_decision || res;
+                    window.renderStage3Screen(res);
+                    window.syncWorkflowUI();
+                }
             } catch (e) {
                 if (panel) panel.innerHTML = `<div style="font-size:0.72rem; color:#fda4af;">Adaptive discovery failed: ${escapeHtml(e.message)}</div>`;
             }
