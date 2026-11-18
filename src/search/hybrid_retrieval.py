@@ -82,19 +82,20 @@ class HybridHSNEngine:
         if not self.raw_master_path.exists():
             raise FileNotFoundError(f"Master HSN file missing at {self.raw_master_path}")
 
-        # Compute SHA-256 file hash of the authoritative Master file
-        hasher = hashlib.sha256()
-        with open(self.raw_master_path, "rb") as f:
-            for chunk in iter(lambda: f.read(65536), b""):
-                hasher.update(chunk)
-        self.file_hash = hasher.hexdigest()
-
         # Load or generate enriched dataset
         if not self.enriched_parquet_path.exists():
             from src.search.normalization import MasterHSNEnricher
             enricher = MasterHSNEnricher(raw_excel_path=self.raw_master_path)
             enricher.process()
             enricher.save(self.enriched_parquet_path)
+
+        # Compute SHA-256 file hash of the active enriched parquet (and raw master) so cache stays aligned
+        hasher = hashlib.sha256()
+        for p in (self.raw_master_path, self.enriched_parquet_path):
+            with open(p, "rb") as f:
+                for chunk in iter(lambda: f.read(65536), b""):
+                    hasher.update(chunk)
+        self.file_hash = hasher.hexdigest()
 
         self.df = pd.read_parquet(self.enriched_parquet_path)
         self.records = self.df.to_dict(orient="records")
@@ -124,10 +125,10 @@ class HybridHSNEngine:
             for r in self.records
         ]
 
-        self.bm25_heading = BM25Okapi(self.corpus_heading)
-        self.bm25_synonyms = BM25Okapi(self.corpus_synonyms)
-        self.bm25_chapter = BM25Okapi(self.corpus_chapter)
-        self.bm25_subclause = BM25Okapi(self.corpus_subclause)
+        self.bm25_heading = BM25Okapi(self.corpus_heading) if any(self.corpus_heading) else None
+        self.bm25_synonyms = BM25Okapi(self.corpus_synonyms) if any(self.corpus_synonyms) else None
+        self.bm25_chapter = BM25Okapi(self.corpus_chapter) if any(self.corpus_chapter) else None
+        self.bm25_subclause = BM25Okapi(self.corpus_subclause) if any(self.corpus_subclause) else None
 
         # 2. Embedding Model for Query & Document Encoding
         from sentence_transformers import SentenceTransformer
@@ -179,6 +180,8 @@ class HybridHSNEngine:
         # Build corpus vocabulary frequencies for general morphological prefix expansion
         self._vocab_freq: Dict[str, int] = {}
         for bm in (self.bm25_heading, self.bm25_synonyms, self.bm25_subclause):
+            if bm is None:
+                continue
             for tok, freq in getattr(bm, "idf", {}).items():
                 if len(tok) >= 4:
                     self._vocab_freq[tok] = self._vocab_freq.get(tok, 0) + 1
@@ -253,10 +256,10 @@ class HybridHSNEngine:
             return [], None, None, {}, q
 
         # Layer 2A: Weighted BM25 Lexical Retrieval
-        s_head = np.array(self.bm25_heading.get_scores(q_tokens))
-        s_syn = np.array(self.bm25_synonyms.get_scores(q_tokens))
-        s_chap = np.array(self.bm25_chapter.get_scores(q_tokens))
-        s_sub = np.array(self.bm25_subclause.get_scores(q_tokens))
+        s_head = np.array(self.bm25_heading.get_scores(q_tokens)) if self.bm25_heading is not None else np.zeros(self.total_records)
+        s_syn = np.array(self.bm25_synonyms.get_scores(q_tokens)) if self.bm25_synonyms is not None else np.zeros(self.total_records)
+        s_chap = np.array(self.bm25_chapter.get_scores(q_tokens)) if self.bm25_chapter is not None else np.zeros(self.total_records)
+        s_sub = np.array(self.bm25_subclause.get_scores(q_tokens)) if self.bm25_subclause is not None else np.zeros(self.total_records)
 
         def min_max(arr: np.ndarray) -> np.ndarray:
             denom = arr.max() - arr.min()
@@ -418,10 +421,10 @@ class HybridHSNEngine:
                 return np.zeros_like(arr)
             return (arr - arr.min()) / denom
 
-        s_head = np.array(self.bm25_heading.get_scores(q_tokens))
-        s_syn = np.array(self.bm25_synonyms.get_scores(q_tokens))
-        s_chap = np.array(self.bm25_chapter.get_scores(q_tokens))
-        s_sub = np.array(self.bm25_subclause.get_scores(q_tokens))
+        s_head = np.array(self.bm25_heading.get_scores(q_tokens)) if self.bm25_heading is not None else np.zeros(self.total_records)
+        s_syn = np.array(self.bm25_synonyms.get_scores(q_tokens)) if self.bm25_synonyms is not None else np.zeros(self.total_records)
+        s_chap = np.array(self.bm25_chapter.get_scores(q_tokens)) if self.bm25_chapter is not None else np.zeros(self.total_records)
+        s_sub = np.array(self.bm25_subclause.get_scores(q_tokens)) if self.bm25_subclause is not None else np.zeros(self.total_records)
 
         bm25_primary = (
             3.0 * min_max(s_head) +
