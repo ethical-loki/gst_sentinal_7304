@@ -161,6 +161,9 @@ class CandidateProfile:
     material_keywords: List[str] = field(default_factory=list)
     consumer_synonyms: List[str] = field(default_factory=list)
     article_tokens: Set[str] = field(default_factory=set)
+    leaf_article_tokens: Set[str] = field(default_factory=set)
+    parent_heading_tokens: Set[str] = field(default_factory=set)
+    functional_tokens: Set[str] = field(default_factory=set)
     material_tokens: Set[str] = field(default_factory=set)
     chapter_tokens: Set[str] = field(default_factory=set)
     material_families: Set[str] = field(default_factory=set)
@@ -170,6 +173,8 @@ class CandidateProfile:
 @dataclass
 class CandidateEvidenceResult:
     status: str  # SUPPORTED | POSSIBLY_SUPPORTED | CONTRADICTED | INSUFFICIENT_EVIDENCE
+    compatibility_level: str = "INSUFFICIENT_EVIDENCE"  # DIRECT_COMPATIBILITY | PARTIAL_COMPATIBILITY | RELATED_DIFFERENT_ARTICLE | EXPLICIT_CONTRADICTION | INSUFFICIENT_EVIDENCE
+    primary_article_matched: bool = False
     article_matches: List[str] = field(default_factory=list)
     statutory_article_matches: List[str] = field(default_factory=list)
     material_matches: List[str] = field(default_factory=list)
@@ -184,6 +189,8 @@ class CandidateEvidenceResult:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "status": self.status,
+            "compatibility_level": self.compatibility_level,
+            "primary_article_matched": self.primary_article_matched,
             "article_matches": list(self.article_matches),
             "statutory_article_matches": list(self.statutory_article_matches),
             "material_matches": list(self.material_matches),
@@ -197,9 +204,13 @@ class CandidateEvidenceResult:
         }
 
 
+_PROFILE_CACHE: Dict[Tuple[str, str, str, str, str], CandidateProfile] = {}
+
+
 def build_candidate_profile(raw_rec: Optional[Dict[str, Any]], candidate: Any) -> CandidateProfile:
     """
-    Normalizes a candidate profile from `enriched_master_hsn.parquet` fields.
+    Normalizes and caches a candidate profile from `enriched_master_hsn.parquet` fields,
+    separating leaf-level article identity, parent-heading scope, and functional/material limitations.
     """
     rec = raw_rec or {}
     hsn = str(getattr(candidate, "hsn_code", None) or rec.get("hsn_code") or "").strip()
@@ -215,10 +226,19 @@ def build_candidate_profile(raw_rec: Optional[Dict[str, Any]], candidate: Any) -
     mat_kws = _split_kw_list(getattr(candidate, "material_keywords", None) or rec.get("material_keywords") or "")
     cons_syns = _split_kw_list(rec.get("consumer_synonyms") or "")
 
+    cache_key = (hsn, stat_desc, item_desc, sub6_desc, hd4_desc)
+    cached = _PROFILE_CACHE.get(cache_key)
+    if cached is not None and not art_kws and not mat_kws and not cons_syns:
+        return cached
+
     art_text = " ".join([item_desc, stat_desc, sub6_desc, hd4_desc, " ".join(art_kws), " ".join(cons_syns)])
     mat_text = " ".join([" ".join(mat_kws), item_desc, stat_desc, sub6_desc, hd4_desc])
 
     art_tokens = _tokenize_content(art_text)
+    leaf_art_tokens = _tokenize_content(f"{item_desc} {sub6_desc}")
+    parent_hd_tokens = _tokenize_content(hd4_desc)
+    func_clauses = re.findall(r"\b(?:for|used\s+in|designed\s+(?:for|to))\s+([a-z0-9\s]{3,40}?)(?:[,;]|$)", f"{item_desc} {sub6_desc} {hd4_desc}".lower())
+    functional_tokens = _tokenize_content(" ".join(func_clauses))
     mat_tokens = _tokenize_content(" ".join(mat_kws)) | (_tokenize_content(item_desc) & {
         _stem(c) for cues in _MATERIAL_FAMILIES.values() for c in cues if " " not in c
     })
@@ -231,7 +251,7 @@ def build_candidate_profile(raw_rec: Optional[Dict[str, Any]], candidate: Any) -
     stat_mat_text = re.sub(r"\bwhether\s+or\s+not\b[^,;)]*", " ", stat_mat_text, flags=re.IGNORECASE)
     stat_mat_fams = _detect_material_families(_tokenize_content(stat_mat_text), stat_mat_text)
 
-    return CandidateProfile(
+    prof = CandidateProfile(
         hsn_code=hsn,
         code_length=code_len,
         chapter_code=chap_code,
@@ -244,11 +264,17 @@ def build_candidate_profile(raw_rec: Optional[Dict[str, Any]], candidate: Any) -
         material_keywords=mat_kws,
         consumer_synonyms=cons_syns,
         article_tokens=art_tokens,
+        leaf_article_tokens=leaf_art_tokens,
+        parent_heading_tokens=parent_hd_tokens,
+        functional_tokens=functional_tokens,
         material_tokens=mat_tokens,
         chapter_tokens=chap_tokens,
         material_families=mat_fams,
         statutory_material_families=stat_mat_fams,
     )
+    if len(_PROFILE_CACHE) < 10000 and not art_kws and not mat_kws and not cons_syns:
+        _PROFILE_CACHE[cache_key] = prof
+    return prof
 
 
 def evaluate_candidate_evidence(
@@ -408,17 +434,32 @@ def evaluate_candidate_evidence(
         if neg_toks and neg_toks.issubset(_tokenize_content(query_full_low)):
             contradictions.append(f"Statutory exclusion matched: '{neg_phrase.strip()}'")
 
-    # 5. Evidence-based verdict (semantic similarity alone NEVER suffices;
-    # material overlap alone NEVER establishes finished-article identity when the query states an article)
+    # 5. Evidence-based verdict & 5-way compatibility classification:
+    # Keep primary article head-noun identity separate from modifier/material/component overlap.
+    head_noun_tokens = _tokenize_content(getattr(product_intent, "product_head_noun", "") or "") - all_mat_cues - generic_stems
+    alias_tokens = _tokenize_content(" ".join(getattr(product_intent, "alternative_names_and_aliases", []) or [])) - all_mat_cues - generic_stems
+    primary_id_tokens = head_noun_tokens | alias_tokens
+    if not primary_id_tokens and article_core_tokens:
+        # Fallback: last non-generic token of finished_article acts as primary noun
+        ordered_core = [t for t in (_stem(w) for w in re.findall(r"\b[a-z0-9]{2,}\b", product_intent.finished_article.lower())) if t in article_core_tokens]
+        if ordered_core:
+            primary_id_tokens = {ordered_core[-1]}
+
+    primary_article_matched = bool(primary_id_tokens & profile.article_tokens) if primary_id_tokens else bool(article_matches)
+    head_is_broad = bool(head_noun_tokens) and head_noun_tokens.issubset(_BROAD_SUPERORDINATES)
+    modifier_only_match = bool(article_matches) and not primary_article_matched
+
     has_article_query = bool(article_core_tokens)
     has_cand_article_vocab = bool(profile.article_tokens or profile.article_keywords or profile.consumer_synonyms)
     material_only_no_article = bool(material_matches) and not article_matches and has_article_query and has_cand_article_vocab
 
     if contradictions:
         status = CONTRADICTED
+        compatibility_level = "EXPLICIT_CONTRADICTION"
         ev_score = 0.0
     elif (
         article_matches
+        and primary_article_matched
         and not generic_only_match
         and not role_mismatch
         and (material_matches or not query_mat_fams)
@@ -426,26 +467,41 @@ def evaluate_candidate_evidence(
         and relation_value == "SAME_PRODUCT"
     ):
         status = SUPPORTED
+        compatibility_level = "DIRECT_COMPATIBILITY"
         ev_score = min(1.0, 0.65 * cross_encoder_confidence + 0.25 + (0.10 if material_matches else 0.0))
-    elif article_matches or (material_matches and not material_only_no_article):
+    elif (article_matches and (primary_article_matched or head_is_broad or relation_value in ("SAME_PRODUCT", "INSUFFICIENT_INFORMATION"))) or (
+        material_matches and not material_only_no_article and (primary_article_matched or not has_article_query)
+    ):
         status = POSSIBLY_SUPPORTED
-        ev_score = min(0.95, 0.60 * cross_encoder_confidence + (0.20 if article_matches else 0.05) + (0.10 if material_matches else 0.0))
+        compatibility_level = "PARTIAL_COMPATIBILITY"
+        ev_score = min(0.95, 0.60 * cross_encoder_confidence + (0.20 if primary_article_matched else 0.08) + (0.10 if material_matches else 0.0))
+        if modifier_only_match and not head_is_broad:
+            ev_score = max(0.0, ev_score - 0.10)
         if generic_only_match:
             ev_score = max(0.0, ev_score - 0.15)
         if role_mismatch == "complete_article_vs_parts":
             ev_score = max(0.0, ev_score - 0.25)
         elif role_mismatch:
             ev_score = max(0.0, ev_score - 0.15)
+    elif modifier_only_match or material_only_no_article:
+        status = INSUFFICIENT_EVIDENCE
+        compatibility_level = "RELATED_DIFFERENT_ARTICLE"
+        ev_score = max(0.0, 0.40 * cross_encoder_confidence)
     else:
         status = INSUFFICIENT_EVIDENCE
+        compatibility_level = "INSUFFICIENT_EVIDENCE"
         ev_score = max(0.0, 0.50 * cross_encoder_confidence)
 
     trace_parts = [
+        f"compat={compatibility_level}",
+        f"primary_head_match={primary_article_matched}",
         f"article_match={article_matches[:3] or 'none'}",
         f"material_match={material_matches[:3] or 'none'}",
         f"chapter_compat={chapter_compatible}",
         f"heading_compat={heading_compatible}",
     ]
+    if modifier_only_match:
+        trace_parts.append("guard=modifier_only_no_head_noun")
     if material_only_no_article:
         trace_parts.append("guard=material_only_no_article")
     if generic_only_match:
@@ -459,6 +515,8 @@ def evaluate_candidate_evidence(
 
     return CandidateEvidenceResult(
         status=status,
+        compatibility_level=compatibility_level,
+        primary_article_matched=primary_article_matched,
         article_matches=article_matches[:6],
         statutory_article_matches=statutory_article_matches[:6],
         material_matches=material_matches[:6],
