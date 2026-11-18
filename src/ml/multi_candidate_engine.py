@@ -1142,7 +1142,7 @@ class MultiCandidateEngine:
                 "required": requires_clarification,
                 "reason": clarification_reason,
                 "separating_attributes": sep_attrs,
-                "questions": questions,
+                "questions": stage3_decision.get("clarification_questions") or questions,
             },
             "active_vs_statutory": {
                 "is_out_of_schedule": comp.is_out_of_schedule,

@@ -10,7 +10,9 @@ from src.ml.multi_candidate_engine import MultiCandidateEngine
 from src.ml.stage3_statutory_verifier import (
     build_stage3_final_decision,
     chapter_to_wco_section,
+    compare_competing_candidates,
     evaluate_gir_sequence,
+    evaluate_statutory_notes,
     lookup_verified_gst_rate,
     verify_statutory_hierarchy,
 )
@@ -71,13 +73,15 @@ def test_conditional_gir_sequence_applicability():
         {},
         {"winner_has_clear_evidence": True},
     )
-    rules1 = [s["rule"] for s in gir1["gir_reasoning"]]
-    assert "GIR 1" in rules1
-    assert "GIR 6" in rules1
-    assert "GIR 3" not in rules1
-    assert "GIR 5" not in rules1
+    by_rule1 = {s["rule"]: s for s in gir1["gir_reasoning"]}
+    assert by_rule1["GIR 1"]["applicable"] is True
+    assert by_rule1["GIR 6"]["applicable"] is True
+    assert by_rule1["GIR 3"]["applicable"] is False
+    assert by_rule1["GIR 3"]["not_applied_reason"]
+    assert by_rule1["GIR 5"]["applicable"] is False
+    assert by_rule1["GIR 4"]["status"] == "INACTIVE"
 
-    pi_complex = analyze_product_intent("Unassembled pump kit in fitted carrying case")
+    pi_complex = analyze_product_intent("Unassembled stainless steel and plastic pump kit with impeller in fitted carrying case")
     cand2 = SimpleNamespace(
         candidate=SimpleNamespace(hsn_code="84137010", chapter_code="84"),
     )
@@ -92,7 +96,41 @@ def test_conditional_gir_sequence_applicability():
         {"winner_has_clear_evidence": False},
     )
     rules2 = [s["rule"] for s in gir2["gir_reasoning"]]
-    assert {"GIR 1", "GIR 2", "GIR 3", "GIR 5", "GIR 6"} <= set(rules2)
+    assert {"GIR 1", "GIR 2", "GIR 3(a)", "GIR 3(b)", "GIR 3(c)", "GIR 4", "GIR 5", "GIR 6"} <= set(rules2)
+    by_rule = {s["rule"]: s for s in gir2["gir_reasoning"]}
+    assert by_rule["GIR 4"]["applicable"] is False
+    assert by_rule["GIR 4"]["status"] == "INACTIVE"
+    assert by_rule["GIR 3(c)"]["applicable"] is False
+    assert by_rule["GIR 3(c)"]["not_applied_reason"]
+
+
+def test_statutory_note_evaluation_and_dynamic_question_filtering():
+    pi_knit = analyze_product_intent("Men knitted 100% cotton t-shirt")
+    note_61 = evaluate_statutory_notes("61", pi_knit)
+    assert note_61["note_coverage_status"] == "AUTHORITATIVE_NOTES_EVALUATED"
+    assert any(e["effect"] == "SUPPORTS" for e in note_61["note_evaluations"])
+
+    note_84 = evaluate_statutory_notes("84", pi_knit)
+    assert note_84["note_coverage_status"] == "NO_CHAPTER_NOTES_IN_SOURCE"
+
+    comp = compare_competing_candidates(
+        pi_knit,
+        [
+            SimpleNamespace(candidate=SimpleNamespace(hsn_code="61091000", tariff_item_desc="OF COTTON")),
+            SimpleNamespace(candidate=SimpleNamespace(hsn_code="61051020", tariff_item_desc="KNIT SHIRTS")),
+        ],
+        {"61091000": {"status": "POSSIBLY_SUPPORTED", "article_matches": ["t-shirt"]}},
+        {},
+        [
+            {"attribute": "material", "question": "What material?", "options": ["Cotton"]},
+            {"attribute": "neck_style", "question": "What neck style?", "options": ["Round", "Collar"]},
+        ],
+    )
+    # 'material' already extracted in Stage 1 ('cotton') must NOT be re-asked
+    attrs = [q["attribute"] for q in comp["filtered_questions"]]
+    assert "material" not in attrs
+    assert "neck_style" in attrs
+    assert comp["filtered_questions"][0]["why_needed"]
 
 
 def test_broad_parent_example_material_does_not_falsely_contradict_leaf():
