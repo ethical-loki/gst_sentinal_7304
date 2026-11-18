@@ -113,9 +113,9 @@ class AdaptiveCandidateDiscoverer:
         self,
         hybrid_engine: HybridHSNEngine,
         classifier: RelevanceClassifier,
-        initial_branch_k: int = 45,
-        expansion_factor: float = 3.0,
-        max_eval_budget: Optional[int] = 250,
+        initial_branch_k: int = 30,
+        expansion_factor: float = 2.0,
+        max_eval_budget: Optional[int] = 160,
     ):
         self.hybrid_engine = hybrid_engine
         self.classifier = classifier

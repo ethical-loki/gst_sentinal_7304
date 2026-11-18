@@ -131,7 +131,7 @@ class ProductTariffReranker:
         self,
         model_name_or_path: str = DEFAULT_RERANKER_MODEL,
         device: Optional[str] = None,
-        max_length: int = 512,
+        max_length: int = 256,
         local_files_only: bool = True,
         batch_size: int = 64,
     ):

@@ -100,6 +100,14 @@ class HybridHSNEngine:
         self.records = self.df.to_dict(orient="records")
         self.total_records = len(self.records)
 
+        rows_by_ch_tmp: Dict[str, List[int]] = {}
+        for idx_r, rec_r in enumerate(self.records):
+            ch_r = str(rec_r.get("chapter_code") or "").zfill(2)
+            rows_by_ch_tmp.setdefault(ch_r, []).append(idx_r)
+        self._rows_by_chapter: Dict[str, np.ndarray] = {
+            ch: np.array(idxs, dtype=int) for ch, idxs in rows_by_ch_tmp.items()
+        }
+
         # 1. Initialize BM25 Multi-Field Corpora from the exact records
         from rank_bm25 import BM25Okapi
         self.corpus_heading = [
@@ -475,24 +483,24 @@ class HybridHSNEngine:
         chapter_allocations: Dict[str, int] = {}
 
         if chapter_weights:
-            total_w = sum(chapter_weights.values()) or 1.0
-            total_ch_budget = max(k_eff, len(chapter_weights) * 5)
-            # Pre-index row indices per guided chapter once
-            rows_by_ch: Dict[str, List[int]] = {ch: [] for ch in chapter_weights}
-            for idx_r, rec_r in enumerate(self.records):
-                ch_r = str(rec_r.get("chapter_code") or "").zfill(2)
-                if ch_r in rows_by_ch:
-                    rows_by_ch[ch_r].append(idx_r)
+            max_cw = max(chapter_weights.values())
+            focused_chapters = sorted(
+                [(ch, cw) for ch, cw in chapter_weights.items() if cw >= max_cw * 0.45],
+                key=lambda kv: -kv[1],
+            )[:3]
+            if not focused_chapters:
+                focused_chapters = sorted(chapter_weights.items(), key=lambda kv: -kv[1])[:1]
+            focused_weights = dict(focused_chapters)
+            total_w = sum(focused_weights.values()) or 1.0
+            total_ch_budget = max(10, min(k_eff, int(round(0.55 * k_eff))))
 
-            for ch_code, ch_conf in sorted(chapter_weights.items(), key=lambda kv: -kv[1]):
-                ch_indices = rows_by_ch.get(ch_code, [])
-                if not ch_indices:
+            for ch_code, ch_conf in focused_chapters:
+                ch_arr = getattr(self, "_rows_by_chapter", {}).get(ch_code)
+                if ch_arr is None or len(ch_arr) == 0:
                     continue
-                alloc = max(5 if k_eff >= 15 else 2, int(round(total_ch_budget * (ch_conf / total_w))))
-                alloc = min(alloc, len(ch_indices))
+                alloc = max(4 if k_eff >= 15 else 2, int(round(total_ch_budget * (ch_conf / total_w))))
+                alloc = min(alloc, len(ch_arr))
                 chapter_allocations[ch_code] = alloc
-
-                ch_arr = np.array(ch_indices, dtype=int)
                 ch_bm25_order = ch_arr[np.argsort(bm25_composite[ch_arr])[::-1][:alloc]]
                 ch_vec_order = ch_arr[np.argsort(cos_sims[ch_arr])[::-1][:alloc]]
 
