@@ -132,6 +132,42 @@ def test_parts_role_alignment_for_spare_parts_queries():
     assert ev.compatibility_level == "PARTIAL_COMPATIBILITY"
 
 
+def test_hierarchy_qualifying_leaf_inherits_parent_article_identity():
+    pi_sheet = analyze_product_intent("biaxially oriented polyester sheet for packaging")
+    qual_sheet_prof = build_candidate_profile(
+        {
+            "hsn_code": "39206932",
+            "chapter_code": "39",
+            "chapter_title": "PLASTICS AND ARTICLES THEREOF",
+            "heading_4digit_desc": "OTHER PLATES, SHEETS, FILM, FOIL AND STRIP, OF PLASTICS",
+            "subheading_6digit_desc": "OF OTHER POLYESTERS",
+            "tariff_item_desc": "FLEXIBLE, PLAIN",
+            "statutory_description": "OTHER PLATES, SHEETS, FILM, FOIL AND STRIP, OF PLASTICS - OF OTHER POLYESTERS: FLEXIBLE, PLAIN",
+        },
+        None,
+    )
+    ev_sheet = evaluate_candidate_evidence(pi_sheet, qual_sheet_prof, "SAME_PRODUCT", 0.85)
+    assert ev_sheet.primary_article_matched is True
+    assert ev_sheet.status in {SUPPORTED, POSSIBLY_SUPPORTED}
+
+    pi_engine = analyze_product_intent("petrol spark-ignition motorcycle engine 150cc")
+    qual_eng_prof = build_candidate_profile(
+        {
+            "hsn_code": "84073290",
+            "chapter_code": "84",
+            "chapter_title": "NUCLEAR REACTORS, BOILERS, MACHINERY",
+            "heading_4digit_desc": "SPARK-IGNITION RECIPROCATING OR ROTARY INTERNAL COMBUSTION PISTON ENGINES",
+            "subheading_6digit_desc": "OF A CYLINDER CAPACITY EXCEEDING 50 CC BUT NOT EXCEEDING 250 CC",
+            "tariff_item_desc": "OTHER",
+            "statutory_description": "SPARK-IGNITION RECIPROCATING INTERNAL COMBUSTION PISTON ENGINES - OF A CYLINDER CAPACITY EXCEEDING 50 CC BUT NOT EXCEEDING 250 CC: OTHER",
+        },
+        None,
+    )
+    ev_eng = evaluate_candidate_evidence(pi_engine, qual_eng_prof, "SAME_PRODUCT", 0.85)
+    assert ev_eng.primary_article_matched is True
+    assert ev_eng.status in {SUPPORTED, POSSIBLY_SUPPORTED}
+
+
 def test_end_to_end_cross_chapter_compatibility_and_confidence_separation():
     engine = MultiCandidateEngine()
     for q in (

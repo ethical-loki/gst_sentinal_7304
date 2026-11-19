@@ -64,6 +64,22 @@ _BROAD_SUPERORDINATES = {
     "unit", "ware", "product", "accessory", "appliance", "apparatus", "tool",
 }
 
+# General WCO tariff qualifier words and prepositional clause starters that qualify a parent heading
+# rather than naming a distinct article at the subheading/leaf level.
+_LEAF_QUALIFIER_TOKENS = _GENERIC_MODIFIERS | {
+    "flexible", "rigid", "plain", "cellular", "unreinforced", "reinforced",
+    "galvanised", "galvanized", "polished", "unworked", "capacity", "cylinder",
+    "cc", "kw", "kva", "hp", "volt", "volts", "watt", "watts", "ampere",
+    "kg", "gram", "grams", "mm", "cm", "inch", "litres", "liter", "between",
+    "upto", "below", "above", "minimum", "maximum", "thickness", "width",
+    "length", "diameter", "power", "rating", "speed", "pressure", "temperature",
+    "phase", "single", "three", "ac", "dc", "but", "having", "fitted",
+}
+_LEAF_QUALIFIER_PREFIX_RE = re.compile(
+    r"^\s*(?:of|for|with|without|containing|exceeding|not\s+exceeding|other\s+than|whether|in|on|by|having|fitted|powered|operated|designed|used|made|from)\b",
+    re.IGNORECASE,
+)
+
 _HOUSEHOLD_ROLE_RE = re.compile(
     r"\b(?:household|kitchenware|tableware|kitchen|domestic|toilet\s+articles|food\s+storage|lunch\s+box|storage\s+container)\b",
     re.IGNORECASE,
@@ -445,9 +461,20 @@ def evaluate_candidate_evidence(
         if ordered_core:
             primary_id_tokens = {ordered_core[-1]}
 
-    leaf_specific_tokens = profile.leaf_article_tokens - all_mat_cues - generic_stems
+    leaf_specific_tokens = {
+        t for t in (profile.leaf_article_tokens - all_mat_cues - _LEAF_QUALIFIER_TOKENS)
+        if not t.isdigit()
+    }
+    leaf_clauses_are_qualifiers = all(
+        (
+            not cl
+            or cl.upper() in {"OTHER", "OTHERS"}
+            or bool(_LEAF_QUALIFIER_PREFIX_RE.match(cl))
+        )
+        for cl in (profile.tariff_item_desc.strip(), profile.subheading_6digit_desc.strip())
+    )
     if primary_id_tokens:
-        if leaf_specific_tokens and not (primary_id_tokens & leaf_specific_tokens):
+        if leaf_specific_tokens and not leaf_clauses_are_qualifiers and not (primary_id_tokens & leaf_specific_tokens):
             # Leaf/subheading explicitly names a different article than the query head noun
             # (e.g., heading lists multiple articles, while leaf specifies only one of them).
             primary_article_matched = False
