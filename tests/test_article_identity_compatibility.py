@@ -112,6 +112,26 @@ def test_no_hardcoded_hsn_rules_in_candidate_evidence_evaluator():
     assert not re.search(r"['\"]\d{8}['\"]", src)
 
 
+def test_parts_role_alignment_for_spare_parts_queries():
+    pi_parts = analyze_product_intent("spare parts for industrial air compressor")
+    parts_prof = build_candidate_profile(
+        {
+            "hsn_code": "84149019",
+            "chapter_code": "84",
+            "chapter_title": "NUCLEAR REACTORS, BOILERS, MACHINERY",
+            "heading_4digit_desc": "AIR OR VACUUM PUMPS, AIR OR OTHER GAS COMPRESSORS AND FANS",
+            "subheading_6digit_desc": "PARTS",
+            "tariff_item_desc": "OTHER",
+            "statutory_description": "AIR OR OTHER GAS COMPRESSORS - PARTS : OTHER",
+        },
+        None,
+    )
+    ev = evaluate_candidate_evidence(pi_parts, parts_prof, "RELATED_PRODUCT", 0.70)
+    assert ev.primary_article_matched is True
+    assert ev.status == POSSIBLY_SUPPORTED
+    assert ev.compatibility_level == "PARTIAL_COMPATIBILITY"
+
+
 def test_end_to_end_cross_chapter_compatibility_and_confidence_separation():
     engine = MultiCandidateEngine()
     for q in (

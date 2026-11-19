@@ -445,7 +445,25 @@ def evaluate_candidate_evidence(
         if ordered_core:
             primary_id_tokens = {ordered_core[-1]}
 
-    primary_article_matched = bool(primary_id_tokens & profile.article_tokens) if primary_id_tokens else bool(article_matches)
+    leaf_specific_tokens = profile.leaf_article_tokens - all_mat_cues - generic_stems
+    if primary_id_tokens:
+        if leaf_specific_tokens and not (primary_id_tokens & leaf_specific_tokens):
+            # Leaf/subheading explicitly names a different article than the query head noun
+            # (e.g., heading lists multiple articles, while leaf specifies only one of them).
+            primary_article_matched = False
+        else:
+            primary_article_matched = bool(primary_id_tokens & profile.article_tokens)
+    else:
+        primary_article_matched = bool(article_matches)
+    # Parts-role alignment: when Stage 1 identifies a part/component/accessory (`q_asks_parts` or head_noun=='part')
+    # and the statutory item is explicitly a parts subheading/leaf (`c_is_parts_only`) for a matched machine/article,
+    # parts-identity compatibility holds even though 'parts' is filtered from general content stopwords.
+    if not primary_article_matched and q_asks_parts and article_matches and (
+        c_is_parts_only
+        or any("part" in m.lower() for m in article_matches)
+        or bool(re.search(r"\bparts\s+thereof\b", profile.statutory_description or "", re.IGNORECASE))
+    ):
+        primary_article_matched = True
     head_is_broad = bool(head_noun_tokens) and head_noun_tokens.issubset(_BROAD_SUPERORDINATES)
     modifier_only_match = bool(article_matches) and not primary_article_matched
 
