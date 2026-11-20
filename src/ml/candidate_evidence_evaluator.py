@@ -30,6 +30,10 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
+from src.ml.hierarchy_intelligence import (
+    extract_statutory_exclusions,
+    get_hierarchy_intelligence,
+)
 from src.nlp.product_intent_analyzer import ProductIntentStructure
 
 SUPPORTED = "SUPPORTED"
@@ -112,7 +116,7 @@ _MATERIAL_FAMILIES: Dict[str, Set[str]] = {
     "wood": {"wood", "wooden", "timber", "plywood", "bamboo"},
     "rubber": {"rubber", "latex", "elastomer", "vulcanised", "vulcanized"},
     "glass_ceramic": {"glass", "ceramic", "porcelain", "stoneware", "earthenware"},
-    "leather": {"leather", "hide", "skin"},
+    "leather": {"leather", "raw hide", "raw hides", "raw skin", "raw skins", "furskin", "furskins", "composition leather", "suede"},
     "paper": {"paper", "paperboard", "cardboard"},
 }
 
@@ -184,6 +188,13 @@ class CandidateProfile:
     chapter_tokens: Set[str] = field(default_factory=set)
     material_families: Set[str] = field(default_factory=set)
     statutory_material_families: Set[str] = field(default_factory=set)
+    is_qualifying_only_leaf: bool = False
+    qualifying_reason: str = ""
+    inherited_parent_articles: Set[str] = field(default_factory=set)
+    explicit_exclusions: Set[str] = field(default_factory=set)
+    contradictory_sibling_articles: Set[str] = field(default_factory=set)
+    sibling_shared_tokens: Set[str] = field(default_factory=set)
+    sibling_distinguishing_tokens: Set[str] = field(default_factory=set)
 
 
 @dataclass
@@ -201,6 +212,7 @@ class CandidateEvidenceResult:
     missing_attributes: List[str] = field(default_factory=list)
     evidence_score: float = 0.0
     trace_summary: str = ""
+    hierarchy_intelligence: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -217,6 +229,7 @@ class CandidateEvidenceResult:
             "missing_attributes": list(self.missing_attributes),
             "evidence_score": round(float(self.evidence_score), 4),
             "trace_summary": self.trace_summary,
+            "hierarchy_intelligence": dict(self.hierarchy_intelligence),
         }
 
 
@@ -247,22 +260,46 @@ def build_candidate_profile(raw_rec: Optional[Dict[str, Any]], candidate: Any) -
     if cached is not None and not art_kws and not mat_kws and not cons_syns:
         return cached
 
-    art_text = " ".join([item_desc, stat_desc, sub6_desc, hd4_desc, " ".join(art_kws), " ".join(cons_syns)])
-    mat_text = " ".join([" ".join(mat_kws), item_desc, stat_desc, sub6_desc, hd4_desc])
+    hi = get_hierarchy_intelligence()
+    h_intel = hi.analyze_record({
+        "hsn_code": hsn,
+        "chapter_code": chap_code,
+        "heading_4digit": hsn[:4] if len(hsn) >= 4 else "",
+        "subheading_6digit": hsn[:6] if len(hsn) >= 6 else "",
+        "heading_4digit_desc": hd4_desc,
+        "subheading_6digit_desc": sub6_desc,
+        "tariff_item_desc": item_desc,
+        "statutory_description": stat_desc,
+        "is_residual": bool(rec.get("is_residual", False)),
+    })
 
-    art_tokens = _tokenize_content(art_text)
-    leaf_art_tokens = _tokenize_content(f"{item_desc} {sub6_desc}")
-    parent_hd_tokens = _tokenize_content(hd4_desc)
+    # Strip explicit exclusion clauses before extracting positive statutory article tokens
+    pos_item, _, _, _ = extract_statutory_exclusions(item_desc)
+    pos_stat, _, _, _ = extract_statutory_exclusions(stat_desc)
+    pos_sub6, _, _, _ = extract_statutory_exclusions(sub6_desc)
+    pos_hd4, _, _, _ = extract_statutory_exclusions(hd4_desc)
+
+    art_text = " ".join([pos_item or item_desc, pos_stat or stat_desc, pos_sub6 or sub6_desc, pos_hd4 or hd4_desc, " ".join(art_kws), " ".join(cons_syns)])
+    mat_text = " ".join([" ".join(mat_kws), pos_item or item_desc, pos_stat or stat_desc, pos_sub6 or sub6_desc, pos_hd4 or hd4_desc])
+
+    leaf_art_tokens = _tokenize_content(f"{pos_item or item_desc} {pos_sub6 or sub6_desc}")
+    raw_art_tokens = _tokenize_content(art_text)
+    # Remove explicit exclusions and contradictory sibling-exclusive nouns unless owned at leaf/sub6 level
+    art_tokens = (
+        (raw_art_tokens - h_intel.explicit_exclusions - h_intel.contradictory_sibling_articles)
+        | leaf_art_tokens
+        | h_intel.inherited_parent_articles
+    )
+    parent_hd_tokens = _tokenize_content(pos_hd4 or hd4_desc) - h_intel.explicit_exclusions
     func_clauses = re.findall(r"\b(?:for|used\s+in|designed\s+(?:for|to))\s+([a-z0-9\s]{3,40}?)(?:[,;]|$)", f"{item_desc} {sub6_desc} {hd4_desc}".lower())
     functional_tokens = _tokenize_content(" ".join(func_clauses))
-    mat_tokens = _tokenize_content(" ".join(mat_kws)) | (_tokenize_content(item_desc) & {
+    dynamic_mat_cues = {
         _stem(c) for cues in _MATERIAL_FAMILIES.values() for c in cues if " " not in c
-    })
+    } | hi.corpus_material_tokens
+    mat_tokens = _tokenize_content(" ".join(mat_kws)) | (_tokenize_content(item_desc) & dynamic_mat_cues) | h_intel.statutory_materials
     chap_tokens = _tokenize_content(chap_title)
     mat_fams = _detect_material_families(_tokenize_content(mat_text), mat_text)
-    # Strip illustrative parenthetical examples ("for example, ...") and permissive "whether or not ..." clauses
-    # before computing hard statutory material contradictions so broad parent-heading examples never reject valid leaves.
-    stat_mat_raw = " ".join([item_desc, stat_desc, sub6_desc, hd4_desc])
+    stat_mat_raw = " ".join([pos_item or item_desc, pos_stat or stat_desc, pos_sub6 or sub6_desc, pos_hd4 or hd4_desc])
     stat_mat_text = re.sub(r"\(\s*for\s+example[^)]*\)", " ", stat_mat_raw, flags=re.IGNORECASE)
     stat_mat_text = re.sub(r"\bwhether\s+or\s+not\b[^,;)]*", " ", stat_mat_text, flags=re.IGNORECASE)
     stat_mat_fams = _detect_material_families(_tokenize_content(stat_mat_text), stat_mat_text)
@@ -287,6 +324,13 @@ def build_candidate_profile(raw_rec: Optional[Dict[str, Any]], candidate: Any) -
         chapter_tokens=chap_tokens,
         material_families=mat_fams,
         statutory_material_families=stat_mat_fams,
+        is_qualifying_only_leaf=h_intel.is_qualifying_only_leaf,
+        qualifying_reason=h_intel.qualifying_reason,
+        inherited_parent_articles=set(h_intel.inherited_parent_articles),
+        explicit_exclusions=set(h_intel.explicit_exclusions),
+        contradictory_sibling_articles=set(h_intel.contradictory_sibling_articles),
+        sibling_shared_tokens=set(h_intel.sibling_shared_tokens),
+        sibling_distinguishing_tokens=set(h_intel.sibling_distinguishing_tokens),
     )
     if len(_PROFILE_CACHE) < 10000 and not art_kws and not mat_kws and not cons_syns:
         _PROFILE_CACHE[cache_key] = prof
@@ -451,21 +495,31 @@ def evaluate_candidate_evidence(
             contradictions.append(f"Statutory exclusion matched: '{neg_phrase.strip()}'")
 
     # 5. Evidence-based verdict & 5-way compatibility classification:
-    # Keep primary article head-noun identity separate from modifier/material/component overlap.
-    head_noun_tokens = _tokenize_content(getattr(product_intent, "product_head_noun", "") or "") - all_mat_cues - generic_stems
-    alias_tokens = _tokenize_content(" ".join(getattr(product_intent, "alternative_names_and_aliases", []) or [])) - all_mat_cues - generic_stems
+    # Combine master-derived corpus qualifier/material vocabularies with structural seeds
+    hi = get_hierarchy_intelligence()
+    dynamic_mat_cues = all_mat_cues | hi.corpus_material_tokens
+    dynamic_qual_tokens = _LEAF_QUALIFIER_TOKENS | hi.corpus_qualifier_tokens
+
+    head_noun_tokens = _tokenize_content(getattr(product_intent, "product_head_noun", "") or "") - dynamic_mat_cues - generic_stems
+    alias_tokens = _tokenize_content(" ".join(getattr(product_intent, "alternative_names_and_aliases", []) or [])) - dynamic_mat_cues - generic_stems
     primary_id_tokens = head_noun_tokens | alias_tokens
     if not primary_id_tokens and article_core_tokens:
-        # Fallback: last non-generic token of finished_article acts as primary noun
         ordered_core = [t for t in (_stem(w) for w in re.findall(r"\b[a-z0-9]{2,}\b", product_intent.finished_article.lower())) if t in article_core_tokens]
         if ordered_core:
             primary_id_tokens = {ordered_core[-1]}
 
+    # Statutory explicit exclusion against primary article identity
+    excluded_id_hits = sorted(primary_id_tokens & profile.explicit_exclusions)
+    if excluded_id_hits and not (primary_id_tokens & profile.leaf_article_tokens):
+        contradictions.append(
+            f"Explicit statutory exclusion matched for primary article {excluded_id_hits}"
+        )
+
     leaf_specific_tokens = {
-        t for t in (profile.leaf_article_tokens - all_mat_cues - _LEAF_QUALIFIER_TOKENS)
+        t for t in (profile.leaf_article_tokens - dynamic_mat_cues - dynamic_qual_tokens)
         if not t.isdigit()
     }
-    leaf_clauses_are_qualifiers = all(
+    leaf_clauses_are_qualifiers = profile.is_qualifying_only_leaf or all(
         (
             not cl
             or cl.upper() in {"OTHER", "OTHERS"}
@@ -474,12 +528,17 @@ def evaluate_candidate_evidence(
         for cl in (profile.tariff_item_desc.strip(), profile.subheading_6digit_desc.strip())
     )
     if primary_id_tokens:
-        if leaf_specific_tokens and not leaf_clauses_are_qualifiers and not (primary_id_tokens & leaf_specific_tokens):
-            # Leaf/subheading explicitly names a different article than the query head noun
-            # (e.g., heading lists multiple articles, while leaf specifies only one of them).
+        # Guard against sibling-exclusive contradictory articles (preventing blind parent inheritance)
+        if (primary_id_tokens & profile.contradictory_sibling_articles) and not (
+            primary_id_tokens & (profile.leaf_article_tokens | profile.inherited_parent_articles)
+        ):
+            primary_article_matched = False
+        elif leaf_specific_tokens and not leaf_clauses_are_qualifiers and not (primary_id_tokens & leaf_specific_tokens):
             primary_article_matched = False
         else:
-            primary_article_matched = bool(primary_id_tokens & profile.article_tokens)
+            primary_article_matched = bool(
+                primary_id_tokens & (profile.article_tokens | profile.inherited_parent_articles)
+            )
     else:
         primary_article_matched = bool(article_matches)
     # Parts-role alignment: when Stage 1 identifies a part/component/accessory (`q_asks_parts` or head_noun=='part')
@@ -572,6 +631,15 @@ def evaluate_candidate_evidence(
         missing_attributes=missing_attributes,
         evidence_score=ev_score,
         trace_summary="; ".join(trace_parts),
+        hierarchy_intelligence={
+            "is_qualifying_only_leaf": profile.is_qualifying_only_leaf,
+            "qualifying_reason": profile.qualifying_reason,
+            "inherited_parent_articles": sorted(profile.inherited_parent_articles)[:10],
+            "sibling_shared_tokens": sorted(profile.sibling_shared_tokens)[:10],
+            "sibling_distinguishing_tokens": sorted(profile.sibling_distinguishing_tokens)[:10],
+            "explicit_exclusions": sorted(profile.explicit_exclusions)[:8],
+            "contradictory_sibling_articles": sorted(profile.contradictory_sibling_articles)[:8],
+        },
     )
 
 

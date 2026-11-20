@@ -19,6 +19,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
+from src.ml.hierarchy_intelligence import get_hierarchy_intelligence
 from src.ml.relevance_classifier import (
     ClassifiedTariffCandidate,
     RelationLabel,
@@ -269,18 +270,27 @@ def analyze_sibling_distinctions(
         cand_token_sets.append(_stat_tokens(leaf_txt))
 
     common_tokens = set.intersection(*cand_token_sets) if len(cand_token_sets) >= 2 else set()
+    hi = get_hierarchy_intelligence()
 
     per_cand: List[Dict[str, Any]] = []
     any_specific_support = False
     for idx, c in enumerate(competing):
         t8 = str(getattr(c.candidate, "tariff_item_desc", "") or "").strip()
         s6 = str(getattr(c.candidate, "subheading_6digit_desc", "") or "").strip()
-        is_residual = t8.lower() in ("other", "others")
+        h4 = str(getattr(c.candidate, "heading_4digit_desc", "") or "").strip()
+        h_analysis = hi.analyze_record({
+            "hsn_code": c.candidate.hsn_code,
+            "heading_4digit_desc": h4,
+            "subheading_6digit_desc": s6,
+            "tariff_item_desc": t8,
+            "statutory_description": c.candidate.description,
+        })
+        is_residual = t8.lower() in ("other", "others") or h_analysis.qualifying_reason == "residual_other"
         # Numerical constraints from leaf/subheading description
         constraints = extract_numeric_constraints(f"{t8} {s6} {c.candidate.description}")
         num_status = evaluate_numeric_match(constraints, q_nums)
 
-        diff_tokens = cand_token_sets[idx] - common_tokens
+        diff_tokens = (cand_token_sets[idx] - common_tokens) | (h_analysis.sibling_distinguishing_tokens & cand_token_sets[idx])
         # Check statutory phrase overlap against query
         matched_diff = sorted(diff_tokens & q_tokens)
         lex_ratio = len(matched_diff) / max(len(diff_tokens), 1) if diff_tokens else 0.0
@@ -384,21 +394,33 @@ def identify_separating_attributes(
     separating: List[str] = []
     evidence: Dict[str, List[str]] = {}
 
-    # 1. Material check via material_keywords & chapter differences
-    # Only treat material as a separating attribute if candidates span multiple chapters
-    # OR their statutory descriptions themselves differ on material terms.
+    # 1. Material check via material_keywords + master-derived statutory_materials across all 97 chapters
+    hi = get_hierarchy_intelligence()
     unique_chaps = {c.candidate.chapter_code for c in competing if c.candidate.chapter_code}
-    mat_sets = [
-        _extract_material_tokens(c.candidate.material_keywords) for c in competing
-    ]
+    mat_sets: List[Set[str]] = []
+    h_analyses = []
+    for c in competing:
+        ha = hi.analyze_record({
+            "hsn_code": c.candidate.hsn_code,
+            "heading_4digit_desc": getattr(c.candidate, "heading_4digit_desc", ""),
+            "subheading_6digit_desc": getattr(c.candidate, "subheading_6digit_desc", ""),
+            "tariff_item_desc": getattr(c.candidate, "tariff_item_desc", ""),
+            "statutory_description": c.candidate.description,
+        })
+        h_analyses.append(ha)
+        stat_mat_hits = _stat_tokens(
+            f"{getattr(c.candidate, 'tariff_item_desc', '')} {getattr(c.candidate, 'subheading_6digit_desc', '')}"
+        ) & hi.corpus_material_tokens
+        mat_sets.append(_extract_material_tokens(c.candidate.material_keywords) | ha.statutory_materials | stat_mat_hits)
+
     non_empty_mats = [m for m in mat_sets if m]
-    if len(non_empty_mats) >= 2 and len(unique_chaps) > 1:
+    if len(non_empty_mats) >= 2:
         union_mats = set().union(*non_empty_mats)
         common_mats = set.intersection(*non_empty_mats)
         diff_mats = sorted(
             m for m in (union_mats - common_mats) if m not in query_lower
         )
-        if diff_mats:
+        if diff_mats and (len(unique_chaps) > 1 or any(ha.statutory_materials for ha in h_analyses)):
             separating.append("material")
             evidence["material"] = diff_mats[:6]
 
@@ -447,16 +469,23 @@ def identify_separating_attributes(
             separating.append("numeric_rating")
             evidence["numeric_rating"] = num_phrases[:6]
 
-    # Fallback: if headings/chapters still differ and no specific cue matched,
-    # check whether chapters differ (typically material or function)
+    # Fallback: use master-derived sibling distinguishing tokens before generic fallback
     if not separating and len(competing) >= 2:
-        chapters = {c.candidate.chapter_code for c in competing}
-        if len(chapters) > 1:
-            separating.append("material")
-            evidence["material"] = [f"Chapter {ch}" for ch in sorted(chapters)]
+        dist_toks = sorted(
+            t for ha in h_analyses for t in ha.sibling_distinguishing_tokens
+            if t not in query_lower and len(t) >= 3
+        )
+        if dist_toks:
+            separating.append("specification")
+            evidence["specification"] = list(dict.fromkeys(dist_toks))[:6]
         else:
-            separating.append("intended_use")
-            evidence["intended_use"] = [c.candidate.description[:40] for c in competing[:3]]
+            chapters = {c.candidate.chapter_code for c in competing}
+            if len(chapters) > 1:
+                separating.append("material")
+                evidence["material"] = [f"Chapter {ch}" for ch in sorted(chapters)]
+            else:
+                separating.append("intended_use")
+                evidence["intended_use"] = [c.candidate.description[:40] for c in competing[:3]]
 
     return separating, evidence
 
