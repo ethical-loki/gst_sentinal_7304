@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0.0",
+  "source_authority": "CBIC / DGFT ITC-HS & GST Council Schedule",
+  "publication_version": "ITC-HS 2022 + Notification No. 09/2025-CT(Rate)",
+  "default_effective_date": "2025-09-22",
+  "default_notification_ref": "Notification No. 09/2025-CT(Rate)",
+  "sources": {
+    "primary_statutory_parquet": "data/tariff_master.parquet",
+    "hierarchy_map_parquet": "data/tariff_hierarchy_map.parquet",
+    "keyword_enrichment_parquet": "data/Master_copy_hsn.parquet",
+    "keyword_enrichment_excel": "data/raw/Master_copy_hsn.xlsx",
+    "itc_untruncated_json": "data/raw/itc_hs_codes.json",
+    "gst_rates_json": "data/raw/gst_rates.json",
+    "legal_notes_json": "data/statutory_rules.json",
+    "extra_legal_notes_json": "data/statutory_legal_notes.json"
+  },
+  "outputs": {
+    "enriched_hsn_parquet": "data/enriched_master_hsn.parquet",
+    "enriched_sac_parquet": "data/enriched_sac_master.parquet",
+    "coverage_report_json": "reports/phase1_statutory_master_coverage_report.json",
+    "coverage_report_md": "reports/phase1_statutory_master_coverage_report.md"
+  },
+  "wco_reserved_empty_chapters": ["77"],
+  "special_provision_chapters": ["98"],
+  "sac_service_chapters": ["99"],
+  "wco_sections": [
+    {"start": 1, "end": 5, "section": "Section I", "title": "Live Animals; Animal Products"},
+    {"start": 6, "end": 14, "section": "Section II", "title": "Vegetable Products"},
+    {"start": 15, "end": 15, "section": "Section III", "title": "Animal, Vegetable or Microbial Fats and Oils"},
+    {"start": 16, "end": 24, "section": "Section IV", "title": "Prepared Foodstuffs; Beverages, Spirits and Vinegar; Tobacco"},
+    {"start": 25, "end": 27, "section": "Section V", "title": "Mineral Products"},
+    {"start": 28, "end": 38, "section": "Section VI", "title": "Products of the Chemical or Allied Industries"},
+    {"start": 39, "end": 40, "section": "Section VII", "title": "Plastics and Articles Thereof; Rubber and Articles Thereof"},
+    {"start": 41, "end": 43, "section": "Section VIII", "title": "Raw Hides and Skins, Leather, Furskins and Articles Thereof"},
+    {"start": 44, "end": 46, "section": "Section IX", "title": "Wood and Articles of Wood; Cork; Straw and Basketware"},
+    {"start": 47, "end": 49, "section": "Section X", "title": "Pulp of Wood; Paper and Paperboard; Printed Material"},
+    {"start": 50, "end": 63, "section": "Section XI", "title": "Textiles and Textile Articles"},
+    {"start": 64, "end": 67, "section": "Section XII", "title": "Footwear, Headgear, Umbrellas, Prepared Feathers"},
+    {"start": 68, "end": 70, "section": "Section XIII", "title": "Articles of Stone, Plaster, Cement; Ceramic Products; Glass"},
+    {"start": 71, "end": 71, "section": "Section XIV", "title": "Natural or Cultured Pearls, Precious Stones and Precious Metals"},
+    {"start": 72, "end": 83, "section": "Section XV", "title": "Base Metals and Articles of Base Metal"},
+    {"start": 84, "end": 85, "section": "Section XVI", "title": "Machinery and Mechanical Appliances; Electrical Equipment"},
+    {"start": 86, "end": 89, "section": "Section XVII", "title": "Vehicles, Aircraft, Vessels and Associated Transport Equipment"},
+    {"start": 90, "end": 92, "section": "Section XVIII", "title": "Optical, Photographic, Precision, Medical Instruments; Clocks; Musical Instruments"},
+    {"start": 93, "end": 93, "section": "Section XIX", "title": "Arms and Ammunition; Parts and Accessories Thereof"},
+    {"start": 94, "end": 96, "section": "Section XX", "title": "Miscellaneous Manufactured Articles"},
+    {"start": 97, "end": 97, "section": "Section XXI", "title": "Works of Art, Collectors' Pieces and Antiques"},
+    {"start": 98, "end": 98, "section": "Section XXI-IN", "title": "Special Classification Provisions (Project Imports, Laboratory Chemicals, Baggage)"},
+    {"start": 99, "end": 99, "section": "SAC", "title": "Services Accounting Code (SAC)"}
+  ]
+}

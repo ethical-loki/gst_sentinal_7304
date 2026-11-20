@@ -214,10 +214,10 @@ def test_real_dataset_integration_scenarios():
     r_abbr = engine.classify_adaptive("AUXI. MACH. FOR USE", page=1, page_size=10)
     assert r_abbr["discovery"]["qualifying_candidates"] >= 1
 
-    # 5. Out-of-schedule
-    r_coffee = engine.classify_adaptive("roasted arabica coffee beans", page=1, page_size=10)
-    assert r_coffee["prediction_mode"] == "OUT_OF_SCHEDULE"
-    assert r_coffee["final_chapter"] == "09"
+    # 5. Out-of-schedule (SAC Chapter 99 services outside 97-chapter HSN goods master)
+    r_service = engine.classify_adaptive("software consulting and IT maintenance services", page=1, page_size=10)
+    assert r_service["prediction_mode"] == "OUT_OF_SCHEDULE"
+    assert r_service["final_chapter"] == "99"
 
     # 6. Insufficient / uninformative
     r_empty = engine.classify_adaptive("OTHER", page=1, page_size=10)
