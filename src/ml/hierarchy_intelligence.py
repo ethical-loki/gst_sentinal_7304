@@ -483,6 +483,17 @@ class MasterHierarchyIntelligence:
             own_branch_articles |= _extract_pre_clause_head_tokens(pos_s6, drop_participles=True)
         own_branch_articles -= self.corpus_qualifier_tokens | self.corpus_material_tokens
 
+        leaf_for_check = pos_t8 or t8_desc
+        leaf_norm = re.sub(r"[^a-z0-9\s]", "", leaf_for_check.lower()).strip()
+        is_residual = bool(rec_or_fields.get("is_residual")) or leaf_norm in ("other", "others", "all other", "other goods")
+        leaf_head_direct = (
+            _extract_pre_clause_head_tokens(leaf_for_check, drop_participles=True)
+            - self.corpus_qualifier_tokens
+            - self.corpus_material_tokens
+        ) if (not pos_s6 and leaf_for_check and not is_residual and not _SYNTACTIC_QUALIFIER_PREFIX_RE.match(leaf_for_check)) else set()
+        if leaf_head_direct:
+            own_branch_articles |= leaf_head_direct
+
         other_branch_articles: Set[str] = set()
         if not synthetic_override:
             for bk, toks in branch_map.items():
@@ -490,9 +501,13 @@ class MasterHierarchyIntelligence:
                     other_branch_articles.update(toks)
 
         h4_all_pos_toks = set(_tokenize(pos_h4)) - self.corpus_qualifier_tokens - self.corpus_material_tokens
-        # Only reject heading-level nouns (`h4_all_pos_toks`) when this branch's OWN non-qualifying subheading
-        # explicitly selects a narrower commodity subset from the heading (e.g., `731816: NUTS` vs `bolts`).
-        own_claims_h4_subset = (not sub6_is_qual) and bool(own_branch_articles & h4_all_pos_toks)
+        # Reject sibling heading nouns (`h4_all_pos_toks`) when THIS branch's non-qualifying sub6
+        # (or direct concrete leaf with no sub6) explicitly selects a narrower commodity subset from the heading
+        # (e.g., `73181600: NUTS` vs `bolt`/`screw`).
+        own_claims_h4_subset = (
+            ((not sub6_is_qual) or bool(leaf_head_direct))
+            and bool(own_branch_articles & h4_all_pos_toks)
+        )
 
         contradictory_siblings = {
             t for t in other_branch_articles
