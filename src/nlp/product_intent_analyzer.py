@@ -520,7 +520,36 @@ def analyze_product_intent(description: str, clarification: str = "") -> Product
     if not head_words:
         head_words = [w for w in re.findall(r"[A-Za-z0-9\-]+", finished_article) if w.lower() not in ("of", "for", "and", "or", "the", "a", "an", "with", "in", "without")]
     all_article_words = [w for w in re.findall(r"[A-Za-z0-9\-]+", finished_article) if w.lower() not in ("of", "for", "and", "or", "the", "a", "an", "with", "in", "without")]
-    product_head_noun = str(head_facts.get("article") or (head_words[-1] if head_words else finished_article))
+    raw_head_article = str(head_facts.get("article") or "").strip()
+    rightmost_head = head_words[-1] if head_words else finished_article
+    _generic_trailing = {
+        "unit", "units", "system", "systems", "set", "sets", "kit", "kits",
+        "item", "items", "goods", "type", "types", "model", "models",
+        "grade", "grades", "assembly", "assemblies", "module", "modules",
+    }
+    if (
+        raw_head_article
+        and " " not in raw_head_article
+        and rightmost_head
+        and rightmost_head.isalpha()
+        and len(rightmost_head) >= 3
+        and rightmost_head.lower() not in _generic_trailing
+        and rightmost_head.lower() != raw_head_article.lower()
+        and pre_prep_article.lower().rfind(rightmost_head.lower()) > pre_prep_article.lower().rfind(raw_head_article.lower())
+    ):
+        product_head_noun = rightmost_head
+    elif (
+        (not raw_head_article or raw_head_article.lower() in _generic_trailing)
+        and rightmost_head
+        and rightmost_head.lower() in _generic_trailing
+        and len(head_words) >= 2
+        and head_words[-2].isalpha()
+        and len(head_words[-2]) >= 3
+        and head_words[-2].lower() not in _generic_trailing
+    ):
+        product_head_noun = head_words[-2]
+    else:
+        product_head_noun = raw_head_article or rightmost_head
     descriptive_modifiers = [w for w in all_article_words if w.lower() != product_head_noun.lower()] if len(all_article_words) > 1 else []
     if re.search(r"\b(?:parts?|spares?|components?|accessories|subassembly)\b", finished_article, re.IGNORECASE):
         article_category = "parts_or_component"

@@ -126,6 +126,8 @@ _MATERIAL_FAMILIES: Dict[str, Set[str]] = {
     "glass_ceramic": {"glass", "ceramic", "porcelain", "stoneware", "earthenware"},
     "leather": {"leather", "raw hide", "raw hides", "raw skin", "raw skins", "furskin", "furskins", "composition leather", "suede"},
     "paper": {"paper", "paperboard", "cardboard"},
+    "protein": {"protein", "casein", "gelatin", "gelatine", "collagen", "albumin"},
+    "cellulosic": {"cellulose", "cellulosic", "cellophane", "nitrocellulose", "cellulose acetate"},
 }
 
 # Compatible material pairs (e.g. synthetic_textile vs plastics share nylon/polyester terms)
@@ -145,7 +147,7 @@ def _stem(tok: str) -> str:
         return t[:-3] + "y"
     if len(t) > 4 and t.endswith("es") and t[-3] in "shxz":
         return t[:-2]
-    if len(t) > 3 and t.endswith("s") and not t.endswith("ss"):
+    if len(t) > 3 and t.endswith("s") and not t.endswith(("ss", "us", "is", "os", "as")):
         return t[:-1]
     return t
 
@@ -464,8 +466,25 @@ def evaluate_candidate_evidence(
             and not q_asks_parts
         )
     )
+    q_explicit_parts = bool(
+        re.search(
+            r"\b(?:part|parts|spare|spares|component|components|accessory|accessories|subassembly)\b",
+            query_role_text,
+            re.IGNORECASE,
+        )
+    )
     if c_is_parts_only and not q_asks_parts:
         role_mismatch = "complete_article_vs_parts"
+    elif (
+        q_explicit_parts
+        and not c_is_parts_only
+        and not re.search(
+            r"\bparts?(?:\s+thereof|\s+of|\s+for|\s+and\s+accessories)?\b",
+            f"{profile.heading_4digit_desc} {profile.subheading_6digit_desc} {profile.tariff_item_desc}",
+            re.IGNORECASE,
+        )
+    ):
+        role_mismatch = "parts_vs_complete_article"
 
     # Detect generic-superordinate-only article match when query has more specific nouns
     matched_stems = {_stem(t) for m in article_matches for t in _tokenize_content(m)}
@@ -486,13 +505,16 @@ def evaluate_candidate_evidence(
             not sub_leaf_fams
             and bool(re.search(r"\bany\s+material\b", profile.heading_4digit_desc or "", re.IGNORECASE))
         )
+        # When subheading/leaf explicitly declares material families (e.g. 391710 "OF HARDENED PROTEIN"
+        # under Heading 3917 "OF PLASTICS"), test compatibility against leaf-level families first.
+        target_cand_fams = sub_leaf_fams if sub_leaf_fams else profile.statutory_material_families
         has_compatible = permissive_any_mat
         if not has_compatible:
             for qf in query_mat_fams:
-                if qf in profile.statutory_material_families:
+                if qf in target_cand_fams:
                     has_compatible = True
                     break
-                for cf in profile.statutory_material_families:
+                for cf in target_cand_fams:
                     if frozenset({qf, cf}) in _COMPATIBLE_FAMILIES:
                         has_compatible = True
                         break
@@ -500,7 +522,7 @@ def evaluate_candidate_evidence(
                     break
         if not has_compatible:
             contradictions.append(
-                f"Material contradiction: query states {sorted(query_mat_fams)}, statutory description specifies {sorted(profile.statutory_material_families)}"
+                f"Material contradiction: query states {sorted(query_mat_fams)}, statutory description specifies {sorted(target_cand_fams)}"
             )
     elif not query_mat_fams and profile.statutory_material_families:
         missing_attributes.append(f"material ({'/'.join(sorted(profile.statutory_material_families))})")
@@ -541,30 +563,75 @@ def evaluate_candidate_evidence(
         contradictions.append("Form contradiction: query specifies rigid, candidate is flexible")
     if re.search(r"\broasted\b", proc_low) and re.search(r"\bnot\s+roasted\b|\bunroasted\b", cand_hier_low):
         contradictions.append("Process contradiction: query specifies roasted, candidate is unroasted")
+    q_full_state = f"{proc_low} {product_intent.raw_description or ''}".lower()
+    if re.search(r"\b(?:unrecorded|blank|recordable)\b", q_full_state) and re.search(r"\brecorded\b", cand_hier_low) and not re.search(r"\bunrecorded|recordable|blank\b", cand_hier_low):
+        contradictions.append("State contradiction: query specifies unrecorded/blank/recordable media, candidate specifies recorded media")
+    elif re.search(r"\brecorded\b", q_full_state) and not re.search(r"\bunrecorded|recordable|blank\b", q_full_state) and re.search(r"\bunrecorded\b", cand_hier_low) and not re.search(r"\brecorded\b", cand_hier_low):
+        contradictions.append("State contradiction: query specifies recorded media, candidate specifies unrecorded media")
 
-    # Generic negated-attribute check (e.g., "non-circular" vs "circular", "non-cellular" vs "cellular")
+    # Mutually-exclusive prime-mover / power-source contradiction (e.g. wind vs water/steam/solar/nuclear)
+    _power_sources = {
+        "wind": r"\bwind[-\s]*powered\b|\bwind\s+turbine\b|\bwindmill\b",
+        "water_hydro": r"\bwater\s+turbine\b|\bhydro[-\s]*electric\b|\bhydraulic\s+turbine\b",
+        "steam": r"\bsteam\s+turbine\b|\bvapor\s+turbine\b",
+        "solar": r"\bsolar\b|\bphotovoltaic\b",
+        "nuclear": r"\bnuclear\s+reactor\b",
+    }
+    q_pm = {k for k, pat in _power_sources.items() if re.search(pat, q_full_state)}
+    c_pm = {k for k, pat in _power_sources.items() if re.search(pat, cand_hier_low)}
+    if q_pm and c_pm and not (q_pm & c_pm):
+        contradictions.append(
+            f"Power-source contradiction: query specifies {sorted(q_pm)}, candidate specifies {sorted(c_pm)}"
+        )
+
+    # Statutory engine/propulsion type contradiction (spark-ignition/petrol vs compression-ignition/diesel)
+    _cand_pos_eng = re.sub(r"\bother\s+than\s+spark[-\s]*ignition\b|\bnot\s+spark[-\s]*ignition\b", " ", cand_hier_low)
+    q_spark = bool(re.search(r"\b(?:petrol|gasoline|spark[-\s]*ignition)\b", f"{proc_low} {product_intent.raw_description or ''}".lower()))
+    q_diesel = bool(re.search(r"\b(?:diesel|compression[-\s]*ignition)\b", f"{proc_low} {product_intent.raw_description or ''}".lower()))
+    c_spark = bool(re.search(r"\b(?:spark[-\s]*ignition|petrol|gasoline)\b", _cand_pos_eng))
+    c_diesel = bool(re.search(r"\b(?:compression[-\s]*ignition|diesel)\b", cand_hier_low))
+    if q_spark and not q_diesel and c_diesel and not c_spark:
+        contradictions.append("Propulsion contradiction: query specifies spark-ignition/petrol, candidate specifies diesel/compression-ignition")
+    elif q_diesel and not q_spark and c_spark and not c_diesel:
+        contradictions.append("Propulsion contradiction: query specifies diesel/compression-ignition, candidate specifies spark-ignition/petrol")
+
+    # Generic negated-attribute check (e.g., "non-circular" vs "circular", "unplasticised" vs "plasticised")
     query_neg_source = f"{proc_low} {product_intent.raw_description or ''}".lower()
-    cand_pos_low = re.sub(r"\b(?:non[-\s]+|not\s+)([a-z]{4,})\b", " ", cand_hier_low)
+    cand_pos_low = re.sub(r"\b(?:non[-\s]+|not\s+|un)([a-z]{4,})\b", " ", cand_hier_low)
     _neg_stop = {"this", "that", "with", "from", "than", "more", "less", "such", "other", "none"}
+    neg_attrs: Set[str] = set()
     for neg_attr in re.findall(r"\bnon[-\s]+([a-z]{4,})\b", query_neg_source):
-        if neg_attr not in _neg_stop and re.search(rf"\b{re.escape(neg_attr)}\b", cand_pos_low):
+        if neg_attr not in _neg_stop:
+            neg_attrs.add(neg_attr)
+    for neg_attr in re.findall(r"\bun([a-z]{5,}(?:ed|ised|ized|able|ible|bleached|worked|alloyed))\b", query_neg_source):
+        if neg_attr not in _neg_stop:
+            neg_attrs.add(neg_attr)
+    for neg_attr in sorted(neg_attrs):
+        if re.search(rf"\b{re.escape(neg_attr)}\b", cand_pos_low):
             contradictions.append(
-                f"Attribute contradiction: query specifies non-{neg_attr}, candidate specifies {neg_attr}"
+                f"Attribute contradiction: query specifies un/non-{neg_attr}, candidate specifies {neg_attr}"
             )
 
-    # Negative statutory phrasing check (e.g., "not containing X", "other than X"),
+    # Negative statutory phrasing check (e.g., "not containing X", "other than T-shirts"),
     # explicitly ignoring permissive "whether or not containing X" clauses.
     cand_desc_low = re.sub(
         r"\bwhether\s+or\s+not\s+containing\b",
         "optionally_containing",
         f"{profile.tariff_item_desc} {profile.statutory_description}".lower(),
     )
-    neg_matches = re.findall(r"\b(?:not\s+containing|other\s+than\s+(?:of\s+)?|excluding)\s+([a-z0-9\s]{3,30}?)(?:[,;]|$)", cand_desc_low)
+    neg_matches = re.findall(r"\b(?:not\s+containing|other\s+than(?:\s+of)?|excluding)\s+([a-z0-9\-\s]{3,40}?)(?:[,;\)]|$)", cand_desc_low)
     query_full_low = f"{product_intent.finished_article} {query_mat_text} {' '.join(product_intent.ingredients_or_additives)}".lower()
+    _q_hyphen_words = {_stem(t.replace("-", "")) for t in re.findall(r"\b[a-z0-9]+-[a-z0-9]+\b", query_full_low)}
+    # Strip hyphenated tokens from base tokenization so "t-shirt" -> "tshirt" (not plain "shirt")
+    q_full_no_hyphen = re.sub(r"\b[a-z0-9]+-[a-z0-9]+\b", " ", query_full_low)
+    q_full_toks = _tokenize_content(q_full_no_hyphen) | _q_hyphen_words
     for neg_phrase in neg_matches:
-        neg_toks = _tokenize_content(neg_phrase)
-        if neg_toks and neg_toks.issubset(_tokenize_content(query_full_low)):
-            contradictions.append(f"Statutory exclusion matched: '{neg_phrase.strip()}'")
+        neg_clean = neg_phrase.strip()
+        _neg_hw = {_stem(t.replace("-", "")) for t in re.findall(r"\b[a-z0-9]+-[a-z0-9]+\b", neg_clean)}
+        _neg_no_hyphen = re.sub(r"\b[a-z0-9]+-[a-z0-9]+\b", " ", neg_clean)
+        neg_toks = _tokenize_content(_neg_no_hyphen) | _neg_hw
+        if neg_toks and neg_toks.issubset(q_full_toks):
+            contradictions.append(f"Statutory exclusion matched: '{neg_clean}'")
 
     # 5. Evidence-based verdict & 5-way compatibility classification:
     # Combine master-derived corpus qualifier/material vocabularies with structural seeds
@@ -650,7 +717,8 @@ def evaluate_candidate_evidence(
     ):
         status = SUPPORTED
         compatibility_level = "DIRECT_COMPATIBILITY"
-        ev_score = min(1.0, 0.65 * cross_encoder_confidence + 0.25 + (0.10 if material_matches else 0.0))
+        propulsion_bonus = 0.05 if ((q_spark and c_spark and not c_diesel) or (q_diesel and c_diesel and not c_spark)) else 0.0
+        ev_score = min(1.0, 0.65 * cross_encoder_confidence + 0.25 + (0.10 if material_matches else 0.0) + propulsion_bonus)
     elif (article_matches and (primary_article_matched or head_is_broad or relation_value in ("SAME_PRODUCT", "INSUFFICIENT_INFORMATION"))) or (
         material_matches and not material_only_no_article and (primary_article_matched or not has_article_query)
     ):

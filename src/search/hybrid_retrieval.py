@@ -536,21 +536,23 @@ class HybridHSNEngine:
         if chapter_weights:
             max_cw = max(chapter_weights.values())
             focused_chapters = sorted(
-                [(ch, cw) for ch, cw in chapter_weights.items() if cw >= max_cw * 0.40],
+                [(ch, cw) for ch, cw in chapter_weights.items() if cw >= max_cw * 0.50],
                 key=lambda kv: -kv[1],
-            )[:4]
+            )[:3]
             if not focused_chapters:
                 focused_chapters = sorted(chapter_weights.items(), key=lambda kv: -kv[1])[:1]
-            focused_weights = dict(focused_chapters)
-            total_w = sum(focused_weights.values()) or 1.0
-            total_ch_budget = max(12, min(k_eff, int(round(0.75 * k_eff))))
+            # Nonlinear weighting emphasizes top-1/top-2 chapters so large machinery/apparel
+            # chapters are not starved of leaf slots by secondary chapter ties.
+            focused_pow = {ch: (cw / max_cw) ** 1.5 if max_cw > 0 else 1.0 for ch, cw in focused_chapters}
+            total_w = sum(focused_pow.values()) or 1.0
+            total_ch_budget = max(14, min(int(round(0.95 * k_eff)), k_eff))
 
             ch_index_map = getattr(self, "_leaf_rows_by_chapter", None) or getattr(self, "_rows_by_chapter", {})
             for ch_code, ch_conf in focused_chapters:
                 ch_arr = ch_index_map.get(ch_code)
                 if ch_arr is None or len(ch_arr) == 0:
                     continue
-                alloc = max(4 if k_eff >= 15 else 2, int(round(total_ch_budget * (ch_conf / total_w))))
+                alloc = max(4 if k_eff >= 15 else 2, int(round(total_ch_budget * (focused_pow[ch_code] / total_w))))
                 alloc = min(alloc, len(ch_arr))
                 chapter_allocations[ch_code] = alloc
                 ch_bm25_order = ch_arr[np.argsort(bm25_composite[ch_arr])[::-1][:alloc]]

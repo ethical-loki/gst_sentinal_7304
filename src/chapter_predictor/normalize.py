@@ -313,7 +313,7 @@ def extract_query_facts(raw_text: str) -> Dict[str, Any]:
                 sing = t_clean[:-3] + "y"
             elif t_clean.endswith("es") and len(t_clean) > 3 and t_clean[-3] in "shxz":
                 sing = t_clean[:-2]
-            elif t_clean.endswith("s") and not t_clean.endswith("ss") and len(t_clean) > 3:
+            elif t_clean.endswith("s") and not t_clean.endswith(("ss", "us", "is", "os", "as")) and len(t_clean) > 3:
                 sing = t_clean[:-1]
             else:
                 sing = t_clean

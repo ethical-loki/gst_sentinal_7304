@@ -116,9 +116,12 @@ def identify_relevant_chapters(
     if not index:
         return []
 
-    art_toks = _tok(product_intent.finished_article) | _tok(" ".join(product_intent.alternative_names_and_aliases))
+    raw_art_toks = _tok(product_intent.finished_article) | _tok(" ".join(product_intent.alternative_names_and_aliases))
     head_toks = _tok(getattr(product_intent, "product_head_noun", "") or "")
     mat_toks = _tok(" ".join(product_intent.constituent_materials))
+    # Exclude explicit constituent-material tokens (unless also the head noun) from article tokens
+    # so raw-material chapters do not double-score finished goods queries in title matching.
+    art_toks = (raw_art_toks - (mat_toks - head_toks)) or raw_art_toks
     fn_toks = _tok(product_intent.function_use or "")
     proc_toks = _tok(product_intent.processing_form or "")
     comp_toks = _tok(" ".join(product_intent.components_or_parts))

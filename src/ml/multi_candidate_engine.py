@@ -175,7 +175,7 @@ class AdaptiveCandidateDiscoverer:
                 rec_id = str(rec.get("source_record_id") or f"hsn_{rec.get('hsn_code', idx)}")
                 if rec_id in evaluated_map or rec_id in raw_by_id:
                     continue
-                if len(raw_by_id) + len(new_rows) >= budget:
+                if len(raw_by_id) >= budget:
                     break
                 raw_by_id[rec_id] = rec
                 src = str(rec.get("retrieval_source") or "hybrid")
@@ -703,9 +703,20 @@ class MultiCandidateEngine:
             RelationLabel.RELATED_PRODUCT: 2,
             RelationLabel.UNRELATED: 3,
         }
+        def _stem_leaf_tok(w: str) -> str:
+            if len(w) > 4 and w.endswith("ies"):
+                return w[:-3] + "y"
+            if len(w) > 3 and w.endswith("s") and not w.endswith(("ss", "us", "is", "os", "as")):
+                return w[:-1]
+            return w
+
         _q_toks = {
-            t for t in re.findall(r"\b[a-z0-9]{3,}\b", effective_query.lower())
+            _stem_leaf_tok(t) for t in re.findall(r"\b[a-z0-9]{3,}\b", effective_query.lower())
             if t not in {"and", "the", "for", "with", "other", "from", "type", "made"}
+        }
+        _q_toks |= {
+            _stem_leaf_tok(h.replace("-", ""))
+            for h in re.findall(r"\b[a-z0-9]+-[a-z0-9]+\b", effective_query.lower())
         }
 
         def _composite_rank_score(c: ClassifiedTariffCandidate) -> float:
@@ -713,6 +724,8 @@ class MultiCandidateEngine:
             ev_info = evidence_by_hsn.get(hsn, {})
             raw = disc.raw_records_by_id.get(hsn, {})
             ce_conf = float(c.confidence)
+            raw_logit = float(getattr(c.candidate, "raw_logit", 0.0) or 0.0)
+            logit_norm = max(0.0, min(1.0, (raw_logit + 4.0) / 10.0))
             ev_score = float(ev_info.get("evidence_score", 0.0))
             rrf_norm = min(1.0, float(raw.get("rrf_score", 0.0) or 0.0) / 0.04)
 
@@ -720,17 +733,22 @@ class MultiCandidateEngine:
             sub6_desc = str(raw.get("subheading_6digit_desc") or "").strip().lower()
             leaf_specificity_bonus = 0.0
             if tariff_desc in {"other", "others", "- other", "-- other", "--- other", "---- other"}:
-                leaf_specificity_bonus = -0.015
-            elif _q_toks:
-                leaf_toks = set(re.findall(r"\b[a-z0-9]{3,}\b", f"{tariff_desc} {sub6_desc}"))
+                leaf_specificity_bonus -= 0.015
+            if sub6_desc in {"other", "others", "- other", "-- other"}:
+                leaf_specificity_bonus -= 0.025
+            if _q_toks and tariff_desc not in {"other", "others", "- other", "-- other", "--- other", "---- other"}:
+                leaf_text = f"{tariff_desc} {sub6_desc}"
+                leaf_toks = {_stem_leaf_tok(w) for w in re.findall(r"\b[a-z0-9]{3,}\b", leaf_text)}
+                leaf_toks |= {_stem_leaf_tok(h.replace("-", "")) for h in re.findall(r"\b[a-z0-9]+-[a-z0-9]+\b", leaf_text)}
                 if _q_toks & leaf_toks:
-                    leaf_specificity_bonus = 0.04
+                    leaf_specificity_bonus += 0.04
 
-            return (0.58 * ce_conf) + (0.27 * ev_score) + (0.15 * rrf_norm) + leaf_specificity_bonus
+            return (0.46 * ce_conf) + (0.18 * logit_norm) + (0.28 * ev_score) + (0.08 * rrf_norm) + leaf_specificity_bonus
 
         qualifying.sort(
             key=lambda c: (
                 _ev_rank.get(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status", POSSIBLY_SUPPORTED), 2),
+                1 if evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch") else 0,
                 _rel_rank.get(c.relation, 3),
                 -_composite_rank_score(c),
                 -c.confidence,
@@ -778,7 +796,12 @@ class MultiCandidateEngine:
         # 4. Compute calibrated query-level confidences
         bundle = getattr(self.classifier, "calibration_bundle", None)
         same = [c for c in qualifying_ordered if c.relation == RelationLabel.SAME_PRODUCT]
-        same_leaves = [c for c in same if _is_leaf_8digit(c)]
+        same_leaves_all = [c for c in same if _is_leaf_8digit(c)]
+        clean_same_leaves = [
+            c for c in same_leaves_all
+            if not evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch")
+        ]
+        same_leaves = clean_same_leaves if clean_same_leaves else same_leaves_all
         same_parents = [c for c in parent_qualifying if c.relation == RelationLabel.SAME_PRODUCT]
         insuff = [c for c in qualifying_ordered if c.relation == RelationLabel.INSUFFICIENT_INFORMATION]
         related = [c for c in qualifying_ordered if c.relation == RelationLabel.RELATED_PRODUCT]
@@ -862,8 +885,27 @@ class MultiCandidateEngine:
             questions = []
         diff_ms = round((time.perf_counter() - t_diff0) * 1000.0, 2)
 
-        # Compute independent confidences over ordered 8-digit leaves (fallback to full pool if no leaves)
-        conf_pool = [c for c in qualifying_ordered if _is_leaf_8digit(c)] or qualifying_ordered
+        # Compute independent confidences over ordered 8-digit leaves (excluding role-mismatched
+        # distractors and distant weak off-subheading items when a clean winner exists).
+        raw_leaf_pool = [c for c in qualifying_ordered if _is_leaf_8digit(c)]
+        if same_leaves and raw_leaf_pool:
+            top1_ev_st = evidence_by_hsn.get(same_leaves[0].candidate.hsn_code, {}).get("status")
+            top1_raw_l = float(getattr(same_leaves[0].candidate, "raw_logit", 0.0) or 0.0)
+            top1_sub6 = same_leaves[0].candidate.hsn_code[:6]
+            conf_pool = [
+                c for c in raw_leaf_pool
+                if (
+                    not (clean_same_leaves and evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch"))
+                    and not (
+                        top1_ev_st == SUPPORTED
+                        and c.relation in (RelationLabel.INSUFFICIENT_INFORMATION, RelationLabel.RELATED_PRODUCT)
+                        and c.candidate.hsn_code[:6] != top1_sub6
+                        and float(getattr(c.candidate, "raw_logit", 0.0) or 0.0) < (top1_raw_l - 2.5)
+                    )
+                )
+            ] or raw_leaf_pool
+        else:
+            conf_pool = raw_leaf_pool or qualifying_ordered
         best_rel_conf = (
             qualifying_ordered[0].relevance_confidence
             if qualifying_ordered and qualifying_ordered[0].relevance_confidence > 0
@@ -940,6 +982,7 @@ class MultiCandidateEngine:
         else:
             unique_headings = {c.candidate.hsn_code[:4] for c in same_leaves if c.candidate.hsn_code}
             top1_logit = float(getattr(same_leaves[0].candidate, "raw_logit", 0.0) or 0.0)
+            top1_has_mat = bool(evidence_by_hsn.get(same_leaves[0].candidate.hsn_code, {}).get("material_matches"))
             competing_rescued = [
                 c for c in qualifying_ordered
                 if evidence_by_hsn.get(c.candidate.hsn_code, {}).get("rescued_by_statutory_evidence")
@@ -948,6 +991,7 @@ class MultiCandidateEngine:
                 and len(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("statutory_article_matches") or []) >= 2
                 and evidence_by_hsn.get(c.candidate.hsn_code, {}).get("heading_compatible")
                 and not evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch")
+                and not (top1_has_mat and not evidence_by_hsn.get(c.candidate.hsn_code, {}).get("material_matches"))
                 and float(getattr(c.candidate, "raw_logit", 0.0) or 0.0) >= -3.0
                 and (top1_logit - float(getattr(c.candidate, "raw_logit", 0.0) or 0.0)) <= 5.5
             ]

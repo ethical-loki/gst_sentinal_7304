@@ -36,7 +36,7 @@ def main() -> None:
     used_hsns = {r["expected_hsn"] for r in INDEPENDENT_100}
     used_queries = {r["query"].lower().strip() for r in INDEPENDENT_100}
     for fname in ("full_pairs_train.parquet", "full_pairs_val.parquet"):
-        p = ROOT / "data" / fname
+        p = ROOT / "data" / "training_pairs" / fname
         if p.exists():
             tdf = pd.read_parquet(p)
             if "hsn_code" in tdf.columns:
