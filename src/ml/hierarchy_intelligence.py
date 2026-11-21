@@ -21,6 +21,7 @@ Derives for any tariff record:
 
 from __future__ import annotations
 
+from functools import lru_cache
 import logging
 import re
 from collections import Counter, defaultdict
@@ -86,6 +87,7 @@ _MATERIAL_PREP_RE = re.compile(
 )
 
 
+@lru_cache(maxsize=8192)
 def _stem_token(tok: str) -> str:
     w = (tok or "").lower().strip()
     if len(w) <= 3:

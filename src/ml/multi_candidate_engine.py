@@ -194,7 +194,22 @@ class AdaptiveCandidateDiscoverer:
             t1 = time.perf_counter()
             to_score: List[Dict[str, Any]] = []
             cached_results: List[Tuple[Dict[str, Any], ClassifiedTariffCandidate]] = []
+            prior_active_exists = any(
+                c.relation in (RelationLabel.SAME_PRODUCT, RelationLabel.INSUFFICIENT_INFORMATION)
+                for c in evaluated_map.values()
+            )
             for rec in new_rows:
+                # In expansion rounds when strong active candidates already exist, prune pure off-chapter
+                # zero-BM25 low-cosine tail noise before invoking the CrossEncoder.
+                if (
+                    rounds >= 2
+                    and prior_active_exists
+                    and not rec.get("chapter_guided")
+                    and float(rec.get("bm25_score") or 0.0) <= 0.0
+                    and float(rec.get("vector_score") or 0.0) < 0.22
+                ):
+                    discarded_count += 1
+                    continue
                 ctx = format_tariff_context(rec)
                 if ctx in ctx_score_cache:
                     r_score, r_logit, r_rel, r_conf = ctx_score_cache[ctx]
@@ -257,6 +272,21 @@ class AdaptiveCandidateDiscoverer:
                 c.relation in (RelationLabel.SAME_PRODUCT, RelationLabel.INSUFFICIENT_INFORMATION)
                 for c in evaluated_map.values()
             )
+            same_so_far = [
+                c for c in evaluated_map.values() if c.relation == RelationLabel.SAME_PRODUCT
+            ]
+            if (
+                rounds == 1
+                and not exhaustive
+                and len(raw_by_id) >= 100
+                and len(same_so_far) >= 4
+                and max((c.confidence for c in same_so_far), default=0.0)
+                >= max(0.84, getattr(self.classifier, "same_product_threshold", 0.725) + 0.08)
+            ):
+                stopping_reason = "round1_strong_match_stabilized"
+                discovery_complete = True
+                break
+
             if rounds > 1 and ((has_active_pool and new_active == 0) or new_qualifying == 0):
                 stopping_reason = (
                     "expansion_tail_stabilized_zero_new_active"
@@ -476,8 +506,8 @@ class MultiCandidateEngine:
         relevance_classifier: Optional[RelevanceClassifier] = None,
         statutory_index: Optional[StatutoryMasterIndex] = None,
         feedback_collector: Optional[FeedbackCollector] = None,
-        initial_branch_k: int = 70,
-        max_eval_budget: Optional[int] = 280,
+        initial_branch_k: int = 65,
+        max_eval_budget: Optional[int] = 220,
         inference_timeout_s: Optional[float] = None,
     ):
         self.hybrid_engine = hybrid_engine or HybridHSNEngine.get_instance()

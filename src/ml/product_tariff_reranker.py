@@ -10,8 +10,10 @@ scoring is purely driven by the model over the candidate tariff context.
 
 import logging
 import math
+import os
 import re
 import time
+import warnings
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
@@ -131,9 +133,10 @@ class ProductTariffReranker:
         self,
         model_name_or_path: str = DEFAULT_RERANKER_MODEL,
         device: Optional[str] = None,
-        max_length: int = 256,
+        max_length: int = 384,
         local_files_only: bool = True,
-        batch_size: int = 64,
+        batch_size: int = 16,
+        quantize_int8: Optional[bool] = None,
     ):
         self.model_name_or_path = model_name_or_path
         if device is None:
@@ -142,6 +145,7 @@ class ProductTariffReranker:
         self.device = device
         self.max_length = max_length
         self.batch_size = batch_size
+        self._quantized_int8 = False
 
         global CrossEncoder
         if CrossEncoder is None:
@@ -159,12 +163,45 @@ class ProductTariffReranker:
             max_length=max_length,
             local_files_only=local_files_only,
         )
+        # Apply CPU inference optimizations: IntraOp thread tuning + Dynamic INT8 Linear quantization
+        use_int8 = (
+            (os.environ.get("GST_DISABLE_INT8_RERANKER", "").strip() != "1")
+            if quantize_int8 is None
+            else bool(quantize_int8)
+        )
+        if self.device == "cpu":
+            try:
+                import torch
+                target_threads = min(6, os.cpu_count() or 4)
+                if torch.get_num_threads() < target_threads:
+                    torch.set_num_threads(target_threads)
+                if (
+                    use_int8
+                    and hasattr(self.model, "_modules")
+                    and "0" in self.model._modules
+                    and hasattr(self.model[0], "model")
+                ):
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", DeprecationWarning)
+                        warnings.simplefilter("ignore", UserWarning)
+                        self.model[0].model = torch.ao.quantization.quantize_dynamic(
+                            self.model[0].model,
+                            {torch.nn.Linear},
+                            dtype=torch.qint8,
+                        )
+                    self._quantized_int8 = True
+            except Exception as exc:
+                logger.warning(f"CPU INT8 dynamic quantization skipped ({exc}); using FP32")
+
         self.load_time_s = time.perf_counter() - t0
         self._pair_cache: Dict[Tuple[str, str], float] = {}
         self._pair_cache_max = 20000
         self.pair_cache_hits = 0
         self.pair_cache_misses = 0
-        logger.info(f"Loaded '{model_name_or_path}' in {self.load_time_s:.2f}s")
+        logger.info(
+            f"Loaded '{model_name_or_path}' in {self.load_time_s:.2f}s "
+            f"(max_length={self.max_length}, batch_size={self.batch_size}, int8={self._quantized_int8})"
+        )
 
     def score_pairs(self, pairs: Sequence[Sequence[str]]) -> List[float]:
         """Scores a list of (query, tariff_context) pairs, returning raw logits (with in-memory pair cache)."""

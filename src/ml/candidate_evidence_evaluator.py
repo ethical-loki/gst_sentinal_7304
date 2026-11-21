@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from src.ml.hierarchy_intelligence import (
@@ -137,6 +138,7 @@ _COMPATIBLE_FAMILIES: Set[frozenset] = {
 }
 
 
+@lru_cache(maxsize=16384)
 def _stem(tok: str) -> str:
     t = tok.lower().strip()
     if len(t) > 4 and t.endswith("ies"):
