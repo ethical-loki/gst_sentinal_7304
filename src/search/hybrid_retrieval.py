@@ -57,14 +57,36 @@ STOPWORDS = {
 
 
 def tokenize(text: str) -> List[str]:
-    """Lightweight whitespace & punctuation tokenizer with stopword suppression and hyphenated compound preservation."""
+    """Lightweight whitespace & punctuation tokenizer with morphological plural stemming, UK/US normalization, and hyphenated compound preservation."""
     if not text:
         return []
-    clean = text.lower()
+    clean = (
+        text.lower()
+        .replace("fibre", "fiber")
+        .replace("tyre", "tire")
+        .replace("aluminium", "aluminum")
+        .replace("stailess", "stainless")
+        .replace("vaccum", "vacuum")
+        .replace("digial", "digital")
+    )
     # Expand single-character hyphenated compounds (e.g. t-shirt -> tshirts shirt, v-neck -> vneck neck)
     clean = re.sub(r"\b([a-zA-Z0-9])-([a-zA-Z0-9]+)\b", r"\1\2 \2", clean)
     words = re.findall(r"\b[a-zA-Z0-9]{2,}\b", clean)
-    return [w for w in words if w not in STOPWORDS]
+    out: List[str] = []
+    for w in words:
+        if w in STOPWORDS:
+            continue
+        if len(w) > 4 and w.endswith("ies"):
+            stem = w[:-3] + "y"
+        elif len(w) > 4 and w.endswith(("ches", "shes", "xes", "zes")):
+            stem = w[:-2]
+        elif len(w) > 3 and w.endswith("s") and not w.endswith(("ss", "us", "is", "os", "lens")):
+            stem = w[:-1]
+        else:
+            stem = w
+        if stem not in STOPWORDS:
+            out.append(stem)
+    return out
 
 
 class HybridHSNEngine:
@@ -102,11 +124,30 @@ class HybridHSNEngine:
         self.total_records = len(self.records)
 
         rows_by_ch_tmp: Dict[str, List[int]] = {}
+        leaf_idxs_tmp: List[int] = []
+        parent_idxs_tmp: List[int] = []
+        leaf_rows_by_ch_tmp: Dict[str, List[int]] = {}
         for idx_r, rec_r in enumerate(self.records):
             ch_r = str(rec_r.get("chapter_code") or "").zfill(2)
             rows_by_ch_tmp.setdefault(ch_r, []).append(idx_r)
+            hsn_r = str(rec_r.get("hsn_code") or rec_r.get("code_str") or "").strip()
+            if len(hsn_r) == 8 and hsn_r.isdigit():
+                leaf_idxs_tmp.append(idx_r)
+                leaf_rows_by_ch_tmp.setdefault(ch_r, []).append(idx_r)
+            else:
+                parent_idxs_tmp.append(idx_r)
         self._rows_by_chapter: Dict[str, np.ndarray] = {
             ch: np.array(idxs, dtype=int) for ch, idxs in rows_by_ch_tmp.items()
+        }
+        self._leaf_indices: np.ndarray = (
+            np.array(leaf_idxs_tmp, dtype=int)
+            if leaf_idxs_tmp
+            else np.arange(self.total_records, dtype=int)
+        )
+        self._parent_indices: np.ndarray = np.array(parent_idxs_tmp, dtype=int)
+        self._leaf_rows_by_chapter: Dict[str, np.ndarray] = {
+            ch: np.array(leaf_rows_by_ch_tmp[ch], dtype=int) if leaf_rows_by_ch_tmp.get(ch) else arr
+            for ch, arr in self._rows_by_chapter.items()
         }
 
         # 1. Initialize BM25 Multi-Field Corpora from the exact records
@@ -268,10 +309,10 @@ class HybridHSNEngine:
             return (arr - arr.min()) / denom
 
         bm25_composite = (
-            3.0 * min_max(s_head) +
-            2.5 * min_max(s_syn) +
-            1.5 * min_max(s_chap) +
-            1.0 * min_max(s_sub)
+            2.5 * min_max(s_head) +
+            2.2 * min_max(s_syn) +
+            1.2 * min_max(s_chap) +
+            2.2 * min_max(s_sub)
         )
         top_bm25_indices = np.argsort(bm25_composite)[::-1][:branch_k]
 
@@ -427,10 +468,10 @@ class HybridHSNEngine:
         s_sub = np.array(self.bm25_subclause.get_scores(q_tokens)) if self.bm25_subclause is not None else np.zeros(self.total_records)
 
         bm25_primary = (
-            3.0 * min_max(s_head) +
-            2.5 * min_max(s_syn) +
-            1.5 * min_max(s_chap) +
-            1.0 * min_max(s_sub)
+            2.5 * min_max(s_head) +
+            2.2 * min_max(s_syn) +
+            1.2 * min_max(s_chap) +
+            2.2 * min_max(s_sub)
         )
 
         # Secondary representations weighted strictly below the primary commercial article anchor
@@ -462,9 +503,16 @@ class HybridHSNEngine:
         k_eff = min(max(1, int(branch_k)), self.total_records)
         k_rrf = 60.0
 
-        # Path B: Global Safeguard Retrieval (full statutory master)
-        top_bm25_global = np.argsort(bm25_composite)[::-1][:k_eff]
-        top_vec_global = np.argsort(cos_sims)[::-1][:k_eff]
+        # Prioritize 8-digit statutory tariff leaves so 4/6-digit parent headings
+        # cannot crowd out leaf candidates inside the retrieval budget.
+        leaf_pool = getattr(self, "_leaf_indices", None)
+        if leaf_pool is None or len(leaf_pool) == 0:
+            leaf_pool = np.arange(self.total_records, dtype=int)
+        k_leaf = min(k_eff, len(leaf_pool))
+
+        # Path B: Global Safeguard Retrieval (across all 8-digit tariff leaves)
+        top_bm25_global = leaf_pool[np.argsort(bm25_composite[leaf_pool])[::-1][:k_leaf]]
+        top_vec_global = leaf_pool[np.argsort(cos_sims[leaf_pool])[::-1][:k_leaf]]
         global_bm25_set = set(int(i) for i in top_bm25_global)
         global_vec_set = set(int(i) for i in top_vec_global)
 
@@ -479,7 +527,7 @@ class HybridHSNEngine:
             global_set.add(i)
             rrf_map[i] = rrf_map.get(i, 0.0) + (1.0 / (k_rrf + rank + 1))
 
-        # Path A: Chapter-Allocated Retrieval across Stage 1 chapter candidates
+        # Path A: Chapter-Allocated Retrieval across Stage 1 chapter candidates (leaf-prioritized)
         chapter_weights: Dict[str, float] = reps["chapter_weights"]
         guided_chapters: Set[str] = set(chapter_weights.keys())
         chapter_set: Set[int] = set()
@@ -488,17 +536,18 @@ class HybridHSNEngine:
         if chapter_weights:
             max_cw = max(chapter_weights.values())
             focused_chapters = sorted(
-                [(ch, cw) for ch, cw in chapter_weights.items() if cw >= max_cw * 0.45],
+                [(ch, cw) for ch, cw in chapter_weights.items() if cw >= max_cw * 0.40],
                 key=lambda kv: -kv[1],
-            )[:3]
+            )[:4]
             if not focused_chapters:
                 focused_chapters = sorted(chapter_weights.items(), key=lambda kv: -kv[1])[:1]
             focused_weights = dict(focused_chapters)
             total_w = sum(focused_weights.values()) or 1.0
-            total_ch_budget = max(10, min(k_eff, int(round(0.55 * k_eff))))
+            total_ch_budget = max(12, min(k_eff, int(round(0.75 * k_eff))))
 
+            ch_index_map = getattr(self, "_leaf_rows_by_chapter", None) or getattr(self, "_rows_by_chapter", {})
             for ch_code, ch_conf in focused_chapters:
-                ch_arr = getattr(self, "_rows_by_chapter", {}).get(ch_code)
+                ch_arr = ch_index_map.get(ch_code)
                 if ch_arr is None or len(ch_arr) == 0:
                     continue
                 alloc = max(4 if k_eff >= 15 else 2, int(round(total_ch_budget * (ch_conf / total_w))))
@@ -515,6 +564,22 @@ class HybridHSNEngine:
                     i = int(idx)
                     chapter_set.add(i)
                     rrf_map[i] = rrf_map.get(i, 0.0) + (0.65 / (k_rrf + rank + 1)) + (0.004 * ch_conf)
+
+        # Include top-3 parent heading matches without consuming any 8-digit leaf slot
+        # so broad/abbreviated queries still retain heading-level context for Stage 3.
+        parent_pool = getattr(self, "_parent_indices", None)
+        if k_eff >= 15 and parent_pool is not None and len(parent_pool) > 0:
+            top_p_bm25 = parent_pool[np.argsort(bm25_composite[parent_pool])[::-1][:3]]
+            top_p_vec = parent_pool[np.argsort(cos_sims[parent_pool])[::-1][:3]]
+            for rank, idx in enumerate(top_p_bm25):
+                if float(bm25_composite[int(idx)]) > 0.0:
+                    i = int(idx)
+                    global_set.add(i)
+                    rrf_map[i] = rrf_map.get(i, 0.0) + (0.30 / (k_rrf + rank + 1))
+            for rank, idx in enumerate(top_p_vec):
+                i = int(idx)
+                global_set.add(i)
+                rrf_map[i] = rrf_map.get(i, 0.0) + (0.30 / (k_rrf + rank + 1))
 
         ordered = sorted(rrf_map.keys(), key=lambda i: rrf_map[i], reverse=True)
         out: List[Dict[str, Any]] = []

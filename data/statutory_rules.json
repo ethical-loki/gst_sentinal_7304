@@ -81,6 +81,22 @@
     "trigger_families": ["pharmaceuticals"],
     "target_chapter": "30",
     "boost": 0.020
+  },
+  {
+    "rule_id": "CHAPTER_98_PROJECT_IMPORTS",
+    "source_note": "Chapter 98 Note 2 & Heading 9801 (Project Imports Regulations, 1986)",
+    "trigger_families": ["project_imports", "machinery_plant"],
+    "condition_form": ["project", "expansion", "setting"],
+    "target_chapter": "98",
+    "boost": 0.010
+  },
+  {
+    "rule_id": "CHAPTER_98_PASSENGER_BAGGAGE_PERSONAL_STORES",
+    "source_note": "Chapter 98 Notes 1, 3, 4 & Headings 9802-9805 (Lab Chemicals <=500g, Baggage, Personal Post, Vessel/Aircraft Stores)",
+    "trigger_families": ["special_customs_provisions"],
+    "condition_form": ["baggage", "passenger", "personal", "post", "stores", "laboratory"],
+    "target_chapter": "98",
+    "boost": 0.010
   }
 ]
 

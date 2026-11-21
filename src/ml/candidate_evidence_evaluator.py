@@ -475,23 +475,50 @@ def evaluate_candidate_evidence(
     missing_attributes: List[str] = []
 
     if query_mat_fams and profile.statutory_material_families:
-        has_compatible = False
-        for qf in query_mat_fams:
-            if qf in profile.statutory_material_families:
-                has_compatible = True
-                break
-            for cf in profile.statutory_material_families:
-                if frozenset({qf, cf}) in _COMPATIBLE_FAMILIES:
+        # Heading clauses with permissive "any material or of X" (e.g. Heading 9404 bedding stuffed
+        # with "any material or of cellular rubber or plastics") do not contradict non-plastic/rubber leaves
+        # unless the 6-digit subheading or 8-digit tariff item itself mandates a specific material.
+        sub_leaf_txt = f"{profile.subheading_6digit_desc} {profile.tariff_item_desc}".strip()
+        sub_leaf_fams = _detect_material_families(_tokenize_content(sub_leaf_txt), sub_leaf_txt)
+        permissive_any_mat = (
+            not sub_leaf_fams
+            and bool(re.search(r"\bany\s+material\b", profile.heading_4digit_desc or "", re.IGNORECASE))
+        )
+        has_compatible = permissive_any_mat
+        if not has_compatible:
+            for qf in query_mat_fams:
+                if qf in profile.statutory_material_families:
                     has_compatible = True
                     break
-            if has_compatible:
-                break
+                for cf in profile.statutory_material_families:
+                    if frozenset({qf, cf}) in _COMPATIBLE_FAMILIES:
+                        has_compatible = True
+                        break
+                if has_compatible:
+                    break
         if not has_compatible:
             contradictions.append(
                 f"Material contradiction: query states {sorted(query_mat_fams)}, statutory description specifies {sorted(profile.statutory_material_families)}"
             )
     elif not query_mat_fams and profile.statutory_material_families:
         missing_attributes.append(f"material ({'/'.join(sorted(profile.statutory_material_families))})")
+
+    # Chapter 98 (Special Import Regimes: 9801 Project Imports, 9802 Lab Chemicals,
+    # 9803 Baggage, 9804 Personal Use by Post/Air, 9805 Ship/Aircraft Stores) requires explicit regime cues.
+    hsn4 = str(profile.hsn_code or "").strip()[:4]
+    if profile.chapter_code == "98" and hsn4 in {"9801", "9802", "9803", "9804", "9805"}:
+        full_q_low = f"{product_intent.raw_description or ''} {product_intent.finished_article or ''} {product_intent.packaging_or_presentation or ''} {product_intent.function_use or ''}".lower()
+        regime_patterns = {
+            "9801": r"\b(?:project\s+import|initial\s+setting\s+up|substantial\s+expansion|power\s+project)\b",
+            "9802": r"\b(?:laboratory\s+chemical|500\s*g|500\s*ml)\b",
+            "9803": r"\b(?:baggage|passenger|crew)\b",
+            "9804": r"\b(?:personal\s+use|imported\s+by\s+post|postal\s+import)\b",
+            "9805": r"\b(?:stores\s+on\s+board|vessel|aircraft\s+stores)\b",
+        }
+        if not re.search(regime_patterns[hsn4], full_q_low):
+            contradictions.append(
+                f"Chapter 98 special-provision regime (Heading {hsn4}) requires explicit import regime confirmation not present in description"
+            )
 
     # Processing / construction contradiction checks (e.g. knitted vs not knitted or crocheted)
     proc_low = f"{product_intent.processing_form or ''} {product_intent.finished_article}".lower()

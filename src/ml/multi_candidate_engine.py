@@ -476,8 +476,8 @@ class MultiCandidateEngine:
         relevance_classifier: Optional[RelevanceClassifier] = None,
         statutory_index: Optional[StatutoryMasterIndex] = None,
         feedback_collector: Optional[FeedbackCollector] = None,
-        initial_branch_k: int = 45,
-        max_eval_budget: Optional[int] = 250,
+        initial_branch_k: int = 70,
+        max_eval_budget: Optional[int] = 280,
         inference_timeout_s: Optional[float] = None,
     ):
         self.hybrid_engine = hybrid_engine or HybridHSNEngine.get_instance()

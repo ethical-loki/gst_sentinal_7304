@@ -36,12 +36,25 @@ _CHAPTER_INDEX_CACHE: Optional[List[Dict[str, Any]]] = None
 def _tok(text: str) -> Set[str]:
     if not text:
         return set()
-    words = re.findall(r"\b[a-z0-9]{2,}\b", text.lower())
+    clean = (
+        text.lower()
+        .replace("fibre", "fiber")
+        .replace("tyre", "tire")
+        .replace("aluminium", "aluminum")
+        .replace("stailess", "stainless")
+        .replace("vaccum", "vacuum")
+        .replace("digial", "digital")
+    )
+    words = re.findall(r"\b[a-z0-9]{2,}\b", clean)
     out: Set[str] = set()
     for w in words:
         if w in _STOP:
             continue
-        if len(w) > 3 and w.endswith("s") and not w.endswith("ss"):
+        if len(w) > 4 and w.endswith("ies"):
+            out.add(w[:-3] + "y")
+        elif len(w) > 4 and w.endswith(("ches", "shes", "xes", "zes")):
+            out.add(w[:-2])
+        elif len(w) > 3 and w.endswith("s") and not w.endswith(("ss", "us", "is", "os", "lens")):
             out.add(w[:-1])
         else:
             out.add(w)
@@ -71,9 +84,9 @@ def load_statutory_chapter_index(parquet_path: Path = DEFAULT_MASTER_PARQUET) ->
         mat_texts = grp["material_keywords"].dropna().astype(str).unique().tolist() if "material_keywords" in grp.columns else []
         stat_texts = grp["statutory_description"].dropna().astype(str).unique().tolist() if "statutory_description" in grp.columns else []
 
-        heading_toks = _tok(" ".join(h4_texts[:250]))
-        article_toks = _tok(" ".join(art_texts[:300])) | _tok(" ".join(stat_texts[:300]))
-        material_toks = _tok(" ".join(mat_texts[:250]))
+        heading_toks = _tok(" ".join(h4_texts))
+        article_toks = _tok(" ".join(art_texts)) | _tok(" ".join(stat_texts))
+        material_toks = _tok(" ".join(mat_texts))
 
         chapters.append({
             "chapter_code": str(ch_val).zfill(2),
@@ -104,6 +117,7 @@ def identify_relevant_chapters(
         return []
 
     art_toks = _tok(product_intent.finished_article) | _tok(" ".join(product_intent.alternative_names_and_aliases))
+    head_toks = _tok(getattr(product_intent, "product_head_noun", "") or "")
     mat_toks = _tok(" ".join(product_intent.constituent_materials))
     fn_toks = _tok(product_intent.function_use or "")
     proc_toks = _tok(product_intent.processing_form or "")
@@ -114,6 +128,9 @@ def identify_relevant_chapters(
         t_hits = sorted(art_toks & ch["title_tokens"])
         h_hits = sorted(art_toks & ch["heading_tokens"])
         a_hits = sorted(art_toks & ch["article_tokens"])
+        head_t_hits = head_toks & ch["title_tokens"]
+        head_h_hits = head_toks & ch["heading_tokens"]
+        head_a_hits = head_toks & ch["article_tokens"]
         m_title_hits = sorted(mat_toks & ch["title_tokens"])
         m_hits = sorted(mat_toks & ch["material_tokens"])
         f_hits = sorted(fn_toks & (ch["heading_tokens"] | ch["article_tokens"]))
@@ -123,6 +140,9 @@ def identify_relevant_chapters(
             3.0 * len(t_hits)
             + 2.2 * len(h_hits)
             + 1.5 * len(a_hits)
+            + 3.5 * len(head_t_hits)
+            + 2.5 * len(head_h_hits)
+            + 1.5 * len(head_a_hits)
             + 2.0 * len(m_title_hits)
             + 0.8 * len(m_hits)
             + 1.0 * len(f_hits)
