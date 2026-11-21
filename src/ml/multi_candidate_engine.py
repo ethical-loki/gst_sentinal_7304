@@ -517,6 +517,30 @@ class MultiCandidateEngine:
             if confirmed
             else orig
         )
+        # Safely append standard chemical/engineering acronym expansions (from Layer 1 map) so
+        # CrossEncoder and statutory evidence see full terms (e.g., PET -> polyethylene terephthalate)
+        _safe_abbr = {
+            "pet": "polyethylene terephthalate",
+            "pvc": "polyvinyl chloride",
+            "upvc": "unplasticised polyvinyl chloride",
+            "cpvc": "chlorinated polyvinyl chloride",
+            "hdpe": "high density polyethylene",
+            "ldpe": "low density polyethylene",
+            "lldpe": "linear low density polyethylene",
+            "ptfe": "polytetrafluoroethylene",
+            "smps": "switched mode power supply",
+            "pcb": "printed circuit board",
+            "mcb": "miniature circuit breaker",
+        }
+        q_lower = effective_query.lower()
+        expansions_to_add = [
+            full_t for abbr_t, full_t in _safe_abbr.items()
+            if re.search(rf"\b{re.escape(abbr_t)}\b", q_lower)
+            and full_t not in q_lower
+            and not (abbr_t == "pet" and any(a in q_lower for a in ("dog", "cat", "animal", "food", "bowl", "leash")))
+        ]
+        if expansions_to_add:
+            effective_query = f"{effective_query} ({', '.join(expansions_to_add)})"
 
         if not effective_query:
             return self._empty_response(orig, confirmed, page, page_size, t_total0)
@@ -732,8 +756,13 @@ class MultiCandidateEngine:
         # Dynamic statutory & numerical distinction analysis over top competing 8-digit leaves,
         # including INSUFFICIENT_INFORMATION siblings under the winning 6-digit subheading so
         # unresolved 6-digit sibling competition is never hidden by a single SAME_PRODUCT label.
-        dist_pool = list(same_leaves[:20])
         if same_leaves:
+            top_h4 = same_leaves[0].candidate.hsn_code[:4]
+            top_role_mm = bool(evidence_by_hsn.get(same_leaves[0].candidate.hsn_code, {}).get("role_mismatch"))
+            dist_pool = [
+                c for c in same_leaves
+                if top_role_mm or c.candidate.hsn_code[:4] == top_h4
+            ][:20]
             top_sub6 = same_leaves[0].candidate.hsn_code[:6]
             seen_dist_hsn = {c.candidate.hsn_code for c in dist_pool}
             for c in qualifying_ordered:
@@ -741,19 +770,23 @@ class MultiCandidateEngine:
                     _is_leaf_8digit(c)
                     and c.candidate.hsn_code[:6] == top_sub6
                     and c.candidate.hsn_code not in seen_dist_hsn
-                    and c.relation != RelationLabel.RELATED_PRODUCT
+                    and c.relation not in (RelationLabel.RELATED_PRODUCT, RelationLabel.UNRELATED)
                 ):
                     dist_pool.append(c)
                     seen_dist_hsn.add(c.candidate.hsn_code)
                     if len(dist_pool) >= 20:
                         break
+        else:
+            dist_pool = []
         has_competing_sub6_leaves = len(dist_pool) > 1 and any(
             c.candidate.hsn_code[:6] == same_leaves[0].candidate.hsn_code[:6]
             and c.candidate.hsn_code != same_leaves[0].candidate.hsn_code
             for c in dist_pool
         ) if same_leaves else False
 
-        dist_analysis = analyze_sibling_distinctions(dist_pool, effective_query) if dist_pool else {
+        dist_analysis = analyze_sibling_distinctions(
+            dist_pool, effective_query, evidence_by_hsn=evidence_by_hsn
+        ) if dist_pool else {
             "per_candidate": [],
             "ranked_indices": [],
             "winner_idx": None,
@@ -775,7 +808,11 @@ class MultiCandidateEngine:
             groups, hsn_to_group = group_candidates(qualifying_ordered)
 
         t_diff0 = time.perf_counter()
-        focus_pool = same_leaves if len(same_leaves) >= 2 else (same if len(same) >= 2 else (same + insuff)[:12])
+        leaf_pool_for_focus = [c for c in qualifying_ordered if _is_leaf_8digit(c)]
+        focus_pool = (
+            same_leaves if len(same_leaves) >= 2
+            else (same if len(same) >= 2 else ((same + insuff) if len(same + insuff) >= 2 else leaf_pool_for_focus[:12]))
+        )
         sep_attrs: List[str] = []
         attr_ev: Dict[str, List[str]] = {}
         if len(focus_pool) >= 2:
@@ -803,13 +840,18 @@ class MultiCandidateEngine:
             else best_active_score
         )
         if conf_pool and bundle is not None:
+            import math
+            p_thr = min(0.99, max(0.01, float(getattr(self.classifier, "same_product_threshold", 0.725))))
+            rel_thr_logit = math.log(p_thr / (1.0 - p_thr))
             feats = extract_query_confidence_features(
                 raw_logits=[c.candidate.raw_logit for c in conf_pool],
                 hsn_codes=[c.candidate.hsn_code for c in conf_pool],
                 chapter_codes=[c.candidate.chapter_code for c in conf_pool],
                 query=effective_query,
-                rel_threshold_logit=0.97,
+                rel_threshold_logit=rel_thr_logit,
                 is_ambiguous=len({c.candidate.hsn_code[:4] for c in same_leaves}) > 1,
+                statutory_clear_winner=1.0 if dist_analysis.get("winner_has_clear_evidence") else 0.0,
+                statutory_evidence_margin=float(dist_analysis.get("evidence_margin", 0.0)),
             )
             chap_conf = round(float(bundle.chapter_calibrator.predict_proba_one(feats)), 4)
             hsn_conf = round(float(bundle.hsn_calibrator.predict_proba_one(feats)), 4)
@@ -867,13 +909,17 @@ class MultiCandidateEngine:
                 clarification_reason = "No 8-digit leaf candidate met the calibrated SAME_PRODUCT threshold."
         else:
             unique_headings = {c.candidate.hsn_code[:4] for c in same_leaves if c.candidate.hsn_code}
+            top1_logit = float(getattr(same_leaves[0].candidate, "raw_logit", 0.0) or 0.0)
             competing_rescued = [
                 c for c in qualifying_ordered
                 if evidence_by_hsn.get(c.candidate.hsn_code, {}).get("rescued_by_statutory_evidence")
                 and c.candidate.hsn_code[:4] != same_leaves[0].candidate.hsn_code[:4]
+                and bool(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("primary_article_matched"))
                 and len(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("statutory_article_matches") or []) >= 2
                 and evidence_by_hsn.get(c.candidate.hsn_code, {}).get("heading_compatible")
                 and not evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch")
+                and float(getattr(c.candidate, "raw_logit", 0.0) or 0.0) >= -3.0
+                and (top1_logit - float(getattr(c.candidate, "raw_logit", 0.0) or 0.0)) <= 5.5
             ]
             top_role_mismatch = evidence_by_hsn.get(same_leaves[0].candidate.hsn_code, {}).get("role_mismatch", "")
             if top_role_mismatch == "complete_article_vs_parts":
@@ -927,9 +973,16 @@ class MultiCandidateEngine:
                 prediction_mode = "CHAPTER_ONLY_CLARIFY"
                 final_chapter = same_leaves[0].candidate.chapter_code
                 requires_clarification = True
-                clarification_reason = (
-                    f"Heading {same_leaves[0].candidate.hsn_code[:4]} supported, but {max(len(same_leaves), len(dist_pool))} leaf tariff items compete without decisive statutory distinction."
-                )
+                if dist_analysis.get("winner_has_clear_evidence"):
+                    clarification_reason = (
+                        f"Heading {same_leaves[0].candidate.hsn_code[:4]} supported "
+                        f"(statutory winner {same_leaves[0].candidate.hsn_code}), but calibrated HSN confidence "
+                        f"({hsn_conf:.2f}) is below threshold ({tau_exact:.2f}); clarification needed."
+                    )
+                else:
+                    clarification_reason = (
+                        f"Heading {same_leaves[0].candidate.hsn_code[:4]} supported, but {max(len(same_leaves), len(dist_pool))} leaf tariff items compete without decisive statutory distinction."
+                    )
             elif hsn_conf >= tau_exact:
                 prediction_mode = "EXACT_HSN"
                 final_hsn = same_leaves[0].candidate.hsn_code
@@ -939,6 +992,29 @@ class MultiCandidateEngine:
                 prediction_mode = "CHAPTER_ONLY_CLARIFY"
                 final_chapter = same_leaves[0].candidate.chapter_code
                 requires_clarification = True
+                clarification_reason = clarification_reason or (
+                    f"Calibrated HSN confidence ({hsn_conf:.2f}) below exact-HSN threshold ({tau_exact:.2f}); clarification needed."
+                )
+
+        # Ensure every clarification-required decision surfaces a concrete, distinguishing question
+        if requires_clarification and not questions and len(qualifying_ordered) >= 2:
+            opt_labels: List[str] = []
+            for c in qualifying_ordered[:3]:
+                clause = str(getattr(c.candidate, "tariff_item_desc", "") or c.candidate.description or "").strip()
+                sub6 = str(getattr(c.candidate, "subheading_6digit_desc", "") or "").strip()
+                label = f"{sub6} -> {clause}" if (sub6 and clause and sub6.upper() not in clause.upper()) else (clause or sub6)
+                if label and label not in opt_labels:
+                    opt_labels.append(label[:70])
+            if opt_labels:
+                questions = [{
+                    "attribute": sep_attrs[0] if sep_attrs else "statutory_variant",
+                    "question": (
+                        f"Which statutory tariff category matches '{orig}': "
+                        + " vs ".join(f"'{o}'" for o in opt_labels[:3])
+                        + "?"
+                    ),
+                    "options": opt_labels[:4],
+                }]
 
         # 6. Build full non-truncated candidate records with lineage & explanations
         all_formatted: List[Dict[str, Any]] = []

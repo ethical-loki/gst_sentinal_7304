@@ -91,43 +91,47 @@ def build_independent_eval_suite(excluded_hsns: Set[str]) -> Path:
 def _collect_features(
     eng: MultiCandidateEngine,
     df_queries: pd.DataFrame,
+    tag: str = "split",
 ) -> tuple[List[Dict[str, float]], List[int], List[int]]:
     feats_list: List[Dict[str, float]] = []
     chap_labels: List[int] = []
     hsn_labels: List[int] = []
+    total = len(df_queries)
 
-    for _, r in df_queries.iterrows():
+    for idx_i, (_, r) in enumerate(df_queries.iterrows(), start=1):
         q = str(r["query"]).strip()
         gold_hsn = str(r["hsn_code"]).strip()
         gold_ch = str(r["chapter_code"]).strip().zfill(2)
 
-        disc = eng.discoverer.discover(q)
-        qual = disc.qualifying_classified
-        leaves = [c for c in qual if _is_leaf_8digit(c)] or qual
-        same_leaves = [c for c in leaves if c.relation == RelationLabel.SAME_PRODUCT]
-
-        # Apply Stage 3 ordering if available
-        if same_leaves:
-            from src.ml.ambiguity_resolver import analyze_sibling_distinctions
-            da = analyze_sibling_distinctions(same_leaves[:20], q)
-            if da.get("ranked_indices"):
-                same_leaves = [same_leaves[i] for i in da["ranked_indices"]] + same_leaves[20:]
-                seen = {id(c) for c in same_leaves}
-                leaves = same_leaves + [c for c in leaves if id(c) not in seen]
-
-        if not leaves:
+        res = eng.classify_adaptive(q, page=1, page_size=None)
+        if idx_i % 10 == 0 or idx_i == total:
+            print(f"[{tag}] {idx_i}/{total} collected", flush=True)
+        cands = [c for c in res.get("candidates", []) if len(str(c.get("hsn_code", ""))) >= 8]
+        if not cands:
             continue
 
+        conf_pool = [
+            c for c in cands
+            if c.get("relevance_category") == "SAME_PRODUCT"
+            or (c.get("evidence_trace") or {}).get("rescued_by_statutory_evidence")
+        ] or cands
+        import math
+        p_thr = min(0.99, max(0.01, float(getattr(eng.classifier, "same_product_threshold", 0.725))))
+        rel_thr_logit = math.log(p_thr / (1.0 - p_thr))
+        same_h4s = {c["hsn_code"][:4] for c in cands if c.get("relevance_category") == "SAME_PRODUCT"}
+        stat_dist = res.get("statutory_distinction") or {}
         feats = extract_query_confidence_features(
-            raw_logits=[c.candidate.raw_logit for c in leaves],
-            hsn_codes=[c.candidate.hsn_code for c in leaves],
-            chapter_codes=[c.candidate.chapter_code for c in leaves],
+            raw_logits=[float(c.get("raw_logit") or 0.0) for c in conf_pool],
+            hsn_codes=[c["hsn_code"] for c in conf_pool],
+            chapter_codes=[c["chapter_code"] for c in conf_pool],
             query=q,
-            rel_threshold_logit=0.97,
-            is_ambiguous=len({c.candidate.hsn_code[:4] for c in same_leaves}) > 1,
+            rel_threshold_logit=rel_thr_logit,
+            is_ambiguous=len(same_h4s) > 1,
+            statutory_clear_winner=1.0 if stat_dist.get("winner_has_clear_evidence") else 0.0,
+            statutory_evidence_margin=float(stat_dist.get("evidence_margin") or 0.0),
         )
-        pred_hsn = leaves[0].candidate.hsn_code
-        pred_ch = str(leaves[0].candidate.chapter_code).strip().zfill(2)
+        pred_hsn = cands[0]["hsn_code"]
+        pred_ch = str(cands[0]["chapter_code"]).strip().zfill(2)
 
         feats_list.append(feats)
         chap_labels.append(1 if pred_ch == gold_ch else 0)
@@ -148,13 +152,17 @@ def main() -> None:
             d = pd.read_parquet(p)
             excluded_hsns.update(d["expected_hsn"].astype(str).str.strip())
 
+    from scripts.benchmark_phase17_independent import INDEPENDENT_100
+    for item in INDEPENDENT_100:
+        excluded_hsns.add(item["expected_hsn"])
+
     train_df = pd.read_parquet(PROJECT_ROOT / "data" / "training_pairs" / "full_pairs_train.parquet")
     val_df = pd.read_parquet(PROJECT_ROOT / "data" / "training_pairs" / "full_pairs_val.parquet")
 
     train_val_hsns = set(train_df["hsn_code"].astype(str).str.strip()) | set(val_df["hsn_code"].astype(str).str.strip())
     build_independent_eval_suite(excluded_hsns | train_val_hsns)
 
-    # 2. Prepare disjoint calibration fit (80 queries) and eval (50 queries) from full_pairs_val
+    # 2. Prepare disjoint calibration fit (60 queries) and eval (40 queries) from full_pairs_val
     pos_val = val_df[
         (val_df["label"] == 1)
         & (val_df["hsn_code"].astype(str).str.strip().str.len() == 8)
@@ -163,20 +171,29 @@ def main() -> None:
 
     # Split by HSN code so fit and eval have zero HSN overlap
     unique_val_hsns = pos_val["hsn_code"].astype(str).str.strip().unique().tolist()
-    split_idx = int(len(unique_val_hsns) * 0.6)
+    split_idx = int(len(unique_val_hsns) * 0.60)
     fit_hsns = set(unique_val_hsns[:split_idx])
     eval_hsns = set(unique_val_hsns[split_idx:])
 
-    fit_df = pos_val[pos_val["hsn_code"].astype(str).str.strip().isin(fit_hsns)].head(80).reset_index(drop=True)
-    eval_df = pos_val[pos_val["hsn_code"].astype(str).str.strip().isin(eval_hsns)].head(50).reset_index(drop=True)
+    fit_df = pos_val[pos_val["hsn_code"].astype(str).str.strip().isin(fit_hsns)].head(60).reset_index(drop=True)
+    eval_df = pos_val[pos_val["hsn_code"].astype(str).str.strip().isin(eval_hsns)].head(40).reset_index(drop=True)
     print(f"Calibration fit queries: {len(fit_df)}, eval queries: {len(eval_df)}")
 
     eng = MultiCandidateEngine()
-    cal_path = PROJECT_ROOT / "data" / "model_versions" / "hsn_reranker_v1" / "calibration.json"
-    old_bundle = CalibrationBundle.load(cal_path)
+    from src.ml.model_registry import ModelRegistry
+    active_entry = ModelRegistry().get_active_entry()
+    active_dir = Path(active_entry["model_path"]) if active_entry and active_entry.get("model_path") else (PROJECT_ROOT / "data" / "model_versions" / "hsn_reranker_v1")
+    cal_path = active_dir / "calibration.json"
+    v1_cal_path = PROJECT_ROOT / "data" / "model_versions" / "hsn_reranker_v1" / "calibration.json"
+    if cal_path.exists():
+        old_bundle = CalibrationBundle.load(cal_path)
+    elif v1_cal_path.exists():
+        old_bundle = CalibrationBundle.load(v1_cal_path)
+    else:
+        old_bundle = CalibrationBundle(tau_abstain=0.40, tau_chapter=0.50, tau_exact_hsn=0.55)
 
-    fit_feats, fit_chap_y, fit_hsn_y = _collect_features(eng, fit_df)
-    eval_feats, eval_chap_y, eval_hsn_y = _collect_features(eng, eval_df)
+    fit_feats, fit_chap_y, fit_hsn_y = _collect_features(eng, fit_df, tag="fit")
+    eval_feats, eval_chap_y, eval_hsn_y = _collect_features(eng, eval_df, tag="eval")
 
     # Evaluate OLD bundle on eval split
     old_hsn_probs = old_bundle.hsn_calibrator.predict_proba(eval_feats)
@@ -185,8 +202,25 @@ def main() -> None:
     old_chap_metrics = compute_calibration_metrics(eval_chap_y, old_chap_probs)
 
     # Fit NEW calibrators on fit split (keep thresholds tau_abstain=0.40, tau_chapter=0.50, tau_exact_hsn=0.55)
-    new_chap_cal = LogisticFeatureCalibrator().fit(fit_feats, fit_chap_y, l2=0.1, lr=0.1, steps=1200)
-    new_hsn_cal = LogisticFeatureCalibrator().fit(fit_feats, fit_hsn_y, l2=0.1, lr=0.1, steps=1200)
+    # Enforce monotonic directional signs on structural ambiguity vs statutory distinction features
+    # so small-sample collinearity cannot invert unambiguous single-heading weights.
+    hsn_signs = {
+        "top1_logit": 1,
+        "top1_top2_margin": 1,
+        "n_siblings_same_heading": -1,
+        "n_distinct_headings_above": -1,
+        "n_distinct_chapters_above": -1,
+        "is_ambiguous": -1,
+        "statutory_clear_winner": 1,
+        "statutory_evidence_margin": 1,
+    }
+    new_chap_cal = LogisticFeatureCalibrator().fit(
+        fit_feats, fit_chap_y, l2=0.08, lr=0.1, steps=1200,
+        sign_constraints={"top1_logit": 1, "top1_top2_margin": 1, "n_distinct_chapters_above": -1},
+    )
+    new_hsn_cal = LogisticFeatureCalibrator().fit(
+        fit_feats, fit_hsn_y, l2=0.08, lr=0.1, steps=1200, sign_constraints=hsn_signs
+    )
 
     new_hsn_probs = new_hsn_cal.predict_proba(eval_feats)
     new_chap_probs = new_chap_cal.predict_proba(eval_feats)
@@ -195,6 +229,7 @@ def main() -> None:
     new_selective = compute_selective_curve(eval_hsn_y, new_hsn_probs)
 
     cal_report = {
+        "model_dir": str(active_dir),
         "fit_n": len(fit_feats),
         "eval_n": len(eval_feats),
         "fit_hsn_base_accuracy": round(float(np.mean(fit_hsn_y)), 4),
@@ -205,10 +240,12 @@ def main() -> None:
         "old_chapter_calibration": old_chap_metrics,
         "new_chapter_calibration": new_chap_metrics,
         "new_hsn_selective_curve": new_selective,
+        "new_hsn_weights": new_hsn_cal.weights,
+        "new_hsn_bias": round(float(new_hsn_cal.bias), 6),
     }
 
-    # Save updated calibration bundle if Brier improves
-    if new_hsn_metrics["brier"] <= old_hsn_metrics["brier"]:
+    # Save updated calibration bundle if Brier improves or new model lacks calibration.json
+    if (not cal_path.exists()) or (new_hsn_metrics["brier"] <= old_hsn_metrics["brier"]):
         new_bundle = CalibrationBundle(
             relevance_calibrator=old_bundle.relevance_calibrator,
             chapter_calibrator=new_chap_cal,
@@ -218,9 +255,10 @@ def main() -> None:
             tau_exact_hsn=old_bundle.tau_exact_hsn,
             metadata={
                 **old_bundle.metadata,
-                "phase10_recalibrated": True,
-                "phase10_fit_n": len(fit_feats),
-                "phase10_eval_n": len(eval_feats),
+                "model_path": str(active_dir),
+                "phase3_recalibrated": True,
+                "phase3_fit_n": len(fit_feats),
+                "phase3_eval_n": len(eval_feats),
             },
         )
         new_bundle.save(cal_path)

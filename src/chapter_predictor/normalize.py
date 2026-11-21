@@ -235,7 +235,7 @@ def extract_query_facts(raw_text: str) -> Dict[str, Any]:
     # Focus head-noun extraction on the primary product clause before purpose/component/material markers
     # so "VFD for controlling AC motor speed" does not treat "motor" as the primary article.
     head_split = re.split(
-        r"\b(?:for\s+use\s+in|intended\s+for|used\s+for|designed\s+for|suitable\s+for|for|fitted\s+with|equipped\s+with|containing|made\s+from|made\s+of|made\s+with|with)\b",
+        r"\b(?:for\s+use\s+in|intended\s+for|used\s+for|designed\s+for|suitable\s+for|for|fitted\s+with|equipped\s+with|without|containing|made\s+from|made\s+of|made\s+with|consisting\s+of|of|with)\b",
         lower,
         maxsplit=1,
     )

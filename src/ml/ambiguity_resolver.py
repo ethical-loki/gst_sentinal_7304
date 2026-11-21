@@ -52,10 +52,24 @@ ATTRIBUTE_CUE_VOCAB: Dict[str, Set[str]] = {
 }
 
 
+_NON_MATERIAL_NOISE_RE = re.compile(
+    r"\b(?:specialized|component|compressor|seating|controller|drive|system|equipment|other\s+than|technical\s+composition)\b|[():]",
+    re.IGNORECASE,
+)
+
+
 def _extract_material_tokens(raw: str) -> Set[str]:
     if not raw:
         return set()
-    return {t.strip().lower() for t in re.split(r"[,;|]+", raw) if len(t.strip()) >= 2}
+    out: Set[str] = set()
+    for part in re.split(r"[,;|]+", raw):
+        clean = part.strip().lower()
+        if len(clean) < 2:
+            continue
+        if len(clean.split()) > 3 or _NON_MATERIAL_NOISE_RE.search(clean):
+            continue
+        out.add(clean)
+    return out
 
 
 _UNIT_NORMALIZATION: Dict[str, Tuple[str, float]] = {
@@ -217,22 +231,48 @@ def evaluate_numeric_match(
 
 
 _STAT_STOPWORDS = {
-    "other", "others", "and", "or", "of", "the", "for", "in", "with", "without",
-    "than", "not", "thereof", "similar", "articles", "parts", "accessories",
-    "whether", "exceeding", "included", "elsewhere", "specified", "nes",
+    "other", "others", "and", "or", "of", "the", "for", "in", "with",
+    "than", "not", "thereof", "similar", "articles", "article", "parts",
+    "accessories", "accessory", "whether", "exceeding", "included",
+    "elsewhere", "specified", "nes", "type", "types", "kind", "based",
+    "incorporating", "consisting", "equipment", "apparatus", "system",
+    "systems", "device", "devices", "unit", "units", "machinery",
+    "machine", "machines", "appliance", "appliances", "goods", "product",
+    "products",
 }
 
 
+def _stem_stat(tok: str) -> str:
+    w = (tok or "").lower().strip()
+    if len(w) <= 3:
+        return w
+    if w.endswith("ies") and len(w) > 4:
+        return w[:-3] + "y"
+    if w.endswith("es") and len(w) > 4 and w[-3] in "shxz":
+        return w[:-2]
+    if w.endswith("s") and not w.endswith(("ss", "us", "is", "as")):
+        return w[:-1]
+    return w
+
+
 def _stat_tokens(text: str) -> Set[str]:
-    return {
-        tok for tok in re.findall(r"[a-z0-9]+", (text or "").lower())
-        if len(tok) >= 3 and tok not in _STAT_STOPWORDS and not tok.isdigit()
-    }
+    out: Set[str] = set()
+    norm = re.sub(r"\bvaccum\b", "vacuum", re.sub(r"\bstailess\b", "stainless", (text or "").lower()))
+    for tok in re.findall(r"[a-z0-9]+", norm):
+        if len(tok) < 3 or tok.isdigit():
+            continue
+        if tok in _STAT_STOPWORDS:
+            continue
+        st = _stem_stat(tok)
+        if st not in _STAT_STOPWORDS:
+            out.add(st)
+    return out
 
 
 def analyze_sibling_distinctions(
     competing: Sequence[ClassifiedTariffCandidate],
     query: str,
+    evidence_by_hsn: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """
     Dynamically compares sibling tariff candidates using their statutory descriptions,
@@ -262,8 +302,6 @@ def analyze_sibling_distinctions(
                 getattr(c.candidate, "tariff_item_desc", ""),
                 getattr(c.candidate, "subheading_6digit_desc", ""),
                 c.candidate.description,
-                c.candidate.article_keywords,
-                c.candidate.material_keywords,
             ) if p
         )
         cand_leaf_texts.append(leaf_txt)
@@ -314,9 +352,20 @@ def analyze_sibling_distinctions(
             "diff_phrase": t8 or s6 or c.candidate.description[:80],
         })
 
-    # Compute combined evidence score per candidate
+    # Compute combined evidence score per candidate (preserving logit margin, role_mismatch & SUPPORTED priority)
     for item, c in zip(per_cand, competing):
-        score = float(c.confidence) * 0.5
+        cand_logit = float(getattr(c.candidate, "raw_logit", 0.0) or 0.0)
+        score = float(c.confidence) * 0.5 + max(-2.0, min(8.0, cand_logit)) * 0.12
+        ev_meta = (evidence_by_hsn or {}).get(c.candidate.hsn_code, {})
+        ev_status = str(ev_meta.get("status") or "")
+        role_mm = str(ev_meta.get("role_mismatch") or "")
+        if ev_status == "SUPPORTED":
+            score += 0.30
+        if role_mm == "complete_article_vs_parts":
+            score -= 1.50
+        elif role_mm:
+            score -= 0.40
+
         if item["numeric_status"] == "MATCH":
             score += 1.0
         elif item["numeric_status"] == "CONFLICT":
@@ -325,28 +374,44 @@ def analyze_sibling_distinctions(
         if item["is_residual_other"] and any_specific_support:
             score -= 0.35
         item["evidence_score"] = round(score, 4)
+        item["raw_logit"] = float(getattr(c.candidate, "raw_logit", 0.0) or 0.0)
+        item["sub6"] = str(c.candidate.hsn_code or "")[:6]
 
     ranked = sorted(per_cand, key=lambda x: x["evidence_score"], reverse=True)
     best = ranked[0]
     second_score = ranked[1]["evidence_score"] if len(ranked) >= 2 else 0.0
     margin = round(best["evidence_score"] - second_score, 4)
+    logit_margin = round(best["raw_logit"] - (ranked[1]["raw_logit"] if len(ranked) >= 2 else best["raw_logit"] - 5.0), 4)
 
-    # Check if top competing candidates differ by missing numerical constraints
-    missing_num = any(
-        x["numeric_status"] == "MISSING" and x["has_numeric_constraints"]
-        for x in ranked[:4]
-    ) and best["numeric_status"] != "MATCH"
+    # Check if competing candidates in the SAME winning 6-digit subheading differ by missing numerical constraints
+    # (never import numerical kVA/cc bounds from unrelated sibling subheadings like diesel gensets onto wind-powered sets).
+    best_sub6 = best.get("sub6", "")
+    best_h4 = str(best.get("hsn_code", ""))[:4]
+    same_sub6_ranked = [x for x in ranked if x.get("sub6") == best_sub6] or ranked[:4]
+    same_h4_ranked = [x for x in ranked if str(x.get("hsn_code", ""))[:4] == best_h4] or ranked[:4]
+    missing_num = best["numeric_status"] != "MATCH" and (
+        (
+            len(same_sub6_ranked) >= 2
+            and any(x["numeric_status"] == "MISSING" and x["has_numeric_constraints"] for x in same_sub6_ranked[:4])
+        )
+        or (
+            best["numeric_status"] == "MISSING"
+            and best["has_numeric_constraints"]
+            and sum(1 for x in same_h4_ranked[:4] if x["has_numeric_constraints"]) >= 2
+        )
+    )
 
     # Winner has clear evidence only if not contradicted, not missing required numeric spec,
     # and statutory leaf evidence (numeric MATCH or direct non-residual tariff_item_desc match)
     # clearly distinguishes it from competing siblings.
     has_competing_non_residual = any(
-        not x["is_residual_other"] for x in ranked[1:]
+        not x["is_residual_other"] for x in same_sub6_ranked[1:]
     )
     residual_blocked = best["is_residual_other"] and has_competing_non_residual
     statutory_leaf_clear = (
         best["numeric_status"] == "MATCH"
-        or (not best["is_residual_other"] and best["t8_hit_ratio"] >= 0.5 and margin >= 0.15)
+        or (not best["is_residual_other"] and best["t8_hit_ratio"] >= 0.5 and (margin >= 0.15 or logit_margin >= 1.5))
+        or (len(same_sub6_ranked) == 1 and not best["is_residual_other"] and best["t8_hit_ratio"] >= 0.5)
         or (len(ranked) == 1 and best["lex_ratio"] >= 0.35)
     )
     clear_ev = (

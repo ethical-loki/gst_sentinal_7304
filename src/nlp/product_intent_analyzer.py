@@ -510,9 +510,18 @@ def analyze_product_intent(description: str, clarification: str = "") -> Product
             rel.evidence_trace = f"extracted via {rel.clause_source} ({rel.attribute_type})"
 
     # Task 2: Head noun, modifiers, and article category (finished vs intermediate vs parts)
-    head_words = [w for w in re.findall(r"[A-Za-z0-9\-]+", finished_article) if w.lower() not in ("of", "for", "and", "or", "the", "a", "an", "with", "in")]
+    pre_prep_article = re.split(
+        r"\s+(?:of|without|with|containing|consisting\s+of|made\s+(?:of|from))\s+",
+        finished_article,
+        maxsplit=1,
+        flags=re.IGNORECASE,
+    )[0].strip()
+    head_words = [w for w in re.findall(r"[A-Za-z0-9\-]+", pre_prep_article or finished_article) if w.lower() not in ("of", "for", "and", "or", "the", "a", "an", "with", "in", "without")]
+    if not head_words:
+        head_words = [w for w in re.findall(r"[A-Za-z0-9\-]+", finished_article) if w.lower() not in ("of", "for", "and", "or", "the", "a", "an", "with", "in", "without")]
+    all_article_words = [w for w in re.findall(r"[A-Za-z0-9\-]+", finished_article) if w.lower() not in ("of", "for", "and", "or", "the", "a", "an", "with", "in", "without")]
     product_head_noun = str(head_facts.get("article") or (head_words[-1] if head_words else finished_article))
-    descriptive_modifiers = [w for w in head_words[:-1] if w.lower() != product_head_noun.lower()] if len(head_words) > 1 else []
+    descriptive_modifiers = [w for w in all_article_words if w.lower() != product_head_noun.lower()] if len(all_article_words) > 1 else []
     if re.search(r"\b(?:parts?|spares?|components?|accessories|subassembly)\b", finished_article, re.IGNORECASE):
         article_category = "parts_or_component"
     elif product_form and any(f in product_form.lower() for f in ("granules", "powder", "flakes", "pellets", "resin", "scrap", "liquid")):

@@ -109,10 +109,17 @@ _MATERIAL_FAMILIES: Dict[str, Set[str]] = {
     "iron_steel": {"iron", "steel", "stainless", "cast iron", "wrought iron", "alloy steel", "carbon steel", "mild steel", "ferro"},
     "aluminium": {"aluminium", "aluminum"},
     "copper_brass": {"copper", "brass", "bronze"},
+    "base_metal": {
+        "base metal", "nickel", "lead", "zinc", "tin", "tungsten", "molybdenum",
+        "tantalum", "magnesium", "cobalt", "bismuth", "cadmium", "titanium",
+        "zirconium", "antimony", "manganese", "beryllium", "chromium",
+        "germanium", "vanadium", "cermet", "cermets",
+    },
     "cotton": {"cotton"},
     "wool": {"wool", "woollen", "woolen", "cashmere", "merino", "animal hair"},
     "silk": {"silk"},
     "synthetic_textile": {"synthetic", "man-made", "polyester", "viscose", "rayon", "spandex", "elastane"},
+    "vegetable_textile": {"linen", "flax", "ramie", "hemp", "jute", "coir", "sisal"},
     "wood": {"wood", "wooden", "timber", "plywood", "bamboo"},
     "rubber": {"rubber", "latex", "elastomer", "vulcanised", "vulcanized"},
     "glass_ceramic": {"glass", "ceramic", "porcelain", "stoneware", "earthenware"},
@@ -124,6 +131,9 @@ _MATERIAL_FAMILIES: Dict[str, Set[str]] = {
 _COMPATIBLE_FAMILIES: Set[frozenset] = {
     frozenset({"plastics", "synthetic_textile"}),
     frozenset({"iron_steel", "aluminium"}),  # multi-metal assemblies can appear together unless exclusive
+    frozenset({"base_metal", "iron_steel"}),
+    frozenset({"base_metal", "aluminium"}),
+    frozenset({"base_metal", "copper_brass"}),
 }
 
 
@@ -396,6 +406,9 @@ def evaluate_candidate_evidence(
             if kw_stem not in seen_mat_stems:
                 seen_mat_stems.add(kw_stem)
                 material_matches.append(kw)
+    if not material_matches and query_mat_fams and profile.material_families:
+        for fam in sorted(query_mat_fams & profile.material_families):
+            material_matches.append(fam)
 
     # 3. Chapter & heading compatibility (supporting evidence only, never standalone proof)
     intent_all_tokens = _tokenize_content(
@@ -420,8 +433,22 @@ def evaluate_candidate_evidence(
 
     # Complete-article vs spare-part role protection (universal across machinery/apparatus)
     q_asks_parts = bool(_QUERY_PARTS_CUES_RE.search(query_role_text))
+    leaf_low = (profile.tariff_item_desc or "").strip().lower()
+    # Standalone separately-presented sub-units classified under a parent "PARTS" subheading
+    # (e.g. "SEPARATELY PRESENTED INDOOR UNITS OR OUTDOOR UNITS") are valid leaf matches for "unit" queries
+    # as long as the leaf description itself does not start with "OF ..." or name "PARTS".
+    leaf_explicit_standalone_unit = bool(
+        not _CAND_PARTS_DESC_RE.match(leaf_low)
+        and not _CAND_OF_MACHINE_RE.match(leaf_low)
+        and re.search(r"\bseparately\s+presented\b", leaf_low)
+        and re.search(r"\bunit(?:s)?\b", query_role_text.lower())
+        and re.search(r"\bunit(?:s)?\b", leaf_low)
+    )
     c_is_parts_only = bool(
-        _CAND_PARTS_SUB6_RE.match(profile.subheading_6digit_desc or "")
+        (
+            _CAND_PARTS_SUB6_RE.match(profile.subheading_6digit_desc or "")
+            and not leaf_explicit_standalone_unit
+        )
         or _CAND_PARTS_DESC_RE.match(profile.tariff_item_desc or "")
         or (
             _CAND_PARTS_STAT_RE.search(profile.statutory_description or "")
@@ -477,8 +504,24 @@ def evaluate_candidate_evidence(
             contradictions.append("Construction contradiction: query specifies woven/not knitted, candidate is knitted or crocheted")
     if re.search(r"\bseamless\b", proc_low) and re.search(r"\bwelded\b", cand_hier_low) and not re.search(r"\bseamless\b", cand_hier_low):
         contradictions.append("Construction contradiction: query specifies seamless, candidate is welded")
+    elif re.search(r"\bwelded\b", proc_low) and not re.search(r"\bseamless\b", proc_low) and re.search(r"\bseamless\b", cand_hier_low) and not re.search(r"\bwelded\b", cand_hier_low):
+        contradictions.append("Construction contradiction: query specifies welded, candidate is seamless")
+    if re.search(r"\bflexible\b", proc_low) and not re.search(r"\brigid\b", proc_low) and re.search(r"\brigid\b", cand_hier_low) and not re.search(r"\bflexible\b", cand_hier_low):
+        contradictions.append("Form contradiction: query specifies flexible, candidate is rigid")
+    elif re.search(r"\brigid\b", proc_low) and not re.search(r"\bflexible\b", proc_low) and re.search(r"\bflexible\b", cand_hier_low) and not re.search(r"\brigid\b", cand_hier_low):
+        contradictions.append("Form contradiction: query specifies rigid, candidate is flexible")
     if re.search(r"\broasted\b", proc_low) and re.search(r"\bnot\s+roasted\b|\bunroasted\b", cand_hier_low):
         contradictions.append("Process contradiction: query specifies roasted, candidate is unroasted")
+
+    # Generic negated-attribute check (e.g., "non-circular" vs "circular", "non-cellular" vs "cellular")
+    query_neg_source = f"{proc_low} {product_intent.raw_description or ''}".lower()
+    cand_pos_low = re.sub(r"\b(?:non[-\s]+|not\s+)([a-z]{4,})\b", " ", cand_hier_low)
+    _neg_stop = {"this", "that", "with", "from", "than", "more", "less", "such", "other", "none"}
+    for neg_attr in re.findall(r"\bnon[-\s]+([a-z]{4,})\b", query_neg_source):
+        if neg_attr not in _neg_stop and re.search(rf"\b{re.escape(neg_attr)}\b", cand_pos_low):
+            contradictions.append(
+                f"Attribute contradiction: query specifies non-{neg_attr}, candidate specifies {neg_attr}"
+            )
 
     # Negative statutory phrasing check (e.g., "not containing X", "other than X"),
     # explicitly ignoring permissive "whether or not containing X" clauses.
@@ -507,6 +550,11 @@ def evaluate_candidate_evidence(
         ordered_core = [t for t in (_stem(w) for w in re.findall(r"\b[a-z0-9]{2,}\b", product_intent.finished_article.lower())) if t in article_core_tokens]
         if ordered_core:
             primary_id_tokens = {ordered_core[-1]}
+    if any(t.endswith("ing") and len(t) > 5 for t in primary_id_tokens):
+        cand_vocab = profile.article_tokens | profile.inherited_parent_articles | profile.leaf_article_tokens
+        for t in list(primary_id_tokens):
+            if t.endswith("ing") and len(t) > 5 and (t[:-3] + "e") in cand_vocab:
+                primary_id_tokens.add(t[:-3] + "e")
 
     # Statutory explicit exclusion against primary article identity
     excluded_id_hits = sorted(primary_id_tokens & profile.explicit_exclusions)
@@ -519,6 +567,7 @@ def evaluate_candidate_evidence(
         t for t in (profile.leaf_article_tokens - dynamic_mat_cues - dynamic_qual_tokens)
         if not t.isdigit()
     }
+    leaf_introduced_tokens = leaf_specific_tokens - profile.inherited_parent_articles
     leaf_clauses_are_qualifiers = profile.is_qualifying_only_leaf or all(
         (
             not cl
@@ -533,7 +582,7 @@ def evaluate_candidate_evidence(
             primary_id_tokens & (profile.leaf_article_tokens | profile.inherited_parent_articles)
         ):
             primary_article_matched = False
-        elif leaf_specific_tokens and not leaf_clauses_are_qualifiers and not (primary_id_tokens & leaf_specific_tokens):
+        elif leaf_introduced_tokens and not leaf_clauses_are_qualifiers and not (primary_id_tokens & leaf_specific_tokens) and not (article_core_tokens & leaf_introduced_tokens):
             primary_article_matched = False
         else:
             primary_article_matched = bool(

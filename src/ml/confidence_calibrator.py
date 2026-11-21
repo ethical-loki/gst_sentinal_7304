@@ -163,6 +163,8 @@ QUERY_FEATURE_NAMES = [
     "n_distinct_chapters_above",
     "is_ambiguous",
     "query_token_count",
+    "statutory_clear_winner",
+    "statutory_evidence_margin",
 ]
 
 
@@ -173,6 +175,8 @@ def extract_query_confidence_features(
     query: str,
     rel_threshold_logit: float = 0.0,
     is_ambiguous: bool = False,
+    statutory_clear_winner: float = 0.0,
+    statutory_evidence_margin: float = 0.0,
 ) -> Dict[str, float]:
     """
     Extracts non-product-specific structural signals for query-level
@@ -211,6 +215,8 @@ def extract_query_confidence_features(
         "n_distinct_chapters_above": float(max(1, len(chaps_above))),
         "is_ambiguous": 1.0 if is_ambiguous else 0.0,
         "query_token_count": float(tok_cnt),
+        "statutory_clear_winner": float(statutory_clear_winner),
+        "statutory_evidence_margin": float(max(0.0, statutory_evidence_margin)),
     }
 
 
@@ -235,6 +241,7 @@ class LogisticFeatureCalibrator:
         l2: float = 0.05,
         lr: float = 0.1,
         steps: int = 1000,
+        sign_constraints: Optional[Dict[str, int]] = None,
     ) -> "LogisticFeatureCalibrator":
         if not feature_dicts:
             return self
@@ -247,6 +254,7 @@ class LogisticFeatureCalibrator:
         stds = np.where(np.std(X, axis=0) > 1e-6, np.std(X, axis=0), 1.0)
         Xn = (X - means) / stds
 
+        signs = [int((sign_constraints or {}).get(name, 0)) for name in self.feature_names]
         w = np.zeros(Xn.shape[1], dtype=np.float64)
         b = float(np.log(np.clip(np.mean(y), 0.05, 0.95) / (1.0 - np.clip(np.mean(y), 0.05, 0.95))))
         for _ in range(steps):
@@ -256,6 +264,11 @@ class LogisticFeatureCalibrator:
             grad_b = float(np.mean(err))
             w -= lr * grad_w
             b -= lr * grad_b
+            for j, sgn in enumerate(signs):
+                if sgn > 0 and w[j] < 0.0:
+                    w[j] = 0.0
+                elif sgn < 0 and w[j] > 0.0:
+                    w[j] = 0.0
 
         self.means = [round(float(v), 6) for v in means]
         self.stds = [round(float(v), 6) for v in stds]

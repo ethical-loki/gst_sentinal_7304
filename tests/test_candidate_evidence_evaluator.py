@@ -726,3 +726,59 @@ def test_phase20_task1_task2_task3_selective_rescue_case73_and_spare_parts(tmp_p
     assert "auxiliary" in exp_toks and "machinery" in exp_toks
 
 
+def test_phase3_negated_attribute_contradiction_and_extreme_logit_rescue_guard():
+    """Verify generic non-<attr> negation contradicts positive <attr> statutory branch."""
+    intent_noncirc = analyze_product_intent("non-circular rectangular hollow structural iron tube")
+    rec_circ = {
+        "hsn_code": "73063010",
+        "code_length": 8,
+        "chapter_code": "73",
+        "chapter_title": "Articles of iron or steel",
+        "heading_4digit_desc": "OTHER TUBES, PIPES AND HOLLOW PROFILES, OF IRON OR STEEL",
+        "subheading_6digit_desc": "OTHER, WELDED, OF CIRCULAR CROSS-SECTION, OF IRON OR NON-ALLOY STEEL",
+        "tariff_item_desc": "OF IRON",
+        "statutory_description": "OTHER TUBES - OTHER, WELDED, OF CIRCULAR CROSS-SECTION: OF IRON",
+        "article_keywords": "tube, pipe",
+        "material_keywords": "iron",
+    }
+    ev_circ = evaluate_candidate_evidence(
+        intent_noncirc, build_candidate_profile(rec_circ, None), "SAME_PRODUCT", 0.90
+    )
+    assert ev_circ.status == CONTRADICTED
+    assert any("non-circular" in c.lower() for c in ev_circ.contradictions)
+    assert ev_circ.compatibility_level == "EXPLICIT_CONTRADICTION"
+
+    rec_noncirc = {
+        **rec_circ,
+        "hsn_code": "73066010",
+        "subheading_6digit_desc": "OTHER, WELDED, OF NON-CIRCULAR CROSS-SECTION",
+        "statutory_description": "OTHER TUBES - OTHER, WELDED, OF NON-CIRCULAR CROSS-SECTION: OF IRON",
+    }
+    ev_noncirc = evaluate_candidate_evidence(
+        intent_noncirc, build_candidate_profile(rec_noncirc, None), "SAME_PRODUCT", 0.96
+    )
+    assert ev_noncirc.status == SUPPORTED
+    assert not ev_noncirc.contradictions
+
+    # Symmetric rigid vs flexible statutory form check (Ch 39)
+    intent_flex = analyze_product_intent("flexible pvc tubing")
+    rec_rigid = {
+        "hsn_code": "39172310",
+        "code_length": 8,
+        "chapter_code": "39",
+        "chapter_title": "Plastics and articles thereof",
+        "heading_4digit_desc": "TUBES, PIPES AND HOSES, AND FITTINGS THEREFOR, OF PLASTICS - TUBES, PIPES AND HOSES, RIGID",
+        "subheading_6digit_desc": "OF POLYMERS OF VINYL CHLORIDE",
+        "tariff_item_desc": "SEAMLESS TUBES",
+        "statutory_description": "TUBES, PIPES AND HOSES, RIGID : OF POLYMERS OF VINYL CHLORIDE",
+        "article_keywords": "tubes, pipes",
+        "material_keywords": "pvc",
+    }
+    ev_rigid = evaluate_candidate_evidence(
+        intent_flex, build_candidate_profile(rec_rigid, None), "SAME_PRODUCT", 0.85
+    )
+    assert ev_rigid.status == CONTRADICTED
+    assert any("rigid" in c.lower() for c in ev_rigid.contradictions)
+
+
+

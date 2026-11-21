@@ -1,0 +1,2474 @@
+[
+  {
+    "case_id": 7,
+    "category": "simple",
+    "query": "phenoplast thermoset plastic waste and scrap",
+    "expected_hsn": "39159061",
+    "rank_now": 1,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "Competing statutory heading(s) ['8113', '8106', '8113'] have strong independent statutory article evidence; clarification needed.",
+    "sep_attrs": [
+      "material",
+      "construction",
+      "processing_state"
+    ],
+    "question": "Please specify the processing state of 'phenoplast thermoset plastic waste and scrap' (observed statutory options: rods).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 2,
+    "top4": [
+      {
+        "hsn": "39159061",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9696,
+        "logit": 3.2921,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "phenoplast",
+          "scrap",
+          "waste"
+        ],
+        "role_mm": "",
+        "leaf": "OF PHENOPLAST",
+        "sub6": "OF OTHER PLASTICS"
+      },
+      {
+        "hsn": "39169021",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9053,
+        "logit": 1.2409,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "phenoplast",
+          "scrap",
+          "waste"
+        ],
+        "role_mm": "",
+        "leaf": "OF PHENOPLAST",
+        "sub6": "OF OTHER PLASTICS"
+      },
+      {
+        "hsn": "39169026",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.914,
+        "logit": 1.4222,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "phenoplast",
+          "scrap",
+          "waste"
+        ],
+        "role_mm": "",
+        "leaf": "OF EPOXIDE - RESINS (INCLUDING WASTE AND SCRAP",
+        "sub6": "OF OTHER PLASTICS"
+      },
+      {
+        "hsn": "39159071",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9815,
+        "logit": 4.16,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "scrap",
+          "waste"
+        ],
+        "role_mm": "",
+        "leaf": "OF REGENERATED CELLULOSE",
+        "sub6": "OF OTHER PLASTICS"
+      }
+    ]
+  },
+  {
+    "case_id": 10,
+    "category": "multiple_materials",
+    "query": "flexible plasticized pvc sausage casing tubing",
+    "expected_hsn": "39173220",
+    "rank_now": 1,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "Competing statutory heading(s) ['8307'] have strong independent statutory article evidence; clarification needed.",
+    "sep_attrs": [
+      "material",
+      "construction"
+    ],
+    "question": "Please specify the construction of 'flexible plasticized pvc sausage casing tubing' (observed statutory options: braided, extruded, woven).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "39173220",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9728,
+        "logit": 3.4831,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "casing",
+          "sausage"
+        ],
+        "role_mm": "",
+        "leaf": "OF ADDITION POLYMERISATION PRODUCTS",
+        "sub6": "OTHER TUBES, PIPES AND HOSES : OTHER, NOT REI"
+      },
+      {
+        "hsn": "39173100",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.957,
+        "logit": 2.6797,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "casing",
+          "flexible",
+          "sausage"
+        ],
+        "role_mm": "",
+        "leaf": "FLEXIBLE TUBES, PIPES AND HOSES, HAVING A MINIMUM BURST",
+        "sub6": "OTHER TUBES, PIPES AND HOSES"
+      },
+      {
+        "hsn": "39173290",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9666,
+        "logit": 3.1265,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "casing",
+          "sausage"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "OTHER TUBES, PIPES AND HOSES : OTHER, NOT REI"
+      },
+      {
+        "hsn": "39173990",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9531,
+        "logit": 2.5251,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "casing",
+          "sausage"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "OTHER"
+      }
+    ]
+  },
+  {
+    "case_id": 11,
+    "category": "processing",
+    "query": "unreinforced non-cellular pet polyester film roll",
+    "expected_hsn": "39206210",
+    "rank_now": 21,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "Competing statutory heading(s) ['3702', '3702', '3702'] have strong independent statutory article evidence; clarification needed.",
+    "sep_attrs": [
+      "material"
+    ],
+    "question": "Please specify the material of 'unreinforced non-cellular pet polyester film roll' (observed statutory options: non-cellular unreinforced plastic resin 39206310, non-cellular unreinforced plastic resin 39206320, non-cellular unreinforced plastic resin 39206911, non-cellular unreinforced plastic resin 39206921, non-cellular unreinforced plastic resin 39206922).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "39206921",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9418,
+        "logit": 2.136,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "cellular",
+          "film"
+        ],
+        "role_mm": "",
+        "leaf": "RIGID, PLAIN",
+        "sub6": "OF OTHER POLYESTERS"
+      },
+      {
+        "hsn": "39206310",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9406,
+        "logit": 2.0995,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "cellular",
+          "film"
+        ],
+        "role_mm": "",
+        "leaf": "RIGID, PLAIN",
+        "sub6": "OF UNSATURATED POLYESTERS"
+      },
+      {
+        "hsn": "39206922",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9405,
+        "logit": 2.097,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "cellular",
+          "film"
+        ],
+        "role_mm": "",
+        "leaf": "FLEXIBLE, PLAIN",
+        "sub6": "OF OTHER POLYESTERS"
+      },
+      {
+        "hsn": "39206320",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9398,
+        "logit": 2.076,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "cellular",
+          "film"
+        ],
+        "role_mm": "",
+        "leaf": "FLEXIBLE, PLAIN",
+        "sub6": "OF UNSATURATED POLYESTERS"
+      }
+    ]
+  },
+  {
+    "case_id": 14,
+    "category": "processing",
+    "query": "rigid plain polyvinyl butyral plastic sheet",
+    "expected_hsn": "39209110",
+    "rank_now": 1,
+    "prediction_mode": "CHAPTER_ONLY_CLARIFY",
+    "final_hsn": null,
+    "clarification_reason": "Heading 3920 supported, but 35 leaf tariff items compete without decisive statutory distinction.",
+    "sep_attrs": [
+      "material"
+    ],
+    "question": "Please specify the material of 'rigid plain polyvinyl butyral plastic sheet' (observed statutory options: non-cellular unreinforced plastic resin 39209110, non-cellular unreinforced plastic resin 39209111, non-cellular unreinforced plastic resin 39209911, non-cellular unreinforced plastic resin 39209921, non-cellular unreinforced plastic resin 39209941).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "39209110",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9207,
+        "logit": 1.5725,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "plain",
+          "rigid",
+          "sheet"
+        ],
+        "role_mm": "",
+        "leaf": "RIGID, PLAIN",
+        "sub6": "OF OTHER PLASTICS"
+      },
+      {
+        "hsn": "39209111",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9704,
+        "logit": 3.3371,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "butyral",
+          "plain",
+          "rigid",
+          "sheet"
+        ],
+        "role_mm": "",
+        "leaf": "RIGID, PLAIN",
+        "sub6": "OF OTHER PLASTICS"
+      },
+      {
+        "hsn": "39209921",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9247,
+        "logit": 1.6661,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "plain",
+          "rigid",
+          "sheet"
+        ],
+        "role_mm": "",
+        "leaf": "RIGID, PLAIN",
+        "sub6": "OF OTHER PLASTICS"
+      },
+      {
+        "hsn": "39209911",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9322,
+        "logit": 1.8602,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "plain",
+          "rigid",
+          "sheet"
+        ],
+        "role_mm": "",
+        "leaf": "RIGID, PLAIN",
+        "sub6": "OF OTHER PLASTICS"
+      }
+    ]
+  },
+  {
+    "case_id": 19,
+    "category": "multiple_materials",
+    "query": "men knitted casual ensemble of linen blend",
+    "expected_hsn": "61032990",
+    "rank_now": 1,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "5 SAME_PRODUCT leaf candidates span 2 distinct headings.",
+    "sep_attrs": [
+      "material"
+    ],
+    "question": "Please specify the material of 'men knitted casual ensemble of linen blend' (observed statutory options: mixed yarns).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 2,
+    "top4": [
+      {
+        "hsn": "61032990",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9648,
+        "logit": 3.0331,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "ensemble"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "OF OTHER TEXTILE MATERIALS"
+      },
+      {
+        "hsn": "61033990",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9499,
+        "logit": 2.407,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "ensemble"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "OF OTHER TEXTILE MATERIALS"
+      },
+      {
+        "hsn": "61031990",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9172,
+        "logit": 1.4927,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "ensemble"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "MENS OR BOYS SUITS, ENSEMBLES, JACKETS, BLAZE"
+      },
+      {
+        "hsn": "61034990",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9233,
+        "logit": 1.6322,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "ensemble"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "OF OTHER TEXTILE MATERIALS"
+      }
+    ]
+  },
+  {
+    "case_id": 25,
+    "category": "simple",
+    "query": "knitted cotton necktie accessory",
+    "expected_hsn": "61172030",
+    "rank_now": 1,
+    "prediction_mode": "CHAPTER_ONLY_CLARIFY",
+    "final_hsn": null,
+    "clarification_reason": "Heading 6117 supported, but 5 leaf tariff items compete without decisive statutory distinction.",
+    "sep_attrs": [
+      "material"
+    ],
+    "question": "Please specify the material of 'knitted cotton necktie accessory' (observed statutory options: combed cotton, cotton terry knit, cotton yarn, cotton-spandex elastic, crochet cotton thread).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "61172030",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9465,
+        "logit": 2.289,
+        "ev": "INSUFFICIENT_EVIDENCE",
+        "rescued": false,
+        "stat_art": [],
+        "role_mm": "",
+        "leaf": "OF COTTON",
+        "sub6": "TIES, BOW TIES AND CRAVATS"
+      },
+      {
+        "hsn": "61171030",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9288,
+        "logit": 1.7703,
+        "ev": "INSUFFICIENT_EVIDENCE",
+        "rescued": false,
+        "stat_art": [],
+        "role_mm": "",
+        "leaf": "OF COTTON",
+        "sub6": "SHAWLS, SCARVES, MUFFLERS, MANTILLAS, VEILS A"
+      },
+      {
+        "hsn": "61178030",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9079,
+        "logit": 1.2924,
+        "ev": "INSUFFICIENT_EVIDENCE",
+        "rescued": false,
+        "stat_art": [],
+        "role_mm": "",
+        "leaf": "OF COTTON",
+        "sub6": "OTHER ACCESSORIES"
+      },
+      {
+        "hsn": "61171090",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8597,
+        "logit": 0.4844,
+        "ev": "INSUFFICIENT_EVIDENCE",
+        "rescued": false,
+        "stat_art": [],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "SHAWLS, SCARVES, MUFFLERS, MANTILLAS, VEILS A"
+      }
+    ]
+  },
+  {
+    "case_id": 26,
+    "category": "ambiguous",
+    "query": "knitted cotton headband clothing accessory",
+    "expected_hsn": "61178030",
+    "rank_now": 1,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "10 SAME_PRODUCT leaf candidates span 2 distinct headings with low distinction confidence (0.0183); clarification needed.",
+    "sep_attrs": [
+      "material",
+      "product_completeness"
+    ],
+    "question": "Please specify the product completeness of 'knitted cotton headband clothing accessory' (observed statutory options: parts).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 2,
+    "top4": [
+      {
+        "hsn": "61178030",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9851,
+        "logit": 4.5328,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "clothing"
+        ],
+        "role_mm": "",
+        "leaf": "OF COTTON",
+        "sub6": "OTHER ACCESSORIES"
+      },
+      {
+        "hsn": "61172030",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9426,
+        "logit": 2.1615,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "clothing"
+        ],
+        "role_mm": "",
+        "leaf": "OF COTTON",
+        "sub6": "TIES, BOW TIES AND CRAVATS"
+      },
+      {
+        "hsn": "61171030",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9467,
+        "logit": 2.2962,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "clothing"
+        ],
+        "role_mm": "",
+        "leaf": "OF COTTON",
+        "sub6": "SHAWLS, SCARVES, MUFFLERS, MANTILLAS, VEILS A"
+      },
+      {
+        "hsn": "61112000",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9362,
+        "logit": 1.97,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "clothing"
+        ],
+        "role_mm": "",
+        "leaf": "OF COTTON",
+        "sub6": ""
+      }
+    ]
+  },
+  {
+    "case_id": 32,
+    "category": "processing",
+    "query": "women woven linen pleated midi skirt",
+    "expected_hsn": "62045990",
+    "rank_now": 2,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "Multiple related or uncertain candidates found; clarification needed.",
+    "sep_attrs": [],
+    "question": null,
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 0,
+    "top4": [
+      {
+        "hsn": "62044220",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8374,
+        "logit": 0.1887,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "skirt"
+        ],
+        "role_mm": "",
+        "leaf": "DRESSES",
+        "sub6": "OF COTTON"
+      },
+      {
+        "hsn": "62045990",
+        "rel": "RELATED_PRODUCT",
+        "conf": 0.7725,
+        "logit": -0.5198,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "skirt"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "OF OTHER TEXTILE MATERIALS"
+      },
+      {
+        "hsn": "62045300",
+        "rel": "RELATED_PRODUCT",
+        "conf": 0.774,
+        "logit": -0.5053,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "skirt"
+        ],
+        "role_mm": "",
+        "leaf": "OF SYNTHETIC FIBRES",
+        "sub6": "OF SYNTHETIC FIBRE"
+      },
+      {
+        "hsn": "62046990",
+        "rel": "RELATED_PRODUCT",
+        "conf": 0.7221,
+        "logit": -0.9748,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "skirt"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "OF OTHER TEXTILE MATERIALS"
+      }
+    ]
+  },
+  {
+    "case_id": 34,
+    "category": "processing",
+    "query": "welded stainless steel oil and gas line pipe",
+    "expected_hsn": "73061100",
+    "rank_now": 40,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "Competing statutory heading(s) ['8468'] have strong independent statutory article evidence; clarification needed.",
+    "sep_attrs": [
+      "material",
+      "construction"
+    ],
+    "question": "Please specify the material of 'welded stainless steel oil and gas line pipe' (observed statutory options: api 5l grade b, chrome alloy steel, fabricated mild steel plate, high-strength drill collar alloy, iron).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 3,
+    "top4": [
+      {
+        "hsn": "73042200",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9532,
+        "logit": 2.5267,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "gas",
+          "line",
+          "oil",
+          "pipe"
+        ],
+        "role_mm": "",
+        "leaf": "DRILL PIPE OF STAILESS STEEL",
+        "sub6": "CASING, TUBING AND DRILL PIPE, OF A KIND USED"
+      },
+      {
+        "hsn": "73042400",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9408,
+        "logit": 2.1053,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "gas",
+          "line",
+          "oil",
+          "pipe"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER, OF STAILESS STEEL",
+        "sub6": "CASING, TUBING AND DRILL PIPE, OF A KIND USED"
+      },
+      {
+        "hsn": "73041110",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9645,
+        "logit": 3.019,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "gas",
+          "line",
+          "oil",
+          "pipe"
+        ],
+        "role_mm": "",
+        "leaf": "TUBES AND PIPES",
+        "sub6": "OF STAINLESS STEEL"
+      },
+      {
+        "hsn": "73041120",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.943,
+        "logit": 2.1742,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "gas",
+          "line",
+          "oil",
+          "pipe"
+        ],
+        "role_mm": "",
+        "leaf": "BLANKS FOR TUBES AND PIPES",
+        "sub6": "OF STAINLESS STEEL"
+      }
+    ]
+  },
+  {
+    "case_id": 35,
+    "category": "simple",
+    "query": "non-circular rectangular hollow structural iron tube",
+    "expected_hsn": "73066010",
+    "rank_now": 1,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "Competing statutory heading(s) ['7304', '7304', '7304'] have strong independent statutory article evidence; clarification needed.",
+    "sep_attrs": [
+      "material",
+      "construction",
+      "processing_state",
+      "numeric_rating"
+    ],
+    "question": "Please specify the construction of 'non-circular rectangular hollow structural iron tube' (observed statutory options: cast, seamless, welded).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 3,
+    "top4": [
+      {
+        "hsn": "73066010",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9851,
+        "logit": 4.5253,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "circular",
+          "hollow",
+          "tube"
+        ],
+        "role_mm": "",
+        "leaf": "OF IRON",
+        "sub6": "OTHER, WELDED, OF NON-CIRCULAR CROSS-SECTION"
+      },
+      {
+        "hsn": "73063010",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9585,
+        "logit": 2.7419,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "circular",
+          "hollow",
+          "tube"
+        ],
+        "role_mm": "",
+        "leaf": "OF IRON",
+        "sub6": "OTHER, WELDED, OF CIRCULAR CROSS-SECTION, OF "
+      },
+      {
+        "hsn": "73043921",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9512,
+        "logit": 2.454,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "circular",
+          "hollow",
+          "tube"
+        ],
+        "role_mm": "",
+        "leaf": "OF IRON",
+        "sub6": "OTHER"
+      },
+      {
+        "hsn": "73043111",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.934,
+        "logit": 1.9084,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "circular",
+          "hollow",
+          "tube"
+        ],
+        "role_mm": "",
+        "leaf": "OF IRON",
+        "sub6": "COLD-DRAWN OR COLD-ROLLED (COLD-REDUCED"
+      }
+    ]
+  },
+  {
+    "case_id": 46,
+    "category": "complete_machine",
+    "query": "retail fuel dispensing pump for petrol station",
+    "expected_hsn": "84131191",
+    "rank_now": 1,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "Multiple related or uncertain candidates found; clarification needed.",
+    "sep_attrs": [
+      "specification"
+    ],
+    "question": "Please specify the specification of 'retail fuel dispensing pump for petrol station' (observed statutory options: hand).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 0,
+    "top4": [
+      {
+        "hsn": "84131191",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8516,
+        "logit": 0.3724,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "dispensing",
+          "fuel",
+          "pump"
+        ],
+        "role_mm": "",
+        "leaf": "PUMPS FOR DISPENSING FUEL",
+        "sub6": "PUMPS FOR DISPENSING FUEL OR LUBRICANTS, OF T"
+      },
+      {
+        "hsn": "84131110",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.7978,
+        "logit": -0.2641,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "dispensing",
+          "fuel",
+          "pump"
+        ],
+        "role_mm": "",
+        "leaf": "HAND PUMPS",
+        "sub6": "PUMPS FOR DISPENSING FUEL OR LUBRICANTS, OF T"
+      },
+      {
+        "hsn": "84131199",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.787,
+        "logit": -0.3763,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "dispensing",
+          "fuel",
+          "pump"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "PUMPS FOR DISPENSING FUEL OR LUBRICANTS, OF T"
+      },
+      {
+        "hsn": "84133010",
+        "rel": "UNRELATED",
+        "conf": 0.495,
+        "logit": -2.6329,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": true,
+        "stat_art": [
+          "fuel",
+          "pump"
+        ],
+        "role_mm": "",
+        "leaf": "INJECTION PUMPS FOR DIESEL ENGINES",
+        "sub6": "FUEL, LUBRICATING OR COOLING MEDIUM PUMPS FOR"
+      }
+    ]
+  },
+  {
+    "case_id": 47,
+    "category": "complete_machine",
+    "query": "rotary positive displacement screw pump with cast iron casing",
+    "expected_hsn": "84136020",
+    "rank_now": 1,
+    "prediction_mode": "CHAPTER_ONLY_CLARIFY",
+    "final_hsn": null,
+    "clarification_reason": "Heading 8413 supported, but 7 leaf tariff items compete without decisive statutory distinction.",
+    "sep_attrs": [
+      "specification"
+    ],
+    "question": "Please specify the specification of 'rotary positive displacement screw pump with cast iron casing' (observed statutory options: deep, dosing, gear, metering, tube).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "84136020",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9887,
+        "logit": 5.0118,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "displacement",
+          "positive",
+          "pump",
+          "rotary",
+          "screw"
+        ],
+        "role_mm": "",
+        "leaf": "SCREW TYPE PUMPS",
+        "sub6": "OTHER ROTARY POSITIVE DISPLACEMENT PUMPS"
+      },
+      {
+        "hsn": "84136090",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9756,
+        "logit": 3.6717,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "displacement",
+          "positive",
+          "pump",
+          "rotary"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "OTHER ROTARY POSITIVE DISPLACEMENT PUMPS"
+      },
+      {
+        "hsn": "84136010",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9751,
+        "logit": 3.6421,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "displacement",
+          "positive",
+          "pump",
+          "rotary"
+        ],
+        "role_mm": "",
+        "leaf": "GEAR TYPE PUMPS",
+        "sub6": "OTHER ROTARY POSITIVE DISPLACEMENT PUMPS"
+      },
+      {
+        "hsn": "84135021",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9397,
+        "logit": 2.0738,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "displacement",
+          "positive",
+          "pump"
+        ],
+        "role_mm": "",
+        "leaf": "DEEP TUBE WELL TURBINE PUMP",
+        "sub6": "OTHER RECIPROCATING POSITIVE DISPLACEMENT PUM"
+      }
+    ]
+  },
+  {
+    "case_id": 48,
+    "category": "complete_machine",
+    "query": "centrifugal water pump with electric motor",
+    "expected_hsn": "84137010",
+    "rank_now": 2,
+    "prediction_mode": "CHAPTER_ONLY_CLARIFY",
+    "final_hsn": null,
+    "clarification_reason": "Top-ranked candidate is a parts/accessories tariff item while the description specifies a complete article; clarification needed to confirm complete machine vs. spare part.",
+    "sep_attrs": [
+      "product_completeness"
+    ],
+    "question": "Please specify the product completeness of 'centrifugal water pump with electric motor' (observed statutory options: parts).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "84139120",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.8929,
+        "logit": 1.0078,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "centrifugal",
+          "pump"
+        ],
+        "role_mm": "complete_article_vs_parts",
+        "leaf": "OF CENTRIFUGAL PUMPS",
+        "sub6": "OF PUMPS"
+      },
+      {
+        "hsn": "84137010",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9163,
+        "logit": 1.4707,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "centrifugal",
+          "pump",
+          "water"
+        ],
+        "role_mm": "",
+        "leaf": "PRIMARILY DESIGNED TO HANDLE WATER",
+        "sub6": "OTHER CENTRIFUGAL PUMPS"
+      },
+      {
+        "hsn": "84137094",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8573,
+        "logit": 0.4515,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "centrifugal",
+          "pump"
+        ],
+        "role_mm": "",
+        "leaf": "VERTICAL TURBINE DRIVEN PUMPS",
+        "sub6": "OTHER CENTRIFUGAL PUMPS"
+      },
+      {
+        "hsn": "84137091",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8566,
+        "logit": 0.4408,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "centrifugal",
+          "pump"
+        ],
+        "role_mm": "",
+        "leaf": "SINGLE AND MULTISTAGE CHEMICAL PROCESS PUMPS",
+        "sub6": "OTHER CENTRIFUGAL PUMPS"
+      }
+    ]
+  },
+  {
+    "case_id": 49,
+    "category": "complete_machine",
+    "query": "hydraulic ram water lifting pump",
+    "expected_hsn": "84138120",
+    "rank_now": 1,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "Competing statutory heading(s) ['8410', '8410', '8410'] have strong independent statutory article evidence; clarification needed.",
+    "sep_attrs": [],
+    "question": null,
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "84138120",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9373,
+        "logit": 2.003,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "hydraulic",
+          "pump",
+          "ram"
+        ],
+        "role_mm": "",
+        "leaf": "HYDRAULIC RAM",
+        "sub6": "PUMPS"
+      },
+      {
+        "hsn": "84133030",
+        "rel": "RELATED_PRODUCT",
+        "conf": 0.6807,
+        "logit": -1.3115,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "pump",
+          "water"
+        ],
+        "role_mm": "",
+        "leaf": "WATER PUMP",
+        "sub6": "FUEL, LUBRICATING OR COOLING MEDIUM PUMPS FOR"
+      },
+      {
+        "hsn": "84135021",
+        "rel": "UNRELATED",
+        "conf": 0.5113,
+        "logit": -2.5222,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": true,
+        "stat_art": [
+          "pump",
+          "water"
+        ],
+        "role_mm": "",
+        "leaf": "DEEP TUBE WELL TURBINE PUMP",
+        "sub6": "OTHER RECIPROCATING POSITIVE DISPLACEMENT PUM"
+      },
+      {
+        "hsn": "84138130",
+        "rel": "UNRELATED",
+        "conf": 0.5246,
+        "logit": -2.4315,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": true,
+        "stat_art": [
+          "pump",
+          "water"
+        ],
+        "role_mm": "",
+        "leaf": "AXIAL FLOW AND MIXED FLOW VERTICAL PUMP DESIGNED PRIMAR",
+        "sub6": "PUMPS"
+      }
+    ]
+  },
+  {
+    "case_id": 50,
+    "category": "complete_machine",
+    "query": "mechanical liquid elevator for industrial sump",
+    "expected_hsn": "84138200",
+    "rank_now": 1,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "Competing statutory heading(s) ['8416', '8416', '8416'] have strong independent statutory article evidence; clarification needed.",
+    "sep_attrs": [
+      "material",
+      "product_completeness"
+    ],
+    "question": "Please specify the material of 'mechanical liquid elevator for industrial sump' (observed statutory options: lubricating or cooling medium pumps for internal combustion piston engines: other, specialized component material for fuel, specialized component material for other pumps-liquid elevators: 81 - liquid elevators, specialized component material for other pumps-liquid elevators: 81 - pumps : axial flow and mixed flow vertical pump designed primarily for handling water, specialized component material for other pumps-liquid elevators: 81 - pumps : other).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "84138200",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.8921,
+        "logit": 0.9945,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "elevator",
+          "liquid"
+        ],
+        "role_mm": "",
+        "leaf": "8413 81 - LIQUID ELEVATORS",
+        "sub6": "OTHER PUMPS-LIQUID ELEVATORS"
+      },
+      {
+        "hsn": "84139200",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8794,
+        "logit": 0.7813,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "elevator",
+          "liquid"
+        ],
+        "role_mm": "complete_article_vs_parts",
+        "leaf": "OF LIQUID ELEVATORS",
+        "sub6": "PARTS"
+      },
+      {
+        "hsn": "84138130",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8571,
+        "logit": 0.4488,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "elevator",
+          "liquid"
+        ],
+        "role_mm": "",
+        "leaf": "AXIAL FLOW AND MIXED FLOW VERTICAL PUMP DESIGNED PRIMAR",
+        "sub6": "PUMPS"
+      },
+      {
+        "hsn": "84138190",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8513,
+        "logit": 0.369,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "elevator",
+          "liquid"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "PUMPS"
+      }
+    ]
+  },
+  {
+    "case_id": 51,
+    "category": "parts",
+    "query": "spare parts for deep well turbine rotary pump",
+    "expected_hsn": "84139130",
+    "rank_now": 1,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "Competing statutory heading(s) ['8502'] have strong independent statutory article evidence; clarification needed.",
+    "sep_attrs": [
+      "specification"
+    ],
+    "question": "Please specify the specification of 'spare parts for deep well turbine rotary pump' (observed statutory options: tube).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "84139130",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9663,
+        "logit": 3.1093,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "deep",
+          "pump",
+          "rotary",
+          "turbine",
+          "well"
+        ],
+        "role_mm": "",
+        "leaf": "OF DEEP WELL TURBINE PUMPS AND OF OTHER ROTARY PUMPS",
+        "sub6": "OF PUMPS"
+      },
+      {
+        "hsn": "84135021",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8602,
+        "logit": 0.4922,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "deep",
+          "pump",
+          "turbine",
+          "well"
+        ],
+        "role_mm": "",
+        "leaf": "DEEP TUBE WELL TURBINE PUMP",
+        "sub6": "OTHER RECIPROCATING POSITIVE DISPLACEMENT PUM"
+      },
+      {
+        "hsn": "84139140",
+        "rel": "UNRELATED",
+        "conf": 0.2346,
+        "logit": -4.6107,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": true,
+        "stat_art": [
+          "pump"
+        ],
+        "role_mm": "",
+        "leaf": "OF HAND PUMP FOR HANDLING WATER",
+        "sub6": "OF PUMPS"
+      },
+      {
+        "hsn": "84137094",
+        "rel": "UNRELATED",
+        "conf": 0.264,
+        "logit": -4.3429,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": true,
+        "stat_art": [
+          "pump",
+          "turbine"
+        ],
+        "role_mm": "",
+        "leaf": "VERTICAL TURBINE DRIVEN PUMPS",
+        "sub6": "OTHER CENTRIFUGAL PUMPS"
+      }
+    ]
+  },
+  {
+    "case_id": 52,
+    "category": "complete_machine",
+    "query": "stainless steel kitchen exhaust hood with fan",
+    "expected_hsn": "84146000",
+    "rank_now": 1,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "Multiple related or uncertain candidates found; clarification needed.",
+    "sep_attrs": [
+      "construction",
+      "product_completeness",
+      "numeric_rating"
+    ],
+    "question": "Please specify the construction of 'stainless steel kitchen exhaust hood with fan' (observed statutory options: portable).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 0,
+    "top4": [
+      {
+        "hsn": "84146000",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8638,
+        "logit": 0.5432,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "hood"
+        ],
+        "role_mm": "",
+        "leaf": "HOODS HAVING A MAXIMUM HORIZONTAL SIDE NOT EXCEEDING 12",
+        "sub6": ""
+      },
+      {
+        "hsn": "84145990",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8441,
+        "logit": 0.2747,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "hood"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "OTHER"
+      },
+      {
+        "hsn": "84148090",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8295,
+        "logit": 0.092,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "hood"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "OTHER"
+      },
+      {
+        "hsn": "84145920",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8443,
+        "logit": 0.277,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "hood"
+        ],
+        "role_mm": "",
+        "leaf": "BLOWERS, PORTABLE",
+        "sub6": "OTHER"
+      }
+    ]
+  },
+  {
+    "case_id": 54,
+    "category": "parts",
+    "query": "separately presented indoor split air conditioner unit",
+    "expected_hsn": "84159010",
+    "rank_now": 1,
+    "prediction_mode": "CHAPTER_ONLY_CLARIFY",
+    "final_hsn": null,
+    "clarification_reason": "Top-ranked candidate is a parts/accessories tariff item while the description specifies a complete article; clarification needed to confirm complete machine vs. spare part.",
+    "sep_attrs": [
+      "product_completeness"
+    ],
+    "question": "Please specify the product completeness of 'separately presented indoor split air conditioner unit' (observed statutory options: parts).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "84159010",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9972,
+        "logit": 7.3885,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "air",
+          "indoor",
+          "presented",
+          "separately",
+          "split"
+        ],
+        "role_mm": "complete_article_vs_parts",
+        "leaf": "SEPARATELY PRESENTED INDOOR UNITS OR OUTDOOR UNITS FOR ",
+        "sub6": "PARTS"
+      },
+      {
+        "hsn": "84158210",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9564,
+        "logit": 2.6559,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "air",
+          "conditioner",
+          "separately",
+          "split"
+        ],
+        "role_mm": "",
+        "leaf": "SPLIT AIR CONDITIONER TWO TONNES AND ABOVE",
+        "sub6": "OTHER, INCORPORATING A REFRIGERATING UNIT"
+      },
+      {
+        "hsn": "84158310",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9567,
+        "logit": 2.6661,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "air",
+          "conditioner",
+          "separately",
+          "split"
+        ],
+        "role_mm": "",
+        "leaf": "SPLIT AIR CONDITIONER TWO TONNES AND ABOVE",
+        "sub6": "NOT INCORPORATING A REFRIGERATING UNIT"
+      },
+      {
+        "hsn": "84158110",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9501,
+        "logit": 2.4128,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "air",
+          "conditioner",
+          "separately",
+          "split"
+        ],
+        "role_mm": "",
+        "leaf": "SPLIT AIR CONDITIONER TWO TONNES AND ABOVE",
+        "sub6": "INCORPORATING A REFRIGERATING UNIT AND A VALV"
+      }
+    ]
+  },
+  {
+    "case_id": 60,
+    "category": "complete_machine",
+    "query": "stainless steel chemical distillation absorption column",
+    "expected_hsn": "84198915",
+    "rank_now": 1,
+    "prediction_mode": "CHAPTER_ONLY_CLARIFY",
+    "final_hsn": null,
+    "clarification_reason": "Competing tariff items are separated by numerical thresholds not specified in the description.",
+    "sep_attrs": [
+      "numeric_rating"
+    ],
+    "question": "Please specify the numeric rating of 'stainless steel chemical distillation absorption column' (observed statutory options: greater than 0.1 m).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "84198915",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9615,
+        "logit": 2.8743,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "absorption",
+          "chemical",
+          "column",
+          "distillation"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER DISTILLATION OR ABSORPTION COLUMNS",
+        "sub6": "OTHER"
+      },
+      {
+        "hsn": "84198914",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9712,
+        "logit": 3.388,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "absorption",
+          "chemical",
+          "column",
+          "distillation"
+        ],
+        "role_mm": "",
+        "leaf": "DISTILLATION OR ABSORPTION COLUMNS OF INTERNAL DIAMETER",
+        "sub6": "OTHER"
+      },
+      {
+        "hsn": "84198912",
+        "rel": "UNRELATED",
+        "conf": 0.6549,
+        "logit": -1.5095,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": true,
+        "stat_art": [
+          "chemical",
+          "column"
+        ],
+        "role_mm": "",
+        "leaf": "REACTORS WITH TOTAL INTERNAL (GEOMETRIC) VOLUME GREATER",
+        "sub6": "OTHER"
+      }
+    ]
+  },
+  {
+    "case_id": 64,
+    "category": "complete_machine",
+    "query": "electronic platform weighing scale 150 kg capacity",
+    "expected_hsn": "84238210",
+    "rank_now": 1,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "Multiple related or uncertain candidates found; clarification needed.",
+    "sep_attrs": [
+      "specification"
+    ],
+    "question": "Please specify the specification of 'electronic platform weighing scale 150 kg capacity' (observed statutory options: beam, maximum).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 0,
+    "top4": [
+      {
+        "hsn": "84238210",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8706,
+        "logit": 0.6437,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "capacity",
+          "kg",
+          "scale",
+          "weighing"
+        ],
+        "role_mm": "",
+        "leaf": "BEAM SCALE",
+        "sub6": "HAVING A MAXIMUM WEIGHING CAPACITY EXCEEDING "
+      },
+      {
+        "hsn": "84238110",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8574,
+        "logit": 0.4527,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "capacity",
+          "kg",
+          "scale",
+          "weighing"
+        ],
+        "role_mm": "",
+        "leaf": "BEAM SCALE",
+        "sub6": "HAVING A MAXIMUM WEIGHING CAPACITY NOT EXCEED"
+      },
+      {
+        "hsn": "84238290",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.7979,
+        "logit": -0.2631,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "capacity",
+          "kg",
+          "weighing"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "HAVING A MAXIMUM WEIGHING CAPACITY EXCEEDING "
+      },
+      {
+        "hsn": "84238190",
+        "rel": "RELATED_PRODUCT",
+        "conf": 0.7564,
+        "logit": -0.6715,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "capacity",
+          "kg",
+          "weighing"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "HAVING A MAXIMUM WEIGHING CAPACITY NOT EXCEED"
+      }
+    ]
+  },
+  {
+    "case_id": 65,
+    "category": "complete_machine",
+    "query": "tractor mounted agricultural rotary hoe",
+    "expected_hsn": "84322910",
+    "rank_now": 1,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "Competing statutory heading(s) ['8433'] have strong independent statutory article evidence; clarification needed.",
+    "sep_attrs": [],
+    "question": null,
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "84322910",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.947,
+        "logit": 2.3048,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "agricultural",
+          "hoe",
+          "rotary"
+        ],
+        "role_mm": "",
+        "leaf": "ROTARY HOES",
+        "sub6": "OTHER"
+      },
+      {
+        "hsn": "84332000",
+        "rel": "UNRELATED",
+        "conf": 0.6413,
+        "logit": -1.6107,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": true,
+        "stat_art": [
+          "agricultural",
+          "tractor"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER MOWERS, INCLUDING CUTTER BARS FOR TRACTOR MOUNTIN",
+        "sub6": ""
+      },
+      {
+        "hsn": "84321020",
+        "rel": "UNRELATED",
+        "conf": 0.5614,
+        "logit": -2.179,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": true,
+        "stat_art": [
+          "agricultural",
+          "tractor"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER TRACTOR PLOUGHS",
+        "sub6": "PLOUGHS"
+      },
+      {
+        "hsn": "84322990",
+        "rel": "UNRELATED",
+        "conf": 0.5629,
+        "logit": -2.1687,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": true,
+        "stat_art": [
+          "agricultural",
+          "hoe"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER",
+        "sub6": "OTHER"
+      }
+    ]
+  },
+  {
+    "case_id": 69,
+    "category": "complete_machine",
+    "query": "wind-powered electric turbine generating set",
+    "expected_hsn": "85023100",
+    "rank_now": 1,
+    "prediction_mode": "CHAPTER_ONLY_CLARIFY",
+    "final_hsn": null,
+    "clarification_reason": "Competing tariff items are separated by numerical thresholds not specified in the description.",
+    "sep_attrs": [
+      "construction",
+      "numeric_rating"
+    ],
+    "question": "Please specify the numeric rating of 'wind-powered electric turbine generating set' (observed statutory options: not exceeding 3.5 kva, exceeding 75 kva but not exceeding 375 kva, not exceeding 75 kva).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "85023100",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.988,
+        "logit": 4.8989,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "generating",
+          "powered",
+          "set",
+          "wind"
+        ],
+        "role_mm": "",
+        "leaf": "WIND-POWERED",
+        "sub6": "OTHER GENERATING SETS"
+      },
+      {
+        "hsn": "85023920",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9558,
+        "logit": 2.6307,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "generating",
+          "powered",
+          "set",
+          "turbine"
+        ],
+        "role_mm": "",
+        "leaf": "POWERED BY WATER TURBINE",
+        "sub6": "OTHER"
+      },
+      {
+        "hsn": "85023910",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.911,
+        "logit": 1.3569,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "generating",
+          "powered",
+          "set"
+        ],
+        "role_mm": "",
+        "leaf": "POWERED BY STEAM ENGINE",
+        "sub6": "OTHER"
+      },
+      {
+        "hsn": "85022010",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.949,
+        "logit": 2.3757,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "generating",
+          "set"
+        ],
+        "role_mm": "",
+        "leaf": "ELECTRIC PORTABLE GENERATORS OF AN OUTPUT NOT EXCEEDING",
+        "sub6": "GENERATING SETS WITH SPARK-IGNITION INTERNAL "
+      }
+    ]
+  },
+  {
+    "case_id": 75,
+    "category": "complete_machine",
+    "query": "bicycle dynamo electric headlight and signalling lamp",
+    "expected_hsn": "85121000",
+    "rank_now": 1,
+    "prediction_mode": "CHAPTER_ONLY_CLARIFY",
+    "final_hsn": null,
+    "clarification_reason": "",
+    "sep_attrs": [
+      "specification"
+    ],
+    "question": "Please specify the specification of 'bicycle dynamo electric headlight and signalling lamp' (observed statutory options: blinker, side, stop, tail).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "85121000",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9054,
+        "logit": 1.243,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "bicycle",
+          "signalling"
+        ],
+        "role_mm": "",
+        "leaf": "LIGHTING OR VISUAL SIGNALLING EQUIPMENT OF A KIND USED ",
+        "sub6": ""
+      },
+      {
+        "hsn": "85122010",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8636,
+        "logit": 0.5397,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "lamp",
+          "signalling"
+        ],
+        "role_mm": "",
+        "leaf": "HEAD LAMPS, TAIL LAMPS, STOP LAMPS, SIDE LAMPS AND BLIN",
+        "sub6": "OTHER LIGHTING OR VISUAL SIGNALLING EQUIPMENT"
+      },
+      {
+        "hsn": "85122020",
+        "rel": "UNRELATED",
+        "conf": 0.669,
+        "logit": -1.4018,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": true,
+        "stat_art": [
+          "signalling"
+        ],
+        "role_mm": "",
+        "leaf": "OTHER AUTOMOBILE LIGHTING EQUIPMENT",
+        "sub6": "OTHER LIGHTING OR VISUAL SIGNALLING EQUIPMENT"
+      },
+      {
+        "hsn": "85124000",
+        "rel": "UNRELATED",
+        "conf": 0.6468,
+        "logit": -1.5699,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": true,
+        "stat_art": [
+          "signalling"
+        ],
+        "role_mm": "",
+        "leaf": "WINDSCREEN WIPERS, DEFROSTERS AND DEMISTERS",
+        "sub6": ""
+      }
+    ]
+  },
+  {
+    "case_id": 76,
+    "category": "complete_machine",
+    "query": "industrial electron beam melting furnace",
+    "expected_hsn": "85143100",
+    "rank_now": 1,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "Competing statutory heading(s) ['8456', '8456', '8456'] have strong independent statutory article evidence; clarification needed.",
+    "sep_attrs": [
+      "material",
+      "construction",
+      "intended_use"
+    ],
+    "question": "Please specify the material of 'industrial electron beam melting furnace' (observed statutory options: cast iron doors, ceramic fiber insulation, electron beam furnaces technical composition alloy, heavy structural steel framework, melting or other heat treatment of ores).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "85143100",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9597,
+        "logit": 2.7924,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "beam",
+          "electron",
+          "furnace"
+        ],
+        "role_mm": "",
+        "leaf": "ELECTRON BEAM FURNACES",
+        "sub6": "OTHER FURNACES AND OVENS"
+      },
+      {
+        "hsn": "85143010",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.8765,
+        "logit": 0.7344,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "furnace",
+          "melting"
+        ],
+        "role_mm": "",
+        "leaf": "FOR MELTING",
+        "sub6": "OTHER FURNACES AND OVENS"
+      },
+      {
+        "hsn": "84171000",
+        "rel": "INSUFFICIENT_INFORMATION",
+        "conf": 0.7845,
+        "logit": -0.4007,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "furnace",
+          "melting"
+        ],
+        "role_mm": "",
+        "leaf": "FURNACES AND OVENS FOR THE ROASTING, MELTING OR OTHER H",
+        "sub6": ""
+      },
+      {
+        "hsn": "85143200",
+        "rel": "RELATED_PRODUCT",
+        "conf": 0.6839,
+        "logit": -1.2862,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "furnace"
+        ],
+        "role_mm": "",
+        "leaf": "PLASMA AND VACUUM ARC FURNACES",
+        "sub6": "OTHER FURNACES AND OVENS"
+      }
+    ]
+  },
+  {
+    "case_id": 78,
+    "category": "simple",
+    "query": "carrier current line telecommunication equipment",
+    "expected_hsn": "85175010",
+    "rank_now": 1,
+    "prediction_mode": "CHAPTER_ONLY_CLARIFY",
+    "final_hsn": null,
+    "clarification_reason": "Heading 8517 supported, but 25 leaf tariff items compete without decisive statutory distinction.",
+    "sep_attrs": [
+      "specification"
+    ],
+    "question": "Please specify the specification of 'carrier current line telecommunication equipment' (observed statutory options: access, bit, boxe, dlc, electrical).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "85175010",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9877,
+        "logit": 4.8669,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "carrier",
+          "current",
+          "line",
+          "telecommunication"
+        ],
+        "role_mm": "",
+        "leaf": "PLCC EQUIPMENT",
+        "sub6": "ELECTRICAL APPARATUS FOR LINE TELEPHONY OR LI"
+      },
+      {
+        "hsn": "85178020",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9837,
+        "logit": 4.3716,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "carrier",
+          "current",
+          "line",
+          "telecommunication"
+        ],
+        "role_mm": "",
+        "leaf": "SUBSCRIBER END EQUIPMENT",
+        "sub6": "ELECTRICAL APPARATUS FOR LINE TELEPHONY OR LI"
+      },
+      {
+        "hsn": "85175050",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.973,
+        "logit": 3.4997,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "carrier",
+          "current",
+          "line",
+          "telecommunication"
+        ],
+        "role_mm": "",
+        "leaf": "DIGITAL LOOP CARRIER SYSTEM (DLC)",
+        "sub6": "ELECTRICAL APPARATUS FOR LINE TELEPHONY OR LI"
+      },
+      {
+        "hsn": "85175040",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9635,
+        "logit": 2.9694,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "carrier",
+          "current",
+          "line",
+          "telecommunication"
+        ],
+        "role_mm": "",
+        "leaf": "HIGH BIT RATE DIGITAL SUBSCRIBER LINE SYSTEM (HDSL)",
+        "sub6": "ELECTRICAL APPARATUS FOR LINE TELEPHONY OR LI"
+      }
+    ]
+  },
+  {
+    "case_id": 81,
+    "category": "parts",
+    "query": "telephone handset attachment cord accessory",
+    "expected_hsn": "85178010",
+    "rank_now": 1,
+    "prediction_mode": "CHAPTER_ONLY_CLARIFY",
+    "final_hsn": null,
+    "clarification_reason": "Heading 8517 supported, but 4 leaf tariff items compete without decisive statutory distinction.",
+    "sep_attrs": [],
+    "question": null,
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "85178010",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9192,
+        "logit": 1.5378,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "attachment",
+          "handset",
+          "telephone"
+        ],
+        "role_mm": "",
+        "leaf": "ATTACHMENTS FOR TELEPHONES",
+        "sub6": "ELECTRICAL APPARATUS FOR LINE TELEPHONY OR LI"
+      },
+      {
+        "hsn": "85171110",
+        "rel": "UNRELATED",
+        "conf": 0.6673,
+        "logit": -1.4148,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": true,
+        "stat_art": [
+          "handset",
+          "telephone"
+        ],
+        "role_mm": "",
+        "leaf": "PUSH BUTTON TYPE",
+        "sub6": "LINE TELEPHONE SETS WITH CORDLESS HANDSETS"
+      },
+      {
+        "hsn": "85171911",
+        "rel": "UNRELATED",
+        "conf": 0.6099,
+        "logit": -1.8385,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": true,
+        "stat_art": [
+          "handset",
+          "telephone"
+        ],
+        "role_mm": "",
+        "leaf": "PUSH BUTTON TYPE",
+        "sub6": "ELECTRICAL APPARATUS FOR LINE TELEPHONY OR LI"
+      },
+      {
+        "hsn": "85171912",
+        "rel": "UNRELATED",
+        "conf": 0.566,
+        "logit": -2.1471,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": true,
+        "stat_art": [
+          "handset",
+          "telephone"
+        ],
+        "role_mm": "",
+        "leaf": "ROTARY DIAL TYPE",
+        "sub6": "ELECTRICAL APPARATUS FOR LINE TELEPHONY OR LI"
+      }
+    ]
+  },
+  {
+    "case_id": 83,
+    "category": "complete_machine",
+    "query": "turntable record player deck without loudspeaker",
+    "expected_hsn": "85192100",
+    "rank_now": 1,
+    "prediction_mode": "CHAPTER_ONLY_CLARIFY",
+    "final_hsn": null,
+    "clarification_reason": "Heading 8519 supported, but 13 leaf tariff items compete without decisive statutory distinction.",
+    "sep_attrs": [
+      "specification"
+    ],
+    "question": "Please specify the specification of 'turntable record player deck without loudspeaker' (observed statutory options: automatic, changer, changing, compact, disc).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "85192100",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9928,
+        "logit": 5.7917,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "deck",
+          "loudspeaker",
+          "player",
+          "record",
+          "turntable",
+          "without"
+        ],
+        "role_mm": "",
+        "leaf": "WITHOUT LOUDSPEAKER",
+        "sub6": "TURNTABLES (RECORD-DECKS), RECORD-PLAYERS, CA"
+      },
+      {
+        "hsn": "85199940",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9442,
+        "logit": 2.2129,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "deck",
+          "player",
+          "record",
+          "turntable"
+        ],
+        "role_mm": "",
+        "leaf": "MP-3 PLAYER",
+        "sub6": "TURNTABLES (RECORD-DECKS), RECORD-PLAYERS, CA"
+      },
+      {
+        "hsn": "85193100",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9583,
+        "logit": 2.7332,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "deck",
+          "player",
+          "record",
+          "turntable"
+        ],
+        "role_mm": "",
+        "leaf": "WITH AUTOMATIC RECORD CHANGING MECHANISM",
+        "sub6": "TURNTABLES (RECORD-DECKS), RECORD-PLAYERS, CA"
+      },
+      {
+        "hsn": "85199920",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9259,
+        "logit": 1.6955,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "deck",
+          "player",
+          "record",
+          "turntable"
+        ],
+        "role_mm": "",
+        "leaf": "COMPACT DISC CHANGER INCLUDING MINI DISC PLAYER OR LASE",
+        "sub6": "TURNTABLES (RECORD-DECKS), RECORD-PLAYERS, CA"
+      }
+    ]
+  },
+  {
+    "case_id": 86,
+    "category": "simple",
+    "query": "recordable compact disc blank optical media",
+    "expected_hsn": "85239050",
+    "rank_now": 1,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "Competing statutory heading(s) ['8524', '8524', '8524'] have strong independent statutory article evidence; clarification needed.",
+    "sep_attrs": [
+      "material"
+    ],
+    "question": "Please specify the material of 'recordable compact disc blank optical media' (observed statutory options: blank master discs (that is, other than products of chapter 37 - other: blank master disc (i.e. substrate) for producing stamper for compact disc technical composition alloy, other than products of chapter 37 - other: compact disc recordable technical composition alloy, other than products of chapter 37 - other: unrecorded compact disc (audio) technical composition alloy, prepared unrecorded media for sound recording or similar recording of other phenomena).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "85239050",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9692,
+        "logit": 3.2657,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "compact",
+          "disc",
+          "media",
+          "recordable"
+        ],
+        "role_mm": "",
+        "leaf": "COMPACT DISC RECORDABLE",
+        "sub6": "PREPARED UNRECORDED MEDIA FOR SOUND RECORDING"
+      },
+      {
+        "hsn": "85234120",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9427,
+        "logit": 2.1657,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "blank",
+          "compact",
+          "disc",
+          "media"
+        ],
+        "role_mm": "",
+        "leaf": "BLANK MASTER DISCS (THAT IS, SUBSTRATE) FOR PRODUCING S",
+        "sub6": "UNRECORDED"
+      },
+      {
+        "hsn": "85239060",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9496,
+        "logit": 2.3952,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "blank",
+          "compact",
+          "disc",
+          "media"
+        ],
+        "role_mm": "",
+        "leaf": "BLANK MASTER DISC (I.E. SUBSTRATE) FOR PRODUCING STAMPE",
+        "sub6": "PREPARED UNRECORDED MEDIA FOR SOUND RECORDING"
+      },
+      {
+        "hsn": "85239040",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.925,
+        "logit": 1.6737,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "compact",
+          "disc",
+          "media"
+        ],
+        "role_mm": "",
+        "leaf": "UNRECORDED COMPACT DISC (AUDIO)",
+        "sub6": "PREPARED UNRECORDED MEDIA FOR SOUND RECORDING"
+      }
+    ]
+  },
+  {
+    "case_id": 88,
+    "category": "complete_machine",
+    "query": "vhf two-way walkie talkie radio transceiver",
+    "expected_hsn": "85252011",
+    "rank_now": 1,
+    "prediction_mode": "MULTIPLE_CANDIDATES",
+    "final_hsn": null,
+    "clarification_reason": "Competing statutory heading(s) ['8526'] have strong independent statutory article evidence; clarification needed.",
+    "sep_attrs": [],
+    "question": null,
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "85252011",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9567,
+        "logit": 2.6642,
+        "ev": "SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "radio",
+          "talkie",
+          "two",
+          "walkie",
+          "way"
+        ],
+        "role_mm": "",
+        "leaf": "WALKIE TALKIE SET",
+        "sub6": "RADIO-TELEPHONY, RADIOTELEGRAPHY, RADIO-BROAD"
+      },
+      {
+        "hsn": "85252014",
+        "rel": "RELATED_PRODUCT",
+        "conf": 0.72,
+        "logit": -0.9925,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "radio",
+          "two",
+          "way"
+        ],
+        "role_mm": "",
+        "leaf": "TRANSPORTABLE TELEPHONE",
+        "sub6": "RADIO-TELEPHONY, RADIOTELEGRAPHY, RADIO-BROAD"
+      },
+      {
+        "hsn": "85252016",
+        "rel": "RELATED_PRODUCT",
+        "conf": 0.7103,
+        "logit": -1.0732,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "radio",
+          "two",
+          "way"
+        ],
+        "role_mm": "",
+        "leaf": "AMATEUR RADIO EQUIPMENT",
+        "sub6": "RADIO-TELEPHONY, RADIOTELEGRAPHY, RADIO-BROAD"
+      },
+      {
+        "hsn": "85252017",
+        "rel": "RELATED_PRODUCT",
+        "conf": 0.7092,
+        "logit": -1.0821,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [
+          "radio",
+          "two",
+          "way"
+        ],
+        "role_mm": "",
+        "leaf": "CELLULAR TELEPHONE",
+        "sub6": "RADIO-TELEPHONY, RADIOTELEGRAPHY, RADIO-BROAD"
+      }
+    ]
+  },
+  {
+    "case_id": 93,
+    "category": "complete_machine",
+    "query": "petrol-electric hybrid passenger minibus",
+    "expected_hsn": "87023018",
+    "rank_now": 1,
+    "prediction_mode": "CHAPTER_ONLY_CLARIFY",
+    "final_hsn": null,
+    "clarification_reason": "Heading 8702 supported, but 9 leaf tariff items compete without decisive statutory distinction.",
+    "sep_attrs": [
+      "material"
+    ],
+    "question": "Please specify the material of 'petrol-electric hybrid passenger minibus' (observed statutory options: ac compressor, city bus seating, climate control ac, electronic controller, hybrid diesel-electric drive).",
+    "hsn_conf": null,
+    "chap_conf": null,
+    "tau_exact": null,
+    "distinction_conf": null,
+    "unique_same_headings": 1,
+    "top4": [
+      {
+        "hsn": "87023018",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9609,
+        "logit": 2.8455,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [],
+        "role_mm": "",
+        "leaf": "OTHER, AIR-CONDITIONED",
+        "sub6": "WITH BOTH SPARK-IGNITION INTERNAL COMBUSTION "
+      },
+      {
+        "hsn": "87023012",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9402,
+        "logit": 2.088,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [],
+        "role_mm": "",
+        "leaf": "INTEGRATED MONOCOQUE VEHICLE, NON AIR-CONDITIONED",
+        "sub6": "WITH BOTH SPARK-IGNITION INTERNAL COMBUSTION "
+      },
+      {
+        "hsn": "87022011",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.9259,
+        "logit": 1.6957,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [],
+        "role_mm": "",
+        "leaf": "INTEGRATED MONOCOQUE VEHICLE, AIR-CONDITIONED",
+        "sub6": "WITH BOTH COMPRESSION-IGNITION INTERNAL COMBU"
+      },
+      {
+        "hsn": "87023029",
+        "rel": "SAME_PRODUCT",
+        "conf": 0.8985,
+        "logit": 1.1106,
+        "ev": "POSSIBLY_SUPPORTED",
+        "rescued": false,
+        "stat_art": [],
+        "role_mm": "",
+        "leaf": "OTHER, NON AIR-CONDITIONED",
+        "sub6": "WITH BOTH SPARK-IGNITION INTERNAL COMBUSTION "
+      }
+    ]
+  }
+]

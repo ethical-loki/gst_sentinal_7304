@@ -1,189 +1,274 @@
 {
-  "fit_n": 77,
-  "eval_n": 50,
-  "fit_hsn_base_accuracy": 0.3766,
-  "eval_hsn_base_accuracy": 0.38,
-  "eval_chapter_base_accuracy": 0.98,
+  "model_dir": "C:\\Users\\User\\OneDrive\\Desktop\\GST_Sentinal\\data\\model_versions\\hsn_reranker_v1",
+  "fit_n": 59,
+  "eval_n": 40,
+  "fit_hsn_base_accuracy": 0.322,
+  "eval_hsn_base_accuracy": 0.35,
+  "eval_chapter_base_accuracy": 0.925,
   "old_hsn_calibration": {
-    "n": 50,
-    "nll": 2.6775,
-    "brier": 0.3745,
-    "ece": 0.3651,
+    "n": 40,
+    "nll": 0.4031,
+    "brier": 0.1264,
+    "ece": 0.2353,
     "reliability_bins": [
       {
         "bin": "[0.0,0.1]",
-        "count": 50,
-        "mean_confidence": 0.0149,
-        "empirical_accuracy": 0.38
-      }
-    ]
-  },
-  "new_hsn_calibration": {
-    "n": 50,
-    "nll": 0.4308,
-    "brier": 0.1334,
-    "ece": 0.1495,
-    "reliability_bins": [
-      {
-        "bin": "[0.0,0.1]",
-        "count": 1,
-        "mean_confidence": 0.0961,
+        "count": 3,
+        "mean_confidence": 0.0737,
         "empirical_accuracy": 0.0
       },
       {
         "bin": "[0.1,0.2]",
-        "count": 6,
-        "mean_confidence": 0.1678,
+        "count": 11,
+        "mean_confidence": 0.1422,
         "empirical_accuracy": 0.0
       },
       {
         "bin": "[0.2,0.3]",
-        "count": 14,
-        "mean_confidence": 0.244,
-        "empirical_accuracy": 0.1429
+        "count": 6,
+        "mean_confidence": 0.2296,
+        "empirical_accuracy": 0.6667
       },
       {
         "bin": "[0.3,0.4]",
-        "count": 11,
-        "mean_confidence": 0.3417,
-        "empirical_accuracy": 0.1818
+        "count": 9,
+        "mean_confidence": 0.3457,
+        "empirical_accuracy": 0.1111
       },
       {
         "bin": "[0.4,0.5]",
-        "count": 8,
-        "mean_confidence": 0.4542,
-        "empirical_accuracy": 0.625
+        "count": 2,
+        "mean_confidence": 0.4487,
+        "empirical_accuracy": 0.0
       },
       {
         "bin": "[0.5,0.6]",
-        "count": 1,
-        "mean_confidence": 0.5894,
+        "count": 2,
+        "mean_confidence": 0.5638,
         "empirical_accuracy": 1.0
       },
       {
         "bin": "[0.6,0.7]",
         "count": 1,
-        "mean_confidence": 0.6871,
+        "mean_confidence": 0.6156,
         "empirical_accuracy": 1.0
       },
       {
         "bin": "[0.7,0.8]",
         "count": 1,
-        "mean_confidence": 0.711,
+        "mean_confidence": 0.7182,
         "empirical_accuracy": 1.0
       },
       {
         "bin": "[0.8,0.9]",
-        "count": 6,
-        "mean_confidence": 0.8778,
+        "count": 2,
+        "mean_confidence": 0.8306,
         "empirical_accuracy": 1.0
       },
       {
         "bin": "[0.9,1.0]",
-        "count": 1,
-        "mean_confidence": 0.917,
+        "count": 3,
+        "mean_confidence": 0.9604,
+        "empirical_accuracy": 1.0
+      }
+    ]
+  },
+  "new_hsn_calibration": {
+    "n": 40,
+    "nll": 0.3967,
+    "brier": 0.1228,
+    "ece": 0.1065,
+    "reliability_bins": [
+      {
+        "bin": "[0.0,0.1]",
+        "count": 3,
+        "mean_confidence": 0.0788,
+        "empirical_accuracy": 0.0
+      },
+      {
+        "bin": "[0.1,0.2]",
+        "count": 7,
+        "mean_confidence": 0.1681,
+        "empirical_accuracy": 0.0
+      },
+      {
+        "bin": "[0.2,0.3]",
+        "count": 15,
+        "mean_confidence": 0.251,
+        "empirical_accuracy": 0.2
+      },
+      {
+        "bin": "[0.3,0.4]",
+        "count": 3,
+        "mean_confidence": 0.372,
+        "empirical_accuracy": 0.6667
+      },
+      {
+        "bin": "[0.4,0.5]",
+        "count": 5,
+        "mean_confidence": 0.4384,
+        "empirical_accuracy": 0.4
+      },
+      {
+        "bin": "[0.7,0.8]",
+        "count": 2,
+        "mean_confidence": 0.7269,
+        "empirical_accuracy": 1.0
+      },
+      {
+        "bin": "[0.8,0.9]",
+        "count": 2,
+        "mean_confidence": 0.833,
+        "empirical_accuracy": 1.0
+      },
+      {
+        "bin": "[0.9,1.0]",
+        "count": 3,
+        "mean_confidence": 0.9578,
         "empirical_accuracy": 1.0
       }
     ]
   },
   "old_chapter_calibration": {
-    "n": 50,
-    "nll": 0.1038,
-    "brier": 0.0197,
-    "ece": 0.0115,
+    "n": 40,
+    "nll": 0.1908,
+    "brier": 0.0514,
+    "ece": 0.0492,
     "reliability_bins": [
       {
+        "bin": "[0.4,0.5]",
+        "count": 1,
+        "mean_confidence": 0.4789,
+        "empirical_accuracy": 0.0
+      },
+      {
+        "bin": "[0.7,0.8]",
+        "count": 1,
+        "mean_confidence": 0.7881,
+        "empirical_accuracy": 1.0
+      },
+      {
+        "bin": "[0.8,0.9]",
+        "count": 3,
+        "mean_confidence": 0.8586,
+        "empirical_accuracy": 0.6667
+      },
+      {
         "bin": "[0.9,1.0]",
-        "count": 50,
-        "mean_confidence": 0.9915,
-        "empirical_accuracy": 0.98
+        "count": 35,
+        "mean_confidence": 0.9514,
+        "empirical_accuracy": 0.9714
       }
     ]
   },
   "new_chapter_calibration": {
-    "n": 50,
-    "nll": 0.0998,
-    "brier": 0.022,
-    "ece": 0.012,
+    "n": 40,
+    "nll": 0.191,
+    "brier": 0.0514,
+    "ece": 0.0491,
     "reliability_bins": [
       {
-        "bin": "[0.6,0.7]",
+        "bin": "[0.4,0.5]",
         "count": 1,
-        "mean_confidence": 0.6513,
+        "mean_confidence": 0.4787,
+        "empirical_accuracy": 0.0
+      },
+      {
+        "bin": "[0.7,0.8]",
+        "count": 1,
+        "mean_confidence": 0.7878,
         "empirical_accuracy": 1.0
       },
       {
+        "bin": "[0.8,0.9]",
+        "count": 3,
+        "mean_confidence": 0.8578,
+        "empirical_accuracy": 0.6667
+      },
+      {
         "bin": "[0.9,1.0]",
-        "count": 49,
-        "mean_confidence": 0.9745,
-        "empirical_accuracy": 0.9796
+        "count": 35,
+        "mean_confidence": 0.9514,
+        "empirical_accuracy": 0.9714
       }
     ]
   },
   "new_hsn_selective_curve": [
     {
       "threshold": 0.3,
-      "covered": 29,
-      "coverage": 0.58,
-      "accuracy": 0.5862,
-      "error_rate": 0.4138
+      "covered": 15,
+      "coverage": 0.375,
+      "accuracy": 0.7333,
+      "error_rate": 0.2667
     },
     {
       "threshold": 0.4,
-      "covered": 18,
-      "coverage": 0.36,
-      "accuracy": 0.8333,
-      "error_rate": 0.1667
+      "covered": 12,
+      "coverage": 0.3,
+      "accuracy": 0.75,
+      "error_rate": 0.25
     },
     {
       "threshold": 0.5,
-      "covered": 10,
-      "coverage": 0.2,
+      "covered": 7,
+      "coverage": 0.175,
       "accuracy": 1.0,
       "error_rate": 0.0
     },
     {
       "threshold": 0.6,
-      "covered": 9,
-      "coverage": 0.18,
+      "covered": 7,
+      "coverage": 0.175,
       "accuracy": 1.0,
       "error_rate": 0.0
     },
     {
       "threshold": 0.7,
-      "covered": 8,
-      "coverage": 0.16,
+      "covered": 7,
+      "coverage": 0.175,
       "accuracy": 1.0,
       "error_rate": 0.0
     },
     {
       "threshold": 0.75,
-      "covered": 7,
-      "coverage": 0.14,
+      "covered": 5,
+      "coverage": 0.125,
       "accuracy": 1.0,
       "error_rate": 0.0
     },
     {
       "threshold": 0.8,
-      "covered": 7,
-      "coverage": 0.14,
+      "covered": 5,
+      "coverage": 0.125,
       "accuracy": 1.0,
       "error_rate": 0.0
     },
     {
       "threshold": 0.85,
-      "covered": 7,
-      "coverage": 0.14,
+      "covered": 4,
+      "coverage": 0.1,
       "accuracy": 1.0,
       "error_rate": 0.0
     },
     {
       "threshold": 0.9,
-      "covered": 1,
-      "coverage": 0.02,
+      "covered": 3,
+      "coverage": 0.075,
       "accuracy": 1.0,
       "error_rate": 0.0
     }
   ],
+  "new_hsn_weights": [
+    0.517675,
+    0.745413,
+    -0.663087,
+    0.0,
+    0.0,
+    0.0,
+    -0.169953,
+    0.0,
+    0.073978
+  ],
+  "new_hsn_bias": -0.90321,
   "calibration_updated": true
 }
