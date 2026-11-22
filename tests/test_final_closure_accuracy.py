@@ -153,3 +153,169 @@ def test_symmetric_parts_role_propulsion_power_source_and_media_state():
     }
     ev_rec = evaluate_candidate_evidence(pi_blank, build_candidate_profile(rec_recorded, None), "SAME_PRODUCT", 0.80)
     assert ev_rec.status == CONTRADICTED
+
+
+def test_polymer_specificity_media_whether_recorded_and_with_engine_clause():
+    # 1. Specific Ch 39 polymer query contradicts disjoint leaf/subheading polymer
+    pi_nylon = analyze_product_intent("recycled nylon polyamide plastic scrap and parings")
+    rec_pu = {
+        "hsn_code": "39159063",
+        "code_length": 8,
+        "chapter_code": "39",
+        "chapter_title": "Plastics and articles thereof",
+        "heading_4digit": "3915",
+        "heading_4digit_desc": "WASTE, PARINGS AND SCRAP, OF PLASTICS",
+        "subheading_6digit": "391590",
+        "subheading_6digit_desc": "OF OTHER PLASTICS",
+        "tariff_item_desc": "OF POLYURETHANES",
+        "statutory_description": "WASTE, PARINGS AND SCRAP, OF PLASTICS - OF OTHER PLASTICS : OF POLYURETHANES",
+        "article_keywords": "plastic scrap",
+        "material_keywords": "polyurethane",
+    }
+    ev_pu = evaluate_candidate_evidence(pi_nylon, build_candidate_profile(rec_pu, None), "SAME_PRODUCT", 0.90)
+    assert ev_pu.status == CONTRADICTED
+
+    # 2. "WHETHER OR NOT RECORDED" under Heading 8523 must NOT be contradicted for blank media queries
+    pi_smart = analyze_product_intent("blank magnetic stripe plastic smart card")
+    rec_card = {
+        "hsn_code": "85232920",
+        "code_length": 8,
+        "chapter_code": "85",
+        "chapter_title": "Electrical machinery and equipment",
+        "heading_4digit": "8523",
+        "heading_4digit_desc": "DISCS, TAPES, SOLID-STATE NON-VOLATILE MEDIA, SMART CARDS, WHETHER OR NOT RECORDED",
+        "subheading_6digit": "852329",
+        "subheading_6digit_desc": "OTHER",
+        "tariff_item_desc": "STORAGE DEVICES, SMART CARDS AND OTHER MEDIA, WHETHER OR NOT RECORDED",
+        "statutory_description": "SMART CARDS, WHETHER OR NOT RECORDED",
+        "article_keywords": "smart cards",
+        "material_keywords": "plastics",
+    }
+    ev_card = evaluate_candidate_evidence(pi_smart, build_candidate_profile(rec_card, None), "RELATED_PRODUCT", 0.30)
+    assert ev_card.status != CONTRADICTED
+
+    # 3. Complete vehicle with secondary "WITH ... PISTON ENGINE" subheading does not claim standalone engine identity
+    pi_eng = analyze_product_intent("petrol spark-ignition motorcycle engine 150cc")
+    rec_moto = {
+        "hsn_code": "87112019",
+        "code_length": 8,
+        "chapter_code": "87",
+        "chapter_title": "Vehicles other than railway or tramway rolling-stock",
+        "heading_4digit": "8711",
+        "heading_4digit_desc": "MOTORCYCLES (INCLUDING MOPEDS) AND CYCLES FITTED WITH AN AUXILIARY MOTOR",
+        "subheading_6digit": "871120",
+        "subheading_6digit_desc": "WITH RECIPROCATING INTERNAL COMBUSTION PISTON ENGINE OF A CYLINDER CAPACITY EXCEEDING 50 CC",
+        "tariff_item_desc": "OTHER",
+        "statutory_description": "MOTORCYCLES WITH RECIPROCATING INTERNAL COMBUSTION PISTON ENGINE: OTHER",
+        "article_keywords": "motorcycles",
+        "material_keywords": "",
+    }
+    ev_moto = evaluate_candidate_evidence(pi_eng, build_candidate_profile(rec_moto, None), "SAME_PRODUCT", 0.80)
+    assert ev_moto.primary_article_matched is False
+
+
+def test_parts_heading_alignment_and_cross_sub6_residual_preservation():
+    from src.ml.ambiguity_resolver import analyze_sibling_distinctions
+    from src.ml.product_tariff_reranker import RerankedTariffCandidate
+    from src.ml.relevance_classifier import ClassifiedTariffCandidate, RelationLabel
+
+    # 1. Pure-parts heading (8409 PARTS SUITABLE FOR...) satisfies parts-role alignment when query asks for parts
+    pi_part = analyze_product_intent("diesel engine piston assembly spare part")
+    rec_piston_assy = {
+        "hsn_code": "84099914",
+        "code_length": 8,
+        "chapter_code": "84",
+        "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof",
+        "heading_4digit": "8409",
+        "heading_4digit_desc": "PARTS SUITABLE FOR USE SOLELY OR PRINCIPALLY WITH THE ENGINES OF HEADING 8407 OR 8408",
+        "subheading_6digit": "840999",
+        "subheading_6digit_desc": "OTHER",
+        "tariff_item_desc": "PISTON ASSEMBLIES",
+        "statutory_description": "PARTS OF ENGINES: PISTON ASSEMBLIES",
+        "article_keywords": "piston assemblies",
+        "material_keywords": "",
+    }
+    ev_assy = evaluate_candidate_evidence(pi_part, build_candidate_profile(rec_piston_assy, None), "RELATED_PRODUCT", 0.40)
+    assert ev_assy.primary_article_matched is True
+    assert ev_assy.role_mismatch == ""
+    assert ev_assy.status != "INSUFFICIENT_EVIDENCE"
+
+    # 2. Cross-subheading residual "OTHER" leaf (e.g. 84219900 parts of filters vs 84219100 parts of centrifuges)
+    # must NOT be superseded as a weak same-subheading residual or trigger single-sub6 clear_ev over competing sub6.
+    c_9100 = ClassifiedTariffCandidate(
+        candidate=RerankedTariffCandidate(
+            hsn_code="84219100",
+            description="CENTRIFUGES, INCLUDING CENTRIFUGAL DRYERS",
+            chapter_code="84",
+            chapter_title="Machinery",
+            heading_4digit_desc="CENTRIFUGES; FILTERING OR PURIFYING MACHINERY AND APPARATUS",
+            subheading_6digit_desc="OF CENTRIFUGES, INCLUDING CENTRIFUGAL DRYERS",
+            tariff_item_desc="OF CENTRIFUGES, INCLUDING CENTRIFUGAL DRYERS",
+            relevance_score=0.77,
+            raw_logit=1.22,
+        ),
+        relation=RelationLabel.SAME_PRODUCT,
+        confidence=0.77,
+    )
+    c_9900 = ClassifiedTariffCandidate(
+        candidate=RerankedTariffCandidate(
+            hsn_code="84219900",
+            description="OTHER",
+            chapter_code="84",
+            chapter_title="Machinery",
+            heading_4digit_desc="CENTRIFUGES; FILTERING OR PURIFYING MACHINERY AND APPARATUS",
+            subheading_6digit_desc="OTHER",
+            tariff_item_desc="OTHER",
+            relevance_score=0.77,
+            raw_logit=1.23,
+        ),
+        relation=RelationLabel.SAME_PRODUCT,
+        confidence=0.77,
+    )
+    c_9990 = ClassifiedTariffCandidate(
+        candidate=RerankedTariffCandidate(
+            hsn_code="84219990",
+            description="OTHER",
+            chapter_code="84",
+            chapter_title="Machinery",
+            heading_4digit_desc="CENTRIFUGES; FILTERING OR PURIFYING MACHINERY AND APPARATUS",
+            subheading_6digit_desc="OTHER",
+            tariff_item_desc="OTHER",
+            relevance_score=0.78,
+            raw_logit=1.24,
+        ),
+        relation=RelationLabel.SAME_PRODUCT,
+        confidence=0.78,
+    )
+    analysis = analyze_sibling_distinctions(
+        [c_9100, c_9900, c_9990],
+        "replacement parts for industrial centrifuge filter",
+        evidence_by_hsn={
+            "84219100": {"status": "SUPPORTED"},
+            "84219900": {"status": "POSSIBLY_SUPPORTED"},
+            "84219990": {"status": "POSSIBLY_SUPPORTED"},
+        },
+    )
+    assert analysis["winner_has_clear_evidence"] is False
+    assert "84219900" not in analysis["statutorily_superseded_hsns"]
+    assert "84219990" not in analysis["statutorily_superseded_hsns"]
+
+    # 3. Statutory "- PARTS: OTHER" hierarchy rows (e.g. 84219900) recognize parts role cleanly
+    pi_filter_part = analyze_product_intent("replacement parts for industrial centrifuge filter")
+    rec_filter_part = {
+        "hsn_code": "84219900",
+        "code_length": 8,
+        "chapter_code": "84",
+        "chapter_title": "Nuclear reactors, boilers, machinery and mechanical appliances; parts thereof",
+        "heading_4digit": "8421",
+        "heading_4digit_desc": "CENTRIFUGES, INCLUDING CENTRIFUGAL DRYERS; FILTERING OR PURIFYING MACHINERY AND APPARATUS",
+        "subheading_6digit": "842199",
+        "subheading_6digit_desc": "OTHER",
+        "tariff_item_desc": "OTHER",
+        "statutory_description": "CENTRIFUGES, INCLUDING CENTRIFUGAL DRYERS; FILTERING OR PURIFYING MACHINERY AND APPARATUS - PARTS: OTHER",
+        "article_keywords": "centrifuges filtering machinery - parts: other",
+        "material_keywords": "",
+    }
+    ev_filter_part = evaluate_candidate_evidence(pi_filter_part, build_candidate_profile(rec_filter_part, None), "SAME_PRODUCT", 0.77)
+    assert ev_filter_part.role_mismatch == ""
+    assert ev_filter_part.primary_article_matched is True

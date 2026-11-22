@@ -266,6 +266,10 @@ def _stat_tokens(text: str) -> Set[str]:
         st = _stem_stat(tok)
         if st not in _STAT_STOPWORDS:
             out.add(st)
+    for hy in re.findall(r"\b[a-z0-9]+-[a-z0-9]+\b", norm):
+        collapsed = _stem_stat(hy.replace("-", ""))
+        if len(collapsed) >= 3 and collapsed not in _STAT_STOPWORDS:
+            out.add(collapsed)
     return out
 
 
@@ -336,6 +340,7 @@ def analyze_sibling_distinctions(
         # Direct tariff_item_desc phrase boost (e.g. "POLYCARBONATES", "PISTON RINGS")
         t8_tokens = _stat_tokens(t8)
         t8_hit_ratio = len(t8_tokens & q_tokens) / max(len(t8_tokens), 1) if (t8_tokens and not is_residual) else 0.0
+        has_unmatched_t8 = bool(t8_tokens - q_tokens) and (t8_hit_ratio == 0.0) and not is_residual
 
         if not is_residual and (num_status == "MATCH" or lex_ratio >= 0.25 or t8_hit_ratio >= 0.5):
             any_specific_support = True
@@ -347,6 +352,8 @@ def analyze_sibling_distinctions(
             "numeric_status": num_status,
             "has_numeric_constraints": bool(constraints),
             "matched_diff_tokens": matched_diff,
+            "has_unmatched_diff": (bool(diff_tokens - q_tokens) and not matched_diff) or has_unmatched_t8,
+            "has_unmatched_t8": has_unmatched_t8,
             "lex_ratio": round(lex_ratio, 4),
             "t8_hit_ratio": round(t8_hit_ratio, 4),
             "diff_phrase": t8 or s6 or c.candidate.description[:80],
@@ -391,13 +398,12 @@ def analyze_sibling_distinctions(
     same_h4_ranked = [x for x in ranked if str(x.get("hsn_code", ""))[:4] == best_h4] or ranked[:4]
     missing_num = best["numeric_status"] != "MATCH" and (
         (
-            len(same_sub6_ranked) >= 2
-            and any(x["numeric_status"] == "MISSING" and x["has_numeric_constraints"] for x in same_sub6_ranked[:4])
-        )
-        or (
             best["numeric_status"] == "MISSING"
             and best["has_numeric_constraints"]
-            and sum(1 for x in same_h4_ranked[:4] if x["has_numeric_constraints"]) >= 2
+        )
+        or (
+            len(same_sub6_ranked) >= 2
+            and any(x["numeric_status"] == "MISSING" and x["has_numeric_constraints"] for x in same_sub6_ranked[:4])
         )
     )
 
@@ -411,7 +417,7 @@ def analyze_sibling_distinctions(
     statutory_leaf_clear = (
         best["numeric_status"] == "MATCH"
         or (not best["is_residual_other"] and best["t8_hit_ratio"] >= 0.5 and (margin >= 0.15 or logit_margin >= 1.5))
-        or (len(same_sub6_ranked) == 1 and not best["is_residual_other"] and best["t8_hit_ratio"] >= 0.5)
+        or (len(same_h4_ranked) == 1 and not best["is_residual_other"] and best["t8_hit_ratio"] >= 0.5)
         or (len(ranked) == 1 and best["lex_ratio"] >= 0.35)
     )
     clear_ev = (
@@ -420,6 +426,18 @@ def analyze_sibling_distinctions(
         and not residual_blocked
         and statutory_leaf_clear
     )
+    superseded_hsns: Set[str] = set()
+    if clear_ev and len(ranked) >= 2:
+        for cand_x in ranked[1:]:
+            is_weak_residual = cand_x["is_residual_other"] and cand_x.get("sub6") == best_sub6
+            is_disjoint_sibling = (
+                not cand_x["is_residual_other"]
+                and (not cand_x["matched_diff_tokens"] or cand_x["has_unmatched_t8"])
+                and cand_x["t8_hit_ratio"] == 0.0
+                and cand_x["has_unmatched_diff"]
+            )
+            if is_weak_residual or is_disjoint_sibling:
+                superseded_hsns.add(str(cand_x.get("hsn_code") or ""))
 
     return {
         "per_candidate": per_cand,
@@ -428,6 +446,7 @@ def analyze_sibling_distinctions(
         "winner_has_clear_evidence": clear_ev,
         "evidence_margin": margin,
         "missing_numeric_constraints": missing_num,
+        "statutorily_superseded_hsns": superseded_hsns,
         "distinguishing_phrases": {
             x["hsn_code"]: x["diff_phrase"] for x in ranked[:4]
         },

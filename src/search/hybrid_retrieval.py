@@ -536,14 +536,13 @@ class HybridHSNEngine:
         if chapter_weights:
             max_cw = max(chapter_weights.values())
             focused_chapters = sorted(
-                [(ch, cw) for ch, cw in chapter_weights.items() if cw >= max_cw * 0.50],
+                [(ch, cw) for ch, cw in chapter_weights.items() if cw >= max_cw * 0.45],
                 key=lambda kv: -kv[1],
-            )[:3]
+            )[:4]
             if not focused_chapters:
                 focused_chapters = sorted(chapter_weights.items(), key=lambda kv: -kv[1])[:1]
-            # Nonlinear weighting emphasizes top-1/top-2 chapters so large machinery/apparel
-            # chapters are not starved of leaf slots by secondary chapter ties.
-            focused_pow = {ch: (cw / max_cw) ** 1.5 if max_cw > 0 else 1.0 for ch, cw in focused_chapters}
+            # Smooth nonlinear weighting balances #1/#2 large chapters with multi-chapter ties
+            focused_pow = {ch: (cw / max_cw) ** 1.2 if max_cw > 0 else 1.0 for ch, cw in focused_chapters}
             total_w = sum(focused_pow.values()) or 1.0
             total_ch_budget = max(14, min(int(round(0.95 * k_eff)), k_eff))
 

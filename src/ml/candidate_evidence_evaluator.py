@@ -128,6 +128,32 @@ _MATERIAL_FAMILIES: Dict[str, Set[str]] = {
     "paper": {"paper", "paperboard", "cardboard"},
     "protein": {"protein", "casein", "gelatin", "gelatine", "collagen", "albumin"},
     "cellulosic": {"cellulose", "cellulosic", "cellophane", "nitrocellulose", "cellulose acetate"},
+    "feathers_down": {"feather", "feathers"},
+}
+
+# Mutually exclusive specific synthetic/modified polymer families within Ch 39.
+# Only evaluated when BOTH query and candidate subheading/leaf explicitly name a specific polymer.
+_SPECIFIC_POLYMER_PATTERNS: Dict[str, str] = {
+    "polyamide": r"\b(?:polyamides?|nylons?)\b",
+    "polyurethane": r"\bpolyurethanes?\b",
+    "phenoplast": r"\b(?:phenoplasts?|phenolic\s+resins?)\b",
+    "aminoplast": r"\b(?:aminoplasts?|urea\s+resins?|melamine\s+resins?)\b",
+    "polyethylene": r"\b(?:polyethylene|polymers?\s+of\s+ethylene|hdpe|ldpe|lldpe)\b",
+    "polypropylene": r"\b(?:polypropylene|polymers?\s+of\s+propylene)\b",
+    "polystyrene": r"\b(?:polystyrene|polymers?\s+of\s+styrene)\b",
+    "pvc": r"\b(?:polyvinyl\s+chloride|vinyl\s+chloride|pvc|upvc|cpvc)\b",
+    "vinyl_acetate": r"\b(?:poly\s*\(?vinyl\s+acetate\)?|vinyl\s+acetate)\b",
+    "vinyl_alcohol": r"\bpoly\s*\(?vinyl\s+alcohol\)?|\bpolyvinyl\s+alcohol\b",
+    "acrylic": r"\b(?:acrylic\s+polymers?|polymethyl\s+methacrylate|pmma)\b",
+    "polyester": r"\b(?:polyesters?|poly\s*\(?ethylene\s+terephthalate\)?)\b",
+    "polycarbonate": r"\bpolycarbonates?\b",
+    "cellulose_acetate": r"\bcellulose\s+acetates?\b",
+    "cellulose_acetobutyrate": r"\bcellulose\s+acetobutyrates?\b",
+    "cellulose_nitrate": r"\bcellulose\s+nitrates?\b",
+    "regenerated_cellulose": r"\bregenerated\s+cellulose\b",
+    "epoxide": r"\b(?:epoxide\s+resins?|epoxy\s+resins?)\b",
+    "silicone": r"\bsilicones?\b",
+    "ptfe": r"\b(?:ptfe|polytetrafluoroethylene)\b",
 }
 
 # Compatible material pairs (e.g. synthetic_textile vs plastics share nylon/polyester terms)
@@ -178,6 +204,8 @@ def _detect_material_families(tokens: Set[str], raw_text: str = "") -> Set[str]:
             elif _stem(cue) in tokens or cue in tokens:
                 found.add(fam)
                 break
+    if "feathers_down" not in found and re.search(r"\b(?:filled|stuffed)\s+with\s+(?:feathers?|down)\b|\bfeathers?\s+or\s+down\b", low):
+        found.add("feathers_down")
     return found
 
 
@@ -455,16 +483,10 @@ def evaluate_candidate_evidence(
         )
         or _CAND_PARTS_DESC_RE.match(profile.tariff_item_desc or "")
         or (
-            _CAND_PARTS_STAT_RE.search(profile.statutory_description or "")
-            and (
-                _CAND_OF_MACHINE_RE.match(profile.subheading_6digit_desc or "")
-                or _CAND_OF_MACHINE_RE.match(profile.tariff_item_desc or "")
-            )
+            bool(_CAND_PARTS_STAT_RE.search(profile.statutory_description or ""))
+            and not leaf_explicit_standalone_unit
         )
-        or (
-            _CAND_PARTS_DESC_RE.match(profile.heading_4digit_desc or "")
-            and not q_asks_parts
-        )
+        or bool(_CAND_PARTS_DESC_RE.match(profile.heading_4digit_desc or ""))
     )
     q_explicit_parts = bool(
         re.search(
@@ -527,6 +549,18 @@ def evaluate_candidate_evidence(
     elif not query_mat_fams and profile.statutory_material_families:
         missing_attributes.append(f"material ({'/'.join(sorted(profile.statutory_material_families))})")
 
+    # Specific polymer sub-family check (when both query and leaf/sub6 name specific Ch 39 polymers)
+    q_poly_raw = f"{product_intent.finished_article or ''} {query_mat_text} {product_intent.raw_description or ''}".lower()
+    c_poly_raw = f"{profile.subheading_6digit_desc or ''} {profile.tariff_item_desc or ''}".lower()
+    q_polymers = {k for k, pat in _SPECIFIC_POLYMER_PATTERNS.items() if re.search(pat, q_poly_raw)}
+    c_polymers = {k for k, pat in _SPECIFIC_POLYMER_PATTERNS.items() if re.search(pat, c_poly_raw)}
+    # Treat polyester vs pet consistently, and ignore generic cellulose when specific regenerated/acetate matches
+    if q_polymers and c_polymers and not (q_polymers & c_polymers):
+        # Allow cellulose_acetate vs cellulose compat only if cand doesn't name a distinct ester
+        contradictions.append(
+            f"Polymer contradiction: query specifies {sorted(q_polymers)}, leaf/subheading specifies {sorted(c_polymers)}"
+        )
+
     # Chapter 98 (Special Import Regimes: 9801 Project Imports, 9802 Lab Chemicals,
     # 9803 Baggage, 9804 Personal Use by Post/Air, 9805 Ship/Aircraft Stores) requires explicit regime cues.
     hsn4 = str(profile.hsn_code or "").strip()[:4]
@@ -564,9 +598,19 @@ def evaluate_candidate_evidence(
     if re.search(r"\broasted\b", proc_low) and re.search(r"\bnot\s+roasted\b|\bunroasted\b", cand_hier_low):
         contradictions.append("Process contradiction: query specifies roasted, candidate is unroasted")
     q_full_state = f"{proc_low} {product_intent.raw_description or ''}".lower()
-    if re.search(r"\b(?:unrecorded|blank|recordable)\b", q_full_state) and re.search(r"\brecorded\b", cand_hier_low) and not re.search(r"\bunrecorded|recordable|blank\b", cand_hier_low):
+    cand_media_low = re.sub(r"\bwhether\s+or\s+not\s+recorded\b", "optionally_recorded", cand_hier_low)
+    if (
+        re.search(r"\b(?:unrecorded|blank|recordable)\b", q_full_state)
+        and re.search(r"\brecorded\b", cand_media_low)
+        and not re.search(r"\b(?:unrecorded|recordable|blank)\b", cand_media_low)
+    ):
         contradictions.append("State contradiction: query specifies unrecorded/blank/recordable media, candidate specifies recorded media")
-    elif re.search(r"\brecorded\b", q_full_state) and not re.search(r"\bunrecorded|recordable|blank\b", q_full_state) and re.search(r"\bunrecorded\b", cand_hier_low) and not re.search(r"\brecorded\b", cand_hier_low):
+    elif (
+        re.search(r"\brecorded\b", q_full_state)
+        and not re.search(r"\b(?:unrecorded|recordable|blank)\b", q_full_state)
+        and re.search(r"\bunrecorded\b", cand_media_low)
+        and not re.search(r"\brecorded\b", cand_media_low)
+    ):
         contradictions.append("State contradiction: query specifies recorded media, candidate specifies unrecorded media")
 
     # Mutually-exclusive prime-mover / power-source contradiction (e.g. wind vs water/steam/solar/nuclear)
@@ -681,9 +725,18 @@ def evaluate_candidate_evidence(
         elif leaf_introduced_tokens and not leaf_clauses_are_qualifiers and not (primary_id_tokens & leaf_specific_tokens) and not (article_core_tokens & leaf_introduced_tokens):
             primary_article_matched = False
         else:
-            primary_article_matched = bool(
-                primary_id_tokens & (profile.article_tokens | profile.inherited_parent_articles)
+            # Avoid treating nouns inside secondary "WITH <engine/motor/feature>" qualifier clauses
+            # (e.g. Heading 8711 motorcycles "WITH RECIPROCATING PISTON ENGINE") as standalone commodity identity.
+            sub_with_only = bool(re.match(r"^\s*(?:with|fitted\s+with|equipped\s+with)\b", profile.subheading_6digit_desc or "", re.IGNORECASE))
+            hd_primary = _tokenize_content(
+                re.split(r"\b(?:with|fitted\s+with|equipped\s+with)\b", profile.heading_4digit_desc or "", maxsplit=1, flags=re.IGNORECASE)[0]
             )
+            effective_cand_art = (
+                (hd_primary | _tokenize_content(profile.tariff_item_desc or ""))
+                if (sub_with_only and hd_primary)
+                else (profile.article_tokens | profile.inherited_parent_articles)
+            )
+            primary_article_matched = bool(primary_id_tokens & effective_cand_art)
     else:
         primary_article_matched = bool(article_matches)
     # Parts-role alignment: when Stage 1 identifies a part/component/accessory (`q_asks_parts` or head_noun=='part')

@@ -6,13 +6,13 @@
   "chapter_accuracy_pct": 95.45,
   "candidate_recall_pct": 90.91,
   "recall_at_5_pct": 86.36,
-  "top1_pct": 79.55,
-  "exact_hsn_hits": 4,
-  "exact_hsn_accuracy_pct": 9.09,
+  "top1_pct": 77.27,
+  "exact_hsn_hits": 5,
+  "exact_hsn_accuracy_pct": 11.36,
   "false_exact_count": 0,
   "correct_abstention_pct": 100.0,
-  "mean_latency_ms": 11721.7,
-  "p95_latency_ms": 19270.1,
+  "mean_latency_ms": 10588.3,
+  "p95_latency_ms": 14839.3,
   "cases": [
     {
       "case_id": 1,
@@ -21,15 +21,15 @@
       "expected_chapter": "01",
       "top_chapter": "01",
       "chapter_hit": true,
-      "retained_8digit": 50,
+      "retained_8digit": 53,
       "recall_hit": true,
-      "rank": 1,
+      "rank": 2,
       "prediction_mode": "MULTIPLE_CANDIDATES",
       "final_hsn": null,
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 4974.8
+      "latency_ms": 5817.4
     },
     {
       "case_id": 2,
@@ -46,7 +46,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 7784.5
+      "latency_ms": 9421.0
     },
     {
       "case_id": 3,
@@ -55,7 +55,7 @@
       "expected_chapter": "05",
       "top_chapter": "05",
       "chapter_hit": true,
-      "retained_8digit": 12,
+      "retained_8digit": 10,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -63,7 +63,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 5993.3
+      "latency_ms": 8053.6
     },
     {
       "case_id": 4,
@@ -72,7 +72,7 @@
       "expected_chapter": "07",
       "top_chapter": "07",
       "chapter_hit": true,
-      "retained_8digit": 39,
+      "retained_8digit": 33,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "EXACT_HSN",
@@ -80,7 +80,7 @@
       "exact_hit": true,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 7835.2
+      "latency_ms": 10005.5
     },
     {
       "case_id": 5,
@@ -97,7 +97,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 5927.7
+      "latency_ms": 7050.0
     },
     {
       "case_id": 6,
@@ -114,7 +114,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 8130.3
+      "latency_ms": 5753.9
     },
     {
       "case_id": 7,
@@ -131,7 +131,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 6111.4
+      "latency_ms": 6995.7
     },
     {
       "case_id": 8,
@@ -140,7 +140,7 @@
       "expected_chapter": "15",
       "top_chapter": "15",
       "chapter_hit": true,
-      "retained_8digit": 51,
+      "retained_8digit": 52,
       "recall_hit": false,
       "rank": null,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -148,7 +148,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 8126.5
+      "latency_ms": 9540.4
     },
     {
       "case_id": 9,
@@ -157,7 +157,7 @@
       "expected_chapter": "17",
       "top_chapter": "17",
       "chapter_hit": true,
-      "retained_8digit": 29,
+      "retained_8digit": 23,
       "recall_hit": true,
       "rank": 2,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -165,7 +165,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 12618.6
+      "latency_ms": 14612.9
     },
     {
       "case_id": 10,
@@ -174,7 +174,7 @@
       "expected_chapter": "20",
       "top_chapter": "20",
       "chapter_hit": true,
-      "retained_8digit": 62,
+      "retained_8digit": 69,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -182,7 +182,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 6504.6
+      "latency_ms": 8662.5
     },
     {
       "case_id": 11,
@@ -191,7 +191,7 @@
       "expected_chapter": "22",
       "top_chapter": "22",
       "chapter_hit": true,
-      "retained_8digit": 25,
+      "retained_8digit": 35,
       "recall_hit": true,
       "rank": 2,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -199,7 +199,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 8417.2
+      "latency_ms": 9095.6
     },
     {
       "case_id": 12,
@@ -216,7 +216,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 9082.2
+      "latency_ms": 10951.3
     },
     {
       "case_id": 13,
@@ -225,7 +225,7 @@
       "expected_chapter": "26",
       "top_chapter": "26",
       "chapter_hit": true,
-      "retained_8digit": 69,
+      "retained_8digit": 80,
       "recall_hit": true,
       "rank": 2,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -233,7 +233,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 8483.3
+      "latency_ms": 9221.2
     },
     {
       "case_id": 14,
@@ -250,7 +250,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 10038.5
+      "latency_ms": 11935.1
     },
     {
       "case_id": 15,
@@ -267,7 +267,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 19211.0
+      "latency_ms": 15321.3
     },
     {
       "case_id": 16,
@@ -276,7 +276,7 @@
       "expected_chapter": "32",
       "top_chapter": "32",
       "chapter_hit": true,
-      "retained_8digit": 59,
+      "retained_8digit": 63,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -284,7 +284,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 12077.7
+      "latency_ms": 9661.7
     },
     {
       "case_id": 17,
@@ -293,7 +293,7 @@
       "expected_chapter": "34",
       "top_chapter": "34",
       "chapter_hit": true,
-      "retained_8digit": 15,
+      "retained_8digit": 16,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -301,7 +301,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 11260.1
+      "latency_ms": 9970.5
     },
     {
       "case_id": 18,
@@ -318,7 +318,7 @@
       "exact_hit": true,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 9875.8
+      "latency_ms": 7700.8
     },
     {
       "case_id": 19,
@@ -327,7 +327,7 @@
       "expected_chapter": "38",
       "top_chapter": "38",
       "chapter_hit": true,
-      "retained_8digit": 25,
+      "retained_8digit": 24,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -335,7 +335,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 19280.5
+      "latency_ms": 14879.3
     },
     {
       "case_id": 20,
@@ -344,15 +344,15 @@
       "expected_chapter": "41",
       "top_chapter": "41",
       "chapter_hit": true,
-      "retained_8digit": 84,
+      "retained_8digit": 89,
       "recall_hit": true,
-      "rank": 10,
+      "rank": 9,
       "prediction_mode": "MULTIPLE_CANDIDATES",
       "final_hsn": null,
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 13890.1
+      "latency_ms": 13878.0
     },
     {
       "case_id": 21,
@@ -361,7 +361,7 @@
       "expected_chapter": "43",
       "top_chapter": "43",
       "chapter_hit": true,
-      "retained_8digit": 44,
+      "retained_8digit": 43,
       "recall_hit": false,
       "rank": null,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -369,7 +369,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 10444.7
+      "latency_ms": 8906.5
     },
     {
       "case_id": 22,
@@ -378,7 +378,7 @@
       "expected_chapter": "45",
       "top_chapter": "45",
       "chapter_hit": true,
-      "retained_8digit": 18,
+      "retained_8digit": 17,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -386,7 +386,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 17776.7
+      "latency_ms": 14566.3
     },
     {
       "case_id": 23,
@@ -403,7 +403,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 9372.4
+      "latency_ms": 6697.7
     },
     {
       "case_id": 24,
@@ -412,7 +412,7 @@
       "expected_chapter": "49",
       "top_chapter": "49",
       "chapter_hit": true,
-      "retained_8digit": 17,
+      "retained_8digit": 18,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -420,7 +420,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 13042.6
+      "latency_ms": 10301.6
     },
     {
       "case_id": 25,
@@ -429,7 +429,7 @@
       "expected_chapter": "51",
       "top_chapter": "51",
       "chapter_hit": true,
-      "retained_8digit": 49,
+      "retained_8digit": 50,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -437,7 +437,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 10876.8
+      "latency_ms": 7438.3
     },
     {
       "case_id": 26,
@@ -454,7 +454,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 9075.2
+      "latency_ms": 8724.9
     },
     {
       "case_id": 27,
@@ -463,7 +463,7 @@
       "expected_chapter": "55",
       "top_chapter": "55",
       "chapter_hit": true,
-      "retained_8digit": 76,
+      "retained_8digit": 50,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -471,7 +471,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 8321.7
+      "latency_ms": 7386.2
     },
     {
       "case_id": 28,
@@ -480,7 +480,7 @@
       "expected_chapter": "57",
       "top_chapter": "57",
       "chapter_hit": true,
-      "retained_8digit": 73,
+      "retained_8digit": 79,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -488,7 +488,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 7865.6
+      "latency_ms": 6683.4
     },
     {
       "case_id": 29,
@@ -497,7 +497,7 @@
       "expected_chapter": "59",
       "top_chapter": "59",
       "chapter_hit": true,
-      "retained_8digit": 93,
+      "retained_8digit": 82,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -505,7 +505,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 15171.2
+      "latency_ms": 11776.1
     },
     {
       "case_id": 30,
@@ -522,7 +522,7 @@
       "exact_hit": true,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 14125.5
+      "latency_ms": 9762.3
     },
     {
       "case_id": 31,
@@ -531,7 +531,7 @@
       "expected_chapter": "65",
       "top_chapter": "65",
       "chapter_hit": true,
-      "retained_8digit": 32,
+      "retained_8digit": 43,
       "recall_hit": true,
       "rank": 6,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -539,7 +539,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 16739.8
+      "latency_ms": 12137.2
     },
     {
       "case_id": 32,
@@ -556,7 +556,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 20643.7
+      "latency_ms": 13835.1
     },
     {
       "case_id": 33,
@@ -565,7 +565,7 @@
       "expected_chapter": "69",
       "top_chapter": "69",
       "chapter_hit": true,
-      "retained_8digit": 52,
+      "retained_8digit": 55,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -573,7 +573,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 16220.9
+      "latency_ms": 13618.4
     },
     {
       "case_id": 34,
@@ -582,7 +582,7 @@
       "expected_chapter": "71",
       "top_chapter": "71",
       "chapter_hit": true,
-      "retained_8digit": 41,
+      "retained_8digit": 45,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -590,7 +590,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 16525.5
+      "latency_ms": 11665.2
     },
     {
       "case_id": 35,
@@ -602,12 +602,12 @@
       "retained_8digit": 2,
       "recall_hit": true,
       "rank": 1,
-      "prediction_mode": "CHAPTER_ONLY_CLARIFY",
-      "final_hsn": null,
-      "exact_hit": false,
+      "prediction_mode": "EXACT_HSN",
+      "final_hsn": "74020010",
+      "exact_hit": true,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 16990.9
+      "latency_ms": 10207.5
     },
     {
       "case_id": 36,
@@ -624,7 +624,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 39759.6
+      "latency_ms": 30518.5
     },
     {
       "case_id": 37,
@@ -633,7 +633,7 @@
       "expected_chapter": "79",
       "top_chapter": "79",
       "chapter_hit": true,
-      "retained_8digit": 29,
+      "retained_8digit": 28,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -641,7 +641,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 6035.8
+      "latency_ms": 6355.2
     },
     {
       "case_id": 38,
@@ -658,7 +658,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 5368.9
+      "latency_ms": 6222.9
     },
     {
       "case_id": 39,
@@ -667,7 +667,7 @@
       "expected_chapter": "83",
       "top_chapter": "83",
       "chapter_hit": true,
-      "retained_8digit": 57,
+      "retained_8digit": 73,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -675,7 +675,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 11720.6
+      "latency_ms": 11866.6
     },
     {
       "case_id": 40,
@@ -684,7 +684,7 @@
       "expected_chapter": "88",
       "top_chapter": "88",
       "chapter_hit": true,
-      "retained_8digit": 7,
+      "retained_8digit": 16,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -692,7 +692,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 12300.0
+      "latency_ms": 14068.6
     },
     {
       "case_id": 41,
@@ -701,7 +701,7 @@
       "expected_chapter": "90",
       "top_chapter": "90",
       "chapter_hit": true,
-      "retained_8digit": 42,
+      "retained_8digit": 43,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -709,7 +709,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 13112.8
+      "latency_ms": 14140.5
     },
     {
       "case_id": 42,
@@ -726,7 +726,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 4946.1
+      "latency_ms": 5699.6
     },
     {
       "case_id": 43,
@@ -743,7 +743,7 @@
       "exact_hit": true,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 13520.2
+      "latency_ms": 13571.1
     },
     {
       "case_id": 44,
@@ -752,7 +752,7 @@
       "expected_chapter": "97",
       "top_chapter": "97",
       "chapter_hit": true,
-      "retained_8digit": 72,
+      "retained_8digit": 75,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -760,7 +760,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 10172.8
+      "latency_ms": 11208.4
     }
   ]
 }

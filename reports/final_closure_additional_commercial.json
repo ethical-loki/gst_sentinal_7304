@@ -4,17 +4,17 @@
   "zero_leakage_verified": true,
   "chapter_accuracy_pct": 80.0,
   "candidate_recall_pct": 80.0,
-  "recall_at_5_pct": 70.0,
-  "recall_at_10_pct": 70.0,
-  "top1_pct": 60.0,
+  "recall_at_5_pct": 65.0,
+  "recall_at_10_pct": 65.0,
+  "top1_pct": 55.0,
   "exact_hsn_hits": 3,
   "exact_hsn_coverage_pct": 15.0,
   "exact_hsn_precision_pct": 100.0,
   "false_exact_count": 0,
   "correct_abstention_pct": 100.0,
-  "mean_latency_ms": 11254.2,
-  "median_latency_ms": 10755.9,
-  "p95_latency_ms": 15404.6,
+  "mean_latency_ms": 11207.2,
+  "median_latency_ms": 11259.8,
+  "p95_latency_ms": 14847.7,
   "cases": [
     {
       "case_id": 1,
@@ -31,7 +31,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 10371.6
+      "latency_ms": 12142.4
     },
     {
       "case_id": 2,
@@ -48,14 +48,14 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 6928.6
+      "latency_ms": 7241.2
     },
     {
       "case_id": 3,
       "query": "common milling wheat grain in bulk",
       "expected_hsn": "10019910",
       "expected_chapter": "10",
-      "top_chapter": "84",
+      "top_chapter": "19",
       "chapter_hit": false,
       "retained_8digit": 8,
       "recall_hit": false,
@@ -65,7 +65,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 15162.2
+      "latency_ms": 13179.1
     },
     {
       "case_id": 4,
@@ -74,7 +74,7 @@
       "expected_chapter": "25",
       "top_chapter": "25",
       "chapter_hit": true,
-      "retained_8digit": 55,
+      "retained_8digit": 56,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "EXACT_HSN",
@@ -82,7 +82,7 @@
       "exact_hit": true,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 9651.4
+      "latency_ms": 7949.7
     },
     {
       "case_id": 5,
@@ -91,7 +91,7 @@
       "expected_chapter": "30",
       "top_chapter": "30",
       "chapter_hit": true,
-      "retained_8digit": 38,
+      "retained_8digit": 31,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -99,7 +99,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 7947.7
+      "latency_ms": 7771.8
     },
     {
       "case_id": 6,
@@ -116,7 +116,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 13534.1
+      "latency_ms": 12201.8
     },
     {
       "case_id": 7,
@@ -127,13 +127,13 @@
       "chapter_hit": true,
       "retained_8digit": 94,
       "recall_hit": true,
-      "rank": 1,
+      "rank": 40,
       "prediction_mode": "MULTIPLE_CANDIDATES",
       "final_hsn": null,
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 14138.2
+      "latency_ms": 8808.5
     },
     {
       "case_id": 8,
@@ -142,7 +142,7 @@
       "expected_chapter": "63",
       "top_chapter": "63",
       "chapter_hit": true,
-      "retained_8digit": 24,
+      "retained_8digit": 26,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "INSUFFICIENT_INFORMATION",
@@ -150,7 +150,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 20009.6
+      "latency_ms": 10780.4
     },
     {
       "case_id": 9,
@@ -167,7 +167,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 9373.5
+      "latency_ms": 7867.6
     },
     {
       "case_id": 10,
@@ -184,7 +184,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 11140.1
+      "latency_ms": 11739.3
     },
     {
       "case_id": 11,
@@ -201,7 +201,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 12152.5
+      "latency_ms": 14784.6
     },
     {
       "case_id": 12,
@@ -210,7 +210,7 @@
       "expected_chapter": "72",
       "top_chapter": "72",
       "chapter_hit": true,
-      "retained_8digit": 49,
+      "retained_8digit": 38,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -218,7 +218,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 11490.7
+      "latency_ms": 12421.6
     },
     {
       "case_id": 13,
@@ -235,7 +235,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 9396.4
+      "latency_ms": 9750.3
     },
     {
       "case_id": 14,
@@ -244,7 +244,7 @@
       "expected_chapter": "76",
       "top_chapter": "76",
       "chapter_hit": true,
-      "retained_8digit": 40,
+      "retained_8digit": 38,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -252,7 +252,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 7437.0
+      "latency_ms": 9288.9
     },
     {
       "case_id": 15,
@@ -261,15 +261,15 @@
       "expected_chapter": "82",
       "top_chapter": "82",
       "chapter_hit": true,
-      "retained_8digit": 67,
+      "retained_8digit": 58,
       "recall_hit": true,
-      "rank": 5,
+      "rank": 3,
       "prediction_mode": "MULTIPLE_CANDIDATES",
       "final_hsn": null,
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 14805.8
+      "latency_ms": 15277.2
     },
     {
       "case_id": 16,
@@ -286,7 +286,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 11988.6
+      "latency_ms": 13953.1
     },
     {
       "case_id": 17,
@@ -295,7 +295,7 @@
       "expected_chapter": "86",
       "top_chapter": "86",
       "chapter_hit": true,
-      "retained_8digit": 52,
+      "retained_8digit": 51,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "EXACT_HSN",
@@ -303,7 +303,7 @@
       "exact_hit": true,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 11417.6
+      "latency_ms": 14825.1
     },
     {
       "case_id": 18,
@@ -320,7 +320,7 @@
       "exact_hit": true,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 10347.3
+      "latency_ms": 13534.8
     },
     {
       "case_id": 19,
@@ -337,7 +337,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 8837.6
+      "latency_ms": 10245.2
     },
     {
       "case_id": 20,
@@ -354,7 +354,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 8952.6
+      "latency_ms": 10380.5
     }
   ]
 }

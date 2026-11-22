@@ -815,7 +815,7 @@ class MultiCandidateEngine:
             dist_pool = [
                 c for c in same_leaves
                 if top_role_mm or c.candidate.hsn_code[:4] == top_h4
-            ][:20]
+            ][:40]
             top_sub6 = same_leaves[0].candidate.hsn_code[:6]
             seen_dist_hsn = {c.candidate.hsn_code for c in dist_pool}
             for c in qualifying_ordered:
@@ -827,7 +827,7 @@ class MultiCandidateEngine:
                 ):
                     dist_pool.append(c)
                     seen_dist_hsn.add(c.candidate.hsn_code)
-                    if len(dist_pool) >= 20:
+                    if len(dist_pool) >= 40:
                         break
         else:
             dist_pool = []
@@ -888,6 +888,7 @@ class MultiCandidateEngine:
         # Compute independent confidences over ordered 8-digit leaves (excluding role-mismatched
         # distractors and distant weak off-subheading items when a clean winner exists).
         raw_leaf_pool = [c for c in qualifying_ordered if _is_leaf_8digit(c)]
+        superseded_set = set(dist_analysis.get("statutorily_superseded_hsns") or ())
         if same_leaves and raw_leaf_pool:
             top1_ev_st = evidence_by_hsn.get(same_leaves[0].candidate.hsn_code, {}).get("status")
             top1_raw_l = float(getattr(same_leaves[0].candidate, "raw_logit", 0.0) or 0.0)
@@ -896,6 +897,10 @@ class MultiCandidateEngine:
                 c for c in raw_leaf_pool
                 if (
                     not (clean_same_leaves and evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch"))
+                    and not (
+                        dist_analysis.get("winner_has_clear_evidence")
+                        and c.candidate.hsn_code in superseded_set
+                    )
                     and not (
                         top1_ev_st == SUPPORTED
                         and c.relation in (RelationLabel.INSUFFICIENT_INFORMATION, RelationLabel.RELATED_PRODUCT)
@@ -1057,7 +1062,10 @@ class MultiCandidateEngine:
                     clarification_reason = (
                         f"Heading {same_leaves[0].candidate.hsn_code[:4]} supported, but {max(len(same_leaves), len(dist_pool))} leaf tariff items compete without decisive statutory distinction."
                     )
-            elif hsn_conf >= tau_exact:
+            elif hsn_conf >= tau_exact and (
+                dist_analysis.get("winner_has_clear_evidence")
+                or (evidence_by_hsn.get(same_leaves[0].candidate.hsn_code, {}).get("status") == SUPPORTED and len(conf_pool) <= 2)
+            ):
                 prediction_mode = "EXACT_HSN"
                 final_hsn = same_leaves[0].candidate.hsn_code
                 final_chapter = same_leaves[0].candidate.chapter_code
