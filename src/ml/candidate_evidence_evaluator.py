@@ -686,9 +686,21 @@ def evaluate_candidate_evidence(
     )
     neg_matches = re.findall(r"\b(?:not\s+containing|other\s+than(?:\s+of)?|excluding)\s+([a-z0-9\-\s]{3,60}?)(?:[,;\)\|\.]|$)", cand_desc_low)
     query_full_low = f"{product_intent.finished_article} {query_mat_text} {' '.join(product_intent.ingredients_or_additives)} {product_intent.processing_form or ''} {product_intent.raw_description or ''}".lower()
-    _q_hyphen_words = {_stem(t.replace("-", "")) for t in re.findall(r"\b[a-z0-9]+-[a-z0-9]+\b", query_full_low)}
+    # Strip negative statutory clauses inside the query itself ("other than X", "not containing X", "excluding X")
+    # so the query's own exclusion phrasing is never mistaken for a positive attribute that contradicts the tariff item.
+    query_positive_low = re.sub(
+        r"\b(?:other\s+than(?:\s+of)?|not\s+containing|excluding)\b[^,;\)\|\.]*(?:[,;\)\|\.]|$)",
+        " ",
+        query_full_low,
+    )
+    query_positive_low = re.sub(
+        r"\b(?:other\s+than(?:\s+of)?|not\s+containing|excluding)\b[^,;\)\|\.]*$",
+        " ",
+        query_positive_low,
+    )
+    _q_hyphen_words = {_stem(t.replace("-", "")) for t in re.findall(r"\b[a-z0-9]+-[a-z0-9]+\b", query_positive_low)}
     # Strip hyphenated tokens from base tokenization so "t-shirt" -> "tshirt" (not plain "shirt")
-    q_full_no_hyphen = re.sub(r"\b[a-z0-9]+-[a-z0-9]+\b", " ", query_full_low)
+    q_full_no_hyphen = re.sub(r"\b[a-z0-9]+-[a-z0-9]+\b", " ", query_positive_low)
     q_full_toks = _tokenize_content(q_full_no_hyphen) | _q_hyphen_words
     for neg_phrase in neg_matches:
         neg_clean = re.sub(r"\s+of\s+(?:the\s+)?headings?\s+\d{4}.*$", "", neg_phrase.strip()).strip()

@@ -12,9 +12,9 @@
   "exact_hsn_precision_pct": 100.0,
   "false_exact_count": 0,
   "correct_abstention_pct": 100.0,
-  "mean_latency_ms": 11313.8,
-  "median_latency_ms": 11239.5,
-  "p95_latency_ms": 15537.7,
+  "mean_latency_ms": 22651.5,
+  "median_latency_ms": 21895.2,
+  "p95_latency_ms": 35955.8,
   "cases": [
     {
       "case_id": 1,
@@ -31,7 +31,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 12178.0
+      "latency_ms": 20030.8
     },
     {
       "case_id": 2,
@@ -40,24 +40,24 @@
       "expected_chapter": "09",
       "top_chapter": "12",
       "chapter_hit": false,
-      "retained_8digit": 1,
+      "retained_8digit": 20,
       "recall_hit": false,
       "rank": null,
-      "prediction_mode": "INSUFFICIENT_INFORMATION",
+      "prediction_mode": "MULTIPLE_CANDIDATES",
       "final_hsn": null,
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 10599.1
+      "latency_ms": 12446.5
     },
     {
       "case_id": 3,
       "query": "common milling wheat grain in bulk",
       "expected_hsn": "10019910",
       "expected_chapter": "10",
-      "top_chapter": "19",
+      "top_chapter": "11",
       "chapter_hit": false,
-      "retained_8digit": 4,
+      "retained_8digit": 25,
       "recall_hit": false,
       "rank": null,
       "prediction_mode": "INSUFFICIENT_INFORMATION",
@@ -65,7 +65,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 12546.5
+      "latency_ms": 15592.9
     },
     {
       "case_id": 4,
@@ -82,7 +82,7 @@
       "exact_hit": true,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 8449.6
+      "latency_ms": 8206.7
     },
     {
       "case_id": 5,
@@ -99,7 +99,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 8581.3
+      "latency_ms": 7939.3
     },
     {
       "case_id": 6,
@@ -116,7 +116,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 12839.0
+      "latency_ms": 16037.4
     },
     {
       "case_id": 7,
@@ -133,7 +133,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 8263.6
+      "latency_ms": 11901.2
     },
     {
       "case_id": 8,
@@ -150,7 +150,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 8757.7
+      "latency_ms": 30207.3
     },
     {
       "case_id": 9,
@@ -167,7 +167,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 6764.2
+      "latency_ms": 21355.2
     },
     {
       "case_id": 10,
@@ -184,7 +184,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 9833.2
+      "latency_ms": 31498.0
     },
     {
       "case_id": 11,
@@ -201,7 +201,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 12733.4
+      "latency_ms": 35619.0
     },
     {
       "case_id": 12,
@@ -218,7 +218,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 12803.2
+      "latency_ms": 30444.2
     },
     {
       "case_id": 13,
@@ -235,7 +235,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 9034.4
+      "latency_ms": 24089.9
     },
     {
       "case_id": 14,
@@ -244,7 +244,7 @@
       "expected_chapter": "76",
       "top_chapter": "76",
       "chapter_hit": true,
-      "retained_8digit": 36,
+      "retained_8digit": 41,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -252,7 +252,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 10019.2
+      "latency_ms": 22435.2
     },
     {
       "case_id": 15,
@@ -261,7 +261,7 @@
       "expected_chapter": "82",
       "top_chapter": "82",
       "chapter_hit": true,
-      "retained_8digit": 19,
+      "retained_8digit": 40,
       "recall_hit": true,
       "rank": 3,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -269,7 +269,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 17567.8
+      "latency_ms": 35676.1
     },
     {
       "case_id": 16,
@@ -278,15 +278,15 @@
       "expected_chapter": "83",
       "top_chapter": "83",
       "chapter_hit": true,
-      "retained_8digit": 1,
+      "retained_8digit": 12,
       "recall_hit": true,
       "rank": 1,
-      "prediction_mode": "INSUFFICIENT_INFORMATION",
+      "prediction_mode": "MULTIPLE_CANDIDATES",
       "final_hsn": null,
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 15430.9
+      "latency_ms": 41269.6
     },
     {
       "case_id": 17,
@@ -295,7 +295,7 @@
       "expected_chapter": "86",
       "top_chapter": "86",
       "chapter_hit": true,
-      "retained_8digit": 15,
+      "retained_8digit": 24,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "EXACT_HSN",
@@ -303,7 +303,7 @@
       "exact_hit": true,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 14283.5
+      "latency_ms": 25930.5
     },
     {
       "case_id": 18,
@@ -320,7 +320,7 @@
       "exact_hit": true,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 13527.6
+      "latency_ms": 29349.1
     },
     {
       "case_id": 19,
@@ -337,7 +337,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 11879.8
+      "latency_ms": 17137.1
     },
     {
       "case_id": 20,
@@ -346,7 +346,7 @@
       "expected_chapter": "96",
       "top_chapter": "96",
       "chapter_hit": true,
-      "retained_8digit": 3,
+      "retained_8digit": 4,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -354,7 +354,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 10183.3
+      "latency_ms": 15864.0
     }
   ]
 }

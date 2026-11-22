@@ -218,7 +218,14 @@ def _split_top_level_clauses(text: str) -> Tuple[str, List[Tuple[str, str]]]:
     )
 
     in_paren = _paren_depth_mask(cleaned)
-    matches = [m for m in pattern.finditer(cleaned) if not in_paren[m.start()]]
+    matches = [
+        m for m in pattern.finditer(cleaned)
+        if not in_paren[m.start()]
+        and not re.search(
+            r"\b(?:not|whether\s+or\s+not|without|excluding|other\s+than(?:\s+of)?)\s+$",
+            cleaned[: m.start()].lower(),
+        )
+    ]
     if not matches:
         return cleaned, []
 

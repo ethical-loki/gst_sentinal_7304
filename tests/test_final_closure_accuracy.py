@@ -470,3 +470,26 @@ def test_hierarchical_multi_level_decision_and_statutory_exclusions():
     ev_7318 = evaluate_candidate_evidence(pi_fastener, build_candidate_profile(rec_7318, None), "INSUFFICIENT_INFORMATION", 0.70)
     assert "guard=secondary_with_feature" not in ev_7318.trace_summary
 
+    # 8. Query containing its own negative statutory exclusion clause ("NOT CONTAINING...", "OTHER THAN...")
+    #    must not self-contradict the matching statutory description
+    pi_water = analyze_product_intent(
+        "WATERS, INCLUDING NATURAL OR ARTIFICIAL MINERAL WATERS AND AERATED WATERS, NOT CONTAINING ADDED SUGAR OR OTHER SWEETENING MATTER NOR FLAVOURED; ICE AND SNOW"
+    )
+    rec_2201 = {
+        "hsn_code": "22011010",
+        "code_length": 8,
+        "chapter_code": "22",
+        "chapter_title": "Beverages, spirits and vinegar",
+        "heading_4digit": "2201",
+        "heading_4digit_desc": "WATERS, INCLUDING NATURAL OR ARTIFICIAL MINERAL WATERS AND AERATED WATERS, NOT CONTAINING ADDED SUGAR OR OTHER SWEETENING MATTER NOR FLAVOURED; ICE AND SNOW",
+        "subheading_6digit": "220110",
+        "subheading_6digit_desc": "MINERAL WATERS AND AERATED WATERS",
+        "tariff_item_desc": "MINERAL WATERS",
+        "statutory_description": "WATERS, INCLUDING NATURAL OR ARTIFICIAL MINERAL WATERS AND AERATED WATERS, NOT CONTAINING ADDED SUGAR: MINERAL WATERS",
+        "article_keywords": "mineral water, aerated water",
+        "material_keywords": "",
+    }
+    ev_2201 = evaluate_candidate_evidence(pi_water, build_candidate_profile(rec_2201, None), "SAME_PRODUCT", 0.90)
+    assert ev_2201.status != CONTRADICTED
+
+

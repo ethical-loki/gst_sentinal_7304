@@ -3,16 +3,16 @@
   "distinct_unseen_chapters": 44,
   "zero_legacy9_overlap": true,
   "zero_train_val_100_leakage": true,
-  "chapter_accuracy_pct": 88.64,
-  "candidate_recall_pct": 79.55,
-  "recall_at_5_pct": 75.0,
-  "top1_pct": 70.45,
+  "chapter_accuracy_pct": 95.45,
+  "candidate_recall_pct": 88.64,
+  "recall_at_5_pct": 84.09,
+  "top1_pct": 77.27,
   "exact_hsn_hits": 5,
   "exact_hsn_accuracy_pct": 11.36,
   "false_exact_count": 0,
   "correct_abstention_pct": 100.0,
-  "mean_latency_ms": 11209.3,
-  "p95_latency_ms": 16098.0,
+  "mean_latency_ms": 13988.5,
+  "p95_latency_ms": 31060.5,
   "cases": [
     {
       "case_id": 1,
@@ -21,7 +21,7 @@
       "expected_chapter": "01",
       "top_chapter": "01",
       "chapter_hit": true,
-      "retained_8digit": 26,
+      "retained_8digit": 33,
       "recall_hit": true,
       "rank": 2,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -29,7 +29,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 5530.6
+      "latency_ms": 15399.0
     },
     {
       "case_id": 2,
@@ -46,7 +46,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 10200.1
+      "latency_ms": 31293.0
     },
     {
       "case_id": 3,
@@ -55,7 +55,7 @@
       "expected_chapter": "05",
       "top_chapter": "05",
       "chapter_hit": true,
-      "retained_8digit": 4,
+      "retained_8digit": 16,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -63,7 +63,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 8225.3
+      "latency_ms": 20114.7
     },
     {
       "case_id": 4,
@@ -80,7 +80,7 @@
       "exact_hit": true,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 10366.9
+      "latency_ms": 35669.1
     },
     {
       "case_id": 5,
@@ -97,7 +97,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 6467.7
+      "latency_ms": 17196.0
     },
     {
       "case_id": 6,
@@ -114,7 +114,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 5963.6
+      "latency_ms": 15130.8
     },
     {
       "case_id": 7,
@@ -131,24 +131,24 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 6726.1
+      "latency_ms": 16069.7
     },
     {
       "case_id": 8,
       "query": "PIG FATS (INCLUDING LARD) AND POULTRY FAT, OTHER THAN THAT OF HEADING 0209 OR 1503 - PIG FAT (INCLUDING LARD) AND POULTRY FAT, OTHER THAN THAT OF HEADING 0209 OR 1503 - LARD",
       "expected_hsn": "15011000",
       "expected_chapter": "15",
-      "top_chapter": "02",
-      "chapter_hit": false,
-      "retained_8digit": 17,
-      "recall_hit": false,
-      "rank": null,
-      "prediction_mode": "MULTIPLE_CANDIDATES",
+      "top_chapter": "15",
+      "chapter_hit": true,
+      "retained_8digit": 36,
+      "recall_hit": true,
+      "rank": 1,
+      "prediction_mode": "CHAPTER_ONLY_CLARIFY",
       "final_hsn": null,
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 9531.9
+      "latency_ms": 23530.8
     },
     {
       "case_id": 9,
@@ -157,15 +157,15 @@
       "expected_chapter": "17",
       "top_chapter": "17",
       "chapter_hit": true,
-      "retained_8digit": 10,
+      "retained_8digit": 23,
       "recall_hit": true,
       "rank": 2,
-      "prediction_mode": "CHAPTER_ONLY_CLARIFY",
+      "prediction_mode": "MULTIPLE_CANDIDATES",
       "final_hsn": null,
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 14466.6
+      "latency_ms": 32297.5
     },
     {
       "case_id": 10,
@@ -182,7 +182,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 8704.2
+      "latency_ms": 20698.2
     },
     {
       "case_id": 11,
@@ -191,32 +191,32 @@
       "expected_chapter": "22",
       "top_chapter": "22",
       "chapter_hit": true,
-      "retained_8digit": 27,
-      "recall_hit": false,
-      "rank": null,
-      "prediction_mode": "CHAPTER_ONLY_CLARIFY",
+      "retained_8digit": 32,
+      "recall_hit": true,
+      "rank": 2,
+      "prediction_mode": "MULTIPLE_CANDIDATES",
       "final_hsn": null,
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 8750.4
+      "latency_ms": 29743.3
     },
     {
       "case_id": 12,
       "query": "UNMANUFACTURED TOBACCO; TOBACCO REFUSE ,TOBACCO LEAVES AS SUCH OR BROKEN TOBACCO LEAVES OR LEAVES STEMS, UNMANUFACTURED TOBACCO (WITHOUT LIME TUBE) \u2013 BEARING A BRAND NAME, UNMANUFACTURED TOBACCO (WITH LIME TUBE) \u2013 BEARING A BRAND - TOBACCO, NOT STEMMED OR STRIPPED - FLUE CURED VIRGINIA TOBACCO",
       "expected_hsn": "24011010",
       "expected_chapter": "24",
-      "top_chapter": "73",
+      "top_chapter": "84",
       "chapter_hit": false,
-      "retained_8digit": 17,
+      "retained_8digit": 22,
       "recall_hit": false,
       "rank": null,
-      "prediction_mode": "INSUFFICIENT_INFORMATION",
+      "prediction_mode": "MULTIPLE_CANDIDATES",
       "final_hsn": null,
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 14793.7
+      "latency_ms": 27251.8
     },
     {
       "case_id": 13,
@@ -233,7 +233,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 9792.0
+      "latency_ms": 17097.8
     },
     {
       "case_id": 14,
@@ -250,7 +250,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 10238.6
+      "latency_ms": 24339.6
     },
     {
       "case_id": 15,
@@ -267,7 +267,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 14492.6
+      "latency_ms": 21526.5
     },
     {
       "case_id": 16,
@@ -276,7 +276,7 @@
       "expected_chapter": "32",
       "top_chapter": "32",
       "chapter_hit": true,
-      "retained_8digit": 42,
+      "retained_8digit": 44,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -284,7 +284,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 12565.9
+      "latency_ms": 14958.4
     },
     {
       "case_id": 17,
@@ -301,7 +301,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 10589.6
+      "latency_ms": 11799.9
     },
     {
       "case_id": 18,
@@ -310,7 +310,7 @@
       "expected_chapter": "36",
       "top_chapter": "36",
       "chapter_hit": true,
-      "retained_8digit": 9,
+      "retained_8digit": 12,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "EXACT_HSN",
@@ -318,7 +318,7 @@
       "exact_hit": true,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 9617.9
+      "latency_ms": 7386.9
     },
     {
       "case_id": 19,
@@ -335,7 +335,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 15287.4
+      "latency_ms": 12190.5
     },
     {
       "case_id": 20,
@@ -344,7 +344,7 @@
       "expected_chapter": "41",
       "top_chapter": "41",
       "chapter_hit": true,
-      "retained_8digit": 57,
+      "retained_8digit": 58,
       "recall_hit": true,
       "rank": 9,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -352,7 +352,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 14501.9
+      "latency_ms": 10815.2
     },
     {
       "case_id": 21,
@@ -361,7 +361,7 @@
       "expected_chapter": "43",
       "top_chapter": "43",
       "chapter_hit": true,
-      "retained_8digit": 35,
+      "retained_8digit": 41,
       "recall_hit": false,
       "rank": null,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -369,7 +369,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 8740.5
+      "latency_ms": 9469.2
     },
     {
       "case_id": 22,
@@ -378,7 +378,7 @@
       "expected_chapter": "45",
       "top_chapter": "45",
       "chapter_hit": true,
-      "retained_8digit": 4,
+      "retained_8digit": 6,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -386,7 +386,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 14987.5
+      "latency_ms": 12647.7
     },
     {
       "case_id": 23,
@@ -403,7 +403,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 7423.1
+      "latency_ms": 6085.9
     },
     {
       "case_id": 24,
@@ -412,7 +412,7 @@
       "expected_chapter": "49",
       "top_chapter": "49",
       "chapter_hit": true,
-      "retained_8digit": 7,
+      "retained_8digit": 21,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -420,7 +420,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 13302.0
+      "latency_ms": 7421.2
     },
     {
       "case_id": 25,
@@ -429,7 +429,7 @@
       "expected_chapter": "51",
       "top_chapter": "51",
       "chapter_hit": true,
-      "retained_8digit": 15,
+      "retained_8digit": 19,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -437,7 +437,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 7597.6
+      "latency_ms": 6207.7
     },
     {
       "case_id": 26,
@@ -454,7 +454,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 8291.6
+      "latency_ms": 7336.6
     },
     {
       "case_id": 27,
@@ -463,7 +463,7 @@
       "expected_chapter": "55",
       "top_chapter": "55",
       "chapter_hit": true,
-      "retained_8digit": 43,
+      "retained_8digit": 66,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -471,7 +471,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 7657.3
+      "latency_ms": 6588.1
     },
     {
       "case_id": 28,
@@ -480,7 +480,7 @@
       "expected_chapter": "57",
       "top_chapter": "57",
       "chapter_hit": true,
-      "retained_8digit": 68,
+      "retained_8digit": 77,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -488,7 +488,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 7102.5
+      "latency_ms": 6029.8
     },
     {
       "case_id": 29,
@@ -497,7 +497,7 @@
       "expected_chapter": "59",
       "top_chapter": "59",
       "chapter_hit": true,
-      "retained_8digit": 35,
+      "retained_8digit": 41,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "CHAPTER_ONLY_CLARIFY",
@@ -505,7 +505,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 10187.2
+      "latency_ms": 8651.8
     },
     {
       "case_id": 30,
@@ -522,7 +522,7 @@
       "exact_hit": true,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 10373.1
+      "latency_ms": 9019.1
     },
     {
       "case_id": 31,
@@ -531,7 +531,7 @@
       "expected_chapter": "65",
       "top_chapter": "65",
       "chapter_hit": true,
-      "retained_8digit": 39,
+      "retained_8digit": 41,
       "recall_hit": true,
       "rank": 6,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -539,7 +539,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 12260.3
+      "latency_ms": 8875.6
     },
     {
       "case_id": 32,
@@ -556,7 +556,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 13927.1
+      "latency_ms": 10329.4
     },
     {
       "case_id": 33,
@@ -565,15 +565,15 @@
       "expected_chapter": "69",
       "top_chapter": "69",
       "chapter_hit": true,
-      "retained_8digit": 18,
-      "recall_hit": false,
-      "rank": null,
+      "retained_8digit": 41,
+      "recall_hit": true,
+      "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
       "final_hsn": null,
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 12371.1
+      "latency_ms": 9800.8
     },
     {
       "case_id": 34,
@@ -590,7 +590,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 11607.2
+      "latency_ms": 9301.6
     },
     {
       "case_id": 35,
@@ -607,7 +607,7 @@
       "exact_hit": true,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 10203.6
+      "latency_ms": 8929.3
     },
     {
       "case_id": 36,
@@ -616,7 +616,7 @@
       "expected_chapter": "76",
       "top_chapter": "76",
       "chapter_hit": true,
-      "retained_8digit": 35,
+      "retained_8digit": 55,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -624,7 +624,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 34532.7
+      "latency_ms": 21987.2
     },
     {
       "case_id": 37,
@@ -641,7 +641,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 6252.7
+      "latency_ms": 5782.7
     },
     {
       "case_id": 38,
@@ -658,7 +658,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 7974.0
+      "latency_ms": 4489.3
     },
     {
       "case_id": 39,
@@ -667,7 +667,7 @@
       "expected_chapter": "83",
       "top_chapter": "83",
       "chapter_hit": true,
-      "retained_8digit": 66,
+      "retained_8digit": 78,
       "recall_hit": true,
       "rank": 1,
       "prediction_mode": "MULTIPLE_CANDIDATES",
@@ -675,7 +675,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 13243.0
+      "latency_ms": 8999.0
     },
     {
       "case_id": 40,
@@ -692,24 +692,24 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 14311.9
+      "latency_ms": 9872.0
     },
     {
       "case_id": 41,
       "query": "OPTICAL FIBRES AND OPTICAL FIBRE BUNDLES; OPTICAL FIBRE CABLES OTHER THAN THOSE OF HEADING 8544; SHEETS AND PLATES OF POLARISING MATERIAL; LENSES (INCLUDING CONTACT LENSES), PRISMS, MIRRORS AND OTHER OPTICAL ELEMENTS, OF ANY MATERIAL, UNMOUNTED, OTHER TH - THAN SUCH ELEMENTS OF GLASS NOT OPTICALLY WORKED OPTICAL FIBRES, OPTICAL FIBRES BUNDLES AND CABLES",
       "expected_hsn": "90011000",
       "expected_chapter": "90",
-      "top_chapter": "85",
-      "chapter_hit": false,
-      "retained_8digit": 34,
+      "top_chapter": "90",
+      "chapter_hit": true,
+      "retained_8digit": 43,
       "recall_hit": false,
       "rank": null,
-      "prediction_mode": "MULTIPLE_CANDIDATES",
+      "prediction_mode": "CHAPTER_ONLY_CLARIFY",
       "final_hsn": null,
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 19769.7
+      "latency_ms": 10190.7
     },
     {
       "case_id": 42,
@@ -726,7 +726,7 @@
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 5803.6
+      "latency_ms": 3874.2
     },
     {
       "case_id": 43,
@@ -743,24 +743,24 @@
       "exact_hit": true,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 16241.0
+      "latency_ms": 11004.0
     },
     {
       "case_id": 44,
       "query": "PAINTINGS, DRAWINGS AND PASTELS, EXECUTED ENTIRELY BY HAND, OTHER THAN DRAWINGS OF HEADING 4906 AND OTHER THAN HAND-PAINTED OR HAND-DECORATED MANUFACTURED ARTICLES; COLLAGES, MOSAICS AND SIMILAR DECORATIVE PLAQUES - PAINTINGS, DRAWINGS AND PASTELS : - MADHUBANI PAINTINGS (ON TEXTILES",
       "expected_hsn": "97011010",
       "expected_chapter": "97",
-      "top_chapter": "96",
-      "chapter_hit": false,
-      "retained_8digit": 13,
-      "recall_hit": false,
-      "rank": null,
-      "prediction_mode": "MULTIPLE_CANDIDATES",
+      "top_chapter": "97",
+      "chapter_hit": true,
+      "retained_8digit": 33,
+      "recall_hit": true,
+      "rank": 1,
+      "prediction_mode": "CHAPTER_ONLY_CLARIFY",
       "final_hsn": null,
       "exact_hit": false,
       "false_exact": false,
       "correctly_abstained": true,
-      "latency_ms": 12234.9
+      "latency_ms": 8092.6
     }
   ]
 }
