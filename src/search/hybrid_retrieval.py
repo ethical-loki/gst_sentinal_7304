@@ -17,7 +17,7 @@ import json
 import hashlib
 import logging
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Set, Tuple
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, Field
@@ -68,6 +68,8 @@ def tokenize(text: str) -> List[str]:
         .replace("stailess", "stainless")
         .replace("vaccum", "vacuum")
         .replace("digial", "digital")
+        .replace("regenration", "regeneration")
+        .replace("acetatc", "acetate")
     )
     # Expand single-character hyphenated compounds (e.g. t-shirt -> tshirts shirt, v-neck -> vneck neck)
     clean = re.sub(r"\b([a-zA-Z0-9])-([a-zA-Z0-9]+)\b", r"\1\2 \2", clean)
@@ -127,15 +129,35 @@ class HybridHSNEngine:
         leaf_idxs_tmp: List[int] = []
         parent_idxs_tmp: List[int] = []
         leaf_rows_by_ch_tmp: Dict[str, List[int]] = {}
+        leaf_rows_by_h4_tmp: Dict[str, List[int]] = {}
+        leaf_rows_by_sub6_tmp: Dict[str, List[int]] = {}
+        h4_codes_tmp: Set[str] = set()
+        h6_codes_tmp: Set[str] = set()
+        h8_codes_tmp: Set[str] = set()
+        h4_desc_tmp: Dict[str, str] = {}
+        h6_desc_tmp: Dict[str, str] = {}
         for idx_r, rec_r in enumerate(self.records):
             ch_r = str(rec_r.get("chapter_code") or "").zfill(2)
             rows_by_ch_tmp.setdefault(ch_r, []).append(idx_r)
             hsn_r = str(rec_r.get("hsn_code") or rec_r.get("code_str") or "").strip()
+            h4_d = str(rec_r.get("heading_4digit_desc") or "").strip()
+            h6_d = str(rec_r.get("subheading_6digit_desc") or "").strip()
+            if len(hsn_r) >= 4 and hsn_r[:4].isdigit() and h4_d and hsn_r[:4] not in h4_desc_tmp:
+                h4_desc_tmp[hsn_r[:4]] = h4_d
+            if len(hsn_r) >= 6 and hsn_r[:6].isdigit() and h6_d and hsn_r[:6] not in h6_desc_tmp:
+                h6_desc_tmp[hsn_r[:6]] = h6_d
             if len(hsn_r) == 8 and hsn_r.isdigit():
+                h8_codes_tmp.add(hsn_r)
                 leaf_idxs_tmp.append(idx_r)
                 leaf_rows_by_ch_tmp.setdefault(ch_r, []).append(idx_r)
+                leaf_rows_by_h4_tmp.setdefault(hsn_r[:4], []).append(idx_r)
+                leaf_rows_by_sub6_tmp.setdefault(hsn_r[:6], []).append(idx_r)
             else:
                 parent_idxs_tmp.append(idx_r)
+                if len(hsn_r) == 4 and hsn_r.isdigit():
+                    h4_codes_tmp.add(hsn_r)
+                elif len(hsn_r) == 6 and hsn_r.isdigit():
+                    h6_codes_tmp.add(hsn_r)
         self._rows_by_chapter: Dict[str, np.ndarray] = {
             ch: np.array(idxs, dtype=int) for ch, idxs in rows_by_ch_tmp.items()
         }
@@ -149,6 +171,23 @@ class HybridHSNEngine:
             ch: np.array(leaf_rows_by_ch_tmp[ch], dtype=int) if leaf_rows_by_ch_tmp.get(ch) else arr
             for ch, arr in self._rows_by_chapter.items()
         }
+        self._leaf_rows_by_h4: Dict[str, np.ndarray] = {
+            h4: np.array(idxs, dtype=int) for h4, idxs in leaf_rows_by_h4_tmp.items()
+        }
+        self._leaf_rows_by_sub6: Dict[str, np.ndarray] = {
+            s6: np.array(idxs, dtype=int) for s6, idxs in leaf_rows_by_sub6_tmp.items()
+        }
+        self._h4_codes: Set[str] = h4_codes_tmp | set(h4_desc_tmp.keys())
+        # A 6-digit subheading legally exists in the statutory master when an explicit 6-digit row exists,
+        # OR when multiple 8-digit tariff items share that 6-digit prefix with a non-empty subheading description.
+        self._h6_explicit_codes: Set[str] = set(h6_codes_tmp)
+        self._h6_codes: Set[str] = h6_codes_tmp | {
+            s6 for s6, idxs in leaf_rows_by_sub6_tmp.items()
+            if s6 in h6_desc_tmp and (len(idxs) > 1 or s6 in h6_codes_tmp)
+        }
+        self._h8_codes: Set[str] = h8_codes_tmp
+        self._h4_desc_map: Dict[str, str] = h4_desc_tmp
+        self._h6_desc_map: Dict[str, str] = h6_desc_tmp
 
         # 1. Initialize BM25 Multi-Field Corpora from the exact records
         from rank_bm25 import BM25Okapi
@@ -284,6 +323,52 @@ class HybridHSNEngine:
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
+
+    def get_hierarchy_depth_info(self, hsn_code: str) -> Dict[str, Any]:
+        """Returns actual statutory master availability for 4/6/8-digit hierarchy levels."""
+        norm = str(hsn_code or "").replace(" ", "").strip()
+        h4 = norm[:4] if len(norm) >= 4 else ""
+        h6 = norm[:6] if len(norm) >= 6 else ""
+        h6_codes = getattr(self, "_h6_codes", set())
+        h6_explicit = getattr(self, "_h6_explicit_codes", set())
+        h4_codes = getattr(self, "_h4_codes", set())
+        h8_codes = getattr(self, "_h8_codes", set())
+        sib_h6 = self._leaf_rows_by_sub6.get(h6) if hasattr(self, "_leaf_rows_by_sub6") and h6 else None
+        sib_h4 = self._leaf_rows_by_h4.get(h4) if hasattr(self, "_leaf_rows_by_h4") and h4 else None
+        return {
+            "has_4digit": bool(h4 and h4 in h4_codes),
+            "has_6digit": bool(h6 and h6 in h6_codes),
+            "has_6digit_explicit_row": bool(h6 and h6 in h6_explicit),
+            "has_8digit": bool(len(norm) == 8 and norm in h8_codes),
+            "h4_desc": getattr(self, "_h4_desc_map", {}).get(h4, ""),
+            "h6_desc": getattr(self, "_h6_desc_map", {}).get(h6, ""),
+            "leaf_count_in_h6": int(len(sib_h6)) if sib_h6 is not None else 0,
+            "leaf_count_in_h4": int(len(sib_h4)) if sib_h4 is not None else 0,
+        }
+
+    def get_sibling_leaf_records(self, prefix: str, limit: int = 12) -> List[Dict[str, Any]]:
+        """Returns up to `limit` 8-digit tariff records sharing a 6-digit subheading or 4-digit heading."""
+        p = str(prefix or "").replace(" ", "").strip()
+        if len(p) == 6 and hasattr(self, "_leaf_rows_by_sub6"):
+            arr = self._leaf_rows_by_sub6.get(p)
+        elif len(p) == 4 and hasattr(self, "_leaf_rows_by_h4"):
+            arr = self._leaf_rows_by_h4.get(p)
+        else:
+            arr = None
+        if arr is None or len(arr) == 0:
+            return []
+        out: List[Dict[str, Any]] = []
+        for idx in arr[:max(1, int(limit))]:
+            rec = dict(self.records[int(idx)])
+            rec["source_record_id"] = f"row_{int(idx)}"
+            rec.setdefault("retrieval_source", "statutory_branch_expansion")
+            rec.setdefault("retrieval_path", "statutory_branch_expansion")
+            rec.setdefault("bm25_score", 0.0)
+            rec.setdefault("vector_score", 0.0)
+            rec.setdefault("rrf_score", 0.0)
+            rec.setdefault("chapter_guided", True)
+            out.append(rec)
+        return out
 
     def _fuse_with_scores(
         self, raw_query: str, pool_size: int = 15, branch_k: int = 20

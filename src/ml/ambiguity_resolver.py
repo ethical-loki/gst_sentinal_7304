@@ -238,7 +238,8 @@ _STAT_STOPWORDS = {
     "incorporating", "consisting", "equipment", "apparatus", "system",
     "systems", "device", "devices", "unit", "units", "machinery",
     "machine", "machines", "appliance", "appliances", "goods", "product",
-    "products",
+    "products", "used", "using", "containing", "without", "mainly",
+    "principally", "suitable", "designed", "form", "forms", "made",
 }
 
 
@@ -257,7 +258,14 @@ def _stem_stat(tok: str) -> str:
 
 def _stat_tokens(text: str) -> Set[str]:
     out: Set[str] = set()
-    norm = re.sub(r"\bvaccum\b", "vacuum", re.sub(r"\bstailess\b", "stainless", (text or "").lower()))
+    norm = (text or "").lower()
+    norm = (
+        norm.replace("stailess", "stainless")
+        .replace("vaccum", "vacuum")
+        .replace("digial", "digital")
+        .replace("regenration", "regeneration")
+        .replace("acetatc", "acetate")
+    )
     for tok in re.findall(r"[a-z0-9]+", norm):
         if len(tok) < 3 or tok.isdigit():
             continue
@@ -337,8 +345,15 @@ def analyze_sibling_distinctions(
         matched_diff = sorted(diff_tokens & q_tokens)
         lex_ratio = len(matched_diff) / max(len(diff_tokens), 1) if diff_tokens else 0.0
 
-        # Direct tariff_item_desc phrase boost (e.g. "POLYCARBONATES", "PISTON RINGS")
-        t8_tokens = _stat_tokens(t8)
+        # Direct tariff_item_desc phrase boost (e.g. "POLYCARBONATES", "PISTON RINGS");
+        # recover leading truncated clause from statutory_description when tariff_item_desc
+        # begins mid-parenthetical (e.g. "ALCOHOL), WHETHER OR NOT...").
+        t8_eval = t8
+        if t8 and (")" in t8 and ("(" not in t8 or t8.index(")") < t8.index("("))) and c.candidate.description:
+            stat_tail = re.split(r"\s+-\s+", c.candidate.description)[-1]
+            if stat_tail:
+                t8_eval = stat_tail
+        t8_tokens = _stat_tokens(t8_eval)
         t8_hit_ratio = len(t8_tokens & q_tokens) / max(len(t8_tokens), 1) if (t8_tokens and not is_residual) else 0.0
         has_unmatched_t8 = bool(t8_tokens - q_tokens) and (t8_hit_ratio == 0.0) and not is_residual
 

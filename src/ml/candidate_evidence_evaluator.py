@@ -119,7 +119,11 @@ _MATERIAL_FAMILIES: Dict[str, Set[str]] = {
     "cotton": {"cotton"},
     "wool": {"wool", "woollen", "woolen", "cashmere", "merino", "animal hair"},
     "silk": {"silk"},
-    "synthetic_textile": {"synthetic", "man-made", "polyester", "viscose", "rayon", "spandex", "elastane"},
+    "synthetic_textile": {
+        "synthetic", "man-made", "man-made fibre", "man-made fibres",
+        "artificial fibre", "artificial fibres", "synthetic fibre", "synthetic fibres",
+        "polyester", "viscose", "rayon", "spandex", "elastane",
+    },
     "vegetable_textile": {"linen", "flax", "ramie", "hemp", "jute", "coir", "sisal"},
     "wood": {"wood", "wooden", "timber", "plywood", "bamboo"},
     "rubber": {"rubber", "latex", "elastomer", "vulcanised", "vulcanized"},
@@ -145,13 +149,13 @@ _SPECIFIC_POLYMER_PATTERNS: Dict[str, str] = {
     "vinyl_acetate": r"\b(?:poly\s*\(?vinyl\s+acetate\)?|vinyl\s+acetate)\b",
     "vinyl_alcohol": r"\bpoly\s*\(?vinyl\s+alcohol\)?|\bpolyvinyl\s+alcohol\b",
     "acrylic": r"\b(?:acrylic\s+polymers?|polymethyl\s+methacrylate|pmma)\b",
-    "polyester": r"\b(?:polyesters?|poly\s*\(?ethylene\s+terephthalate\)?)\b",
+    "polyester": r"\b(?:polyesters?|poly\s*\(?ethylene\s+terephthalate\)?|pet(?!\s+(?:animal|food|dog|cat|bowl)))\b",
     "polycarbonate": r"\bpolycarbonates?\b",
-    "cellulose_acetate": r"\bcellulose\s+acetates?\b",
+    "cellulose_acetate": r"\bcellulose\s+acetat[ec]s?\b",
     "cellulose_acetobutyrate": r"\bcellulose\s+acetobutyrates?\b",
     "cellulose_nitrate": r"\bcellulose\s+nitrates?\b",
     "regenerated_cellulose": r"\bregenerated\s+cellulose\b",
-    "epoxide": r"\b(?:epoxide\s+resins?|epoxy\s+resins?)\b",
+    "epoxide": r"\b(?:epoxide(?:\s*-\s*|\s+)resins?|epoxy(?:\s*-\s*|\s+)resins?)\b",
     "silicone": r"\bsilicones?\b",
     "ptfe": r"\b(?:ptfe|polytetrafluoroethylene)\b",
 }
@@ -197,7 +201,7 @@ def _detect_material_families(tokens: Set[str], raw_text: str = "") -> Set[str]:
     found: Set[str] = set()
     for fam, cues in _MATERIAL_FAMILIES.items():
         for cue in cues:
-            if " " in cue:
+            if " " in cue or "-" in cue:
                 if cue in low:
                     found.add(fam)
                     break
@@ -495,17 +499,29 @@ def evaluate_candidate_evidence(
             re.IGNORECASE,
         )
     )
-    if c_is_parts_only and not q_asks_parts:
-        role_mismatch = "complete_article_vs_parts"
-    elif (
-        q_explicit_parts
-        and not c_is_parts_only
-        and not re.search(
-            r"\bparts?(?:\s+thereof|\s+of|\s+for|\s+and\s+accessories)?\b",
-            f"{profile.heading_4digit_desc} {profile.subheading_6digit_desc} {profile.tariff_item_desc}",
+    _sub_complete_named = bool(
+        profile.subheading_6digit_desc
+        and profile.subheading_6digit_desc.strip().upper() not in {"OTHER", "OTHERS"}
+        and not re.search(r"\b(?:parts?|accessories|attachments?)\b", profile.subheading_6digit_desc, re.IGNORECASE)
+    )
+    _cand_mentions_parts = bool(
+        re.search(
+            r"\b(?:parts?(?:\s+thereof|\s+of|\s+for|\s+and\s+accessories)?|accessories|attachments?)\b",
+            f"{profile.subheading_6digit_desc} {profile.tariff_item_desc}",
             re.IGNORECASE,
         )
-    ):
+        or (
+            not _sub_complete_named
+            and re.search(
+                r"\b(?:parts?(?:\s+thereof|\s+of|\s+for|\s+and\s+accessories)?|accessories|attachments?)\b",
+                profile.heading_4digit_desc or "",
+                re.IGNORECASE,
+            )
+        )
+    )
+    if c_is_parts_only and not q_asks_parts:
+        role_mismatch = "complete_article_vs_parts"
+    elif q_explicit_parts and not c_is_parts_only and not _cand_mentions_parts:
         role_mismatch = "parts_vs_complete_article"
 
     # Detect generic-superordinate-only article match when query has more specific nouns
@@ -659,23 +675,42 @@ def evaluate_candidate_evidence(
     # Negative statutory phrasing check (e.g., "not containing X", "other than T-shirts"),
     # explicitly ignoring permissive "whether or not containing X" clauses.
     cand_desc_low = re.sub(
-        r"\bwhether\s+or\s+not\s+containing\b",
-        "optionally_containing",
-        f"{profile.tariff_item_desc} {profile.statutory_description}".lower(),
+        r"\bwhether\s+or\s+not(?:\s+containing)?\b",
+        "optionally_including",
+        " | ".join([
+            profile.heading_4digit_desc or "",
+            profile.subheading_6digit_desc or "",
+            profile.tariff_item_desc or "",
+            profile.statutory_description or "",
+        ]).lower(),
     )
-    neg_matches = re.findall(r"\b(?:not\s+containing|other\s+than(?:\s+of)?|excluding)\s+([a-z0-9\-\s]{3,40}?)(?:[,;\)]|$)", cand_desc_low)
-    query_full_low = f"{product_intent.finished_article} {query_mat_text} {' '.join(product_intent.ingredients_or_additives)}".lower()
+    neg_matches = re.findall(r"\b(?:not\s+containing|other\s+than(?:\s+of)?|excluding)\s+([a-z0-9\-\s]{3,60}?)(?:[,;\)\|\.]|$)", cand_desc_low)
+    query_full_low = f"{product_intent.finished_article} {query_mat_text} {' '.join(product_intent.ingredients_or_additives)} {product_intent.processing_form or ''} {product_intent.raw_description or ''}".lower()
     _q_hyphen_words = {_stem(t.replace("-", "")) for t in re.findall(r"\b[a-z0-9]+-[a-z0-9]+\b", query_full_low)}
     # Strip hyphenated tokens from base tokenization so "t-shirt" -> "tshirt" (not plain "shirt")
     q_full_no_hyphen = re.sub(r"\b[a-z0-9]+-[a-z0-9]+\b", " ", query_full_low)
     q_full_toks = _tokenize_content(q_full_no_hyphen) | _q_hyphen_words
     for neg_phrase in neg_matches:
-        neg_clean = neg_phrase.strip()
+        neg_clean = re.sub(r"\s+of\s+(?:the\s+)?headings?\s+\d{4}.*$", "", neg_phrase.strip()).strip()
+        if not neg_clean:
+            continue
         _neg_hw = {_stem(t.replace("-", "")) for t in re.findall(r"\b[a-z0-9]+-[a-z0-9]+\b", neg_clean)}
         _neg_no_hyphen = re.sub(r"\b[a-z0-9]+-[a-z0-9]+\b", " ", neg_clean)
         neg_toks = _tokenize_content(_neg_no_hyphen) | _neg_hw
         if neg_toks and neg_toks.issubset(q_full_toks):
             contradictions.append(f"Statutory exclusion matched: '{neg_clean}'")
+    # Participle exclusion lists in headings (e.g. 3920 "AND NOT REINFORCED, LAMINATED, SUPPORTED")
+    for part_list in re.findall(
+        r"\band\s+not\s+(?!exceeding\b|containing\b|elsewhere\b|more\b|less\b|including\b)([a-z]+ed(?:\s*,\s*[a-z]+ed)+)",
+        cand_desc_low,
+    ):
+        for p_word in re.findall(r"\b[a-z]{4,}ed\b", part_list):
+            p_stem = _stem(p_word)
+            if (
+                p_stem in q_full_toks
+                and not re.search(rf"\b(?:un|non[-\s]+|not\s+){re.escape(p_word)}\b", query_full_low)
+            ):
+                contradictions.append(f"Statutory process exclusion matched: 'not {p_word}'")
 
     # 5. Evidence-based verdict & 5-way compatibility classification:
     # Combine master-derived corpus qualifier/material vocabularies with structural seeds
@@ -716,6 +751,7 @@ def evaluate_candidate_evidence(
         )
         for cl in (profile.tariff_item_desc.strip(), profile.subheading_6digit_desc.strip())
     )
+    secondary_with_feature = False
     if primary_id_tokens:
         # Guard against sibling-exclusive contradictory articles (preventing blind parent inheritance)
         if (primary_id_tokens & profile.contradictory_sibling_articles) and not (
@@ -726,17 +762,35 @@ def evaluate_candidate_evidence(
             primary_article_matched = False
         else:
             # Avoid treating nouns inside secondary "WITH <engine/motor/feature>" qualifier clauses
-            # (e.g. Heading 8711 motorcycles "WITH RECIPROCATING PISTON ENGINE") as standalone commodity identity.
-            sub_with_only = bool(re.match(r"^\s*(?:with|fitted\s+with|equipped\s+with)\b", profile.subheading_6digit_desc or "", re.IGNORECASE))
+            # (e.g. Heading 8711 motorcycles "WITH RECIPROCATING PISTON ENGINE" or 8703 ", WITH BOTH...")
+            # as standalone commodity identity.
+            sub_desc_str = profile.subheading_6digit_desc or ""
+            sub_with_only = bool(
+                re.search(r"(?:^|,)\s*(?:with|fitted\s+with|equipped\s+with)\b", sub_desc_str, re.IGNORECASE)
+            )
             hd_primary = _tokenize_content(
                 re.split(r"\b(?:with|fitted\s+with|equipped\s+with)\b", profile.heading_4digit_desc or "", maxsplit=1, flags=re.IGNORECASE)[0]
             )
+            sub_primary = (
+                _tokenize_content(
+                    re.split(r"(?:^|,)\s*(?:with|fitted\s+with|equipped\s+with)\b", sub_desc_str, maxsplit=1, flags=re.IGNORECASE)[0]
+                )
+                if sub_with_only
+                else set()
+            )
             effective_cand_art = (
-                (hd_primary | _tokenize_content(profile.tariff_item_desc or ""))
+                (hd_primary | sub_primary | _tokenize_content(profile.tariff_item_desc or ""))
                 if (sub_with_only and hd_primary)
                 else (profile.article_tokens | profile.inherited_parent_articles)
             )
             primary_article_matched = bool(primary_id_tokens & effective_cand_art)
+            if (
+                sub_with_only
+                and hd_primary
+                and not primary_article_matched
+                and (primary_id_tokens & (profile.article_tokens | profile.inherited_parent_articles))
+            ):
+                secondary_with_feature = True
     else:
         primary_article_matched = bool(article_matches)
     # Parts-role alignment: when Stage 1 identifies a part/component/accessory (`q_asks_parts` or head_noun=='part')
@@ -748,6 +802,7 @@ def evaluate_candidate_evidence(
         or bool(re.search(r"\bparts\s+thereof\b", profile.statutory_description or "", re.IGNORECASE))
     ):
         primary_article_matched = True
+        secondary_with_feature = False
     head_is_broad = bool(head_noun_tokens) and head_noun_tokens.issubset(_BROAD_SUPERORDINATES)
     modifier_only_match = bool(article_matches) and not primary_article_matched
 
@@ -805,6 +860,8 @@ def evaluate_candidate_evidence(
     ]
     if modifier_only_match:
         trace_parts.append("guard=modifier_only_no_head_noun")
+    if secondary_with_feature:
+        trace_parts.append("guard=secondary_with_feature")
     if material_only_no_article:
         trace_parts.append("guard=material_only_no_article")
     if generic_only_match:

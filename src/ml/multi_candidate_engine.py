@@ -317,6 +317,89 @@ class AdaptiveCandidateDiscoverer:
                 next_k = branch_k + 30
             branch_k = min(next_k, total_master) if total_master > 0 else next_k
 
+        # Statutory Sibling & Residual Branch Completion:
+        # When non-exhaustive retrieval surfaced specific leaves inside a 6-digit subheading or 4-digit
+        # heading branch while omitting adjacent siblings (such as residual "OTHER" items like xx xx 90),
+        # examine missing branch siblings cleanly within the evaluation budget.
+        if (
+            not exhaustive
+            and len(raw_by_id) < budget
+            and hasattr(self.hybrid_engine, "get_sibling_leaf_records")
+        ):
+            ranked_eval = sorted(evaluated_map.values(), key=lambda c: -c.confidence)
+            top_sub6s: List[str] = []
+            top_h4s: List[str] = []
+            for cand_item in ranked_eval[:12]:
+                code_s = str(cand_item.candidate.hsn_code or "").strip()
+                if len(code_s) == 8:
+                    if code_s[:6] not in top_sub6s:
+                        top_sub6s.append(code_s[:6])
+                    if code_s[:4] not in top_h4s:
+                        top_h4s.append(code_s[:4])
+            sibling_recs: List[Dict[str, Any]] = []
+            for s6 in top_sub6s[:2]:
+                sibling_recs.extend(self.hybrid_engine.get_sibling_leaf_records(s6, limit=10))
+            q_toks_exp = {t for t in re.findall(r"\b[a-z0-9]{3,}\b", eval_query.lower())}
+            for h4 in top_h4s[:2]:
+                for h_rec in self.hybrid_engine.get_sibling_leaf_records(h4, limit=24):
+                    t8_l = str(h_rec.get("tariff_item_desc") or "").strip().lower()
+                    s6_l = str(h_rec.get("subheading_6digit_desc") or "").strip().lower()
+                    if t8_l in {"other", "others"} or s6_l in {"other", "others"} or (
+                        q_toks_exp & set(re.findall(r"\b[a-z0-9]{3,}\b", f"{s6_l} {t8_l}"))
+                    ):
+                        sibling_recs.append(h_rec)
+
+            sib_to_score: List[Dict[str, Any]] = []
+            sib_cached: List[Tuple[Dict[str, Any], ClassifiedTariffCandidate]] = []
+            max_sib_add = min(18, max(0, budget - len(raw_by_id)))
+            for idx_s, s_rec in enumerate(sibling_recs):
+                if len(sib_to_score) + len(sib_cached) >= max_sib_add:
+                    break
+                s_hsn = str(s_rec.get("hsn_code") or "").strip()
+                rec_id = str(s_rec.get("source_record_id") or f"hsn_{s_hsn or idx_s}")
+                if not s_hsn or rec_id in evaluated_map or rec_id in raw_by_id:
+                    continue
+                if any(str(r.get("hsn_code") or "").strip() == s_hsn for r in raw_by_id.values()):
+                    continue
+                raw_by_id[rec_id] = s_rec
+                sources_seen.add(str(s_rec.get("retrieval_source") or "statutory_branch_expansion"))
+                ctx = format_tariff_context(s_rec)
+                if ctx in ctx_score_cache:
+                    r_score, r_logit, r_rel, r_conf = ctx_score_cache[ctx]
+                    from src.ml.product_tariff_reranker import RerankedTariffCandidate, _get_field
+                    cloned_cand = RerankedTariffCandidate(
+                        hsn_code=s_hsn,
+                        chapter_code=_get_field(s_rec, "chapter_code", "chapter_str", "chapter"),
+                        description=_get_field(s_rec, "statutory_description", "HSN Description", "tariff_item_desc", "description"),
+                        relevance_score=r_score,
+                        raw_logit=r_logit,
+                        chapter_title=_get_field(s_rec, "chapter_title"),
+                        heading_4digit_desc=_get_field(s_rec, "heading_4digit_desc"),
+                        subheading_6digit_desc=_get_field(s_rec, "subheading_6digit_desc"),
+                        tariff_item_desc=_get_field(s_rec, "tariff_item_desc"),
+                        article_keywords=_get_field(s_rec, "article_keywords", "Article Keywords"),
+                        material_keywords=_get_field(s_rec, "material_keywords", "Material Keywords"),
+                        tariff_level=classify_tariff_level(s_hsn, s_rec.get("code_length")),
+                    )
+                    sib_cached.append((s_rec, ClassifiedTariffCandidate(
+                        candidate=cloned_cand, relation=r_rel, confidence=r_conf, relevance_confidence=r_conf
+                    )))
+                else:
+                    sib_to_score.append(s_rec)
+
+            t_sib0 = time.perf_counter()
+            if sib_to_score:
+                sib_scored = self.classifier.classify(eval_query, sib_to_score)
+                for s_rec, s_cand in zip(sib_to_score, sib_scored):
+                    ctx_score_cache[format_tariff_context(s_rec)] = (
+                        s_cand.candidate.relevance_score, s_cand.candidate.raw_logit, s_cand.relation, s_cand.confidence
+                    )
+                    sib_cached.append((s_rec, s_cand))
+            t_rerank_ms += (time.perf_counter() - t_sib0) * 1000.0
+            for s_rec, s_cand in sib_cached:
+                rec_id = str(s_rec.get("source_record_id") or f"hsn_{s_cand.candidate.hsn_code}")
+                evaluated_map[rec_id] = s_cand
+
         # Re-order qualifying candidates by score descending (never truncate valid alternatives!)
         same_cands = [c for c in evaluated_map.values() if c.relation == RelationLabel.SAME_PRODUCT]
         insuff_cands = [c for c in evaluated_map.values() if c.relation == RelationLabel.INSUFFICIENT_INFORMATION]
@@ -648,6 +731,80 @@ class MultiCandidateEngine:
                 continue
             qualifying.append(c)
 
+        # If statutory contradiction eliminated all retrieved SAME_PRODUCT / INSUFFICIENT_INFORMATION leaves
+        # (e.g. laminated sheet contradicted by 3920 "AND NOT REINFORCED, LAMINATED"), recover non-contradicted
+        # adjacent headings from the primary guided chapter(s).
+        if (
+            not exhaustive
+            and contradicted_count > 0
+            and not any(c.relation in (RelationLabel.SAME_PRODUCT, RelationLabel.INSUFFICIENT_INFORMATION) for c in qualifying)
+            and isinstance(effective_stage1, dict)
+            and hasattr(self.hybrid_engine, "_leaf_rows_by_chapter")
+        ):
+            contr_h4s = {
+                c.candidate.hsn_code[:4]
+                for c in consolidated
+                if evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status") == CONTRADICTED and c.candidate.hsn_code
+            }
+            guided_c = [
+                str(ch_d.get("chapter_code", "")).zfill(2)
+                for ch_d in (effective_stage1.get("chapter_candidates") or [])
+                if isinstance(ch_d, dict) and ch_d.get("chapter_code")
+            ][:2]
+            q_rec_toks = set(re.findall(r"\b[a-z0-9]{3,}\b", effective_query.lower())) - {"and", "the", "for", "with", "use", "type"}
+            recov_pool: List[Dict[str, Any]] = []
+            seen_hsn_rec = set(disc.raw_records_by_id.keys())
+            per_h4_cap: Dict[str, int] = defaultdict(int)
+            for gch in guided_c:
+                ch_arr = getattr(self.hybrid_engine, "_leaf_rows_by_chapter", {}).get(gch)
+                if ch_arr is None:
+                    continue
+                scored_alt: List[Tuple[int, str, Dict[str, Any]]] = []
+                for idx_r in ch_arr:
+                    r_alt = self.hybrid_engine.records[int(idx_r)]
+                    h_alt = str(r_alt.get("hsn_code") or "").strip()
+                    if len(h_alt) != 8 or h_alt in seen_hsn_rec or h_alt[:4] in contr_h4s:
+                        continue
+                    txt_alt = f"{r_alt.get('heading_4digit_desc', '')} {r_alt.get('subheading_6digit_desc', '')} {r_alt.get('tariff_item_desc', '')}".lower()
+                    ov = len(q_rec_toks & set(re.findall(r"\b[a-z0-9]{3,}\b", txt_alt)))
+                    if ov >= 2:
+                        is_gen_other = 1 if str(r_alt.get("tariff_item_desc") or "").strip().lower() in {"other", "others"} else 0
+                        scored_alt.append((ov, is_gen_other, h_alt, r_alt))
+                scored_alt.sort(key=lambda x: (-x[0], -x[1], x[2]))
+                for _, _, h_alt, r_alt in scored_alt:
+                    if per_h4_cap[h_alt[:4]] >= 8:
+                        continue
+                    per_h4_cap[h_alt[:4]] += 1
+                    r_copy = dict(r_alt)
+                    r_copy.setdefault("source_record_id", f"hsn_{h_alt}")
+                    r_copy["retrieval_source"] = "statutory_contradiction_recovery"
+                    r_copy["retrieval_path"] = "chapter_guided"
+                    r_copy["chapter_guided"] = True
+                    recov_pool.append(r_copy)
+                    seen_hsn_rec.add(h_alt)
+                    if len(recov_pool) >= 16:
+                        break
+                if len(recov_pool) >= 16:
+                    break
+            if recov_pool:
+                recov_cls = self.classifier.classify(effective_query, recov_pool)
+                for r_alt, c_alt in zip(recov_pool, recov_cls):
+                    disc.raw_records_by_id[c_alt.candidate.hsn_code] = r_alt
+                    prof_alt = build_candidate_profile(r_alt, c_alt.candidate)
+                    ev_alt = evaluate_candidate_evidence(
+                        product_intent=product_intent,
+                        profile=prof_alt,
+                        relation_value=c_alt.relation.value,
+                        cross_encoder_confidence=c_alt.confidence,
+                    )
+                    ev_dict_alt = ev_alt.to_dict()
+                    ev_dict_alt["ce_relation"] = c_alt.relation.value
+                    ev_dict_alt["rescued_by_statutory_evidence"] = False
+                    ev_dict_alt["rescue_reason"] = ""
+                    evidence_by_hsn[c_alt.candidate.hsn_code] = ev_dict_alt
+                    if ev_alt.status != CONTRADICTED:
+                        qualifying.append(c_alt)
+
         # Selective Cross-Encoder candidate rescue:
         # Preserve UNRELATED candidates ONLY when independent statutory (non-synthetic) article evidence
         # + heading compatibility hold without contradictions, generic-only matches, or parts-vs-complete mismatch.
@@ -670,9 +827,9 @@ class MultiCandidateEngine:
             )
             has_generic_only = "penalty=generic_superordinate_only" in ev_res.trace_summary
             has_strong_statutory_match = (
-                not qualifying
+                (not qualifying and ev_res.primary_article_matched)
                 or (hsn[:4] in qualifying_h4s)
-                or len(ev_res.statutory_article_matches) >= 2
+                or (len(ev_res.statutory_article_matches) >= 2 and ev_res.primary_article_matched)
             )
             if (
                 ev_res.status != CONTRADICTED
@@ -680,6 +837,7 @@ class MultiCandidateEngine:
                 and ev_res.heading_compatible
                 and not has_generic_only
                 and ev_res.role_mismatch != "complete_article_vs_parts"
+                and ev_res.primary_article_matched
                 and has_strong_statutory_match
             ):
                 ev_dict = ev_res.to_dict()
@@ -710,13 +868,24 @@ class MultiCandidateEngine:
                 return w[:-1]
             return w
 
+        def _norm_typo(s: str) -> str:
+            return (
+                s.lower()
+                .replace("stailess", "stainless")
+                .replace("vaccum", "vacuum")
+                .replace("digial", "digital")
+                .replace("regenration", "regeneration")
+                .replace("acetatc", "acetate")
+            )
+
+        _norm_q = _norm_typo(effective_query)
         _q_toks = {
-            _stem_leaf_tok(t) for t in re.findall(r"\b[a-z0-9]{3,}\b", effective_query.lower())
+            _stem_leaf_tok(t) for t in re.findall(r"\b[a-z0-9]{3,}\b", _norm_q)
             if t not in {"and", "the", "for", "with", "other", "from", "type", "made"}
         }
         _q_toks |= {
             _stem_leaf_tok(h.replace("-", ""))
-            for h in re.findall(r"\b[a-z0-9]+-[a-z0-9]+\b", effective_query.lower())
+            for h in re.findall(r"\b[a-z0-9]+-[a-z0-9]+\b", _norm_q)
         }
 
         def _composite_rank_score(c: ClassifiedTariffCandidate) -> float:
@@ -729,8 +898,8 @@ class MultiCandidateEngine:
             ev_score = float(ev_info.get("evidence_score", 0.0))
             rrf_norm = min(1.0, float(raw.get("rrf_score", 0.0) or 0.0) / 0.04)
 
-            tariff_desc = str(raw.get("tariff_item_desc") or c.candidate.tariff_item_desc or "").strip().lower()
-            sub6_desc = str(raw.get("subheading_6digit_desc") or "").strip().lower()
+            tariff_desc = _norm_typo(str(raw.get("tariff_item_desc") or c.candidate.tariff_item_desc or "").strip())
+            sub6_desc = _norm_typo(str(raw.get("subheading_6digit_desc") or "").strip())
             leaf_specificity_bonus = 0.0
             if tariff_desc in {"other", "others", "- other", "-- other", "--- other", "---- other"}:
                 leaf_specificity_bonus -= 0.015
@@ -749,6 +918,7 @@ class MultiCandidateEngine:
             key=lambda c: (
                 _ev_rank.get(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status", POSSIBLY_SUPPORTED), 2),
                 1 if evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch") else 0,
+                1 if "guard=secondary_with_feature" in str(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("trace_summary", "")) else 0,
                 _rel_rank.get(c.relation, 3),
                 -_composite_rank_score(c),
                 -c.confidence,
@@ -797,11 +967,30 @@ class MultiCandidateEngine:
         bundle = getattr(self.classifier, "calibration_bundle", None)
         same = [c for c in qualifying_ordered if c.relation == RelationLabel.SAME_PRODUCT]
         same_leaves_all = [c for c in same if _is_leaf_8digit(c)]
+        has_primary_head_leaf = any(
+            _is_leaf_8digit(c)
+            and c.relation in (RelationLabel.SAME_PRODUCT, RelationLabel.INSUFFICIENT_INFORMATION)
+            and not evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch")
+            and "guard=secondary_with_feature" not in str(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("trace_summary", ""))
+            and evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status") in (SUPPORTED, POSSIBLY_SUPPORTED)
+            for c in qualifying_ordered
+        )
         clean_same_leaves = [
             c for c in same_leaves_all
             if not evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch")
+            and not (
+                has_primary_head_leaf
+                and "guard=secondary_with_feature" in str(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("trace_summary", ""))
+            )
         ]
-        same_leaves = clean_same_leaves if clean_same_leaves else same_leaves_all
+        if clean_same_leaves:
+            same_leaves = clean_same_leaves
+        elif has_primary_head_leaf:
+            # Modifier-only secondary SAME_PRODUCT leaves (e.g. motorcycle "WITH PISTON ENGINE" on an engine query)
+            # must not override primary head-matched INSUFFICIENT_INFORMATION leaves in Step 3 decision making.
+            same_leaves = []
+        else:
+            same_leaves = same_leaves_all
         same_parents = [c for c in parent_qualifying if c.relation == RelationLabel.SAME_PRODUCT]
         insuff = [c for c in qualifying_ordered if c.relation == RelationLabel.INSUFFICIENT_INFORMATION]
         related = [c for c in qualifying_ordered if c.relation == RelationLabel.RELATED_PRODUCT]
@@ -932,8 +1121,45 @@ class MultiCandidateEngine:
             )
             chap_conf = round(float(bundle.chapter_calibrator.predict_proba_one(feats)), 4)
             hsn_conf = round(float(bundle.hsn_calibrator.predict_proba_one(feats)), 4)
+
+            # Separate calibrated confidence for 4-digit Heading & 6-digit Subheading levels
+            # by collapsing intra-heading / intra-subheading siblings to their top representative.
+            def _collapse_by_prefix(pool_items: Sequence[ClassifiedTariffCandidate], k_len: int) -> List[ClassifiedTariffCandidate]:
+                seen_p: Dict[str, ClassifiedTariffCandidate] = {}
+                for ci in pool_items:
+                    pref = str(ci.candidate.hsn_code or "")[:k_len]
+                    if pref not in seen_p or float(ci.candidate.raw_logit or 0.0) > float(seen_p[pref].candidate.raw_logit or 0.0):
+                        seen_p[pref] = ci
+                return sorted(seen_p.values(), key=lambda x: -float(x.candidate.raw_logit or 0.0))
+
+            h4_reps = _collapse_by_prefix(conf_pool, 4)
+            h6_reps = _collapse_by_prefix(conf_pool, 6)
+            h4_feats = extract_query_confidence_features(
+                raw_logits=[c.candidate.raw_logit for c in h4_reps],
+                hsn_codes=[c.candidate.hsn_code for c in h4_reps],
+                chapter_codes=[c.candidate.chapter_code for c in h4_reps],
+                query=effective_query,
+                rel_threshold_logit=rel_thr_logit,
+                is_ambiguous=len({c.candidate.hsn_code[:4] for c in (same_leaves or h4_reps)}) > 1,
+                statutory_clear_winner=1.0 if len({c.candidate.hsn_code[:4] for c in (same_leaves or h4_reps[:1])}) == 1 else 0.0,
+                statutory_evidence_margin=float(dist_analysis.get("evidence_margin", 0.0)),
+            )
+            h6_feats = extract_query_confidence_features(
+                raw_logits=[c.candidate.raw_logit for c in h6_reps],
+                hsn_codes=[c.candidate.hsn_code for c in h6_reps],
+                chapter_codes=[c.candidate.chapter_code for c in h6_reps],
+                query=effective_query,
+                rel_threshold_logit=rel_thr_logit,
+                is_ambiguous=len({c.candidate.hsn_code[:6] for c in (same_leaves or h6_reps)}) > 1,
+                statutory_clear_winner=1.0 if len({c.candidate.hsn_code[:6] for c in (same_leaves or h6_reps[:1])}) == 1 else 0.0,
+                statutory_evidence_margin=float(dist_analysis.get("evidence_margin", 0.0)),
+            )
+            heading_conf = round(float(bundle.chapter_calibrator.predict_proba_one(h4_feats)), 4)
+            sub6_conf = round(float(bundle.chapter_calibrator.predict_proba_one(h6_feats)), 4)
         else:
             chap_conf = round(float(best_rel_conf), 4)
+            heading_conf = chap_conf
+            sub6_conf = chap_conf
             hsn_conf = round(float(best_rel_conf), 4)
 
         distinction_conf = 0.0
@@ -942,26 +1168,34 @@ class MultiCandidateEngine:
         elif len(leaf_qualifying) == 1:
             distinction_conf = 1.0
 
-        # 5. Decision Controller (only 8-digit leaf HSNs may become EXACT_HSN)
-        from src.ml.confidence_calibrator import DEFAULT_TAU_ABSTAIN, DEFAULT_TAU_EXACT_HSN
+        # 5. Decision Controller (dataset-aware hierarchy: 8d -> 6d -> 4d -> 2d)
+        from src.ml.confidence_calibrator import DEFAULT_TAU_ABSTAIN, DEFAULT_TAU_CHAPTER, DEFAULT_TAU_EXACT_HSN
 
         tau_abstain = bundle.tau_abstain if bundle is not None else DEFAULT_TAU_ABSTAIN
+        tau_chapter = bundle.tau_chapter if bundle is not None else DEFAULT_TAU_CHAPTER
         tau_exact = bundle.tau_exact_hsn if bundle is not None else DEFAULT_TAU_EXACT_HSN
 
         final_hsn: Optional[str] = None
+        final_subheading: Optional[str] = None
+        final_heading: Optional[str] = None
         final_chapter: Optional[str] = None
+        prediction_level = "UNRESOLVED"
+        predicted_hsn: Optional[str] = None
         prediction_mode = "INSUFFICIENT_INFORMATION"
         requires_clarification = True
         clarification_reason = ""
+        lead_depth_info: Dict[str, Any] = {}
 
         if comp.is_out_of_schedule and comp.best_inactive_match:
             prediction_mode = "OUT_OF_SCHEDULE"
+            prediction_level = "OUT_OF_SCHEDULE"
             final_hsn = comp.best_inactive_match.get("hsn_code")
             final_chapter = comp.best_inactive_match.get("chapter")
             requires_clarification = False
             clarification_reason = comp.reason
         elif not qualifying_ordered or best_rel_conf < tau_abstain:
             prediction_mode = "INSUFFICIENT_INFORMATION"
+            prediction_level = "UNRESOLVED"
             requires_clarification = True
             clarification_reason = (
                 f"Insufficient product evidence (relevance_confidence={best_rel_conf:.2f} < {tau_abstain:.2f})."
@@ -969,25 +1203,112 @@ class MultiCandidateEngine:
         elif not same_leaves:
             if same_parents:
                 parent_chaps = {c.candidate.chapter_code for c in same_parents if c.candidate.chapter_code}
-                if len(parent_chaps) == 1:
+                parent_h4s = {c.candidate.hsn_code[:4] for c in same_parents if len(str(c.candidate.hsn_code or "")) >= 4}
+                if len(parent_h4s) == 1 and heading_conf >= tau_chapter:
+                    h4_p = next(iter(parent_h4s))
                     prediction_mode = "CHAPTER_ONLY_CLARIFY"
+                    prediction_level = "HEADING_4DIGIT"
+                    final_heading = h4_p
+                    final_chapter = h4_p[:2]
+                    predicted_hsn = h4_p
+                elif len(parent_chaps) == 1:
+                    prediction_mode = "CHAPTER_ONLY_CLARIFY"
+                    prediction_level = "CHAPTER_2DIGIT"
                     final_chapter = next(iter(parent_chaps))
+                    predicted_hsn = final_chapter
                 else:
                     prediction_mode = "MULTIPLE_CANDIDATES"
                 requires_clarification = True
                 clarification_reason = (
                     "Evidence supports parent tariff heading/subheading only; clarification needed to select an 8-digit leaf HSN."
                 )
-            elif len(insuff) >= 2 or len(related) >= 2:
-                prediction_mode = "MULTIPLE_CANDIDATES" if len(qualifying_ordered) >= 2 else "INSUFFICIENT_INFORMATION"
-                clarification_reason = "Multiple related or uncertain candidates found; clarification needed."
             else:
-                prediction_mode = "INSUFFICIENT_INFORMATION"
-                clarification_reason = "No 8-digit leaf candidate met the calibrated SAME_PRODUCT threshold."
+                # Check hierarchical consensus among top non-mismatched supported/possibly-supported leaves,
+                # ensuring no competing heading exists within 2.5 logits when missing material/attributes.
+                top_q_logit = float(getattr(qualifying_ordered[0].candidate, "raw_logit", 0.0) or 0.0)
+                active_cons = [
+                    c for c in raw_leaf_pool
+                    if c.relation in (RelationLabel.SAME_PRODUCT, RelationLabel.INSUFFICIENT_INFORMATION)
+                    and evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status") in (SUPPORTED, POSSIBLY_SUPPORTED)
+                    and not evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch")
+                    and "guard=secondary_with_feature" not in str(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("trace_summary", ""))
+                    and float(getattr(c.candidate, "raw_logit", 0.0) or 0.0) >= (top_q_logit - 1.2)
+                ]
+                wider_cons_h4s = {
+                    c.candidate.hsn_code[:4] for c in raw_leaf_pool
+                    if len(c.candidate.hsn_code) >= 4
+                    and c.relation in (RelationLabel.SAME_PRODUCT, RelationLabel.INSUFFICIENT_INFORMATION)
+                    and evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status") in (SUPPORTED, POSSIBLY_SUPPORTED)
+                    and not evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch")
+                    and "guard=secondary_with_feature" not in str(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("trace_summary", ""))
+                    and float(getattr(c.candidate, "raw_logit", 0.0) or 0.0) >= (top_q_logit - 2.2)
+                }
+                cons_h6 = {c.candidate.hsn_code[:6] for c in active_cons if len(c.candidate.hsn_code) >= 6}
+                cons_h4 = wider_cons_h4s if len(wider_cons_h4s) > 1 else {c.candidate.hsn_code[:4] for c in active_cons if len(c.candidate.hsn_code) >= 4}
+                # Under non-SAME_PRODUCT consensus, verify no competing 6-digit subheading inside the same heading
+                # also has primary-article evidence within 2.2 logits before locking SUBHEADING_6DIGIT.
+                wider_cons_h6s = {
+                    c.candidate.hsn_code[:6] for c in raw_leaf_pool
+                    if len(c.candidate.hsn_code) >= 6
+                    and len(cons_h4) == 1
+                    and c.candidate.hsn_code[:4] in cons_h4
+                    and evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status") in (SUPPORTED, POSSIBLY_SUPPORTED)
+                    and not evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch")
+                    and "guard=secondary_with_feature" not in str(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("trace_summary", ""))
+                    and c.relation != RelationLabel.UNRELATED
+                    and float(getattr(c.candidate, "raw_logit", 0.0) or 0.0) >= (top_q_logit - 2.2)
+                }
+                cons_ch = {h[:2] for h in cons_h4 if len(h) >= 2}
+                lead_code = active_cons[0].candidate.hsn_code if active_cons else ""
+                lead_missing_mat = any(
+                    "material" in str(m).lower()
+                    for m in (evidence_by_hsn.get(lead_code, {}).get("missing_attributes") or [])
+                ) and ("material" in (getattr(product_intent, "missing_critical_attributes", None) or []))
+                if lead_code and hasattr(self.hybrid_engine, "get_hierarchy_depth_info"):
+                    lead_depth_info = self.hybrid_engine.get_hierarchy_depth_info(lead_code)
+                if active_cons and not lead_missing_mat and len(cons_h6) == 1 and len(wider_cons_h6s) <= 1 and len(cons_h4) == 1 and lead_depth_info.get("has_6digit", False) and sub6_conf >= tau_chapter:
+                    h6_v = next(iter(cons_h6))
+                    prediction_mode = "CHAPTER_ONLY_CLARIFY"
+                    prediction_level = "SUBHEADING_6DIGIT"
+                    final_subheading = h6_v
+                    final_heading = h6_v[:4]
+                    final_chapter = h6_v[:2]
+                    predicted_hsn = h6_v
+                    clarification_reason = (
+                        f"6-digit Subheading {h6_v} supported (confidence={sub6_conf:.2f}); "
+                        "clarification needed to distinguish competing 8-digit tariff items."
+                    )
+                elif active_cons and not lead_missing_mat and len(cons_h4) == 1 and lead_depth_info.get("has_4digit", True) and heading_conf >= tau_chapter:
+                    h4_v = next(iter(cons_h4))
+                    prediction_mode = "CHAPTER_ONLY_CLARIFY"
+                    prediction_level = "HEADING_4DIGIT"
+                    final_heading = h4_v
+                    final_chapter = h4_v[:2]
+                    predicted_hsn = h4_v
+                    clarification_reason = (
+                        f"4-digit Heading {h4_v} supported (confidence={heading_conf:.2f}); "
+                        "clarification needed to select subheading / 8-digit tariff item."
+                    )
+                elif active_cons and not lead_missing_mat and len(cons_ch) == 1 and chap_conf >= tau_chapter and best_rel_conf >= tau_abstain:
+                    ch_v = next(iter(cons_ch))
+                    prediction_mode = "MULTIPLE_CANDIDATES" if len(qualifying_ordered) >= 2 else "CHAPTER_ONLY_CLARIFY"
+                    prediction_level = "CHAPTER_2DIGIT"
+                    final_chapter = ch_v
+                    predicted_hsn = ch_v
+                    clarification_reason = (
+                        f"Chapter {ch_v} supported (confidence={chap_conf:.2f}); multiple headings compete."
+                    )
+                elif len(insuff) >= 2 or len(related) >= 2:
+                    prediction_mode = "MULTIPLE_CANDIDATES" if len(qualifying_ordered) >= 2 else "INSUFFICIENT_INFORMATION"
+                    clarification_reason = "Multiple related or uncertain candidates found; clarification needed."
+                else:
+                    prediction_mode = "INSUFFICIENT_INFORMATION"
+                    clarification_reason = "No 8-digit leaf candidate met the calibrated SAME_PRODUCT threshold."
         else:
             unique_headings = {c.candidate.hsn_code[:4] for c in same_leaves if c.candidate.hsn_code}
             top1_logit = float(getattr(same_leaves[0].candidate, "raw_logit", 0.0) or 0.0)
-            top1_has_mat = bool(evidence_by_hsn.get(same_leaves[0].candidate.hsn_code, {}).get("material_matches"))
+            top1_mats = set(evidence_by_hsn.get(same_leaves[0].candidate.hsn_code, {}).get("material_matches") or [])
+            top1_has_mat = bool(top1_mats)
             competing_rescued = [
                 c for c in qualifying_ordered
                 if evidence_by_hsn.get(c.candidate.hsn_code, {}).get("rescued_by_statutory_evidence")
@@ -996,7 +1317,10 @@ class MultiCandidateEngine:
                 and len(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("statutory_article_matches") or []) >= 2
                 and evidence_by_hsn.get(c.candidate.hsn_code, {}).get("heading_compatible")
                 and not evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch")
-                and not (top1_has_mat and not evidence_by_hsn.get(c.candidate.hsn_code, {}).get("material_matches"))
+                and (
+                    not top1_has_mat
+                    or bool(set(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("material_matches") or []) & top1_mats)
+                )
                 and float(getattr(c.candidate, "raw_logit", 0.0) or 0.0) >= -3.0
                 and (top1_logit - float(getattr(c.candidate, "raw_logit", 0.0) or 0.0)) <= 5.5
             ]
@@ -1077,6 +1401,87 @@ class MultiCandidateEngine:
                 clarification_reason = clarification_reason or (
                     f"Calibrated HSN confidence ({hsn_conf:.2f}) below exact-HSN threshold ({tau_exact:.2f}); clarification needed."
                 )
+
+            # Dataset-aware parent hierarchy resolution for all non-EXACT_HSN SAME_PRODUCT branches
+            lead_code = (final_hsn or same_leaves[0].candidate.hsn_code) if same_leaves else ""
+            if lead_code and hasattr(self.hybrid_engine, "get_hierarchy_depth_info"):
+                lead_depth_info = self.hybrid_engine.get_hierarchy_depth_info(lead_code)
+            if prediction_mode == "EXACT_HSN" and final_hsn:
+                prediction_level = "TARIFF_ITEM_8DIGIT"
+                predicted_hsn = final_hsn
+                final_heading = final_hsn[:4]
+                final_chapter = final_hsn[:2]
+                if lead_depth_info.get("has_6digit", False):
+                    final_subheading = final_hsn[:6]
+            elif top_role_mismatch != "complete_article_vs_parts":
+                # Check hierarchical agreement over clean SAME_PRODUCT leaves (or non-superseded pool if clear winner)
+                same_h6s = {c.candidate.hsn_code[:6] for c in same_leaves if len(c.candidate.hsn_code) >= 6}
+                same_h4s = {c.candidate.hsn_code[:4] for c in same_leaves if len(c.candidate.hsn_code) >= 4}
+                same_chs = {str(c.candidate.chapter_code).zfill(2) for c in same_leaves if c.candidate.chapter_code}
+                # Also if MULTIPLE_CANDIDATES was only set by secondary/low-margin noise while one heading holds clear statutory win:
+                non_sup = [c for c in same_leaves if c.candidate.hsn_code not in superseded_set] or same_leaves
+                eff_h6s = {c.candidate.hsn_code[:6] for c in non_sup if len(c.candidate.hsn_code) >= 6}
+                eff_h4s = {c.candidate.hsn_code[:4] for c in non_sup if len(c.candidate.hsn_code) >= 4}
+                eff_chs = {str(c.candidate.chapter_code).zfill(2) for c in non_sup if c.candidate.chapter_code}
+
+                # Do not lock a single 4-digit heading if Top-1 lacks material match + misses numeric constraint
+                # while a competing non-mismatched heading explicitly matches the query's specific material.
+                competing_mat_heading = (
+                    not top1_has_mat
+                    and bool(dist_analysis.get("missing_numeric_constraints"))
+                    and any(
+                        _is_leaf_8digit(c)
+                        and c.candidate.hsn_code[:4] != same_leaves[0].candidate.hsn_code[:4]
+                        and evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status") in (SUPPORTED, POSSIBLY_SUPPORTED)
+                        and not evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch")
+                        and bool(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("material_matches"))
+                        for c in qualifying_ordered[:15]
+                    )
+                )
+                if competing_mat_heading:
+                    prediction_mode = "MULTIPLE_CANDIDATES"
+                    if len(same_chs) == 1 and chap_conf >= tau_chapter:
+                        final_chapter = next(iter(same_chs))
+                        prediction_level = "CHAPTER_2DIGIT"
+                        predicted_hsn = final_chapter
+                elif not competing_rescued:
+                    if len(same_h6s) == 1 and lead_depth_info.get("has_6digit", False) and sub6_conf >= tau_chapter:
+                        h6_v = next(iter(same_h6s))
+                        final_subheading = h6_v
+                        final_heading = h6_v[:4]
+                        final_chapter = h6_v[:2]
+                        prediction_level = "SUBHEADING_6DIGIT"
+                        predicted_hsn = h6_v
+                    elif len(eff_h6s) == 1 and dist_analysis.get("winner_has_clear_evidence") and lead_depth_info.get("has_6digit", False) and sub6_conf >= tau_chapter:
+                        h6_v = next(iter(eff_h6s))
+                        final_subheading = h6_v
+                        final_heading = h6_v[:4]
+                        final_chapter = h6_v[:2]
+                        prediction_level = "SUBHEADING_6DIGIT"
+                        predicted_hsn = h6_v
+                        prediction_mode = "CHAPTER_ONLY_CLARIFY"
+                    elif len(same_h4s) == 1 and lead_depth_info.get("has_4digit", True) and heading_conf >= tau_chapter:
+                        h4_v = next(iter(same_h4s))
+                        final_heading = h4_v
+                        final_chapter = h4_v[:2]
+                        prediction_level = "HEADING_4DIGIT"
+                        predicted_hsn = h4_v
+                    elif len(eff_h4s) == 1 and dist_analysis.get("winner_has_clear_evidence") and lead_depth_info.get("has_4digit", True) and heading_conf >= tau_chapter:
+                        h4_v = next(iter(eff_h4s))
+                        final_heading = h4_v
+                        final_chapter = h4_v[:2]
+                        prediction_level = "HEADING_4DIGIT"
+                        predicted_hsn = h4_v
+                        prediction_mode = "CHAPTER_ONLY_CLARIFY"
+                    elif len(same_chs) == 1 and chap_conf >= tau_chapter:
+                        ch_v = next(iter(same_chs))
+                        final_chapter = ch_v
+                        prediction_level = "CHAPTER_2DIGIT"
+                        predicted_hsn = ch_v
+                elif len(eff_chs) == 1 and chap_conf >= tau_chapter:
+                    final_chapter = next(iter(eff_chs))
+                    prediction_level = "CHAPTER_2DIGIT"
+                    predicted_hsn = final_chapter
 
         # Ensure every clarification-required decision surfaces a concrete, distinguishing question
         if requires_clarification and not questions and len(qualifying_ordered) >= 2:
@@ -1204,11 +1609,22 @@ class MultiCandidateEngine:
                 chapter_allocations[ch] = slots
 
         from src.ml.stage3_statutory_verifier import build_stage3_final_decision
+        hierarchy_confs = {
+            "chapter": chap_conf,
+            "heading": heading_conf,
+            "subheading": sub6_conf,
+            "tariff_item": hsn_conf,
+        }
         stage3_decision = build_stage3_final_decision(
             original_description=orig,
             prediction_mode=prediction_mode,
             final_hsn=final_hsn,
             final_chapter=final_chapter,
+            final_subheading=final_subheading,
+            final_heading=final_heading,
+            prediction_level=prediction_level,
+            hierarchy_confidences=hierarchy_confs,
+            hierarchy_depth_info=lead_depth_info,
             hsn_confidence=hsn_conf,
             clarification_reason=clarification_reason,
             product_intent=product_intent,
@@ -1240,12 +1656,18 @@ class MultiCandidateEngine:
             },
             "stage3_decision": stage3_decision,
             "prediction_mode": prediction_mode,
+            "prediction_level": stage3_decision.get("prediction_level", prediction_level),
+            "predicted_hsn": stage3_decision.get("predicted_hsn", predicted_hsn),
             "final_hsn": final_hsn,
-            "final_chapter": final_chapter,
+            "final_subheading": stage3_decision.get("final_subheading", final_subheading),
+            "final_heading": stage3_decision.get("final_heading", final_heading),
+            "final_chapter": stage3_decision.get("final_chapter", final_chapter),
             "confidences": {
                 "retrieval_relevance": round(float(qualifying[0].confidence), 4) if qualifying else 0.0,
                 "relevance_confidence": round(float(best_rel_conf), 4),
                 "chapter_confidence": chap_conf,
+                "heading_confidence": heading_conf,
+                "subheading_confidence": sub6_conf,
                 "hsn_confidence": hsn_conf,
                 "distinction_confidence": distinction_conf,
                 "discovery_completeness": 1.0 if disc.discovery_complete else round(

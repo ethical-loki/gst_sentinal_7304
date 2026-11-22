@@ -319,3 +319,154 @@ def test_parts_heading_alignment_and_cross_sub6_residual_preservation():
     ev_filter_part = evaluate_candidate_evidence(pi_filter_part, build_candidate_profile(rec_filter_part, None), "SAME_PRODUCT", 0.77)
     assert ev_filter_part.role_mismatch == ""
     assert ev_filter_part.primary_article_matched is True
+
+
+def test_hierarchical_multi_level_decision_and_statutory_exclusions():
+    from src.ml.stage3_statutory_verifier import build_stage3_final_decision
+
+    # 1. Trailing specification noun ("150 kg capacity") must not hijack product_head_noun
+    pi_scale = analyze_product_intent("electronic platform weighing scale 150 kg capacity")
+    assert pi_scale.product_head_noun.lower() == "scale"
+
+    # 2. Hyphenated material ("MAN-MADE FIBRES") contradicts cotton queries
+    pi_cotton = analyze_product_intent("knitted cotton headband clothing accessory")
+    rec_manmade = {
+        "hsn_code": "61178040",
+        "code_length": 8,
+        "chapter_code": "61",
+        "chapter_title": "Articles of apparel and clothing accessories, knitted or crocheted",
+        "heading_4digit": "6117",
+        "heading_4digit_desc": "OTHER MADE UP CLOTHING ACCESSORIES, KNITTED OR CROCHETED",
+        "subheading_6digit": "611780",
+        "subheading_6digit_desc": "OTHER ACCESSORIES",
+        "tariff_item_desc": "OF MAN-MADE FIBRES",
+        "statutory_description": "OTHER ACCESSORIES : OF MAN-MADE FIBRES",
+        "article_keywords": "headband accessory",
+        "material_keywords": "",
+    }
+    ev_manmade = evaluate_candidate_evidence(pi_cotton, build_candidate_profile(rec_manmade, None), "SAME_PRODUCT", 0.90)
+    assert ev_manmade.status == CONTRADICTED
+
+    # 3. Heading participle exclusion ("AND NOT REINFORCED, LAMINATED, SUPPORTED") contradicts laminated sheets
+    pi_lam = analyze_product_intent("multi-layer laminated plastic sheet for industrial use")
+    rec_3920 = {
+        "hsn_code": "39209942",
+        "code_length": 8,
+        "chapter_code": "39",
+        "chapter_title": "Plastics and articles thereof",
+        "heading_4digit": "3920",
+        "heading_4digit_desc": "OTHER PLATES, SHEETS, FILM, FOIL AND STRIP, OF PLASTICS, NON-CELLULAR AND NOT REINFORCED, LAMINATED, SUPPORTED OR SIMILARLY COMBINED WITH OTHER MATERIALS",
+        "subheading_6digit": "392099",
+        "subheading_6digit_desc": "OF OTHER PLASTICS",
+        "tariff_item_desc": "FLEXIBLE, PLAIN",
+        "statutory_description": "OTHER PLATES, SHEETS, OF PLASTICS: FLEXIBLE, PLAIN",
+        "article_keywords": "plastic sheet",
+        "material_keywords": "plastics",
+    }
+    assert evaluate_candidate_evidence(pi_lam, build_candidate_profile(rec_3920, None), "SAME_PRODUCT", 0.80).status == CONTRADICTED
+
+    # 4. Heading exclusion with trailing period ("OTHER THAN VACUUM CLEANERS OF HEADING 8508.")
+    pi_vac = analyze_product_intent("electric canister vacuum cleaner for home")
+    rec_8509 = {
+        "hsn_code": "85091000",
+        "code_length": 8,
+        "chapter_code": "85",
+        "chapter_title": "Electrical machinery",
+        "heading_4digit": "8509",
+        "heading_4digit_desc": "ELECTRO-MECHANICAL DOMESTIC APPLIANCES, WITH SELF CONTAINED ELECTRIC MOTOR, OTHER THAN VACUUM CLEANERS OF HEADING 8508.",
+        "subheading_6digit": "",
+        "subheading_6digit_desc": "",
+        "tariff_item_desc": "VACUUM CLEANERS, INCLUDING DRY AND WET VACUUM CLEANERS",
+        "statutory_description": "ELECTRO-MECHANICAL DOMESTIC APPLIANCES VACUUM CLEANERS",
+        "article_keywords": "vacuum cleaner",
+        "material_keywords": "",
+    }
+    assert evaluate_candidate_evidence(pi_vac, build_candidate_profile(rec_8509, None), "SAME_PRODUCT", 0.85).status == CONTRADICTED
+
+    # 5. Epoxide spaced hyphen & PET / acetatc typo polymer contradictions
+    pi_poly = analyze_product_intent("recycled nylon polyamide plastic scrap and parings")
+    rec_pet = {
+        "hsn_code": "39159042",
+        "code_length": 8,
+        "chapter_code": "39",
+        "chapter_title": "Plastics and articles thereof",
+        "heading_4digit": "3915",
+        "heading_4digit_desc": "WASTE, PARINGS AND SCRAP, OF PLASTICS",
+        "subheading_6digit": "391590",
+        "subheading_6digit_desc": "OF OTHER PLASTICS",
+        "tariff_item_desc": "OF PET BOTTLES",
+        "statutory_description": "WASTE, PARINGS AND SCRAP: OF PET BOTTLES",
+        "article_keywords": "plastic scrap",
+        "material_keywords": "pet",
+    }
+    assert evaluate_candidate_evidence(pi_poly, build_candidate_profile(rec_pet, None), "SAME_PRODUCT", 0.85).status == CONTRADICTED
+
+    # 6. Multi-level Stage 3 hierarchical outputs maintain strict prefix consistency
+    s3_sub6 = build_stage3_final_decision(
+        original_description="retail fuel dispensing pump for petrol station",
+        prediction_mode="CHAPTER_ONLY_CLARIFY",
+        final_hsn=None,
+        final_chapter="84",
+        final_heading="8413",
+        final_subheading="841311",
+        prediction_level="SUBHEADING_6DIGIT",
+        hsn_confidence=0.18,
+        clarification_reason="Subheading 841311 supported.",
+        product_intent=analyze_product_intent("retail fuel dispensing pump for petrol station"),
+        qualifying_leaves=[],
+        evidence_by_hsn={},
+        raw_records_by_id={},
+        dist_analysis={},
+        questions=[{"attribute": "pump_type", "question": "Hand pump or metered dispenser?", "options": ["Hand", "Dispenser"]}],
+        contradicted_reasons=[],
+    )
+    assert s3_sub6["prediction_level"] == "SUBHEADING_6DIGIT"
+    assert s3_sub6["predicted_hsn"] == "841311"
+    assert s3_sub6["final_subheading"] == "841311"
+    assert s3_sub6["final_heading"] == "8413"
+    assert s3_sub6["final_chapter"] == "84"
+    assert s3_sub6["final_hsn"] is None
+    assert s3_sub6["verified_gst_rate"] is None
+    assert s3_sub6["decision_outcome"] == "CUSTOMER_CLARIFICATION_REQUIRED"
+
+    # 7. Spec-qualified prime-mover head noun vs secondary-with-feature guard
+    pi_car = analyze_product_intent("petrol passenger sedan car 1200cc engine")
+    assert pi_car.product_head_noun.lower() == "car"
+
+    pi_eng = analyze_product_intent("motorcycle engine 150cc")
+    assert pi_eng.product_head_noun.lower() == "engine"
+    rec_8711 = {
+        "hsn_code": "87112019",
+        "code_length": 8,
+        "chapter_code": "87",
+        "chapter_title": "Vehicles other than railway or tramway rolling-stock",
+        "heading_4digit": "8711",
+        "heading_4digit_desc": "MOTORCYCLES (INCLUDING MOPEDS) AND CYCLES FITTED WITH AN AUXILIARY MOTOR, WITH OR WITHOUT SIDE-CARS; SIDE-CARS",
+        "subheading_6digit": "871120",
+        "subheading_6digit_desc": "WITH RECIPROCATING INTERNAL COMBUSTION PISTON ENGINE OF A CYLINDER CAPACITY EXCEEDING 50 CC BUT NOT EXCEEDING 250 CC",
+        "tariff_item_desc": "MOTORCYCLES",
+        "statutory_description": "MOTORCYCLES WITH RECIPROCATING INTERNAL COMBUSTION PISTON ENGINE",
+        "article_keywords": "motorcycle",
+        "material_keywords": "",
+    }
+    ev_8711 = evaluate_candidate_evidence(pi_eng, build_candidate_profile(rec_8711, None), "SAME_PRODUCT", 0.85)
+    assert "guard=secondary_with_feature" in ev_8711.trace_summary
+
+    pi_fastener = analyze_product_intent("galvanized mild steel fastener bolt")
+    rec_7318 = {
+        "hsn_code": "73181190",
+        "code_length": 8,
+        "chapter_code": "73",
+        "chapter_title": "Articles of iron or steel",
+        "heading_4digit": "7318",
+        "heading_4digit_desc": "SCREWS, BOLTS, NUTS, COACH SCREWS, SCREW HOOKS, RIVETS, COTTERS, COTTER-PINS, WASHERS AND SIMILAR ARTICLES, OF IRON OR STEEL",
+        "subheading_6digit": "731811",
+        "subheading_6digit_desc": "COACH SCREWS",
+        "tariff_item_desc": "OTHER",
+        "statutory_description": "SCREWS, BOLTS, NUTS - COACH SCREWS: OTHER",
+        "article_keywords": "screws, bolts",
+        "material_keywords": "iron or steel",
+    }
+    ev_7318 = evaluate_candidate_evidence(pi_fastener, build_candidate_profile(rec_7318, None), "INSUFFICIENT_INFORMATION", 0.70)
+    assert "guard=secondary_with_feature" not in ev_7318.trace_summary
+

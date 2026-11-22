@@ -529,10 +529,16 @@ def build_stage3_final_decision(
     dist_analysis: Dict[str, Any],
     questions: Sequence[Dict[str, Any]],
     contradicted_reasons: Sequence[str],
+    final_subheading: Optional[str] = None,
+    final_heading: Optional[str] = None,
+    prediction_level: Optional[str] = None,
+    hierarchy_confidences: Optional[Dict[str, float]] = None,
+    hierarchy_depth_info: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Layers 6 & 7: Maps internal decision state to the 4 canonical Stage 3 outcomes
-    and builds the complete customer-facing statutory verification report.
+    and builds the complete customer-facing hierarchical statutory verification report
+    across 2-digit Chapter, 4-digit Heading, 6-digit Subheading, and 8-digit Tariff Item.
     """
     if prediction_mode == "EXACT_HSN" and final_hsn:
         outcome = "EXACT_CLASSIFICATION"
@@ -557,24 +563,87 @@ def build_stage3_final_decision(
     if outcome == "EXACT_CLASSIFICATION" and not hierarchy.get("hierarchy_valid"):
         outcome = "ABSTAIN"
 
+    eff_final_hsn = final_hsn if outcome == "EXACT_CLASSIFICATION" else None
+    eff_final_sub6 = (
+        eff_final_hsn[:6]
+        if (eff_final_hsn and (hierarchy_depth_info or {}).get("has_6digit", False))
+        else (final_subheading if (final_subheading and len(final_subheading) == 6) else None)
+    )
+    eff_final_h4 = (
+        eff_final_hsn[:4]
+        if eff_final_hsn
+        else (
+            eff_final_sub6[:4]
+            if eff_final_sub6
+            else (final_heading if (final_heading and len(final_heading) == 4) else None)
+        )
+    )
+    eff_final_ch = (
+        eff_final_hsn[:2]
+        if eff_final_hsn
+        else (
+            eff_final_h4[:2]
+            if eff_final_h4
+            else (final_chapter if (final_chapter and len(final_chapter) == 2) else None)
+        )
+    )
+
+    # Enforce strict prefix consistency across returned hierarchy levels
+    if eff_final_sub6 and eff_final_h4 and not eff_final_sub6.startswith(eff_final_h4):
+        eff_final_sub6 = None
+    if eff_final_h4 and eff_final_ch and not eff_final_h4.startswith(eff_final_ch):
+        eff_final_h4 = None
+
+    if eff_final_hsn:
+        eff_level = "TARIFF_ITEM_8DIGIT"
+        predicted_hsn = eff_final_hsn
+    elif eff_final_sub6:
+        eff_level = "SUBHEADING_6DIGIT"
+        predicted_hsn = eff_final_sub6
+    elif eff_final_h4:
+        eff_level = "HEADING_4DIGIT"
+        predicted_hsn = eff_final_h4
+    elif eff_final_ch:
+        eff_level = "CHAPTER_2DIGIT" if prediction_mode != "OUT_OF_SCHEDULE" else "OUT_OF_SCHEDULE"
+        predicted_hsn = eff_final_ch if prediction_mode != "OUT_OF_SCHEDULE" else None
+    else:
+        eff_level = prediction_level or "UNRESOLVED"
+        predicted_hsn = None
+
     focus_ev = evidence_by_hsn.get(focus_hsn, {}) if focus_hsn else {}
-    gst_rate = lookup_verified_gst_rate(final_hsn) if outcome == "EXACT_CLASSIFICATION" else None
+    gst_rate = lookup_verified_gst_rate(eff_final_hsn) if outcome == "EXACT_CLASSIFICATION" else None
     comparison = compare_competing_candidates(
         product_intent, qualifying_leaves, evidence_by_hsn, raw_records_by_id, questions
+    )
+
+    default_reason = (
+        f"Exact 8-digit HSN {eff_final_hsn} verified under GIR 1 & GIR 6 with statutory support."
+        if outcome == "EXACT_CLASSIFICATION"
+        else (
+            f"6-digit Subheading {eff_final_sub6} verified; clarification required to select an 8-digit tariff item."
+            if eff_final_sub6
+            else (
+                f"4-digit Heading {eff_final_h4} verified under GIR 1; clarification required for subheading/tariff item."
+                if eff_final_h4
+                else "Statutory evidence insufficient for an exact 8-digit determination."
+            )
+        )
     )
 
     return {
         "decision_outcome": outcome,
         "internal_prediction_mode": prediction_mode,
-        "product_description": original_description,
-        "final_hsn": final_hsn if outcome == "EXACT_CLASSIFICATION" else None,
-        "final_chapter": final_chapter,
+        "prediction_level": eff_level,
+        "predicted_hsn": predicted_hsn,
+        "final_hsn": eff_final_hsn,
+        "final_subheading": eff_final_sub6,
+        "final_heading": eff_final_h4,
+        "final_chapter": eff_final_ch,
+        "hierarchy_confidences": dict(hierarchy_confidences or {"tariff_item": round(float(hsn_confidence), 4)}),
+        "hierarchy_depth_available": dict(hierarchy_depth_info or {}),
         "calibrated_confidence": round(float(hsn_confidence), 4),
-        "decision_reason": clarification_reason or (
-            f"Exact 8-digit HSN {final_hsn} verified under GIR 1 & GIR 6 with statutory support."
-            if outcome == "EXACT_CLASSIFICATION"
-            else "Statutory evidence insufficient for an exact 8-digit determination."
-        ),
+        "product_description": original_description,
+        "decision_reason": clarification_reason or default_reason,
         "hierarchy_verification": hierarchy,
         "gir_reasoning": gir_eval["gir_reasoning"],
         "supporting_notes": gir_eval["supporting_notes"],

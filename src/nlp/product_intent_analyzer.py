@@ -526,30 +526,53 @@ def analyze_product_intent(description: str, clarification: str = "") -> Product
         "unit", "units", "system", "systems", "set", "sets", "kit", "kits",
         "item", "items", "goods", "type", "types", "model", "models",
         "grade", "grades", "assembly", "assemblies", "module", "modules",
+        "capacity", "rating", "size", "sizes", "weight", "duty", "service",
+        "range", "output", "power", "pressure", "voltage", "speed", "use", "purpose",
     }
-    if (
+    _unit_tok_re = re.compile(
+        r"^(?:\d+(?:\.\d+)?(?:cc|kw|kva|hp|mm|cm|m|kg|g|ml|l|v|kv|hz|a)?|kg|gm|g|mm|cm|m|inch|cc|kw|kva|hp|v|kv|hz|amp|bar|psi|cfm|lph|l|ml|litre|litres|tonnes?|gsm|seater)$",
+        re.IGNORECASE,
+    )
+    # Strip trailing capacity/rating spec + engine/motor ("car 1200cc engine" -> head "car",
+    # while "motorcycle engine 150cc" stays "engine").
+    noun_src = re.sub(
+        r"\s+\d+(?:\.\d+)?\s*(?:cc|kw|kva|hp|mm|cm|m|kg|g|ml|l|v|kv|hz|a)\s+(?:engine|motor)s?$",
+        "",
+        pre_prep_article or finished_article,
+        flags=re.IGNORECASE,
+    ).strip()
+    stripped_spec_prime_mover = bool(noun_src and noun_src != (pre_prep_article or finished_article).strip())
+    noun_src_words = [
+        w for w in re.findall(r"[A-Za-z0-9\-]+", noun_src)
+        if w.lower() not in ("of", "for", "and", "or", "the", "a", "an", "with", "in", "without")
+    ] or head_words
+    noun_candidates = [w for w in noun_src_words if w.isalpha() and len(w) >= 3 and not _unit_tok_re.match(w)]
+    if not noun_candidates:
+        noun_candidates = [w for w in head_words if w.isalpha() and len(w) >= 3 and not _unit_tok_re.match(w)]
+    non_generic_nouns = [w for w in noun_candidates if w.lower() not in _generic_trailing]
+    effective_rightmost = non_generic_nouns[-1] if non_generic_nouns else (noun_candidates[-1] if noun_candidates else rightmost_head)
+    if stripped_spec_prime_mover and non_generic_nouns:
+        product_head_noun = non_generic_nouns[-1]
+    elif (
         raw_head_article
         and " " not in raw_head_article
-        and rightmost_head
-        and rightmost_head.isalpha()
-        and len(rightmost_head) >= 3
-        and rightmost_head.lower() not in _generic_trailing
-        and rightmost_head.lower() != raw_head_article.lower()
-        and pre_prep_article.lower().rfind(rightmost_head.lower()) > pre_prep_article.lower().rfind(raw_head_article.lower())
+        and effective_rightmost
+        and effective_rightmost.isalpha()
+        and len(effective_rightmost) >= 3
+        and effective_rightmost.lower() not in _generic_trailing
+        and effective_rightmost.lower() != raw_head_article.lower()
+        and pre_prep_article.lower().rfind(effective_rightmost.lower()) > pre_prep_article.lower().rfind(raw_head_article.lower())
     ):
-        product_head_noun = rightmost_head
+        product_head_noun = effective_rightmost
     elif (
-        (not raw_head_article or raw_head_article.lower() in _generic_trailing)
-        and rightmost_head
-        and rightmost_head.lower() in _generic_trailing
-        and len(head_words) >= 2
-        and head_words[-2].isalpha()
-        and len(head_words[-2]) >= 3
-        and head_words[-2].lower() not in _generic_trailing
+        (not raw_head_article or raw_head_article.lower() in _generic_trailing or _unit_tok_re.match(raw_head_article))
+        and non_generic_nouns
     ):
-        product_head_noun = head_words[-2]
+        product_head_noun = non_generic_nouns[-1]
+    elif raw_head_article and not _unit_tok_re.match(raw_head_article) and raw_head_article.lower() not in _generic_trailing:
+        product_head_noun = raw_head_article
     else:
-        product_head_noun = raw_head_article or rightmost_head
+        product_head_noun = effective_rightmost or raw_head_article or rightmost_head
     descriptive_modifiers = [w for w in all_article_words if w.lower() != product_head_noun.lower()] if len(all_article_words) > 1 else []
     if re.search(r"\b(?:parts?|spares?|components?|accessories|subassembly)\b", finished_article, re.IGNORECASE):
         article_category = "parts_or_component"
