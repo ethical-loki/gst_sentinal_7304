@@ -1,0 +1,18 @@
+{
+  "workbook_path": "c:\\Users\\User\\OneDrive\\Desktop\\GST_Sentinal\\data\\raw\\Master_copy_hsn.xlsx",
+  "sheets": {
+    "Sheet1": {
+      "header": [
+        "s_no",
+        "HSN Code",
+        "chapter_code",
+        "chapter_title",
+        "HSN Description",
+        "Article Keywords",
+        "Material Keywords"
+      ],
+      "data_rows": 4851
+    }
+  },
+  "total_rows": 4851
+}

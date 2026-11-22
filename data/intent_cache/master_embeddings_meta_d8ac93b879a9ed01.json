@@ -1,0 +1,5 @@
+{
+  "file_hash": "d8ac93b879a9ed01ac8c36cd642b2bfb7af7baca9b4e85f18ec57fe28069c41e",
+  "total_records": 18797,
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
+}
