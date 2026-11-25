@@ -505,7 +505,9 @@ class HybridHSNEngine:
         rel_targets = [
             str(r.get("target") or "").strip()
             for r in (comp_rel.get("relationship_graph") or [])
-            if isinstance(r, dict) and r.get("target")
+            if isinstance(r, dict)
+            and r.get("target")
+            and str(r.get("relation") or "").upper() in ("ATTACHED_TO", "HAS_COMPONENT", "PART_OF")
         ]
         component_text = " ".join(components + rel_targets)
 
@@ -560,11 +562,13 @@ class HybridHSNEngine:
         )
 
         # Secondary representations weighted strictly below the primary commercial article anchor
+        # (unless the raw consumer query has zero BM25 matches in the master and formal linguistic aliases exist).
+        alias_weight = 1.60 if (reps["alias_text"] and float(bm25_primary.max()) <= 0.0) else 0.20
         secondary_bm25 = np.zeros_like(bm25_primary)
         for rep_text, weight in (
-            (reps["alias_text"], 0.20),
+            (reps["alias_text"], alias_weight),
             (reps["material_text"], 0.12),
-            (reps["function_text"], 0.10),
+            (reps["function_text"], 0.25),
             (reps["component_text"], 0.04),
         ):
             if rep_text:
@@ -576,14 +580,20 @@ class HybridHSNEngine:
 
         bm25_composite = bm25_primary + secondary_bm25
 
-        # Dense retrieval anchored on primary commercial product (plus optional alias blend)
+        # Dense retrieval anchored on primary commercial product (plus optional alias/function blend)
         q_emb = self.embedding_model.encode([q], convert_to_numpy=True, normalize_embeddings=True)[0]
         cos_sims = np.dot(self.dense_embeddings, q_emb)
         if reps["alias_text"]:
             alias_q, _ = self._expand_abbreviated_query(reps["alias_text"])
             if alias_q:
                 a_emb = self.embedding_model.encode([alias_q], convert_to_numpy=True, normalize_embeddings=True)[0]
-                cos_sims = 0.85 * cos_sims + 0.15 * np.dot(self.dense_embeddings, a_emb)
+                a_blend = 0.55 if float(bm25_primary.max()) <= 0.0 else 0.15
+                cos_sims = (1.0 - a_blend) * cos_sims + a_blend * np.dot(self.dense_embeddings, a_emb)
+        elif reps["function_text"]:
+            fn_q, _ = self._expand_abbreviated_query(reps["function_text"])
+            if fn_q:
+                f_emb = self.embedding_model.encode([fn_q], convert_to_numpy=True, normalize_embeddings=True)[0]
+                cos_sims = 0.88 * cos_sims + 0.12 * np.dot(self.dense_embeddings, f_emb)
 
         k_eff = min(max(1, int(branch_k)), self.total_records)
         k_rrf = 60.0
@@ -714,7 +724,7 @@ class HybridHSNEngine:
         Executes Layer 2 Hybrid Retrieval + Layer 3 Re-Ranking.
         """
         candidate_indices, bm25_composite, cos_sims, rrf_map, q = self._fuse_with_scores(
-            raw_query, pool_size=15, branch_k=20
+            raw_query, pool_size=60, branch_k=60
         )
         if not candidate_indices:
             return []

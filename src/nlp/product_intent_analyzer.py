@@ -110,7 +110,23 @@ _MACHINERY_RATING_CUES = re.compile(
     r"\b(?:motor|generator|generating\s+set|pump|boiler|transformer|compressor|turbine|engine)\b",
     re.IGNORECASE,
 )
+_VESSEL_INSULATION_CUES = re.compile(
+    r"\b(?:bottle|bottles|flask|flasks|jug|jugs|thermos|carafe|pitcher|mug|mugs|tumbler|tumblers)\b",
+    re.IGNORECASE,
+)
+_THERMAL_SPEC_RE = re.compile(
+    r"\b(?:insulat(?:ed|ion)|vacuum|thermo|thermosteel|double[- ]wall|single[- ]wall|uninsulated)\b",
+    re.IGNORECASE,
+)
 _NUMERIC_SPEC_RE = re.compile(r"\b\d+(?:\.\d+)?\s*(?:kva|kw|w|hp|v|kv|a|amp|hz|tonnes?|kg|g|ml|l|litre|mm|cm|m)\b", re.IGNORECASE)
+
+# General English consumer-to-formal commercial lexical synonyms (zero HSN codes or chapter hints)
+_COMMERCIAL_LEXICAL_SYNONYMS: Tuple[Tuple[re.Pattern, Tuple[str, ...]], ...] = (
+    (
+        re.compile(r"\b(?:laptop|laptops|notebook\s+computer|notebook\s+pc|ultrabook|chromebook)\b", re.IGNORECASE),
+        ("personal computer", "portable computer", "portable data processing machines"),
+    ),
+)
 
 
 @dataclass
@@ -502,12 +518,21 @@ def analyze_product_intent(description: str, clarification: str = "") -> Product
     # Multi-article detection (distinct articles joined by top-level ';' outside parentheses)
     secondary_articles: List[str] = list(extra_articles)
 
+    # General English commercial synonym expansion (no HSN codes or chapter routing)
+    for syn_re, syn_terms in _COMMERCIAL_LEXICAL_SYNONYMS:
+        if syn_re.search(finished_article):
+            for st in syn_terms:
+                if st not in alternative_aliases:
+                    alternative_aliases.append(st)
+
     # Detect missing classification-critical attributes
     missing_critical: List[str] = []
     if not constituent_materials:
         missing_critical.append("material")
     if _GARMENT_CONSTRUCTION_CUES.search(finished_article) and not processing_form:
         missing_critical.append("construction (knitted vs woven)")
+    if _VESSEL_INSULATION_CUES.search(finished_article) and not _THERMAL_SPEC_RE.search(combined):
+        missing_critical.append("insulation (vacuum-insulated vs single-wall)")
     if _MACHINERY_RATING_CUES.search(finished_article) and not _NUMERIC_SPEC_RE.search(combined):
         missing_critical.append("capacity_or_rating")
 
@@ -535,6 +560,8 @@ def analyze_product_intent(description: str, clarification: str = "") -> Product
         "grade", "grades", "assembly", "assemblies", "module", "modules",
         "capacity", "rating", "size", "sizes", "weight", "duty", "service",
         "range", "output", "power", "pressure", "voltage", "speed", "use", "purpose",
+        "packet", "packets", "pack", "packs", "pouch", "pouches", "sachet", "sachets",
+        "carton", "cartons", "blister", "blisters",
     }
     _unit_tok_re = re.compile(
         r"^(?:\d+(?:\.\d+)?(?:cc|kw|kva|hp|mm|cm|m|kg|g|ml|l|v|kv|hz|a)?|kg|gm|g|mm|cm|m|inch|cc|kw|kva|hp|v|kv|hz|amp|bar|psi|cfm|lph|l|ml|litre|litres|tonnes?|gsm|seater)$",
@@ -617,16 +644,30 @@ def analyze_product_intent(description: str, clarification: str = "") -> Product
 
     # Task 5: Function & application decomposition
     use_str = "; ".join(use_parts) if use_parts else None
+    use_inferred = False
+    if not use_str and article_category == "finished_article":
+        head_low = (product_head_noun or "").lower().rstrip("s")
+        _no_industrial = not re.search(
+            r"\b(?:machine|machinery|apparatus|industrial|factory|laboratory|packaging|conveyance|shipping|cargo)\b",
+            combined_low,
+        )
+        if _no_industrial:
+            if head_low in {"bottle", "flask", "tumbler", "cup", "mug", "jug", "pitcher", "carafe", "thermo", "therm"} or (product_head_noun or "").lower() in {"flasks", "bottles", "thermos"}:
+                use_str = "household tableware, kitchenware or beverage vessel / container"
+                use_inferred = True
+            elif head_low in {"pot", "pan", "skillet", "kettle", "bowl", "plate", "dish", "ladle", "cookware"}:
+                use_str = "household kitchenware or tableware cooking and serving article"
+                use_inferred = True
     packaging_str = "; ".join(packaging_parts) if packaging_parts else None
     function_details: Dict[str, Any] = {
         "action": None,
         "mechanism": None,
         "target_object": None,
         "application": use_str,
-        "evidence_type": "EXPLICIT" if use_str else None,
+        "evidence_type": ("INFERRED" if use_inferred else "EXPLICIT") if use_str else None,
     }
     if use_str:
-        _add_attr("intended_use", use_str, "FUNCTION", use_str, 0.92)
+        _add_attr("intended_use", use_str, "FUNCTION", use_str, 0.78 if use_inferred else 0.92, ev_type=("INFERRED" if use_inferred else "EXPLICIT"))
         fn_m = re.match(r"^(controlling|regulating|driving|pumping|heating|cooling|drying|filtering|cutting|welding|lifting|measuring|converting|transmitting|protecting|cleaning|brewing)\s+(.+)$", use_str.strip(), re.IGNORECASE)
         if fn_m:
             function_details["action"] = fn_m.group(1).lower()

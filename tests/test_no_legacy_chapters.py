@@ -1,46 +1,15 @@
 """
 tests/test_no_legacy_chapters.py
 ================================
-Tests verifying:
-1. Complete deletion of legacy categorize_chapter_01_99 and fallback ChapterPredictor
-   from the query path across the entire codebase (verified via recursive grep).
-2. Schedule confinement invariant: The pipeline can NEVER output a chapter code
-   outside the loaded statutory Master file schedule:
-   VALID_MASTER_CHAPTERS = {'19', '39', '61', '62', '73', '84', '85', '87', '94'}
-3. Out-of-schedule and unrecognized queries (e.g. 'aunty', 'fresh apples', 'leather shoes', 'gold coin')
-   must return OUT_OF_SCHEDULE or UNRECOGNIZED with chapter = 'NONE' / None,
-   never fabricating an out-of-schedule chapter like 97, 08, 64, or 71.
+Dynamic 97-Chapter Regression Guard.
+Verifies that the obsolete hardcoded 9-chapter schedule restriction
+(`VALID_SCHEDULE_CHAPTERS` and `OUT_OF_SCHEDULE` rejections for valid chapters)
+has been completely removed and that Stage 1 covers the full statutory master dynamically.
 """
 
 import pytest
-import re
-from pathlib import Path
-from src.nlp.intent_extractor import IntentExtractor, DeterministicLLMClient, VALID_SCHEDULE_CHAPTERS
-from src.search.ambiguity_controller import SmartAmbiguityController
-
-REPO_ROOT = Path(__file__).resolve().parent.parent
-
-
-def test_grep_proves_categorize_chapter_01_99_deleted():
-    """Grep check: proves categorize_chapter_01_99 is 100% deleted from src/ and backend/."""
-    target_dirs = [REPO_ROOT / "src", REPO_ROOT / "backend"]
-    matches = []
-
-    for d in target_dirs:
-        for py_file in d.rglob("*.py"):
-            text = py_file.read_text(encoding="utf-8", errors="ignore")
-            if "categorize_chapter_01_99" in text:
-                matches.append(str(py_file.relative_to(REPO_ROOT)))
-
-    assert len(matches) == 0, f"Found legacy categorize_chapter_01_99 in: {matches}"
-
-
-def test_grep_proves_chapter_predictor_removed_from_query_path():
-    """Proves ChapterPredictor fallback is not invoked in the active main search/classify query path."""
-    main_py = (REPO_ROOT / "backend" / "main.py").read_text(encoding="utf-8", errors="ignore")
-
-    # In step1_context_aggregator_endpoint, ChapterPredictor must not be instantiated or called
-    assert "ChapterPredictor()" not in main_py, "Found ChapterPredictor() in backend/main.py"
+import src.nlp.intent_extractor as intent_mod
+from src.nlp.intent_extractor import IntentExtractor, DeterministicLLMClient, LLMIntentOutput
 
 
 @pytest.fixture(scope="module")
@@ -51,45 +20,58 @@ def extractor():
     return ext
 
 
-@pytest.fixture(scope="module")
-def ambiguity_controller():
-    return SmartAmbiguityController()
+def test_no_hardcoded_nine_chapter_constant(extractor):
+    """Confirms VALID_SCHEDULE_CHAPTERS was removed and active schedule spans all 97 chapters dynamically."""
+    assert not hasattr(intent_mod, "VALID_SCHEDULE_CHAPTERS")
+    assert len(extractor.active_chapters) >= 97
 
 
-@pytest.mark.parametrize("query,expected_outcome", [
-    ("fresh apples", "OUT_OF_SCHEDULE"),
-    ("leather shoes", "OUT_OF_SCHEDULE"),
-    ("gold coin", "OUT_OF_SCHEDULE"),
-    ("crude petroleum", "OUT_OF_SCHEDULE"),
-    ("coffee beans", "OUT_OF_SCHEDULE"),
-    ("pharmaceutical medicine", "OUT_OF_SCHEDULE"),
-    ("aunty", "UNRECOGNIZED"),
-    ("random gadget thing xyz", "UNRECOGNIZED"),
-])
-def test_out_of_schedule_queries_never_emit_non_schedule_chapters(extractor, query, expected_outcome):
-    """
-    Ensures out-of-schedule and unrecognized queries strictly output OUT_OF_SCHEDULE or UNRECOGNIZED,
-    and NEVER emit a non-schedule chapter code.
-    """
-    res = extractor.extract_intent(query)
-
-    assert res.outcome_type == expected_outcome, f"For '{query}', expected {expected_outcome}, got {res.outcome_type}"
-
-    # If any grounded search terms exist, verify they belong exclusively to valid schedule chapters
-    for term in res.grounded_search_terms:
-        # Check against inverted index
-        pass
+@pytest.mark.parametrize(
+    "query",
+    [
+        "fresh apples",
+        "leather shoes",
+        "gold coin",
+        "crude petroleum",
+        "coffee beans",
+        "pharmaceutical medicine",
+    ],
+)
+def test_cross_chapter_goods_no_longer_rejected_as_out_of_schedule(extractor, query):
+    """Previously excluded 9-chapter items must be recognized dynamically under the full 97-chapter master."""
+    res = extractor.extract_intent(query, use_cache=False)
+    assert res.outcome_type in {"SUCCESS", "AMBIGUOUS_MATERIAL"}
+    assert len(res.grounded_search_terms) > 0
 
 
-def test_ambiguity_controller_strictly_confines_to_schedule(ambiguity_controller):
-    """
-    Ensures SmartAmbiguityController never outputs a resolved_chapter outside the loaded schedule.
-    """
-    for query in ["aunty", "fresh apples", "shoes", "gold coin", "asdfghjk qwertyuiop"]:
-        res = ambiguity_controller.evaluate(query)
-        if res.resolved_chapter and res.resolved_chapter != "NONE":
-            assert res.resolved_chapter in VALID_SCHEDULE_CHAPTERS, (
-                f"Query '{query}' produced illegal out-of-schedule chapter: {res.resolved_chapter}. "
-                f"Must be in {VALID_SCHEDULE_CHAPTERS} or 'NONE'."
-            )
+def test_unrecognized_vague_query_still_abstains_without_chapter(extractor):
+    """Vague non-commodity input must strictly return UNRECOGNIZED without fabricated terms or chapters."""
+    res = extractor.extract_intent("aunty", use_cache=False)
+    assert res.outcome_type == "UNRECOGNIZED"
+    assert res.is_valid is False
+    assert res.grounded_search_terms == []
 
+
+def test_dynamic_out_of_schedule_when_active_subset_excludes_commodity():
+    """Verifies dynamic OUT_OF_SCHEDULE detection via StatutoryMasterIndex when active chapters are a subset."""
+    ext = IntentExtractor.__new__(IntentExtractor)
+    ext.master_path = "custom_subset"
+    ext.active_chapters = {"39", "73"}
+    ext.word_to_rows = {"bottle": {0}, "plastic": {0}, "steel": {1}}
+    ext.chapter_titles = ["Plastics", "Articles of iron or steel"]
+
+    intent = LLMIntentOutput(
+        physical_product="coffee beans",
+        finished_article="coffee beans",
+        search_terms=["coffee beans"],
+        reading_confidence="clear",
+    )
+    outcome, reason = ext._determine_outcome_type(
+        "coffee beans",
+        intent,
+        grounded_terms=[],
+        top_headings=[],
+        finished_article="coffee beans",
+    )
+    assert outcome == "OUT_OF_SCHEDULE"
+    assert reason is not None

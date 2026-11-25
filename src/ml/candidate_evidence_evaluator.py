@@ -26,9 +26,11 @@ Design rules:
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass, field
 from functools import lru_cache
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from src.ml.hierarchy_intelligence import (
@@ -127,7 +129,7 @@ _MATERIAL_FAMILIES: Dict[str, Set[str]] = {
     "vegetable_textile": {"linen", "flax", "ramie", "hemp", "jute", "coir", "sisal"},
     "wood": {"wood", "wooden", "timber", "plywood", "bamboo"},
     "rubber": {"rubber", "latex", "elastomer", "vulcanised", "vulcanized"},
-    "glass_ceramic": {"glass", "ceramic", "porcelain", "stoneware", "earthenware"},
+    "glass_ceramic": {"glass", "glassware", "ceramic", "ceramicware", "porcelain", "chinaware", "stoneware", "earthenware"},
     "leather": {"leather", "raw hide", "raw hides", "raw skin", "raw skins", "furskin", "furskins", "composition leather", "suede"},
     "paper": {"paper", "paperboard", "cardboard"},
     "protein": {"protein", "casein", "gelatin", "gelatine", "collagen", "albumin"},
@@ -173,13 +175,90 @@ _COMPATIBLE_FAMILIES: Set[frozenset] = {
 @lru_cache(maxsize=16384)
 def _stem(tok: str) -> str:
     t = tok.lower().strip()
+    if len(t) > 6 and re.search(r"[aeiouy][bcdfghjklmnpqrstvwxz]elling$", t):
+        return t[:-4]
     if len(t) > 4 and t.endswith("ies"):
         return t[:-3] + "y"
-    if len(t) > 4 and t.endswith("es") and t[-3] in "shxz":
+    if len(t) > 4 and t.endswith(("sses", "shes", "ches", "xes", "zes")):
         return t[:-2]
     if len(t) > 3 and t.endswith("s") and not t.endswith(("ss", "us", "is", "os", "as")):
         return t[:-1]
     return t
+
+
+_PACKAGING_TAIL_RE = re.compile(
+    r"\b(?:put\s+up\s+)?in\s+(?:tablets|tubes|jars|bottles|flasks|ampoules|cans|boxes|bags|packets|containers|cartons|packs|packings|sachets|similar\s+forms(?:\s+or\s+packings)?)\b[^;\.]*",
+    re.IGNORECASE,
+)
+_MACHINERY_ACTION_TAIL_RE = re.compile(
+    r"\b(machinery|machine|machines|apparatus|appliances?|equipment|tools?|moulds?|molds?|instruments?|preparations?|brushes?)\b([^;]*?)\bfor\s+(?:[a-z]{3,}ing\b|the\s+[a-z]+\s+of\b)[^;\.]*",
+    re.IGNORECASE,
+)
+_CLOSURE_ACCESSORY_TAIL_RE = re.compile(
+    r"\b(stoppers|caps|lids|corks|closures|capsules|bungs|seals|covers|fittings)\b(?:\s*,\s*|\s+)(?:[^,;]*?\s+)?\bfor\s+[^,;\.]+",
+    re.IGNORECASE,
+)
+
+
+def extract_statutory_subject_text(text: str) -> str:
+    """
+    Extracts primary commodity subject phrases from a WCO statutory description,
+    stripping action-object tails on machinery/preparations ('MACHINERY FOR CLEANING BOTTLES'),
+    retail packaging clauses ('IN TABLETS, TUBES, JARS, BOTTLES'), and closure/accessory target
+    phrases ('CAPSULES FOR BOTTLES') so object/container nouns are not mistaken for the good itself.
+    """
+    if not text:
+        return ""
+    clauses_out: List[str] = []
+    for raw_clause in re.split(r";", text):
+        c = raw_clause.strip()
+        if not c:
+            continue
+        c = _PACKAGING_TAIL_RE.sub(" ", c)
+        c = _MACHINERY_ACTION_TAIL_RE.sub(r"\1 \2", c)
+        c = _CLOSURE_ACCESSORY_TAIL_RE.sub(r"\1", c)
+        c = re.sub(r"\s+", " ", c).strip()
+        if c:
+            clauses_out.append(c)
+    return " ; ".join(clauses_out)
+
+
+@lru_cache(maxsize=1)
+def _load_vocab_article_families() -> Tuple[Set[str], Set[str]]:
+    """Loads finished container nouns and raw/worked metal form nouns dynamically from article_form_vocabulary.json."""
+    vocab_path = Path(__file__).resolve().parent.parent.parent / "data" / "article_form_vocabulary.json"
+    containers: Set[str] = set()
+    raw_metals: Set[str] = set()
+    if vocab_path.exists():
+        try:
+            entries = json.loads(vocab_path.read_text(encoding="utf-8"))
+            for item in entries:
+                if not isinstance(item, dict):
+                    continue
+                term = str(item.get("term") or "").strip().lower()
+                fam = str(item.get("family") or "").strip().lower()
+                if not term or " " in term:
+                    continue
+                stemmed = _stem(term)
+                if fam == "containers":
+                    containers.add(stemmed)
+                elif fam == "raw_metals_and_minerals":
+                    raw_metals.add(stemmed)
+        except Exception:
+            pass
+    return containers, raw_metals
+
+
+_VESSEL_CONSUMER_NOUNS = {
+    "bottle", "flask", "tumbler", "cup", "mug", "jug", "pitcher", "carafe",
+    "thermos", "jar", "canister", "utensil", "pot", "pan", "skillet", "kettle",
+    "bowl", "plate", "dish", "tray", "ladle", "cookware", "tableware", "kitchenware",
+}
+_STATUTORY_HOUSEHOLD_SUPERORDINATE_RE = re.compile(
+    r"\b(?:tableware|kitchenware|household\s+articles|table\s*,\s*kitchen\s+or\s+other\s+household\s+articles|"
+    r"drinking\s+glasses|vacuum\s+flasks|vacuum\s+vessels)\b",
+    re.IGNORECASE,
+)
 
 
 def _tokenize_content(text: str) -> Set[str]:
@@ -400,8 +479,21 @@ def evaluate_candidate_evidence(
     article_core_tokens = head_tokens - all_mat_cues - generic_stems
     if not article_core_tokens:
         article_core_tokens = head_tokens - all_mat_cues
+    raw_alias_tokens = _tokenize_content(" ".join(getattr(product_intent, "alternative_names_and_aliases", []) or []))
+    alias_core_tokens = raw_alias_tokens - all_mat_cues - generic_stems
+    effective_article_core = article_core_tokens | alias_core_tokens
 
-    # 1. Article identity matching (deduplicated by canonical stem; no generic-modifier phrase inflation)
+    statutory_subject_raw = extract_statutory_subject_text(
+        f"{profile.tariff_item_desc} ; {profile.statutory_description} ; {profile.subheading_6digit_desc} ; {profile.heading_4digit_desc}"
+    )
+    statutory_subject_tokens = _tokenize_content(statutory_subject_raw)
+    statutory_all_tokens = _tokenize_content(
+        f"{profile.tariff_item_desc} {profile.statutory_description} {profile.subheading_6digit_desc} {profile.heading_4digit_desc}"
+    )
+    object_clause_only_tokens = statutory_all_tokens - statutory_subject_tokens
+
+    # 1. Article identity matching (deduplicated by canonical stem; no generic-modifier phrase inflation
+    #    and no object/packaging-clause false attribution)
     article_matches: List[str] = []
     seen_art_stems: Set[str] = set()
     art_phrase_pool = profile.article_keywords + profile.consumer_synonyms
@@ -410,20 +502,22 @@ def evaluate_candidate_evidence(
         if not phrase:
             continue
         p_toks = _tokenize_content(phrase) - all_mat_cues - generic_stems
-        if phrase in head_low or (p_toks and p_toks.issubset(article_core_tokens)):
+        if p_toks and p_toks.issubset(object_clause_only_tokens) and not (p_toks & statutory_subject_tokens):
+            continue
+        if phrase in head_low or (p_toks and p_toks.issubset(effective_article_core)):
             canon = " ".join(sorted(p_toks)) if p_toks else phrase
             if canon not in seen_art_stems:
                 seen_art_stems.add(canon)
                 article_matches.append(phrase)
-    for tok in sorted(article_core_tokens & profile.article_tokens):
+    for tok in sorted(effective_article_core & profile.article_tokens):
+        if tok in object_clause_only_tokens and tok not in statutory_subject_tokens:
+            continue
         if tok not in seen_art_stems and not any(tok in _tokenize_content(m) for m in article_matches):
             seen_art_stems.add(tok)
             article_matches.append(tok)
 
-    statutory_only_tokens = _tokenize_content(
-        f"{profile.tariff_item_desc} {profile.statutory_description} {profile.subheading_6digit_desc} {profile.heading_4digit_desc}"
-    )
-    statutory_article_matches = sorted((article_core_tokens - _BROAD_SUPERORDINATES) & statutory_only_tokens)
+    statutory_article_matches = sorted((effective_article_core - _BROAD_SUPERORDINATES) & statutory_subject_tokens)
+    matched_via_alias_only = bool(article_matches) and not (article_core_tokens & profile.article_tokens)
 
     # 2. Material & composition matching (evaluated separately from article identity)
     query_mat_text = " ".join(product_intent.constituent_materials)
@@ -644,16 +738,22 @@ def evaluate_candidate_evidence(
             f"Power-source contradiction: query specifies {sorted(q_pm)}, candidate specifies {sorted(c_pm)}"
         )
 
-    # Statutory engine/propulsion type contradiction (spark-ignition/petrol vs compression-ignition/diesel)
+    # Statutory engine/propulsion type contradiction (spark-ignition/petrol vs compression-ignition/diesel,
+    # and single IC propulsion vs dual IC + electric-motor hybrid "WITH BOTH ... AND ELECTRIC MOTOR")
+    _q_eng_text = f"{proc_low} {product_intent.raw_description or ''}".lower()
     _cand_pos_eng = re.sub(r"\bother\s+than\s+spark[-\s]*ignition\b|\bnot\s+spark[-\s]*ignition\b", " ", cand_hier_low)
-    q_spark = bool(re.search(r"\b(?:petrol|gasoline|spark[-\s]*ignition)\b", f"{proc_low} {product_intent.raw_description or ''}".lower()))
-    q_diesel = bool(re.search(r"\b(?:diesel|compression[-\s]*ignition)\b", f"{proc_low} {product_intent.raw_description or ''}".lower()))
+    q_spark = bool(re.search(r"\b(?:petrol|gasoline|spark[-\s]*ignition)\b", _q_eng_text))
+    q_diesel = bool(re.search(r"\b(?:diesel|compression[-\s]*ignition)\b", _q_eng_text))
+    q_electric_hybrid = bool(re.search(r"\b(?:electric(?:\s+motor)?|hybrid|hev|phev|plug[-\s]*in|dual[-\s]*power)\b", _q_eng_text))
     c_spark = bool(re.search(r"\b(?:spark[-\s]*ignition|petrol|gasoline)\b", _cand_pos_eng))
     c_diesel = bool(re.search(r"\b(?:compression[-\s]*ignition|diesel)\b", cand_hier_low))
+    c_hybrid_electric = bool(re.search(r"\bwith\s+both\b[^;]*\band\s+electric\s+motor\b", cand_hier_low))
     if q_spark and not q_diesel and c_diesel and not c_spark:
         contradictions.append("Propulsion contradiction: query specifies spark-ignition/petrol, candidate specifies diesel/compression-ignition")
     elif q_diesel and not q_spark and c_spark and not c_diesel:
         contradictions.append("Propulsion contradiction: query specifies diesel/compression-ignition, candidate specifies spark-ignition/petrol")
+    if (q_diesel or q_spark) and not q_electric_hybrid and c_hybrid_electric:
+        contradictions.append("Propulsion contradiction: statutory subheading requires both internal combustion engine and electric motor (hybrid), query specifies single-engine propulsion")
 
     # Generic negated-attribute check (e.g., "non-circular" vs "circular", "unplasticised" vs "plasticised")
     query_neg_source = f"{proc_low} {product_intent.raw_description or ''}".lower()
@@ -763,6 +863,8 @@ def evaluate_candidate_evidence(
         )
         for cl in (profile.tariff_item_desc.strip(), profile.subheading_6digit_desc.strip())
     )
+    object_clause_mismatch = False
+    superordinate_stat_match = False
     secondary_with_feature = False
     if primary_id_tokens:
         # Guard against sibling-exclusive contradictory articles (preventing blind parent inheritance)
@@ -805,6 +907,20 @@ def evaluate_candidate_evidence(
                 secondary_with_feature = True
     else:
         primary_article_matched = bool(article_matches)
+
+    # Guard 0: reject noun matches that exist only inside grammatical object / packaging / closure tails
+    # (e.g., "MACHINERY FOR CLEANING BOTTLES", "COLOURS IN BOTTLES", "CAPSULES FOR BOTTLES")
+    if (
+        primary_id_tokens
+        and not q_asks_parts
+        and (primary_id_tokens & object_clause_only_tokens)
+        and not (primary_id_tokens & statutory_subject_tokens)
+        and not statutory_article_matches
+    ):
+        primary_article_matched = False
+        object_clause_mismatch = True
+        if not role_mismatch:
+            role_mismatch = "article_vs_machinery_or_accessory_object"
     # Parts-role alignment: when Stage 1 identifies a part/component/accessory (`q_asks_parts` or head_noun=='part')
     # and the statutory item is explicitly a parts subheading/leaf (`c_is_parts_only`) for a matched machine/article,
     # parts-identity compatibility holds even though 'parts' is filtered from general content stopwords.
@@ -815,8 +931,51 @@ def evaluate_candidate_evidence(
     ):
         primary_article_matched = True
         secondary_with_feature = False
+
+    # Finished-article vs raw/semi-finished metal form guard using article_form_vocabulary families
+    _vocab_containers, _vocab_raw_metals = _load_vocab_article_families()
+    _q_article_cat = getattr(product_intent, "article_category", "finished_article")
+    if (
+        not role_mismatch
+        and not q_asks_parts
+        and _q_article_cat == "finished_article"
+        and primary_id_tokens
+        and not (primary_id_tokens & _vocab_raw_metals)
+        and not (primary_id_tokens & statutory_subject_tokens)
+        and (statutory_subject_tokens & _vocab_raw_metals)
+        and not (statutory_subject_tokens & (_vocab_containers | _VESSEL_CONSUMER_NOUNS | {"household", "table", "kitchen", "tablewar", "kitchenwar", "vessel"}))
+        and not _STATUTORY_HOUSEHOLD_SUPERORDINATE_RE.search(cand_role_text)
+    ):
+        primary_article_matched = False
+        role_mismatch = "finished_article_vs_raw_form"
+
+    # WCO superordinate compatibility: consumer vessel/household nouns map to statutory household/tableware/
+    # drinking-glass/vacuum-vessel headings when specific leaf is not a distinct named product (e.g., pressure cookers)
+    # and material/role do not contradict.
+    _cand_subj_for_sup = extract_statutory_subject_text(cand_role_text)
+    if (
+        not primary_article_matched
+        and not object_clause_mismatch
+        and not role_mismatch
+        and not contradictions
+        and _q_article_cat == "finished_article"
+        and bool(primary_id_tokens & (_VESSEL_CONSUMER_NOUNS | _vocab_containers))
+        and not (leaf_introduced_tokens and not leaf_clauses_are_qualifiers and not (primary_id_tokens & leaf_specific_tokens))
+        and bool(_STATUTORY_HOUSEHOLD_SUPERORDINATE_RE.search(_cand_subj_for_sup))
+        and (bool(material_matches) or not query_mat_fams or not profile.statutory_material_families)
+    ):
+        sup_hit = _STATUTORY_HOUSEHOLD_SUPERORDINATE_RE.search(_cand_subj_for_sup)
+        if sup_hit:
+            superordinate_stat_match = True
+            heading_compatible = True
+            chapter_compatible = True
+            sup_label = sup_hit.group(0).lower()
+            if sup_label not in seen_art_stems:
+                seen_art_stems.add(sup_label)
+                article_matches.append(sup_label)
+
     head_is_broad = bool(head_noun_tokens) and head_noun_tokens.issubset(_BROAD_SUPERORDINATES)
-    modifier_only_match = bool(article_matches) and not primary_article_matched
+    modifier_only_match = bool(article_matches) and not primary_article_matched and not superordinate_stat_match
 
     has_article_query = bool(article_core_tokens)
     has_cand_article_vocab = bool(profile.article_tokens or profile.article_keywords or profile.consumer_synonyms)
@@ -829,6 +988,8 @@ def evaluate_candidate_evidence(
     elif (
         article_matches
         and primary_article_matched
+        and not matched_via_alias_only
+        and not superordinate_stat_match
         and not generic_only_match
         and not role_mismatch
         and (material_matches or not query_mat_fams)
@@ -839,12 +1000,15 @@ def evaluate_candidate_evidence(
         compatibility_level = "DIRECT_COMPATIBILITY"
         propulsion_bonus = 0.05 if ((q_spark and c_spark and not c_diesel) or (q_diesel and c_diesel and not c_spark)) else 0.0
         ev_score = min(1.0, 0.65 * cross_encoder_confidence + 0.25 + (0.10 if material_matches else 0.0) + propulsion_bonus)
-    elif (article_matches and (primary_article_matched or head_is_broad or relation_value in ("SAME_PRODUCT", "INSUFFICIENT_INFORMATION"))) or (
-        material_matches and not material_only_no_article and (primary_article_matched or not has_article_query)
+    elif not object_clause_mismatch and role_mismatch not in ("finished_article_vs_raw_form", "article_vs_machinery_or_accessory_object") and (
+        (article_matches and (primary_article_matched or head_is_broad or relation_value in ("SAME_PRODUCT", "INSUFFICIENT_INFORMATION")))
+        or (material_matches and not material_only_no_article and (primary_article_matched or not has_article_query))
     ):
         status = POSSIBLY_SUPPORTED
         compatibility_level = "PARTIAL_COMPATIBILITY"
         ev_score = min(0.95, 0.60 * cross_encoder_confidence + (0.20 if primary_article_matched else 0.08) + (0.10 if material_matches else 0.0))
+        if superordinate_stat_match:
+            ev_score = min(ev_score, 0.72)
         if modifier_only_match and not head_is_broad:
             ev_score = max(0.0, ev_score - 0.10)
         if generic_only_match:
@@ -853,7 +1017,7 @@ def evaluate_candidate_evidence(
             ev_score = max(0.0, ev_score - 0.25)
         elif role_mismatch:
             ev_score = max(0.0, ev_score - 0.15)
-    elif modifier_only_match or material_only_no_article:
+    elif modifier_only_match or material_only_no_article or object_clause_mismatch or role_mismatch in ("finished_article_vs_raw_form", "article_vs_machinery_or_accessory_object"):
         status = INSUFFICIENT_EVIDENCE
         compatibility_level = "RELATED_DIFFERENT_ARTICLE"
         ev_score = max(0.0, 0.40 * cross_encoder_confidence)
@@ -874,6 +1038,8 @@ def evaluate_candidate_evidence(
         trace_parts.append("guard=modifier_only_no_head_noun")
     if secondary_with_feature:
         trace_parts.append("guard=secondary_with_feature")
+    if superordinate_stat_match:
+        trace_parts.append("guard=superordinate_statutory_match")
     if material_only_no_article:
         trace_parts.append("guard=material_only_no_article")
     if generic_only_match:

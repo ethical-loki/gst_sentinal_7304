@@ -52,7 +52,7 @@ def _tok(text: str) -> Set[str]:
             continue
         if len(w) > 4 and w.endswith("ies"):
             out.add(w[:-3] + "y")
-        elif len(w) > 4 and w.endswith(("ches", "shes", "xes", "zes")):
+        elif len(w) > 4 and w.endswith(("sses", "ches", "shes", "xes", "zes")):
             out.add(w[:-2])
         elif len(w) > 3 and w.endswith("s") and not w.endswith(("ss", "us", "is", "os", "lens")):
             out.add(w[:-1])
@@ -72,6 +72,7 @@ def load_statutory_chapter_index(parquet_path: Path = DEFAULT_MASTER_PARQUET) ->
         _CHAPTER_INDEX_CACHE = []
         return _CHAPTER_INDEX_CACHE
 
+    from src.ml.candidate_evidence_evaluator import extract_statutory_subject_text
     df = pd.read_parquet(parquet_path)
     chapters: List[Dict[str, Any]] = []
     for ch_val, grp in df.groupby(df["chapter_code"].astype(str).str.zfill(2)):
@@ -79,10 +80,16 @@ def load_statutory_chapter_index(parquet_path: Path = DEFAULT_MASTER_PARQUET) ->
         ch_title = titles[0] if titles else f"Chapter {ch_val}"
         title_toks = _tok(ch_title)
 
-        h4_texts = grp["heading_4digit_desc"].dropna().astype(str).unique().tolist() if "heading_4digit_desc" in grp.columns else []
+        h4_texts = [
+            extract_statutory_subject_text(t)
+            for t in (grp["heading_4digit_desc"].dropna().astype(str).unique().tolist() if "heading_4digit_desc" in grp.columns else [])
+        ]
         art_texts = grp["article_keywords"].dropna().astype(str).unique().tolist() if "article_keywords" in grp.columns else []
         mat_texts = grp["material_keywords"].dropna().astype(str).unique().tolist() if "material_keywords" in grp.columns else []
-        stat_texts = grp["statutory_description"].dropna().astype(str).unique().tolist() if "statutory_description" in grp.columns else []
+        stat_texts = [
+            extract_statutory_subject_text(t)
+            for t in (grp["statutory_description"].dropna().astype(str).unique().tolist() if "statutory_description" in grp.columns else [])
+        ]
 
         heading_toks = _tok(" ".join(h4_texts))
         article_toks = _tok(" ".join(art_texts)) | _tok(" ".join(stat_texts))

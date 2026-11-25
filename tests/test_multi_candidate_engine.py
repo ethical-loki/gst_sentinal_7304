@@ -442,3 +442,30 @@ def test_related_product_preserved_and_categorized_even_in_exact_hsn(tmp_path):
     assert "39269099" not in all_hsns
 
 
+def test_cotton_bath_towel_retains_6302_and_6304_in_chapter_63():
+    """Verifies statutory master entries under both 6302 (terry towelling) and 6304 (towels) are retained without Ch 96 noise."""
+    eng = MultiCandidateEngine.get_instance()
+    res = eng.classify_adaptive("cotton bath towel", page=1, page_size=20)
+    hsns = [c["hsn_code"] for c in res["candidates"]]
+    h4s = {h[:4] for h in hsns}
+    assert "6302" in h4s
+    assert "6304" in h4s
+    assert not any(h.startswith("9619") for h in hsns)
+    assert res["final_chapter"] == "63"
+    assert res["prediction_level"] == "CHAPTER_2DIGIT"
+
+
+def test_laptop_notebook_and_personal_computer_end_to_end():
+    """Verifies laptop, notebook computer, and personal computer converge on 847130 / 84713010 while abstaining on unstated leaf weight."""
+    eng = MultiCandidateEngine.get_instance()
+    for q in ("laptop", "notebook computer", "personal computer"):
+        res = eng.classify_adaptive(q, page=1, page_size=20)
+        assert res["final_chapter"] == "84"
+        assert res["prediction_level"] == "SUBHEADING_6DIGIT"
+        assert res["predicted_hsn"] == "847130"
+        assert res["prediction_mode"] != "EXACT_HSN"
+        top_hsns = [c["hsn_code"] for c in res["candidates"]]
+        assert top_hsns and top_hsns[0] == "84713010"
+
+
+

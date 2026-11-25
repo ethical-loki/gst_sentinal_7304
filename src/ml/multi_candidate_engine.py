@@ -137,6 +137,14 @@ class AdaptiveCandidateDiscoverer:
         total_master = getattr(self.hybrid_engine, "total_records", 0)
         expanded_q, _ = self.hybrid_engine._expand_abbreviated_query(query)
         eval_query = expanded_q or query
+        if stage1_result:
+            s1_aliases = [
+                str(a).strip()
+                for a in (stage1_result.get("alternative_names_and_aliases") or [])
+                if str(a).strip() and str(a).strip().lower() not in eval_query.lower()
+            ]
+            if s1_aliases:
+                eval_query = f"{eval_query} ({', '.join(s1_aliases[:2])})"
 
         evaluated_map: Dict[str, ClassifiedTariffCandidate] = {}
         raw_by_id: Dict[str, Dict[str, Any]] = {}
@@ -722,11 +730,15 @@ class MultiCandidateEngine:
             ev_dict["rescued_by_statutory_evidence"] = False
             ev_dict["rescue_reason"] = ""
             evidence_by_hsn[c.candidate.hsn_code] = ev_dict
-            if ev_res.status == CONTRADICTED:
+            if (
+                ev_res.status == CONTRADICTED
+                or ev_res.role_mismatch in ("finished_article_vs_raw_form", "article_vs_machinery_or_accessory_object")
+            ):
                 contradicted_count += 1
                 if len(contradicted_reasons) < 15:
+                    msg = "; ".join(ev_res.contradictions) if ev_res.contradictions else f"role_mismatch={ev_res.role_mismatch}"
                     contradicted_reasons.append(
-                        f"HSN {c.candidate.hsn_code} CONTRADICTED: {'; '.join(ev_res.contradictions)}"
+                        f"HSN {c.candidate.hsn_code} CONTRADICTED: {msg}"
                     )
                 continue
             qualifying.append(c)
@@ -814,8 +826,14 @@ class MultiCandidateEngine:
         qualifying_h4s = {c.candidate.hsn_code[:4] for c in qualifying if c.candidate.hsn_code}
         has_active_qualifying = any(
             c.relation in (RelationLabel.SAME_PRODUCT, RelationLabel.INSUFFICIENT_INFORMATION)
+            and evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status") in (SUPPORTED, POSSIBLY_SUPPORTED)
             for c in qualifying
         )
+        qualifying_has_mat_match = any(
+            bool(evidence_by_hsn.get(q_c.candidate.hsn_code, {}).get("material_matches"))
+            for q_c in qualifying
+        )
+        query_has_explicit_mat = bool(product_intent.constituent_materials)
         unrelated_consolidated = consolidate_duplicate_records(getattr(disc, "unrelated_classified", []))
         for c in unrelated_consolidated:
             hsn = c.candidate.hsn_code
@@ -830,19 +848,25 @@ class MultiCandidateEngine:
                 cross_encoder_confidence=c.confidence,
             )
             has_generic_only = "penalty=generic_superordinate_only" in ev_res.trace_summary
+            has_superordinate_match = (
+                "guard=superordinate_statutory_match" in ev_res.trace_summary
+                and bool(ev_res.material_matches or not ev_res.missing_attributes)
+            )
+            mat_rescue_ok = (not query_has_explicit_mat) or (not qualifying_has_mat_match) or bool(ev_res.material_matches)
             has_strong_statutory_match = (
                 (not qualifying and ev_res.primary_article_matched)
-                or (not has_active_qualifying and not ev_res.role_mismatch and ev_res.primary_article_matched)
+                or (not has_active_qualifying and not ev_res.role_mismatch and ev_res.primary_article_matched and mat_rescue_ok)
                 or (hsn[:4] in qualifying_h4s)
-                or (len(ev_res.statutory_article_matches) >= 2 and ev_res.primary_article_matched)
+                or (len(ev_res.statutory_article_matches) >= 2 and ev_res.primary_article_matched and mat_rescue_ok)
+                or has_superordinate_match
             )
             if (
                 ev_res.status != CONTRADICTED
-                and ev_res.statutory_article_matches
+                and (ev_res.statutory_article_matches or has_superordinate_match)
                 and ev_res.heading_compatible
                 and not has_generic_only
-                and ev_res.role_mismatch != "complete_article_vs_parts"
-                and ev_res.primary_article_matched
+                and ev_res.role_mismatch not in ("complete_article_vs_parts", "finished_article_vs_raw_form", "article_vs_machinery_or_accessory_object")
+                and (ev_res.primary_article_matched or has_superordinate_match)
                 and has_strong_statutory_match
             ):
                 ev_dict = ev_res.to_dict()
@@ -871,6 +895,8 @@ class MultiCandidateEngine:
         def _stem_leaf_tok(w: str) -> str:
             if len(w) > 4 and w.endswith("ies"):
                 return w[:-3] + "y"
+            if len(w) > 4 and w.endswith(("sses", "shes", "ches", "xes", "zes")):
+                return w[:-2]
             if len(w) > 3 and w.endswith("s") and not w.endswith(("ss", "us", "is", "os", "as")):
                 return w[:-1]
             return w
@@ -1066,9 +1092,13 @@ class MultiCandidateEngine:
 
         t_diff0 = time.perf_counter()
         leaf_pool_for_focus = [c for c in qualifying_ordered if _is_leaf_8digit(c)]
+        supported_or_poss_leaves = [
+            c for c in leaf_pool_for_focus
+            if evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status") in (SUPPORTED, POSSIBLY_SUPPORTED)
+        ]
         focus_pool = (
             same_leaves if len(same_leaves) >= 2
-            else (same if len(same) >= 2 else ((same + insuff) if len(same + insuff) >= 2 else leaf_pool_for_focus[:12]))
+            else (same if len(same) >= 2 else ((same + insuff) if len(same + insuff) >= 2 else (supported_or_poss_leaves[:12] if supported_or_poss_leaves else leaf_pool_for_focus[:12])))
         )
         sep_attrs: List[str] = []
         attr_ev: Dict[str, List[str]] = {}
@@ -1201,6 +1231,11 @@ class MultiCandidateEngine:
         clarification_reason = ""
         lead_depth_info: Dict[str, Any] = {}
 
+        has_rescued_statutory_support = any(
+            evidence_by_hsn.get(c.candidate.hsn_code, {}).get("rescued_by_statutory_evidence")
+            and evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status") in (SUPPORTED, POSSIBLY_SUPPORTED)
+            for c in qualifying_ordered
+        )
         if comp.is_out_of_schedule and comp.best_inactive_match:
             prediction_mode = "OUT_OF_SCHEDULE"
             prediction_level = "OUT_OF_SCHEDULE"
@@ -1208,7 +1243,7 @@ class MultiCandidateEngine:
             final_chapter = comp.best_inactive_match.get("chapter")
             requires_clarification = False
             clarification_reason = comp.reason
-        elif not qualifying_ordered or best_rel_conf < tau_abstain:
+        elif not qualifying_ordered or (best_rel_conf < tau_abstain and not has_rescued_statutory_support):
             prediction_mode = "INSUFFICIENT_INFORMATION"
             prediction_level = "UNRESOLVED"
             requires_clarification = True
@@ -1314,7 +1349,10 @@ class MultiCandidateEngine:
                         f"Chapter {ch_v} supported (confidence={chap_conf:.2f}); multiple headings compete."
                     )
                 elif len(insuff) >= 2 or len(related) >= 2 or any(
-                    evidence_by_hsn.get(c.candidate.hsn_code, {}).get("primary_article_matched")
+                    (
+                        evidence_by_hsn.get(c.candidate.hsn_code, {}).get("primary_article_matched")
+                        or "guard=superordinate_statutory_match" in str(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("trace_summary", ""))
+                    )
                     and not evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch")
                     for c in qualifying_ordered[:5]
                 ):
@@ -1324,11 +1362,17 @@ class MultiCandidateEngine:
                             c.relation == RelationLabel.RELATED_PRODUCT
                             or (
                                 evidence_by_hsn.get(c.candidate.hsn_code, {}).get("rescued_by_statutory_evidence")
-                                and bool(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("statutory_article_matches"))
+                                and (
+                                    bool(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("statutory_article_matches"))
+                                    or "guard=superordinate_statutory_match" in str(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("trace_summary", ""))
+                                )
                             )
                         )
                         and evidence_by_hsn.get(c.candidate.hsn_code, {}).get("status") in (SUPPORTED, POSSIBLY_SUPPORTED)
-                        and evidence_by_hsn.get(c.candidate.hsn_code, {}).get("primary_article_matched")
+                        and (
+                            evidence_by_hsn.get(c.candidate.hsn_code, {}).get("primary_article_matched")
+                            or "guard=superordinate_statutory_match" in str(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("trace_summary", ""))
+                        )
                         and not evidence_by_hsn.get(c.candidate.hsn_code, {}).get("role_mismatch")
                         and "guard=secondary_with_feature" not in str(evidence_by_hsn.get(c.candidate.hsn_code, {}).get("trace_summary", ""))
                         and float(getattr(c.candidate, "raw_logit", 0.0) or 0.0) >= (top_q_logit - 1.5)

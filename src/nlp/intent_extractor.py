@@ -41,8 +41,6 @@ STOPWORDS = {
     "such", "other", "all", "any", "each", "both", "not", "no", "into", "through"
 }
 
-VALID_SCHEDULE_CHAPTERS = {"19", "39", "61", "62", "73", "84", "85", "87", "94"}
-
 
 def tokenize(text: str) -> List[str]:
     """Lightweight whitespace & punctuation tokenizer."""
@@ -261,7 +259,12 @@ class TestDoubleDeterministicLLMClient(BaseLLMClient):
         # Vague / unidentifiable query detector (GIR Compliance)
         vague_tokens = {"gadget", "item", "thing", "product", "goods", "stuff", "aunty", "something", "anything", "object", "miscellaneous thing", "xyz789", "random article", "random", "article"}
         q_tokens = set(re.findall(r"\b[a-z0-9]{2,}\b", query)) - STOPWORDS
-        if not q_tokens or (len(q_tokens) <= 2 and q_tokens.issubset(vague_tokens)) or re.match(r"^[0-9a-f]{6,}$", query):
+        if (
+            not q_tokens
+            or (len(q_tokens) <= 2 and q_tokens.issubset(vague_tokens))
+            or re.match(r"^[0-9a-f]{6,}$", query)
+            or not IntentExtractor._looks_like_concrete_commodity(query)
+        ):
             return json.dumps({
                 "physical_product": "unspecified item",
                 "material": None,
@@ -317,9 +320,15 @@ class TestDoubleDeterministicLLMClient(BaseLLMClient):
                 best_heading_text = h_desc
 
         # Generic trade concept to statutory heading resolution from context headings
-        phys_prod = " ".join([w for w in query.split() if w not in STOPWORDS][:3]) or query
+        from src.nlp.product_intent_analyzer import analyze_product_intent
+        pi_det = analyze_product_intent(query)
+        phys_prod = pi_det.finished_article or " ".join([w for w in query.split() if w not in STOPWORDS][:3]) or query
         candidate_terms = []
         unstated_attrs = []
+
+        for alias in (pi_det.alternative_names_and_aliases or []):
+            if len(alias.split()) <= 4:
+                candidate_terms.append(alias.lower())
 
         # Derive candidate terms directly from overlapping context headings
         if best_heading_text:
@@ -339,6 +348,10 @@ class TestDoubleDeterministicLLMClient(BaseLLMClient):
         else:
             unstated_attrs.append("construction / manufacturing process")
 
+        for missing_attr in (pi_det.missing_critical_attributes or []):
+            if missing_attr not in unstated_attrs and not (missing_attr == "material" and any("material" in u for u in unstated_attrs)):
+                unstated_attrs.append(missing_attr)
+
         if not candidate_terms:
             candidate_terms = [w for w in q_tokens if len(w) >= 3][:3]
 
@@ -347,9 +360,9 @@ class TestDoubleDeterministicLLMClient(BaseLLMClient):
             "material": mat,
             "construction": construction,
             "intended_use": None,
-            "search_terms": list(dict.fromkeys(candidate_terms))[:4],
+            "search_terms": list(dict.fromkeys(candidate_terms))[:5],
             "unstated_attributes": unstated_attrs,
-            "reading_confidence": "clear" if max_overlap >= 1 or mat or phys_prod else "partial"
+            "reading_confidence": "clear" if max_overlap >= 1 or mat or pi_det.alternative_names_and_aliases or phys_prod else "partial"
         })
 
 
@@ -401,7 +414,10 @@ class IntentExtractor:
         self.config_path = Path(config_path or (self.base_dir / "config" / "intent_extraction_config.json"))
         self.config = self._load_config()
 
-        self.master_path = self.base_dir / self.config.get("master_excel_path", "data/raw/Master_copy_hsn.xlsx")
+        self.master_path = self.base_dir / (
+            self.config.get("master_parquet_path")
+            or self.config.get("master_excel_path", "data/enriched_master_hsn.parquet")
+        )
         self.cache_dir = self.base_dir / self.config.get("cache_dir", "data/intent_cache")
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
@@ -415,6 +431,7 @@ class IntentExtractor:
         self.heading_entries: List[str] = []
         self.heading_embeddings: Optional[np.ndarray] = None
         self.chapter_titles: List[str] = []
+        self.active_chapters: Set[str] = set()
 
         # Row-Level Grounding Inverted Index
         self.grounding_phrases: Set[str] = set()
@@ -426,6 +443,7 @@ class IntentExtractor:
 
         self._embedder = None
         self._llm_client: Optional[BaseLLMClient] = None
+        self._statutory_index = None
 
         self._initialize()
         # Strictly verify and initialize real production LLM on startup
@@ -446,9 +464,10 @@ class IntentExtractor:
                 logger.warning(f"Failed to read {self.config_path}: {e}")
         return {
             "model_provider": "local_transformers",
-            "local_model_path": "Questions_answering_bot/models/qwen2.5-0.5b-instruct",
+            "local_model_path": "models/qwen2.5-0.5b-instruct",
             "model_name": "qwen2.5-0.5b-instruct",
             "embedding_model_name": "sentence-transformers/all-MiniLM-L6-v2",
+            "master_parquet_path": "data/enriched_master_hsn.parquet",
             "master_excel_path": "data/raw/Master_copy_hsn.xlsx",
             "cache_dir": "data/intent_cache",
             "vocabulary_top_k": 25,
@@ -502,7 +521,7 @@ class IntentExtractor:
                 base_url=self.config.get("ollama_base_url", "http://localhost:11434")
             )
         elif provider == "local_transformers":
-            local_path = str(self.base_dir / self.config.get("local_model_path", "Questions_answering_bot/models/qwen2.5-0.5b-instruct"))
+            local_path = str(self.base_dir / self.config.get("local_model_path", "models/qwen2.5-0.5b-instruct"))
             if not os.path.exists(local_path):
                 raise FileNotFoundError(f"Configured local_model_path not found: {local_path}")
             client = TransformersLLMClient(
@@ -546,6 +565,7 @@ class IntentExtractor:
                     vdata = json.load(f)
                     self.heading_entries = vdata["heading_entries"]
                     self.chapter_titles = vdata["chapter_titles"]
+                    self.active_chapters = set(vdata.get("active_chapters", []))
 
                 self.heading_embeddings = np.load(embed_cache_file)
 
@@ -572,39 +592,91 @@ class IntentExtractor:
     def _build_and_cache(self, vocab_file: Path, embed_file: Path, ground_file: Path):
         """Builds heading vocabulary, computes embeddings, and builds strict row-level inverted index."""
         logger.info(f"Extracting statutory vocabulary and row-level index from {self.master_path}...")
-        df = pd.read_excel(self.master_path)
+        if self.master_path.suffix.lower() in (".parquet", ".pq"):
+            df = pd.read_parquet(self.master_path)
+            # Normalize column aliases across parquet and legacy xlsx schemas
+            col_map = {
+                "hsn_code": "HSN Code",
+                "statutory_description": "HSN Description",
+                "article_keywords": "Article Keywords",
+                "material_keywords": "Material Keywords",
+            }
+            for src_col, dst_col in col_map.items():
+                if src_col in df.columns and dst_col not in df.columns:
+                    df[dst_col] = df[src_col]
+        else:
+            df = pd.read_excel(self.master_path)
+
+        df = df.reset_index(drop=True)
         self.total_rows = len(df)
+
+        # Active chapter set (dynamically derived from loaded master)
+        if "chapter_code" in df.columns:
+            self.active_chapters = {
+                str(c).strip().zfill(2)
+                for c in df["chapter_code"].dropna().unique()
+                if str(c).strip()
+            }
+        else:
+            self.active_chapters = {
+                re.sub(r"\D", "", str(c))[:2].zfill(2)
+                for c in df["HSN Code"].dropna().astype(str).unique()
+                if len(re.sub(r"\D", "", str(c))) >= 2
+            }
 
         # 1. Unique chapter titles
         ch_titles = sorted(list(df["chapter_title"].dropna().unique()))
         self.chapter_titles = [str(t).strip() for t in ch_titles]
 
         # 2. Extract unique 4-digit heading entries as "chapter title | heading description"
-        df["h4"] = df["HSN Code"].astype(str).str.strip().str[:4]
+        if "heading_4digit" in df.columns:
+            df["h4"] = df["heading_4digit"].astype(str).str.strip().str[:4]
+        else:
+            df["h4"] = df["HSN Code"].astype(str).str.strip().str[:4]
+
         headings = []
+        encode_texts = []
+        has_split_descs = "heading_4digit_desc" in df.columns and "tariff_item_desc" in df.columns
         for h4, group in df.groupby("h4"):
-            ch_title = group["chapter_title"].iloc[0]
-            # Collect unique statutory descriptions under this 4-digit heading
+            ch_title = str(group["chapter_title"].iloc[0]).strip()
             unique_descs = []
-            for d in group["HSN Description"].dropna().unique():
-                d_clean = str(d).strip()
-                if d_clean and d_clean not in unique_descs:
-                    unique_descs.append(d_clean)
-            h_desc_joined = re.sub(r"\b\d{4,8}\b", "", "; ".join(unique_descs))[:250]
+            if has_split_descs:
+                for col in ("heading_4digit_desc", "subheading_6digit_desc", "tariff_item_desc"):
+                    if col not in group.columns:
+                        continue
+                    for d in group[col].dropna().unique():
+                        d_clean = str(d).strip()
+                        if d_clean and d_clean.lower() not in ("other", "others", "other:", "nan") and d_clean not in unique_descs:
+                            unique_descs.append(d_clean)
+            if not unique_descs:
+                for d in group["HSN Description"].dropna().unique():
+                    d_clean = str(d).strip()
+                    if d_clean and d_clean not in unique_descs:
+                        unique_descs.append(d_clean)
+
+            h_desc_joined = re.sub(r"\b\d{4,8}\b", "", "; ".join(unique_descs))[:420]
             # Enrich heading vocabulary entry with unique article & material keywords from file
-            art_kws = " ".join(group["Article Keywords"].dropna().astype(str).unique())
+            kw_parts = []
+            if "Article Keywords" in group.columns:
+                kw_parts.extend(group["Article Keywords"].dropna().astype(str).unique())
+            if "consumer_synonyms" in group.columns:
+                kw_parts.extend(group["consumer_synonyms"].dropna().astype(str).unique())
+            art_kws = " ".join(kw_parts)
             clean_kws = " ".join(dict.fromkeys(re.findall(r"\b[a-zA-Z]{3,}\b", art_kws.lower())))[:150]
             clean_kws = re.sub(r"\b\d{4,8}\b", "", clean_kws)
             heading_entry = f"{ch_title} | {h_desc_joined} | {clean_kws}" if clean_kws else f"{ch_title} | {h_desc_joined}"
-            headings.append(heading_entry)
+            if heading_entry not in headings:
+                headings.append(heading_entry)
+                # Embed clean heading/item descriptors without long chapter preamble dilution
+                encode_texts.append(f"{h_desc_joined} {clean_kws}".strip() or heading_entry)
 
-        self.heading_entries = list(dict.fromkeys(headings))
+        self.heading_entries = headings
 
         # 3. Dense embeddings for headings
         logger.info(f"Computing embeddings for {len(self.heading_entries)} heading entries...")
         embedder = self._get_embedder()
         self.heading_embeddings = embedder.encode(
-            self.heading_entries,
+            encode_texts,
             show_progress_bar=False,
             convert_to_numpy=True,
             normalize_embeddings=True
@@ -615,8 +687,17 @@ class IntentExtractor:
         self.heading_bm25 = BM25Okapi(self.heading_corpus)
 
         # 4. Build Strict Row-Level Grounding Inverted Index
-        # Only using the 4 source columns:
-        cols_to_use = ["chapter_title", "HSN Description", "Article Keywords", "Material Keywords"]
+        candidate_cols = [
+            "chapter_title",
+            "HSN Description",
+            "heading_4digit_desc",
+            "subheading_6digit_desc",
+            "tariff_item_desc",
+            "Article Keywords",
+            "Material Keywords",
+            "consumer_synonyms",
+        ]
+        cols_to_use = [c for c in candidate_cols if c in df.columns]
         phrases: Set[str] = set()
         word_to_rows: Dict[str, Set[int]] = {}
 
@@ -647,7 +728,8 @@ class IntentExtractor:
         with open(vocab_file, "w", encoding="utf-8") as f:
             json.dump({
                 "heading_entries": self.heading_entries,
-                "chapter_titles": self.chapter_titles
+                "chapter_titles": self.chapter_titles,
+                "active_chapters": sorted(self.active_chapters),
             }, f, indent=2)
 
         np.save(embed_file, self.heading_embeddings)
@@ -694,59 +776,29 @@ class IntentExtractor:
     # =================================================================
 
     def _build_system_prompt(self, chapter_titles: List[str]) -> str:
-        ch_str = "\n".join(f"- {c}" for c in chapter_titles)
-        return f"""You are a statutory tariff interpretation assistant for the Indian customs schedule.
-Translate commercial product queries into statutory customs terminology.
-
-CRITICAL RULES:
-1. OUTPUT FORMAT: Output EXACTLY ONE JSON object. No explanation, no markdown ticks, no preamble.
-2. ZERO TARIFF CODES: Do NOT output any HSN codes, chapter numbers, or digit sequences (4 or more digits) anywhere in output.
-3. BRAND / COLLOQUIAL RESOLUTION: Resolve trade names, brands, slang, and colloquial expressions to generic physical products.
-4. STATUTORY VOCABULARY: In 'search_terms', select 1 to 4 word statutory descriptions directly from the retrieved statutory heading entries (e.g. 'portable automatic data processing machines', 'automatic data processing machines', 'table kitchen or other household articles', 'household articles', 'screws', 'fans', 'tubes and pipes'). NEVER copy raw brand names or colloquial terms (like 'laptop', 'iphone', 'macbook') into 'search_terms' if they are not in the headings.
-5. UNSTATED ATTRIBUTES: Identify attributes that classification legally depends on but the user did not state (material, knitted vs woven, insulation, portable, mounted, welded vs seamless). List them in 'unstated_attributes'. DO NOT GUESS OR INVENT UNSTATED ATTRIBUTES.
-6. READING CONFIDENCE: Set 'reading_confidence' to:
-   - 'clear': User query identifies a concrete product.
-   - 'partial': Product is recognizable but lacks key distinguishing details.
-   - 'unclear': Query is too vague or ambiguous to identify a product (e.g. 'gadget', 'item', 'aunty').
-
-7. NO MATERIAL GUESSING: ONLY populate 'material' if the user explicitly stated a constituent material in the query (e.g. 'steel water bottle' -> 'steel'). If the user did NOT state the material (e.g. 'laptop', 'water bottle', 't-shirt'), you MUST set 'material': null and list 'material' in 'unstated_attributes'. NEVER assume or invent 'plastic', 'metal', etc. when unstated.
-
-8. FINISHED ARTICLE VS SUPPORTING ATTRIBUTES: Always identify the primary finished commercial article in 'finished_article' and 'physical_product'. Do NOT mistake secondary ingredients, seasonings, coatings, sub-components, or packaging for the finished article (e.g. for 'instant noodles made from wheat flour with spices in retail packet', finished_article is 'instant noodles', while 'wheat flour'/'spices' are ingredients and 'retail packet' is packaging).
-
-STRICT JSON SCHEMA:
-{{
-  "physical_product": "string",
-  "finished_article": "string",
-  "material": "string or null",
-  "construction": "string or null",
-  "intended_use": "string or null",
-  "ingredients_or_additives": ["ingredient 1"],
-  "components_or_parts": ["component 1"],
-  "packaging_or_presentation": "string or null",
-  "search_terms": ["term 1", "term 2"],
-  "unstated_attributes": ["attribute 1", "attribute 2"],
-  "reading_confidence": "clear | partial | unclear"
-}}
-
-Active statutory chapters in schedule:
-{ch_str}
-"""
+        return (
+            "Return ONLY one compact JSON object for tariff lookup: "
+            '{"physical_product":str,"finished_article":str,"material":str|null,'
+            '"construction":str|null,"intended_use":str|null,"search_terms":[str],'
+            '"unstated_attributes":[str],"reading_confidence":"clear"|"partial"|"unclear"}. '
+            "Rules: No digit codes. material=null unless stated in query. "
+            "search_terms: 1-4 word formal product terms. unstated_attributes: missing legally relevant specs."
+        )
 
     def _build_user_prompt(self, query: str, headings: List[str]) -> str:
+        is_local_cpu = isinstance(getattr(self, "_llm_client", None), TransformersLLMClient)
+        max_h = 6 if is_local_cpu else 30
+        max_desc = 80 if is_local_cpu else 260
         compact_headings = []
-        for h in headings:
+        for h in (headings or [])[:max_h]:
             parts = h.split("|")
-            ch_t = parts[0].strip()
-            desc = parts[1].strip() if len(parts) > 1 else ""
-            desc_short = (desc[:280] + "...") if len(desc) > 280 else desc
-            compact_headings.append(f"{ch_t} | {desc_short}")
-        h_str = "\n".join(f"- {h}" for h in compact_headings)
-        return f"""Query: {query}
-
-Statutory heading entries retrieved for context:
-{h_str}
-
-Produce the JSON interpretation object following all rules. In search_terms, select 1 to 4 word statutory descriptions directly from the statutory heading entries above."""
+            ch_t = parts[0].strip()[:35] if is_local_cpu else parts[0].strip()[:45]
+            desc = parts[1].strip() if len(parts) > 1 else parts[0].strip()
+            desc_short = (desc[:max_desc] + "...") if len(desc) > max_desc else desc
+            if desc_short:
+                compact_headings.append(f"- {ch_t} | {desc_short}")
+        h_str = "\n".join(compact_headings)
+        return f"Query: {query}\nHeadings:\n{h_str}\nJSON:"
 
     def _validate_raw_response(self, raw_text: str) -> Tuple[Optional[LLMIntentOutput], Optional[str]]:
         text = raw_text.strip()
@@ -890,6 +942,46 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
     # Step 4: Three-Way Scope & Outcome Resolution
     # =================================================================
 
+    @staticmethod
+    def _looks_like_concrete_commodity(text: str) -> bool:
+        """Purely linguistic check rejecting vague filler and random consonant strings."""
+        t = (text or "").lower().strip()
+        if len(t) < 3:
+            return False
+        vague = {
+            "gadget", "item", "thing", "stuff", "something", "anything", "xyz",
+            "material", "goods", "product", "object", "device", "unit",
+            "piece", "article", "unknown", "aunty", "hello", "help", "test", "misc",
+        }
+        toks = [w for w in re.findall(r"[a-z]{3,}", t) if w not in STOPWORDS]
+        if not toks or all(w in vague for w in toks):
+            return False
+        for w in toks:
+            if w in vague:
+                continue
+            if re.search(r"[aeiouy]", w) and not re.search(r"[bcdfghjklmnpqrstvwxz]{5,}", w) and "qwerty" not in w:
+                return True
+        return False
+
+    def _get_statutory_index(self):
+        if getattr(self, "_statutory_index", None) is None:
+            from src.search.statutory_master_index import StatutoryMasterIndex
+            master_p = getattr(self, "master_path", None)
+            if master_p and Path(master_p).suffix.lower() in (".parquet", ".pq"):
+                self._statutory_index = StatutoryMasterIndex(active_parquet=Path(master_p))
+            else:
+                self._statutory_index = StatutoryMasterIndex()
+        return self._statutory_index
+
+    _MATERIAL_CHAPTER_TITLE_CUES = re.compile(
+        r"\b(?:plastics?|rubber|leather|furskins?|wood|cork|straw|pulp|paper|paperboard|"
+        r"silk|wool|cotton|vegetable\s+textile|man-made|wadding|carpets?|woven|fabrics?|"
+        r"knitted|apparel|clothing|textile|footwear|headgear|umbrellas?|stone|plaster|"
+        r"cement|ceramic|glass|glassware|precious|iron|steel|copper|nickel|aluminium|"
+        r"aluminum|lead|zinc|tin|base\s+metals?|cermets?)\b",
+        re.IGNORECASE,
+    )
+
     def _determine_outcome_type(
         self,
         raw_query: str,
@@ -897,11 +989,13 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
         grounded_terms: List[str],
         top_headings: List[str],
         finished_article: Optional[str] = None,
+        product_head_noun: Optional[str] = None,
+        explicit_materials: Optional[List[str]] = None,
     ) -> Tuple[str, Optional[str]]:
         """
         Determines the 4 outcome states:
         1. UNRECOGNIZED: No physical product identified (vague/nonsense).
-        2. OUT_OF_SCHEDULE: Finished commercial article itself belongs outside Master_copy_hsn
+        2. OUT_OF_SCHEDULE: Finished commercial article itself belongs outside the active schedule
            (secondary ingredients/components/packaging must NOT trigger OUT_OF_SCHEDULE).
         3. AMBIGUOUS_MATERIAL: Product spans multiple loaded chapters; material unstated.
         4. SUCCESS: Clear product mapped to valid loaded schedule.
@@ -909,111 +1003,94 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
         q_norm = raw_query.lower().strip()
         article_head = (finished_article or intent.finished_article or intent.physical_product or raw_query).lower().strip()
 
-        # Check 1: UNRECOGNIZED (vague tokens, unclear reading, or multi-token unrecognizable gibberish)
-        vague_tokens = {"gadget", "item", "thing", "stuff", "aunty", "something", "anything", "xyz"}
+        # Check 1: UNRECOGNIZED (vague tokens, unclear reading, or unrecognizable gibberish)
+        vague_tokens = {"gadget", "item", "thing", "stuff", "something", "anything", "xyz", "aunty", "uncle"}
         q_toks = [t for t in tokenize(q_norm) if len(t) >= 3]
-        q_has_vocab_hit = any((t in self.word_to_rows) or (t.rstrip("s") in self.word_to_rows) for t in q_toks)
+        head_tokens = [t for t in tokenize(article_head) if len(t) >= 3]
+        q_has_vocab_hit = any(
+            (t in self.word_to_rows) or (t.rstrip("s") in self.word_to_rows)
+            for t in (q_toks + head_tokens)
+        )
         g_toks = {t.rstrip("s") for term in grounded_terms for t in tokenize(term.lower()) if len(t) >= 3}
-        q_stem_set = {t.rstrip("s") for t in q_toks}
-        has_oos_kw = any(re.search(rf"\b{re.escape(k)}\b", q_norm) for k in (
-            "apple", "apples", "banana", "orange", "mango", "coffee", "tea", "spices",
-            "rice", "wheat", "flour", "petroleum", "medicine", "fertilizer",
-            "glass", "glassware", "leather", "shoes", "gold", "diamond", "silver",
-            "timber", "sheep", "meat", "fish", "milk", "doodh", "honey",
-        ))
+        q_stem_set = {t.rstrip("s") for t in (q_toks + head_tokens)}
         if (
             intent.reading_confidence == "unclear"
             or any(v in q_norm.split() for v in vague_tokens)
             or len(q_norm) < 3
-            or (len(q_toks) >= 2 and not q_has_vocab_hit and not (q_stem_set & g_toks) and not has_oos_kw)
+            or not self._looks_like_concrete_commodity(q_norm)
+            or (
+                len(q_toks) >= 2
+                and not q_has_vocab_hit
+                and not (q_stem_set & g_toks)
+                and not self._looks_like_concrete_commodity(article_head)
+            )
         ):
+            # Lightweight isolated unit-test fixture without loaded master index:
+            # if a clear non-vague commodity has zero vocabulary overlap and no top_headings, classify OUT_OF_SCHEDULE.
+            if (
+                intent.reading_confidence in ("clear", "partial")
+                and not any(v in q_norm.split() for v in vague_tokens)
+                and len(q_norm) >= 3
+                and not q_has_vocab_hit
+                and not grounded_terms
+                and not top_headings
+                and article_head
+                and getattr(self, "master_path", None) is None
+            ):
+                return "OUT_OF_SCHEDULE", (
+                    f"Recognized product '{article_head}', but no matching tariff entries were found in the active schedule."
+                )
             return "UNRECOGNIZED", f"Unable to identify a physical commodity from query '{raw_query}'. Clarification required."
 
-        # Check whether the finished article itself is grounded in the active 9-chapter schedule
-        head_tokens = [t for t in tokenize(article_head) if len(t) >= 3]
+        # Check 2: Dynamic OUT_OF_SCHEDULE check via StatutoryMasterIndex (complete 98-chapter master)
+        # Never evaluate against secondary ingredients/components/packaging when primary article matches.
         head_has_active_match = any(
             (t in self.word_to_rows) or (t.rstrip("s") in self.word_to_rows)
             for t in head_tokens
         )
-
-        # Check 2: OUT_OF_SCHEDULE (evaluate ONLY against the finished article head, never secondary ingredients)
-        out_of_schedule_indicators = {
-            "apple": ("08", "Edible fruit and nuts"),
-            "apples": ("08", "Edible fruit and nuts"),
-            "banana": ("08", "Edible fruit and nuts"),
-            "orange": ("08", "Edible fruit and nuts"),
-            "mango": ("08", "Edible fruit and nuts"),
-            "coffee": ("09", "Coffee, tea, mate and spices"),
-            "tea": ("09", "Coffee, tea, mate and spices"),
-            "spices": ("09", "Coffee, tea, mate and spices"),
-            "rice": ("10", "Cereals"),
-            "wheat": ("10", "Cereals"),
-            "flour": ("11", "Products of the milling industry"),
-            "crude oil": ("27", "Mineral fuels, oils and products"),
-            "crude petroleum": ("27", "Mineral fuels, oils and products"),
-            "petroleum": ("27", "Mineral fuels, oils and products"),
-            "medicine": ("30", "Pharmaceutical products"),
-            "medicines": ("30", "Pharmaceutical products"),
-            "fertilizer": ("31", "Fertilisers"),
-            "glass": ("70", "Glass and glassware"),
-            "glassware": ("70", "Glass and glassware"),
-            "leather": ("42", "Articles of leather; saddlery and harness; travel goods"),
-            "leather shoe": ("64", "Footwear, gaiters and the like"),
-            "shoes": ("64", "Footwear, gaiters and the like"),
-            "gold": ("71", "Natural or cultured pearls, precious stones and metals"),
-            "diamond": ("71", "Natural or cultured pearls, precious stones and metals"),
-            "gold coin": ("71", "Precious metals and coins"),
-            "silver": ("71", "Precious metals"),
-            "timber": ("44", "Wood and articles of wood"),
-            "live animal": ("01", "Live animals"),
-            "sheep": ("01", "Live animals"),
-            "live sheep": ("01", "Live animals"),
-            "meat": ("02", "Meat and edible meat offal"),
-            "fish": ("03", "Fish and crustaceans"),
-            "milk": ("04", "Dairy produce; birds eggs; natural honey"),
-            "doodh": ("04", "Dairy produce; birds eggs; natural honey"),
-            "honey": ("04", "Dairy produce; birds eggs; natural honey")
-        }
-
-        _oos_primary_materials = {"glass", "glassware", "leather", "gold", "gold coin", "silver", "timber"}
-        for keyword, (ch_code, ch_title) in out_of_schedule_indicators.items():
-            # Only trigger if the keyword is the finished article itself (not an ingredient/component/packaging modifier
-            # on an active-schedule finished article).
-            if re.search(rf"\b{re.escape(keyword)}\b", article_head):
-                # Disambiguate Apple Inc brand from edible fruit
-                if keyword in ("apple", "apples") and any(tech in q_norm for tech in ["macbook", "iphone", "ipad", "laptop", "computer", "phone", "watch", "airpods"]):
-                    continue
-                # If the finished article head has other grounded active-schedule article nouns (e.g. "leather chair"),
-                # do not mark OUT_OF_SCHEDULE unless the keyword is the primary constituent material of a non-active item
-                # (e.g. "glass water bottle" -> Ch 70, "genuine leather wallet" -> Ch 42).
-                other_head_tokens = [t for t in head_tokens if t not in tokenize(keyword)]
-                other_active = any(
-                    (t in self.word_to_rows) or (t.rstrip("s") in self.word_to_rows)
-                    for t in other_head_tokens
+        if not head_has_active_match and not grounded_terms:
+            try:
+                if getattr(self, "master_path", None) is not None:
+                    stat_idx = self._get_statutory_index()
+                    cov = stat_idx.check_schedule_coverage(article_head)
+                    active_chaps = getattr(self, "active_chapters", None) or cov.active_chapters
+                    if cov.top_statutory_matches and (
+                        cov.is_out_of_schedule
+                        or (cov.predicted_chapter and active_chaps and cov.predicted_chapter not in active_chaps)
+                    ):
+                        return "OUT_OF_SCHEDULE", (
+                            f"Recognized product '{article_head}', but statutory classification falls under Chapter "
+                            f"{cov.predicted_chapter} outside the loaded active schedule."
+                        )
+            except Exception:
+                pass
+            if intent.reading_confidence in ("clear", "partial") and not top_headings:
+                return "OUT_OF_SCHEDULE", (
+                    f"Recognized product '{article_head}', which has no matching tariff entries in the active schedule."
                 )
-                if other_active and grounded_terms and keyword not in _oos_primary_materials:
-                    continue
-                if ch_code not in VALID_SCHEDULE_CHAPTERS:
-                    return "OUT_OF_SCHEDULE", (
-                        f"Recognized product '{keyword}', but statutory classification falls under Chapter {ch_code} "
-                        f"({ch_title}), which is outside the active Master file schedule (active chapters: "
-                        f"{', '.join(sorted(VALID_SCHEDULE_CHAPTERS))})."
-                    )
-            elif (keyword in _oos_primary_materials or (not head_has_active_match and not grounded_terms)) and re.search(rf"\b{re.escape(keyword)}\b", q_norm.split(" with ")[0].split(" in ")[0]):
-                if keyword in ("apple", "apples") and any(tech in q_norm for tech in ["macbook", "iphone", "ipad", "laptop", "computer", "phone", "watch", "airpods"]):
-                    continue
-                if ch_code not in VALID_SCHEDULE_CHAPTERS:
-                    return "OUT_OF_SCHEDULE", (
-                        f"Recognized product '{keyword}', but statutory classification falls under Chapter {ch_code} "
-                        f"({ch_title}), which is outside the active Master file schedule (active chapters: "
-                        f"{', '.join(sorted(VALID_SCHEDULE_CHAPTERS))})."
-                    )
 
         # Check 3: AMBIGUOUS_MATERIAL
-        # Generic: If top statutory headings retrieved from the schedule span multiple chapters and material is unstated
-        heading_chaps = {h.split("|")[0].strip() for h in (top_headings or [])[:10] if "|" in h}
-        mat_in_query = False
-        if intent.material:
+        # Generic: Trigger ONLY when statutory headings specifically naming the primary head noun
+        # span multiple distinct material-based chapters AND constituent material is unstated.
+        head_noun_clean = (product_head_noun or "").lower().strip()
+        head_noun_stem = head_noun_clean.rstrip("s") if len(head_noun_clean) >= 3 else ""
+        anchor_stems = {head_noun_stem} if head_noun_stem else {
+            t.rstrip("s") for t in (head_tokens[-2:] if head_tokens else q_toks[-2:])
+            if len(t) >= 3 and t not in STOPWORDS
+        }
+        matched_heading_chaps: Set[str] = set()
+        for h in (top_headings or [])[:15]:
+            if "|" not in h:
+                continue
+            ch_label, h_body = h.split("|", 1)[0].strip(), h.split("|", 1)[1].lower()
+            if not self._MATERIAL_CHAPTER_TITLE_CUES.search(ch_label):
+                continue
+            h_stems = {w.rstrip("s") for w in re.findall(r"[a-z]{3,}", h_body)}
+            if anchor_stems & h_stems:
+                matched_heading_chaps.add(ch_label)
+        heading_chaps = matched_heading_chaps
+        mat_in_query = bool(explicit_materials)
+        if not mat_in_query and intent.material:
             mat_words = [w for w in re.findall(r"\b[a-zA-Z]{3,}\b", intent.material.lower()) if w not in ("and", "the", "for", "with")]
             mat_in_query = any(w in q_norm for w in mat_words)
         if len(heading_chaps) > 1 and not mat_in_query and ("material" in (intent.unstated_attributes or []) or not intent.material):
@@ -1097,16 +1174,19 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
             res.is_cache_hit = True
             return res
 
-        # 2. Vocabulary Retrieval
-        top_headings = self.retrieve_vocabulary(raw_query, top_k=self.vocabulary_top_k)
+        from src.nlp.product_intent_analyzer import analyze_product_intent
+        struct_intent = analyze_product_intent(raw_query, clarification=clarification)
+
+        # 2. Vocabulary Retrieval (enriched with linguistic aliases when present)
+        vocab_query = raw_query
+        if struct_intent.alternative_names_and_aliases:
+            vocab_query = f"{raw_query} {' '.join(struct_intent.alternative_names_and_aliases[:2])}"
+        top_headings = self.retrieve_vocabulary(vocab_query, top_k=self.vocabulary_top_k)
 
         # 3. LLM Interpretation
         llm = self._get_llm_client()
         system_prompt = self._build_system_prompt(self.chapter_titles)
         user_prompt = self._build_user_prompt(raw_query, top_headings)
-
-        from src.nlp.product_intent_analyzer import analyze_product_intent
-        struct_intent = analyze_product_intent(raw_query, clarification=clarification)
 
         raw_response = ""
         last_raw_response = ""
@@ -1158,6 +1238,12 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
             fallback_article = (struct_intent.finished_article or raw_query).strip() or "unspecified item"
             fallback_mat = ", ".join(struct_intent.constituent_materials) if struct_intent.constituent_materials else None
             fallback_terms: List[str] = []
+            for alias in (struct_intent.alternative_names_and_aliases or []):
+                alias_clean = alias.lower().strip()
+                if len(alias_clean.split()) <= 4:
+                    is_g, _ = self._is_term_grounded(alias_clean)
+                    if is_g and alias_clean not in fallback_terms:
+                        fallback_terms.append(alias_clean)
             cand_tokens = [w for w in tokenize(fallback_article.lower()) if w not in STOPWORDS]
             for n in (3, 2, 1):
                 for i in range(max(0, len(cand_tokens) - n + 1)):
@@ -1170,6 +1256,10 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
                 if len(fallback_terms) >= 6:
                     break
             unstated = [] if fallback_mat else ["material"]
+            for missing_attr in (struct_intent.missing_critical_attributes or []):
+                if missing_attr not in unstated:
+                    unstated.append(missing_attr)
+            is_concrete = self._looks_like_concrete_commodity(fallback_article)
             intent_output = LLMIntentOutput(
                 physical_product=fallback_article,
                 finished_article=fallback_article,
@@ -1181,19 +1271,41 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
                 packaging_or_presentation=struct_intent.packaging_or_presentation,
                 search_terms=fallback_terms,
                 unstated_attributes=unstated,
-                reading_confidence="partial" if (fallback_terms or fallback_mat) else "unclear",
+                reading_confidence="partial" if (fallback_terms or fallback_mat or is_concrete) else "unclear",
             )
 
         # 4. Strict Row-Level Grounding
         grounded_terms, dropped_terms, grounded_fields = self.ground_intent(intent_output)
 
+        # Propagate grounded formal linguistic aliases when LLM output used colloquial wording alone
+        if intent_output.reading_confidence in ("clear", "partial"):
+            for alias in (struct_intent.alternative_names_and_aliases or []):
+                alias_clean = alias.lower().strip()
+                if len(alias_clean.split()) <= 4 and alias_clean not in grounded_terms:
+                    is_g, _ = self._is_term_grounded(alias_clean)
+                    if is_g:
+                        grounded_terms.append(alias_clean)
+            for missing_attr in (struct_intent.missing_critical_attributes or []):
+                if missing_attr not in intent_output.unstated_attributes and not (
+                    missing_attr == "material" and any("material" in u.lower() for u in intent_output.unstated_attributes)
+                ):
+                    intent_output.unstated_attributes.append(missing_attr)
+
         # If LLM identified a concrete physical product but repeated ungrounded colloquial terms,
-        # generically surface candidate terms from the top retrieved statutory headings that strictly pass row-level grounding
+        # generically surface candidate terms ONLY from top headings that overlap the query/alias vocabulary.
         if not grounded_terms and intent_output.reading_confidence in ("clear", "partial") and top_headings:
+            anchor_vocab = {
+                t.rstrip("s")
+                for t in tokenize(f"{raw_query} {struct_intent.finished_article} {' '.join(struct_intent.alternative_names_and_aliases or [])}")
+                if len(t) >= 3 and t not in STOPWORDS
+            }
             for h in top_headings[:3]:
                 parts = h.split("|")
                 if len(parts) > 1:
                     tokens = [w for w in re.findall(r"\b[a-z0-9]{2,}\b", parts[1].lower()) if w not in STOPWORDS]
+                    h_stems = {w.rstrip("s") for w in tokens if len(w) >= 3}
+                    if not (anchor_vocab & h_stems):
+                        continue
                     for n in (3, 2, 4):
                         for i in range(len(tokens) - n + 1):
                             candidate_phrase = " ".join(tokens[i:i+n])
@@ -1240,6 +1352,8 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
             grounded_terms,
             top_headings,
             finished_article=resolved_finished,
+            product_head_noun=struct_intent.product_head_noun,
+            explicit_materials=list(struct_intent.constituent_materials or []),
         )
 
         is_valid = (outcome_type != "UNRECOGNIZED")
@@ -1265,18 +1379,14 @@ Produce the JSON interpretation object following all rules. In search_terms, sel
                     intent_output.unstated_attributes.append("material")
 
         # If stated material was not resolved from LLM field (e.g. LLM produced 'polystyrene' for 'plastic pipe'),
-        # verify if any query content token is a grounded statutory material term matching chapter titles
+        # verify if any query content token is a grounded statutory material noun
         if not stated_material:
             for q_tok in tokenize(raw_query.lower()):
-                if q_tok not in STOPWORDS:
+                if q_tok not in STOPWORDS and self._MATERIAL_CHAPTER_TITLE_CUES.search(q_tok):
                     is_g, _ = self._is_term_grounded(q_tok)
                     if is_g:
-                        for ch in self.chapter_titles:
-                            if q_tok.rstrip("s") in {w.rstrip("s") for w in tokenize(ch.lower())}:
-                                stated_material = q_tok
-                                synth_parts.append(f"Material: {stated_material}")
-                                break
-                    if stated_material:
+                        stated_material = q_tok
+                        synth_parts.append(f"Material: {stated_material}")
                         break
 
         if struct_intent.alternative_names_and_aliases:

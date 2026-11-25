@@ -47,4 +47,4 @@ secrets/
 htmlcov/
 
 # ML Model weights
-Questions_answering_bot/models/
+models/qwen2.5-0.5b-instruct/

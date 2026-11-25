@@ -207,16 +207,50 @@ class SmartAmbiguityController:
                 pass
 
         if mat_tokens:
+            # Exclude candidates whose primary commodity subject mismatches a finished article
+            # (e.g. bottle-washing machinery or raw steel wire/ingots for a 'water bottle' query)
+            subject_compat_candidates = []
+            try:
+                from src.nlp.product_intent_analyzer import analyze_product_intent
+                from src.ml.candidate_evidence_evaluator import (
+                    CONTRADICTED,
+                    build_candidate_profile,
+                    evaluate_candidate_evidence,
+                )
+                pi = analyze_product_intent(q)
+                for c in candidates:
+                    raw_rec = {
+                        "hsn_code": c.hsn_code,
+                        "chapter_code": c.chapter_code,
+                        "chapter_title": c.chapter_title,
+                        "heading_4digit_desc": c.heading_4digit_desc,
+                        "subheading_6digit_desc": c.subheading_6digit_desc,
+                        "tariff_item_desc": c.tariff_item_desc,
+                        "statutory_description": c.statutory_description,
+                        "article_keywords": c.article_keywords,
+                        "material_keywords": c.material_keywords,
+                        "consumer_synonyms": c.consumer_synonyms,
+                    }
+                    ev = evaluate_candidate_evidence(pi, build_candidate_profile(raw_rec, c), "RELATED_PRODUCT", c.final_score)
+                    if ev.status != CONTRADICTED and ev.role_mismatch not in (
+                        "finished_article_vs_raw_form",
+                        "article_vs_machinery_or_accessory_object",
+                    ):
+                        subject_compat_candidates.append(c)
+            except Exception:
+                subject_compat_candidates = list(candidates)
+            pool_for_mat = subject_compat_candidates or candidates
+
             material_filtered_candidates = []
             # Match material terms against chapter titles and candidate keywords
             chap_title_matches = [
-                c for c in candidates
+                c for c in pool_for_mat
                 if bool(mat_tokens.intersection({w.rstrip("s") for w in tokenize(c.chapter_title)}))
             ]
             if chap_title_matches:
                 material_filtered_candidates = chap_title_matches
             else:
-                for c in candidates:
+                for c in pool_for_mat:
                     cand_text = f"{c.chapter_title} {c.material_keywords} {c.article_keywords}".lower()
                     cand_stems = {w.rstrip("s") for w in tokenize(cand_text)}
                     if bool(mat_tokens.intersection(cand_stems)):
